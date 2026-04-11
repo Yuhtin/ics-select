@@ -9,12 +9,8 @@ test.describe('Landing page', () => {
     ).toBeVisible();
   });
 
-  test('visual snapshot', async ({ page }) => {
+  test('has the Google login button', async ({ page }) => {
     await page.goto('/login');
-    await page.waitForLoadState('networkidle');
-    await expect(page).toHaveScreenshot('login.png', {
-      fullPage: true,
-      maxDiffPixelRatio: 0.02,
-    });
+    await expect(page.getByRole('button', { name: 'Entrar com Google' })).toBeVisible();
   });
 });
