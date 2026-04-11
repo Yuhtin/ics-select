@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@ics-select/prisma';
 import { PrismaService } from '../common/prisma/prisma.service.js';
-import type { Usage } from '../common/anthropic/anthropic.provider.js';
+import type { Usage } from '../common/openai/openai-chat.provider.js';
 
 type LogInput = {
   userId: string | null;

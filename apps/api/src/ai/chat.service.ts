@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { AnthropicProvider } from '../common/anthropic/anthropic.provider.js';
+import { OpenAiChatProvider } from '../common/openai/openai-chat.provider.js';
 import { WeeklyPlansService } from '../weekly-plans/weekly-plans.service.js';
 
 type ChatMessage = { role: 'user' | 'assistant'; content: string };
@@ -7,7 +7,7 @@ type ChatMessage = { role: 'user' | 'assistant'; content: string };
 @Injectable()
 export class ChatService {
   constructor(
-    private readonly anthropic: AnthropicProvider,
+    private readonly chat: OpenAiChatProvider,
     private readonly plans: WeeklyPlansService,
   ) {}
 
@@ -38,16 +38,12 @@ export class ChatService {
 CONTEXTO DO MEMBRO:
 ${context}`;
 
-    const streamResp = this.anthropic.stream({
+    for await (const token of this.chat.stream({
       system,
       messages,
       maxTokens: 1500,
-    });
-
-    for await (const event of streamResp) {
-      if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
-        yield event.delta.text;
-      }
+    })) {
+      yield token;
     }
   }
 }

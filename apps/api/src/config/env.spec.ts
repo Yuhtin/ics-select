@@ -16,7 +16,6 @@ describe('loadEnv', () => {
     BOOTSTRAP_ADMIN_EMAILS: '',
     FRONTEND_BASE_URL: 'http://localhost:3000',
     OPENAI_API_KEY: 'sk-test-key',
-    ANTHROPIC_API_KEY: 'sk-ant-test-key',
   };
 
   it('parses a valid env object', () => {
@@ -65,11 +64,6 @@ describe('loadEnv', () => {
   it('throws when OPENAI_API_KEY is missing', () => {
     const { OPENAI_API_KEY: _key, ...incomplete } = baseEnv;
     expect(() => loadEnv(incomplete)).toThrow(/OPENAI_API_KEY/);
-  });
-
-  it('throws when ANTHROPIC_API_KEY is missing', () => {
-    const { ANTHROPIC_API_KEY: _key, ...incomplete } = baseEnv;
-    expect(() => loadEnv(incomplete)).toThrow(/ANTHROPIC_API_KEY/);
   });
 
   it('works without Evolution config', () => {

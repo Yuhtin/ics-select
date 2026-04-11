@@ -1,6 +1,6 @@
 import { DraftPlanService } from './draft-plan.service';
 
-const anthropic = {
+const chat = {
   callJson: jest.fn(),
 };
 const library = {
@@ -34,12 +34,12 @@ const usage = { log: jest.fn(async () => undefined) };
 
 describe('DraftPlanService', () => {
   beforeEach(() => {
-    anthropic.callJson.mockReset();
+    chat.callJson.mockReset();
     usage.log.mockClear();
   });
 
   it('returns a draft plan with items and narrative', async () => {
-    anthropic.callJson.mockResolvedValueOnce({
+    chat.callJson.mockResolvedValueOnce({
       data: {
         items: [
           { libraryItemId: 'li-1', order: 0, rationale: 'Builds on previous hard item' },
@@ -49,7 +49,7 @@ describe('DraftPlanService', () => {
       },
       usage: { inputTokens: 500, outputTokens: 100, costUsd: 0.003 },
     });
-    const svc = new DraftPlanService(anthropic as any, library as any, plans as any, usage as any);
+    const svc = new DraftPlanService(chat as any, library as any, plans as any, usage as any);
     const result = await svc.run({ memberId: 'u-1' });
     expect(result.draft.items).toHaveLength(1);
     expect(result.draft.narrative).toContain('recursão');

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { AnthropicProvider, MODEL } from '../common/anthropic/anthropic.provider.js';
+import { OpenAiChatProvider, MODEL } from '../common/openai/openai-chat.provider.js';
 import { LibraryService } from '../library/library.service.js';
 import { UsageLoggerService } from './usage-logger.service.js';
 
@@ -12,7 +12,7 @@ type Draft = {
 @Injectable()
 export class BriefPlanService {
   constructor(
-    private readonly anthropic: AnthropicProvider,
+    private readonly chat: OpenAiChatProvider,
     private readonly library: LibraryService,
     private readonly usage: UsageLoggerService,
   ) {}
@@ -40,7 +40,7 @@ Não invente IDs.`;
 Acervo disponível:
 ${candidatesText}`;
 
-    const result = await this.anthropic.callJson<Draft>({
+    const result = await this.chat.callJson<Draft>({
       system,
       messages: [{ role: 'user', content: user }],
       maxTokens: 1500,
