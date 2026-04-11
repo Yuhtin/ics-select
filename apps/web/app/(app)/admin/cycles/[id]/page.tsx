@@ -1,9 +1,9 @@
 'use client';
 
-import { Avatar, Card, CardBody, CardHeader } from '@heroui/react';
+import { Avatar, Button, Card, CardBody, CardHeader } from '@heroui/react';
 import { useQuery } from '@tanstack/react-query';
 import { use } from 'react';
-import { apiFetch } from '../../../../../lib/api/client';
+import { apiFetch, getAccessToken } from '../../../../../lib/api/client';
 
 type CycleDetail = {
   id: string;
@@ -30,8 +30,28 @@ export default function AdminCycleDetailPage({ params }: { params: Promise<{ id:
   return (
     <div className="mx-auto max-w-4xl space-y-4">
       <Card>
-        <CardHeader>
+        <CardHeader className="flex items-center justify-between gap-3">
           <h1 className="text-2xl font-semibold">{data.name}</h1>
+          <Button
+            size="sm"
+            variant="flat"
+            onPress={async () => {
+              const token = getAccessToken();
+              const apiBase = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+              const res = await fetch(`${apiBase}/cycles/${data.id}/report`, {
+                headers: { Authorization: `Bearer ${token ?? ''}` },
+              });
+              const blob = await res.blob();
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `cycle-${data.id}.md`;
+              a.click();
+              URL.revokeObjectURL(url);
+            }}
+          >
+            Baixar relatório
+          </Button>
         </CardHeader>
         <CardBody className="space-y-1 text-sm text-foreground/70">
           <p>
