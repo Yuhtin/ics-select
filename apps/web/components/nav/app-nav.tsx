@@ -16,6 +16,9 @@ export function AppNav() {
       <div className="flex items-center gap-4 text-sm">
         {user.role === 'ADMIN' ? (
           <>
+            <Link href="/admin/dashboard" className="text-foreground/80 hover:text-foreground">
+              Dashboard
+            </Link>
             <Link href="/admin/cycles" className="text-foreground/80 hover:text-foreground">
               Ciclos
             </Link>
