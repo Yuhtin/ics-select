@@ -18,7 +18,7 @@ These are **not** plan tasks — the engineer executing this plan should confirm
    - `ics-api.daviduarte.com.br` → VPS IP
    - `ics` (for `ics.daviduarte.com.br`) → Vercel's CNAME target (configured later in Vercel)
 2. **VPS:** an Ubuntu 22.04+ VPS with Docker 24+ and Docker Compose v2, SSH access via key, public IP, ports 80 and 443 open.
-3. **GitHub repo:** create `github.com/daviduarte/ics-select` (private) and configure it as the remote of the local repo (`git remote add origin ...`).
+3. **GitHub repo:** create `github.com/Yuhtin/ics-select` (private) and configure it as the remote of the local repo (`git remote add origin ...`).
 4. **Vercel:** create a project linked to the GitHub repo. Set **Root Directory** to `apps/web`. Set env var `NEXT_PUBLIC_API_URL=https://ics-api.daviduarte.com.br`. Add the custom domain `ics.daviduarte.com.br`.
 5. **GitHub Secrets** (for the deploy workflow, created in Task 18):
    - `VPS_HOST` — VPS IP or hostname
@@ -2042,7 +2042,7 @@ services:
       - internal
 
   api:
-    image: ghcr.io/daviduarte/ics-select-api:${IMAGE_TAG:-latest}
+    image: ghcr.io/yuhtin/ics-select-api:${IMAGE_TAG:-latest}
     restart: unless-stopped
     depends_on:
       postgres:
@@ -2058,7 +2058,7 @@ services:
       - web
 
   migrate:
-    image: ghcr.io/daviduarte/ics-select-api:${IMAGE_TAG:-latest}
+    image: ghcr.io/yuhtin/ics-select-api:${IMAGE_TAG:-latest}
     depends_on:
       postgres:
         condition: service_healthy
@@ -2359,7 +2359,7 @@ git commit -m "ci: add deploy workflow to VPS via SSH"
 
 - [ ] **Step 3: Trigger the first deploy (manual)**
 
-After the CI workflow succeeds on `main`, the Deploy workflow will run automatically. Watch it in the GitHub UI. Expected: the image is pushed to `ghcr.io/daviduarte/ics-select-api:<sha>` and the VPS pulls and restarts. After it completes, run `curl -sS https://ics-api.daviduarte.com.br/health` and expect `{"status":"ok",...}`.
+After the CI workflow succeeds on `main`, the Deploy workflow will run automatically. Watch it in the GitHub UI. Expected: the image is pushed to `ghcr.io/yuhtin/ics-select-api:<sha>` and the VPS pulls and restarts. After it completes, run `curl -sS https://ics-api.daviduarte.com.br/health` and expect `{"status":"ok",...}`.
 
 If the VPS step fails because `/opt/ics-select` doesn't have the compose files or `.env` yet, follow the one-time VPS setup from the README (Task 19) and retry.
 
@@ -2440,7 +2440,7 @@ pnpm db:generate   # regenera o client do Prisma
 O deploy é automático via GitHub Actions em merges na branch `main`:
 
 1. CI roda (lint, typecheck, testes, build)
-2. Deploy workflow builda a imagem Docker e faz push pra `ghcr.io/daviduarte/ics-select-api`
+2. Deploy workflow builda a imagem Docker e faz push pra `ghcr.io/yuhtin/ics-select-api`
 3. SSH na VPS → `docker compose pull && migrate && up -d`
 
 **VPS setup inicial (uma vez):**
@@ -2457,7 +2457,7 @@ scp .env.prod.example user@vps:/opt/ics-select/.env
 # depois editar o .env com senhas reais
 
 # Login no GHCR com o PAT
-echo $GHCR_PAT | docker login ghcr.io -u daviduarte --password-stdin
+echo $GHCR_PAT | docker login ghcr.io -u Yuhtin --password-stdin
 
 # Primeira subida
 docker compose -f docker-compose.prod.yml pull
@@ -2528,7 +2528,7 @@ git commit -m "docs: add README with setup, deploy, and operations"
 In a clean shell:
 ```bash
 cd $(mktemp -d)
-git clone git@github.com:daviduarte/ics-select.git ics-select-check
+git clone git@github.com:Yuhtin/ics-select.git ics-select-check
 cd ics-select-check
 pnpm install
 cp .env.example .env
