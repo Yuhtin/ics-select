@@ -11,7 +11,7 @@ export function Providers({ children }: { children: ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <HeroUIProvider>
-        <NextThemesProvider attribute="class" defaultTheme="system" enableSystem>
+        <NextThemesProvider attribute="class" forcedTheme="light">
           <AuthProvider>{children}</AuthProvider>
         </NextThemesProvider>
       </HeroUIProvider>
