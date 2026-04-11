@@ -1,4 +1,4 @@
-import { ArgumentsHost, BadRequestException, HttpException, HttpStatus, InternalServerErrorException } from '@nestjs/common';
+import { ArgumentsHost, BadRequestException, InternalServerErrorException } from '@nestjs/common';
 import { HttpExceptionFilter } from './http-exception.filter';
 
 type Captured = { status?: number; body?: unknown };

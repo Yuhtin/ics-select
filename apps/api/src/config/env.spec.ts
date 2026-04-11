@@ -27,7 +27,7 @@ describe('loadEnv', () => {
   });
 
   it('throws when DATABASE_URL is missing', () => {
-    const { DATABASE_URL, ...incomplete } = baseEnv;
+    const { DATABASE_URL: _DATABASE_URL, ...incomplete } = baseEnv;
     expect(() => loadEnv(incomplete)).toThrow(/DATABASE_URL/);
   });
 
@@ -36,7 +36,7 @@ describe('loadEnv', () => {
   });
 
   it('defaults LOG_LEVEL to info when omitted', () => {
-    const { LOG_LEVEL, ...withoutLogLevel } = baseEnv;
+    const { LOG_LEVEL: _LOG_LEVEL, ...withoutLogLevel } = baseEnv;
     const env = loadEnv(withoutLogLevel);
     expect(env.LOG_LEVEL).toBe('info');
   });
