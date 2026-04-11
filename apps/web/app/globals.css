@@ -3,10 +3,34 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: light dark;
+  --background: 220 29% 99%;
+  --foreground: 222 47% 11%;
+  --surface: 0 0% 100%;
+  --surface-muted: 220 14% 97%;
+  --surface-subtle: 220 14% 95%;
+  --border: 220 13% 91%;
+  --border-strong: 220 13% 83%;
+  --foreground-muted: 215 25% 32%;
+  --foreground-subtle: 215 20% 65%;
+  --brand: 202 96% 54%;
+  --brand-hover: 203 89% 48%;
+  --brand-soft: 204 94% 94%;
+  --brand-soft-foreground: 202 80% 24%;
+  --success: 160 84% 39%;
+  --success-soft: 152 76% 90%;
+  --warning: 38 92% 50%;
+  --warning-soft: 48 96% 89%;
+  --danger: 0 84% 60%;
+  --danger-soft: 0 93% 94%;
+  --info: 217 91% 60%;
+  --info-soft: 214 95% 92%;
 }
 
 html,
 body {
   height: 100%;
+}
+
+body {
+  @apply font-sans bg-background text-foreground antialiased;
 }
