@@ -34,6 +34,7 @@ model User {
   memberships   CycleMembership[]
   googleAccount GoogleAccount?
   availability  MemberAvailability?
+  weeklyPlans   WeeklyPlan[]
 }
 
 model RefreshToken {
@@ -58,6 +59,7 @@ model Cycle {
   createdAt DateTime    @default(now())
 
   memberships CycleMembership[]
+  weeklyPlans WeeklyPlan[]
 }
 
 model CycleMembership {
@@ -101,6 +103,8 @@ model LibraryItem {
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
 
+  planItems WeeklyPlanItem[]
+
   @@index([format])
   @@index([difficulty])
 }
@@ -115,6 +119,78 @@ model GoogleAccount {
   updatedAt       DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum WeeklyPlanStatus {
+  DRAFT
+  PUBLISHED
+  COMPLETED
+  ARCHIVED
+}
+
+enum ItemStatus {
+  PENDING
+  DONE
+}
+
+enum DifficultyRating {
+  EASY
+  HARD
+}
+
+enum StudySessionStatus {
+  SCHEDULED
+  COMPLETED
+  MISSED
+  RESCHEDULED
+}
+
+model WeeklyPlan {
+  id          String           @id @default(cuid())
+  userId      String
+  cycleId     String
+  weekStart   DateTime
+  weekEnd     DateTime
+  status      WeeklyPlanStatus @default(DRAFT)
+  adminNotes  String?
+  createdAt   DateTime         @default(now())
+  publishedAt DateTime?
+
+  user  User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cycle Cycle            @relation(fields: [cycleId], references: [id])
+  items WeeklyPlanItem[]
+
+  @@index([userId, weekStart])
+}
+
+model WeeklyPlanItem {
+  id               String            @id @default(cuid())
+  weeklyPlanId     String
+  libraryItemId    String
+  order            Int
+  status           ItemStatus        @default(PENDING)
+  difficultyRating DifficultyRating?
+  stuck            Boolean           @default(false)
+  stuckAt          DateTime?
+  reflection       String?
+  completedAt      DateTime?
+
+  weeklyPlan  WeeklyPlan     @relation(fields: [weeklyPlanId], references: [id], onDelete: Cascade)
+  libraryItem LibraryItem    @relation(fields: [libraryItemId], references: [id])
+  sessions    StudySession[]
+
+  @@unique([weeklyPlanId, order])
+}
+
+model StudySession {
+  id               String             @id @default(cuid())
+  weeklyPlanItemId String
+  scheduledAt      DateTime
+  durationMinutes  Int
+  googleEventId    String?
+  status           StudySessionStatus @default(SCHEDULED)
+
+  weeklyPlanItem WeeklyPlanItem @relation(fields: [weeklyPlanItemId], references: [id], onDelete: Cascade)
 }
 
 model MemberAvailability {
