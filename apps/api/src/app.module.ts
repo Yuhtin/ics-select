@@ -20,6 +20,7 @@ import { WeeklyPlansModule } from './weekly-plans/weekly-plans.module.js';
 import { ClassesModule } from './classes/classes.module.js';
 import { AdminDashboardModule } from './admin-dashboard/admin-dashboard.module.js';
 import { AiModule } from './ai/ai.module.js';
+import { WhatsappModule } from './whatsapp/whatsapp.module.js';
 import { loadEnv } from './config/env.js';
 
 @Module({
@@ -58,6 +59,7 @@ import { loadEnv } from './config/env.js';
     ClassesModule,
     AdminDashboardModule,
     AiModule,
+    WhatsappModule,
     HealthModule,
   ],
   providers: [
