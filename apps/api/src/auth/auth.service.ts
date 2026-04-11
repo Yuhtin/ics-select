@@ -3,6 +3,7 @@ import { PrismaService } from '../common/prisma/prisma.service.js';
 import { JwtTokenService } from './tokens/jwt-token.service.js';
 import { RefreshTokenService } from './tokens/refresh-token.service.js';
 import type { GoogleProfilePayload } from './strategies/google.strategy.js';
+import { AesGcmService } from '../common/crypto/aes-gcm.service.js';
 
 export const BOOTSTRAP_ADMIN_EMAILS_TOKEN = 'BOOTSTRAP_ADMIN_EMAILS_TOKEN';
 
@@ -27,6 +28,7 @@ export class AuthService {
     private readonly refresh: RefreshTokenService,
     @Inject(BOOTSTRAP_ADMIN_EMAILS_TOKEN)
     private readonly bootstrapAdmins: string[],
+    private readonly aes: AesGcmService,
   ) {}
 
   async loginWithGoogle(profile: GoogleProfilePayload): Promise<LoginResult> {
@@ -50,6 +52,29 @@ export class AuthService {
             role: shouldBeAdmin ? 'ADMIN' : 'MEMBER',
           },
         });
+
+    const accessTokenEnc = this.aes.encrypt(profile.accessToken);
+    const refreshTokenEnc = profile.refreshToken
+      ? this.aes.encrypt(profile.refreshToken)
+      : null;
+    // Access tokens from Google typically last 1h. We set expiresAt to 55min to leave
+    // a small safety margin; the GoogleCalendarService refreshes when close to expiry.
+    const expiresAt = new Date(Date.now() + 55 * 60 * 1000);
+    await this.prisma.googleAccount.upsert({
+      where: { userId: user.id },
+      create: {
+        userId: user.id,
+        accessTokenEnc,
+        refreshTokenEnc,
+        expiresAt,
+        scope: 'email profile https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.readonly',
+      },
+      update: {
+        accessTokenEnc,
+        ...(refreshTokenEnc ? { refreshTokenEnc } : {}),
+        expiresAt,
+      },
+    });
 
     const accessToken = this.jwt.sign({ sub: user.id, email: user.email, role: user.role });
     const refreshToken = await this.refresh.issue(user.id);

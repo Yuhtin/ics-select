@@ -11,6 +11,7 @@ type FakeUser = {
 
 function fakeDeps(bootstrap: string[] = []) {
   const users = new Map<string, FakeUser>();
+  const googleAccounts = new Map<string, { accessTokenEnc: string; refreshTokenEnc: string | null; expiresAt: Date; scope: string; userId: string }>();
   const prisma = {
     user: {
       findUnique: jest.fn(async ({ where }: { where: { email: string } }) =>
@@ -29,6 +30,14 @@ function fakeDeps(bootstrap: string[] = []) {
         return next;
       }),
     },
+    googleAccount: {
+      upsert: jest.fn(async ({ where, create, update }: any) => {
+        const existing = googleAccounts.get(where.userId);
+        const next = existing ? { ...existing, ...update } : { userId: where.userId, ...create };
+        googleAccounts.set(where.userId, next);
+        return next;
+      }),
+    },
   };
   const jwt = { sign: jest.fn(() => 'jwt.token.value') };
   const refresh = {
@@ -43,8 +52,9 @@ function fakeDeps(bootstrap: string[] = []) {
       expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
     })),
   };
-  const svc = new AuthService(prisma as any, jwt as any, refresh as any, bootstrap);
-  return { svc, prisma, jwt, refresh, users };
+  const aes = { encrypt: jest.fn((s: string) => `enc(${s})`), decrypt: jest.fn((s: string) => s.replace(/^enc\(|\)$/g, '')) };
+  const svc = new AuthService(prisma as any, jwt as any, refresh as any, bootstrap, aes as any);
+  return { svc, prisma, jwt, refresh, users, googleAccounts, aes };
 }
 
 describe('AuthService.loginWithGoogle', () => {
@@ -97,5 +107,21 @@ describe('AuthService.loginWithGoogle', () => {
       refreshToken: null,
     });
     expect(users.get('admin@sou.inteli.edu.br')!.role).toBe('ADMIN');
+  });
+
+  it('persists encrypted Google access and refresh tokens on login', async () => {
+    const { svc, googleAccounts, aes } = fakeDeps();
+    await svc.loginWithGoogle({
+      email: 'pedro@sou.inteli.edu.br',
+      name: 'Pedro',
+      pictureUrl: null,
+      accessToken: 'ga-plain',
+      refreshToken: 'gr-plain',
+    });
+    expect(aes.encrypt).toHaveBeenCalledWith('ga-plain');
+    expect(aes.encrypt).toHaveBeenCalledWith('gr-plain');
+    const row = Array.from(googleAccounts.values())[0];
+    expect(row?.accessTokenEnc).toBe('enc(ga-plain)');
+    expect(row?.refreshTokenEnc).toBe('enc(gr-plain)');
   });
 });

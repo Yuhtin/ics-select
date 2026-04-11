@@ -32,6 +32,8 @@ model User {
 
   refreshTokens RefreshToken[]
   memberships   CycleMembership[]
+  googleAccount GoogleAccount?
+  availability  MemberAvailability?
 }
 
 model RefreshToken {
@@ -101,4 +103,33 @@ model LibraryItem {
 
   @@index([format])
   @@index([difficulty])
+}
+
+model GoogleAccount {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  accessTokenEnc  String
+  refreshTokenEnc String?
+  expiresAt       DateTime
+  scope           String
+  updatedAt       DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model MemberAvailability {
+  id                      String   @id @default(cuid())
+  userId                  String   @unique
+  mondayMinutes           Int      @default(0)
+  tuesdayMinutes          Int      @default(0)
+  wednesdayMinutes        Int      @default(0)
+  thursdayMinutes         Int      @default(0)
+  fridayMinutes           Int      @default(0)
+  saturdayMinutes         Int      @default(0)
+  sundayMinutes           Int      @default(0)
+  preferredSessionMinutes Int      @default(60)
+  timezone                String   @default("America/Sao_Paulo")
+  updatedAt               DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
