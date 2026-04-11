@@ -25,12 +25,17 @@ RUN pnpm --filter @ics-select/api deploy --prod /out
 
 # Stage 3: runtime
 FROM node:${NODE_VERSION} AS runtime
-RUN apk add --no-cache libc6-compat openssl
+RUN apk add --no-cache libc6-compat openssl \
+    && npm install -g prisma@5.22.0 \
+    && npm cache clean --force
 WORKDIR /app
 ENV NODE_ENV=production
 COPY --from=build /out/node_modules ./node_modules
 COPY --from=build /out/dist ./dist
 COPY --from=build /repo/packages/prisma/generated ./node_modules/@ics-select/prisma/generated
 COPY --from=build /repo/packages/prisma/prisma ./node_modules/@ics-select/prisma/prisma
+COPY apps/api/docker-entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 EXPOSE 3001
+ENTRYPOINT ["/entrypoint.sh"]
 CMD ["node", "dist/src/main.js"]
