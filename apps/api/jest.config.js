@@ -7,6 +7,8 @@ module.exports = {
   },
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1',
+    '^@ics-select/shared$': '<rootDir>/../../../packages/shared/src/index.ts',
+    '^@ics-select/prisma$': '<rootDir>/../../../packages/prisma/generated/client/index.js',
   },
   collectCoverageFrom: ['**/*.(t|j)s'],
   coverageDirectory: '../coverage',
