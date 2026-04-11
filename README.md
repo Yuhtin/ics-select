@@ -131,3 +131,69 @@ docker compose -f docker-compose.prod.yml up -d api
 - **CI falha em "Apply Prisma migrations":** a service do Postgres não subiu a tempo; GitHub Actions retenta até 10x mas se falhar consistentemente, aumentar `--health-retries`.
 - **Playwright snapshot diff no CI:** rodar `pnpm --filter @ics-select/web test:update` localmente no mesmo SO (use Docker se estiver no macOS) e commitar os snapshots novos.
 - **Deploy falha em "SSH into VPS":** verificar que `VPS_SSH_KEY` no GitHub Secrets é a chave privada completa, incluindo `-----BEGIN ... -----` e `-----END ... -----`.
+
+## Novidades das Fases 5–8
+
+Estas fases consolidam o produto: presença, dashboards, IA, WhatsApp, LGPD e relatórios.
+
+### Fase 5 — Presença + Dashboard Admin
+
+- **Aulas presenciais:** modelos `ClassSession` + `ClassAttendance`. Endpoint admin para registrar presença em lote (`POST /cycles/:id/classes/:classId/attendance`).
+- **Dashboard do admin:** `GET /admin/dashboard` retorna métricas de coorte (total de membros, planos publicados, % de itens concluídos, taxa de presença) e visão por membro. UI em `/admin/dashboard` e `/admin/members/[id]`.
+
+### Fase 6 — IA (Anthropic Claude)
+
+- **Draft de plano:** `POST /ai/draft-plan` gera um plano semanal sugerido a partir do histórico do membro e da biblioteca disponível.
+- **Brief → plano:** `POST /ai/brief-plan` recebe texto livre do admin e converte em itens estruturados.
+- **Diagnóstico do membro:** `GET /members/:id/diagnose` cacheado por 24h, retorna resumo de pontos fortes/fracos.
+- **Chat streaming:** `POST /members/:memberId/chat` (SSE) — coach interno do admin com contexto do membro.
+- **Auditoria de custo:** todas as chamadas registram em `AiGeneration` (tokens, custo USD). Dashboard de uso em `/admin/ai-usage`.
+- Requer `ANTHROPIC_API_KEY` no `.env`.
+
+### Fase 7 — WhatsApp via Evolution API
+
+- **Lembretes automáticos:** cron `@nestjs/schedule` rodando a cada minuto procura `StudySession`s programadas para começar em ~10 minutos e dispara mensagem via WhatsApp.
+- **Alerta "travei":** quando o membro marca um item como travado, o admin recebe um WhatsApp.
+- **Endpoint de teste:** `POST /notifications/test-whatsapp` (admin) para validar a integração.
+- **Auditoria:** toda mensagem (sucesso ou falha) é registrada em `WhatsappLog`.
+
+#### Setup do Evolution API
+
+```bash
+docker compose --profile whatsapp up -d evolution
+```
+
+Depois pareie o número via QR code no painel admin do Evolution e preencha as variáveis de ambiente abaixo. Se elas não estiverem presentes, a feature degrada graciosamente — o serviço apenas registra `error: 'Evolution API not configured'` em `WhatsappLog`.
+
+### Fase 8 — LGPD + Relatórios
+
+- **Exportar meus dados:** `GET /me/export` retorna JSON com tudo que o usuário possui no sistema (perfil, disponibilidade, ciclos, planos, presenças).
+- **Apagar minha conta:** `DELETE /me` remove o usuário; cascatas do Prisma limpam as relações associadas. (Limpeza dos eventos do Google Calendar é best-effort em uma fase futura.)
+- **Aviso de privacidade:** o gate em `/privacy` continua bloqueando o uso até o aceite explícito (`User.privacyAcceptedAt`).
+- **Relatório de ciclo:** `GET /cycles/:id/report` (admin) baixa um Markdown com cobertura geral, presença por aula e estatísticas por membro. Botão "Baixar relatório" no detalhe do ciclo em `/admin/cycles/[id]`.
+
+## Variáveis de ambiente (API)
+
+Resumo das variáveis suportadas pelo `apps/api`. Ver `apps/api/.env.example` para os defaults locais.
+
+| Nome | Obrigatório | Descrição |
+|---|---|---|
+| `NODE_ENV` | não | `development` (default), `test`, `production` |
+| `PORT` | não | Porta HTTP, default `3001` |
+| `DATABASE_URL` | sim | URL Postgres com `?schema=public` |
+| `CORS_ALLOWED_ORIGINS` | sim | Lista CSV de origens permitidas |
+| `LOG_LEVEL` | não | `info` (default) ou `debug`/`warn`/etc |
+| `JWT_SECRET` | sim | ≥ 32 chars |
+| `ENCRYPTION_KEY` | sim | 32 bytes em base64 (cifrar tokens Google) |
+| `GOOGLE_OAUTH_CLIENT_ID` | sim | OAuth client ID |
+| `GOOGLE_OAUTH_CLIENT_SECRET` | sim | OAuth client secret |
+| `GOOGLE_OAUTH_CALLBACK_URL` | sim | URL de callback (`/auth/google/callback`) |
+| `ALLOWED_EMAIL_DOMAINS` | sim | CSV de domínios autorizados |
+| `BOOTSTRAP_ADMIN_EMAILS` | não | CSV de e-mails que viram ADMIN no primeiro login |
+| `FRONTEND_BASE_URL` | sim | URL pública do web (para redirect pós-login) |
+| `OPENAI_API_KEY` | sim | OpenAI (embeddings da biblioteca) |
+| `ANTHROPIC_API_KEY` | sim | Claude (Fase 6) |
+| `EVOLUTION_API_BASE_URL` | não | URL do Evolution API self-hosted (Fase 7) |
+| `EVOLUTION_API_KEY` | não | API key do Evolution |
+| `EVOLUTION_INSTANCE` | não | Nome da instância pareada |
+| `ADMIN_WHATSAPP_NUMBER` | não | Número do admin (E.164) que recebe alertas "travei" |

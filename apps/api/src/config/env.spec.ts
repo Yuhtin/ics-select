@@ -71,4 +71,12 @@ describe('loadEnv', () => {
     const { ANTHROPIC_API_KEY: _key, ...incomplete } = baseEnv;
     expect(() => loadEnv(incomplete)).toThrow(/ANTHROPIC_API_KEY/);
   });
+
+  it('works without Evolution config', () => {
+    const env = loadEnv(baseEnv);
+    expect(env.EVOLUTION_API_BASE_URL).toBeUndefined();
+    expect(env.EVOLUTION_API_KEY).toBeUndefined();
+    expect(env.EVOLUTION_INSTANCE).toBeUndefined();
+    expect(env.ADMIN_WHATSAPP_NUMBER).toBeUndefined();
+  });
 });
