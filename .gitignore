@@ -12,3 +12,4 @@ playwright-report/
 test-results/
 generated/
 !packages/prisma/generated/.gitkeep
+*.tsbuildinfo
