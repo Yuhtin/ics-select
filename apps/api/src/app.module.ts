@@ -5,6 +5,7 @@ import { LoggerModule } from 'nestjs-pino';
 import { PrismaModule } from './common/prisma/prisma.module.js';
 import { HealthModule } from './health/health.module.js';
 import { CryptoModule } from './common/crypto/crypto.module.js';
+import { OpenAiModule } from './common/openai/openai.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard.js';
 import { RolesGuard } from './auth/guards/roles.guard.js';
@@ -36,6 +37,7 @@ import { loadEnv } from './config/env.js';
     }),
     PrismaModule,
     CryptoModule,
+    OpenAiModule,
     AuthModule,
     UsersModule,
     CyclesModule,
