@@ -9,7 +9,7 @@ function fakePrisma() {
     plans,
     items,
     weeklyPlan: {
-      create: jest.fn(async ({ data, include }: any) => {
+      create: jest.fn(async ({ data }: any) => {
         const id = `p-${++pid}`;
         const created = {
           id,
@@ -80,7 +80,7 @@ describe('WeeklyPlansService', () => {
       weekEnd: new Date('2026-04-19'),
       items: [{ libraryItemId: 'li-1', order: 0 }],
     });
-    const itemId = plan.items[0].id;
+    const itemId = plan.items[0]!.id;
     const updated = await svc.markItemDone(plan.id, itemId, 'u-1', {
       rating: 'HARD',
       reflection: 'Travei no passo 3',
