@@ -1,10 +1,28 @@
 'use client';
 
-import { Button, Card, CardBody, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow, useDisclosure } from '@heroui/react';
+import {
+  Button,
+  Input,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  Table,
+  TableBody,
+  TableCell,
+  TableColumn,
+  TableHeader,
+  TableRow,
+  useDisclosure,
+} from '@heroui/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Plus } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import { apiFetch } from '../../../../lib/api/client';
+import { PageHeader } from '../../../../components/shell/page-header';
+import { DataTable } from '../../../../components/ui/data-table';
 
 type Cycle = {
   id: string;
@@ -34,43 +52,60 @@ export default function AdminCyclesPage() {
   });
 
   return (
-    <div className="mx-auto max-w-4xl space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Ciclos</h1>
-        <Button color="primary" onPress={onOpen}>
-          Novo ciclo
-        </Button>
-      </div>
-      <Card>
-        <CardBody>
-          {isLoading ? (
-            <p>Carregando...</p>
-          ) : (
-            <Table aria-label="Ciclos">
-              <TableHeader>
-                <TableColumn>Nome</TableColumn>
-                <TableColumn>Início</TableColumn>
-                <TableColumn>Fim</TableColumn>
-                <TableColumn>Status</TableColumn>
-              </TableHeader>
-              <TableBody emptyContent="Nenhum ciclo ainda.">
-                {(data ?? []).map((cycle) => (
-                  <TableRow key={cycle.id}>
-                    <TableCell>
-                      <Link href={`/admin/cycles/${cycle.id}`} className="font-medium">
-                        {cycle.name}
-                      </Link>
-                    </TableCell>
-                    <TableCell>{new Date(cycle.startsAt).toLocaleDateString('pt-BR')}</TableCell>
-                    <TableCell>{new Date(cycle.endsAt).toLocaleDateString('pt-BR')}</TableCell>
-                    <TableCell>{cycle.status}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardBody>
-      </Card>
+    <>
+      <PageHeader
+        title="Ciclos"
+        description="Gerencie os ciclos do programa."
+        actions={
+          <Button
+            color="primary"
+            startContent={<Plus className="h-4 w-4" />}
+            onPress={onOpen}
+          >
+            Novo ciclo
+          </Button>
+        }
+      />
+
+      {isLoading ? (
+        <p className="text-sm text-foreground-muted">Carregando ciclos...</p>
+      ) : (
+        <DataTable>
+          <Table aria-label="Ciclos" removeWrapper>
+            <TableHeader>
+              <TableColumn>Nome</TableColumn>
+              <TableColumn>Início</TableColumn>
+              <TableColumn>Fim</TableColumn>
+              <TableColumn>Status</TableColumn>
+            </TableHeader>
+            <TableBody emptyContent="Nenhum ciclo ainda.">
+              {(data ?? []).map((cycle) => (
+                <TableRow key={cycle.id}>
+                  <TableCell>
+                    <Link
+                      href={`/admin/cycles/${cycle.id}`}
+                      className="font-medium text-foreground hover:text-brand transition-colors"
+                    >
+                      {cycle.name}
+                    </Link>
+                  </TableCell>
+                  <TableCell>
+                    {new Date(cycle.startsAt).toLocaleDateString('pt-BR', {
+                      timeZone: 'UTC',
+                    })}
+                  </TableCell>
+                  <TableCell>
+                    {new Date(cycle.endsAt).toLocaleDateString('pt-BR', {
+                      timeZone: 'UTC',
+                    })}
+                  </TableCell>
+                  <TableCell>{cycle.status}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </DataTable>
+      )}
 
       <Modal isOpen={isOpen} onClose={onClose}>
         <ModalContent>
@@ -109,6 +144,6 @@ export default function AdminCyclesPage() {
           </ModalFooter>
         </ModalContent>
       </Modal>
-    </div>
+    </>
   );
 }

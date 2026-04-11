@@ -7,6 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { apiFetch } from '../../../../lib/api/client';
 import { LibraryItemCard, type LibraryItemCardProps } from '../../../../components/library/library-item-card';
+import { PageHeader } from '../../../../components/shell/page-header';
 
 const FORMAT_OPTIONS = [
   { key: 'VIDEO', label: 'Vídeo' },
@@ -49,13 +50,21 @@ export default function AdminLibraryPage() {
   });
 
   return (
-    <div className="mx-auto max-w-5xl space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Acervo</h1>
-        <Button as={Link} href="/admin/library/new" color="primary" startContent={<Plus className="h-4 w-4" />}>
-          Novo item
-        </Button>
-      </div>
+    <>
+      <PageHeader
+        title="Acervo"
+        description="Catálogo de materiais de estudo disponíveis para os planos semanais."
+        actions={
+          <Button
+            as={Link}
+            href="/admin/library/new"
+            color="primary"
+            startContent={<Plus className="h-4 w-4" />}
+          >
+            Novo item
+          </Button>
+        }
+      />
 
       <Card>
         <CardBody className="space-y-3">
@@ -105,6 +114,6 @@ export default function AdminLibraryPage() {
           ))}
         </div>
       )}
-    </div>
+    </>
   );
 }
