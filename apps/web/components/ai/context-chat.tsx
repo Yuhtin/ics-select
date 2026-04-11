@@ -71,7 +71,7 @@ export function ContextChat({ memberId }: { memberId: string }) {
       <CardBody className="space-y-3">
         <div className="max-h-80 space-y-2 overflow-y-auto">
           {messages.length === 0 ? (
-            <p className="text-sm text-foreground/60">Faça uma pergunta sobre o membro.</p>
+            <p className="text-sm text-foreground-muted">Faça uma pergunta sobre o membro.</p>
           ) : (
             messages.map((m, i) => (
               <div
@@ -80,7 +80,7 @@ export function ContextChat({ memberId }: { memberId: string }) {
                   m.role === 'user' ? 'bg-foreground/10' : 'bg-primary/10'
                 }`}
               >
-                <span className="mr-1 text-xs font-medium text-foreground/60">
+                <span className="mr-1 text-xs font-medium text-foreground-muted">
                   {m.role === 'user' ? 'Você' : 'IA'}:
                 </span>
                 {m.content}

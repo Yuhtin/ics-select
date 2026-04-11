@@ -79,7 +79,7 @@ export default function ItemDetailPage({
             {item.stuck && <Chip size="sm" color="warning">Travei</Chip>}
           </div>
           {item.libraryItem.description && (
-            <p className="text-sm text-foreground/70">{item.libraryItem.description}</p>
+            <p className="text-sm text-foreground-muted">{item.libraryItem.description}</p>
           )}
           {item.libraryItem.url && (
             <a
@@ -132,7 +132,7 @@ export default function ItemDetailPage({
             <div className="pt-2">
               <Chip color="success">Feito</Chip>
               {item.difficultyRating && <Chip size="sm" variant="flat" className="ml-2">{item.difficultyRating}</Chip>}
-              {item.reflection && <p className="mt-2 text-sm text-foreground/70">{item.reflection}</p>}
+              {item.reflection && <p className="mt-2 text-sm text-foreground-muted">{item.reflection}</p>}
             </div>
           )}
         </CardBody>

@@ -53,7 +53,7 @@ export default function AdminCycleDetailPage({ params }: { params: Promise<{ id:
             Baixar relatório
           </Button>
         </CardHeader>
-        <CardBody className="space-y-1 text-sm text-foreground/70">
+        <CardBody className="space-y-1 text-sm text-foreground-muted">
           <p>
             {new Date(data.startsAt).toLocaleDateString('pt-BR')} —{' '}
             {new Date(data.endsAt).toLocaleDateString('pt-BR')}
@@ -67,14 +67,14 @@ export default function AdminCycleDetailPage({ params }: { params: Promise<{ id:
         </CardHeader>
         <CardBody>
           {data.memberships.length === 0 ? (
-            <p className="text-foreground/60">Nenhum membro neste ciclo ainda.</p>
+            <p className="text-foreground-muted">Nenhum membro neste ciclo ainda.</p>
           ) : (
             <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
               {data.memberships.map((m) => (
-                <li key={m.id} className="flex flex-col items-center gap-2 rounded-md border border-foreground/10 p-3">
+                <li key={m.id} className="flex flex-col items-center gap-2 rounded-md border border-border p-3">
                   <Avatar src={m.user.pictureUrl ?? undefined} name={m.user.name} size="lg" />
                   <span className="text-sm font-medium">{m.user.name}</span>
-                  <span className="text-xs text-foreground/60">{m.user.email}</span>
+                  <span className="text-xs text-foreground-muted">{m.user.email}</span>
                 </li>
               ))}
             </ul>

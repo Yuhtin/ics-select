@@ -64,7 +64,7 @@ export default function EditLibraryItemPage({ params }: { params: Promise<{ id: 
     onSuccess: () => router.push('/admin/library'),
   });
 
-  if (isLoading || !draft.id) return <p className="text-foreground/60">Carregando...</p>;
+  if (isLoading || !draft.id) return <p className="text-foreground-muted">Carregando...</p>;
 
   return (
     <div className="mx-auto max-w-2xl space-y-4">

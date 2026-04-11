@@ -90,7 +90,7 @@ export default function AdminCycleClassesPage({ params }: { params: Promise<{ id
                 <div className="flex w-full items-center justify-between">
                   <div>
                     <h2 className="text-base font-semibold">{cls.title}</h2>
-                    <p className="text-xs text-foreground/60">
+                    <p className="text-xs text-foreground-muted">
                       {new Date(cls.scheduledAt).toLocaleString('pt-BR')}
                       {cls.topic && ` · ${cls.topic}`}
                     </p>

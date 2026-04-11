@@ -60,7 +60,7 @@ export default function AvailabilityPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['availability'] }),
   });
 
-  if (isLoading) return <p className="text-foreground/60">Carregando...</p>;
+  if (isLoading) return <p className="text-foreground-muted">Carregando...</p>;
 
   const totalMinutes = DAYS.reduce((sum, d) => sum + (state[d.key] as number), 0);
 
@@ -70,7 +70,7 @@ export default function AvailabilityPage() {
         <CardHeader>
           <div>
             <h1 className="text-2xl font-semibold">Disponibilidade semanal</h1>
-            <p className="text-sm text-foreground/60">
+            <p className="text-sm text-foreground-muted">
               Defina quantos minutos por dia você consegue dedicar ao estudo. O scheduler
               vai usar esses valores junto com o seu Google Calendar pra montar as sessões.
             </p>
@@ -81,7 +81,7 @@ export default function AvailabilityPage() {
             <div key={d.key}>
               <div className="mb-1 flex justify-between text-sm">
                 <span className="font-medium">{d.label}</span>
-                <span className="text-foreground/60">{state[d.key] as number} min</span>
+                <span className="text-foreground-muted">{state[d.key] as number} min</span>
               </div>
               <Slider
                 aria-label={d.label}
@@ -118,7 +118,7 @@ export default function AvailabilityPage() {
           </div>
 
           <div className="flex items-center justify-between">
-            <p className="text-sm text-foreground/60">Total: {totalMinutes} min / semana</p>
+            <p className="text-sm text-foreground-muted">Total: {totalMinutes} min / semana</p>
             <Button
               color="primary"
               isLoading={saveMutation.isPending}

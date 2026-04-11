@@ -29,7 +29,7 @@ export default function AdminMemberDetailPage({ params }: { params: Promise<{ id
           <Avatar src={data.user.pictureUrl ?? undefined} name={data.user.name} size="lg" />
           <div>
             <h1 className="text-2xl font-semibold">{data.user.name}</h1>
-            <p className="text-sm text-foreground/60">{data.user.email}</p>
+            <p className="text-sm text-foreground-muted">{data.user.email}</p>
           </div>
         </CardBody>
       </Card>
@@ -38,16 +38,16 @@ export default function AdminMemberDetailPage({ params }: { params: Promise<{ id
         <CardHeader><h2 className="text-lg font-semibold">Histórico de planos</h2></CardHeader>
         <CardBody className="space-y-2">
           {data.plans.length === 0 ? (
-            <p className="text-foreground/60">Nenhum plano ainda.</p>
+            <p className="text-foreground-muted">Nenhum plano ainda.</p>
           ) : (
             data.plans.map((p) => (
-              <div key={p.id} className="flex items-center justify-between rounded-md border border-foreground/10 p-3">
+              <div key={p.id} className="flex items-center justify-between rounded-md border border-border p-3">
                 <div>
                   <p className="text-sm font-medium">
                     {new Date(p.weekStart).toLocaleDateString('pt-BR')} —{' '}
                     {new Date(p.weekEnd).toLocaleDateString('pt-BR')}
                   </p>
-                  <p className="text-xs text-foreground/60">{p.doneCount}/{p.totalCount} concluídos</p>
+                  <p className="text-xs text-foreground-muted">{p.doneCount}/{p.totalCount} concluídos</p>
                 </div>
                 <Chip size="sm" variant="flat">{p.status}</Chip>
               </div>
@@ -60,17 +60,17 @@ export default function AdminMemberDetailPage({ params }: { params: Promise<{ id
         <CardHeader><h2 className="text-lg font-semibold">Cobertura de tópicos</h2></CardHeader>
         <CardBody>
           {data.topicCoverage.length === 0 ? (
-            <p className="text-foreground/60">Sem dados ainda.</p>
+            <p className="text-foreground-muted">Sem dados ainda.</p>
           ) : (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
               {data.topicCoverage.map((t) => {
                 const pct = t.total === 0 ? 0 : Math.round((t.done / t.total) * 100);
                 const color = pct >= 75 ? 'success' : pct >= 40 ? 'warning' : 'default';
                 return (
-                  <div key={t.tag} className="rounded-md border border-foreground/10 p-3">
+                  <div key={t.tag} className="rounded-md border border-border p-3">
                     <p className="text-sm font-medium">{t.tag}</p>
                     <div className="mt-1 flex items-center justify-between">
-                      <span className="text-xs text-foreground/60">{t.done}/{t.total}</span>
+                      <span className="text-xs text-foreground-muted">{t.done}/{t.total}</span>
                       <Chip size="sm" variant="flat" color={color}>{pct}%</Chip>
                     </div>
                   </div>

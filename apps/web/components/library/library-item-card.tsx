@@ -20,7 +20,7 @@ export function LibraryItemCard(props: LibraryItemCardProps) {
           <h3 className="text-base font-semibold">{props.title}</h3>
           <Chip size="sm" variant="flat">{props.format}</Chip>
         </div>
-        <div className="flex items-center gap-2 text-xs text-foreground/60">
+        <div className="flex items-center gap-2 text-xs text-foreground-muted">
           {props.source && <span>{props.source}</span>}
           <span>•</span>
           <span>{props.estimatedMinutes} min</span>
