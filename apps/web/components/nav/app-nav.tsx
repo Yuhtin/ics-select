@@ -22,6 +22,9 @@ export function AppNav() {
             <Link href="/admin/members" className="text-foreground/80 hover:text-foreground">
               Membros
             </Link>
+            <Link href="/admin/library" className="text-foreground/80 hover:text-foreground">
+              Acervo
+            </Link>
           </>
         ) : (
           <Link href="/me" className="text-foreground/80 hover:text-foreground">

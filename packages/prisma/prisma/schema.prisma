@@ -70,3 +70,35 @@ model CycleMembership {
   @@unique([userId, cycleId])
   @@index([cycleId])
 }
+
+enum ItemFormat {
+  VIDEO
+  ARTICLE
+  BOOK
+  PROBLEM
+  OTHER
+}
+
+enum ItemDifficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+model LibraryItem {
+  id               String         @id @default(cuid())
+  title            String
+  url              String?
+  description      String?
+  format           ItemFormat
+  difficulty       ItemDifficulty
+  estimatedMinutes Int
+  source           String?
+  tags             String[]
+  createdById      String
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@index([format])
+  @@index([difficulty])
+}

@@ -15,6 +15,7 @@ describe('loadEnv', () => {
     ALLOWED_EMAIL_DOMAINS: 'sou.inteli.edu.br',
     BOOTSTRAP_ADMIN_EMAILS: '',
     FRONTEND_BASE_URL: 'http://localhost:3000',
+    OPENAI_API_KEY: 'sk-test-key',
   };
 
   it('parses a valid env object', () => {
@@ -58,5 +59,10 @@ describe('loadEnv', () => {
     const { LOG_LEVEL: _LOG_LEVEL, ...withoutLogLevel } = baseEnv;
     const env = loadEnv(withoutLogLevel);
     expect(env.LOG_LEVEL).toBe('info');
+  });
+
+  it('throws when OPENAI_API_KEY is missing', () => {
+    const { OPENAI_API_KEY: _key, ...incomplete } = baseEnv;
+    expect(() => loadEnv(incomplete)).toThrow(/OPENAI_API_KEY/);
   });
 });

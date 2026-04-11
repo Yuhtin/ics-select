@@ -36,6 +36,7 @@ const EnvSchema = z.object({
     .default('')
     .transform((s) => s.split(',').map((e) => e.trim().toLowerCase()).filter(Boolean)),
   FRONTEND_BASE_URL: z.string().url(),
+  OPENAI_API_KEY: z.string().min(1),
 });
 
 export type Env = z.infer<typeof EnvSchema>;
