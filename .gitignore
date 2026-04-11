@@ -10,6 +10,6 @@ dist/
 coverage/
 playwright-report/
 test-results/
-
-# Reference PDFs (kept locally; Apresentação.pdf exceeds GitHub's 100MB limit)
-*.pdf
+generated/
+!packages/prisma/generated/.gitkeep
+*.tsbuildinfo

@@ -1,0 +1,26 @@
+{
+  "name": "@ics-select/prisma",
+  "version": "0.0.0",
+  "private": true,
+  "main": "./generated/client/index.js",
+  "types": "./generated/client/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./generated/client/index.d.ts",
+      "default": "./generated/client/index.js"
+    }
+  },
+  "scripts": {
+    "lint": "echo \"(prisma) no lint\"",
+    "typecheck": "echo \"(prisma) generated types, no typecheck\"",
+    "test": "echo \"(prisma) no tests\"",
+    "build": "prisma generate",
+    "postinstall": "prisma generate || echo \"(prisma) skipping generate, will run later\""
+  },
+  "devDependencies": {
+    "prisma": "^5.22.0"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.22.0"
+  }
+}
