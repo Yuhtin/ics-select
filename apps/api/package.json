@@ -21,6 +21,7 @@
     "@nestjs/jwt": "^11.0.2",
     "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^10.4.0",
+    "@nestjs/schedule": "^6.1.1",
     "cheerio": "^1.2.0",
     "cookie-parser": "^1.4.7",
     "googleapis": "^171.4.0",
