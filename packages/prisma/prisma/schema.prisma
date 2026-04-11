@@ -35,6 +35,7 @@ model User {
   googleAccount GoogleAccount?
   availability  MemberAvailability?
   weeklyPlans   WeeklyPlan[]
+  attendance    ClassAttendance[]
 }
 
 model RefreshToken {
@@ -60,6 +61,7 @@ model Cycle {
 
   memberships CycleMembership[]
   weeklyPlans WeeklyPlan[]
+  classes     ClassSession[]
 }
 
 model CycleMembership {
@@ -191,6 +193,37 @@ model StudySession {
   status           StudySessionStatus @default(SCHEDULED)
 
   weeklyPlanItem WeeklyPlanItem @relation(fields: [weeklyPlanItemId], references: [id], onDelete: Cascade)
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+}
+
+model ClassSession {
+  id          String   @id @default(cuid())
+  cycleId     String
+  title       String
+  topic       String?
+  scheduledAt DateTime
+  durationMin Int      @default(90)
+  notes       String?
+
+  cycle      Cycle             @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  attendance ClassAttendance[]
+}
+
+model ClassAttendance {
+  id             String           @id @default(cuid())
+  classSessionId String
+  userId         String
+  status         AttendanceStatus
+
+  classSession ClassSession @relation(fields: [classSessionId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([classSessionId, userId])
 }
 
 model MemberAvailability {
