@@ -31,7 +31,7 @@ export function AiAssistantCard({
         <button
           type="button"
           onClick={onCtaClick}
-          className="bg-white text-brand rounded-md px-4 py-2 text-sm font-semibold hover:bg-white/90 mt-5 inline-flex items-center gap-2 transition-colors"
+          className="bg-white text-brand rounded-md px-4 py-2 text-sm font-semibold hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-brand mt-5 inline-flex items-center gap-2 transition-colors"
         >
           {ctaLabel}
           <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
