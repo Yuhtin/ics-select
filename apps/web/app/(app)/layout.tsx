@@ -3,11 +3,11 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../lib/auth/auth-context';
-import { AppNav } from '../../components/nav/app-nav';
+import { AppShell } from '../../components/shell/app-shell';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, logout } = useAuth();
 
   useEffect(() => {
     if (isLoading) return;
@@ -18,15 +18,24 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   if (isLoading || !user || !user.privacyAcceptedAt) {
     return (
       <main className="flex min-h-screen items-center justify-center">
-        <p className="text-foreground/60">Carregando...</p>
+        <p className="text-sm text-foreground-muted">Carregando...</p>
       </main>
     );
   }
 
   return (
-    <div className="min-h-screen">
-      <AppNav />
-      <div className="p-6">{children}</div>
-    </div>
+    <AppShell
+      user={{
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        avatarUrl: user.pictureUrl,
+      }}
+      onLogout={() => {
+        void logout();
+      }}
+    >
+      {children}
+    </AppShell>
   );
 }

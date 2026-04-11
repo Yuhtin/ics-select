@@ -41,7 +41,17 @@ test.describe('Auth flow', () => {
     });
 
     await page.goto('/');
-    await expect(page.getByRole('link', { name: 'Ciclos' })).toBeVisible();
+
+    // Wait for the authenticated shell to render (main content heading is visible
+    // on both desktop and mobile).
     await expect(page.getByRole('heading', { name: 'Ciclos' })).toBeVisible();
+
+    // On mobile the sidebar lives inside a drawer — open it if the menu button is visible.
+    const menuButton = page.getByRole('button', { name: 'Abrir menu' });
+    if (await menuButton.isVisible()) {
+      await menuButton.click();
+    }
+
+    await expect(page.getByRole('link', { name: 'Ciclos' })).toBeVisible();
   });
 });
