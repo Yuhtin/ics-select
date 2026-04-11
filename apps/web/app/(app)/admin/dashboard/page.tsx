@@ -1,9 +1,12 @@
 'use client';
 
-import { Avatar, Card, CardBody, Chip } from '@heroui/react';
+import { Activity, AlertTriangle, BookOpen, Users } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { apiFetch } from '../../../../lib/api/client';
+import { PageHeader } from '../../../../components/shell/page-header';
+import { StatCard } from '../../../../components/ui/stat-card';
+import { MemberCard } from '../../../../components/ui/member-card';
 
 type Member = {
   id: string;
@@ -15,44 +18,76 @@ type Member = {
 };
 
 export default function AdminDashboardPage() {
+  const router = useRouter();
   const { data, isLoading } = useQuery({
     queryKey: ['admin-dashboard'],
     queryFn: () => apiFetch<Member[]>('/admin/dashboard'),
   });
 
-  if (isLoading) return <p>Carregando...</p>;
+  if (isLoading) {
+    return <p className="text-sm text-foreground-muted">Carregando dashboard...</p>;
+  }
+
+  const members = (data ?? []).filter((m) => m.role === 'MEMBER');
+
+  const totalMembers = members.length;
+  const totalPlans = members.reduce((sum, m) => sum + m.stats.plansCount, 0);
+  const totalDone = members.reduce((sum, m) => sum + m.stats.doneItems, 0);
+  const totalStuck = members.reduce((sum, m) => sum + m.stats.stuckItems, 0);
 
   return (
-    <div className="mx-auto max-w-6xl space-y-4">
-      <h1 className="text-2xl font-semibold">Dashboard</h1>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {(data ?? [])
-          .filter((m) => m.role === 'MEMBER')
-          .map((m) => (
-            <Card key={m.id} as={Link} href={`/admin/members/${m.id}`} isPressable>
-              <CardBody className="space-y-2">
-                <div className="flex items-center gap-3">
-                  <Avatar src={m.pictureUrl ?? undefined} name={m.name} size="md" />
-                  <div>
-                    <p className="text-sm font-semibold">{m.name}</p>
-                    <p className="text-xs text-foreground/60">{m.email}</p>
-                  </div>
-                </div>
-                <div className="flex gap-2 text-xs">
-                  <Chip size="sm" variant="flat">{m.stats.plansCount} planos</Chip>
-                  <Chip size="sm" variant="flat" color="success">
-                    {m.stats.doneItems} feitos
-                  </Chip>
-                  {m.stats.stuckItems > 0 && (
-                    <Chip size="sm" color="warning">
-                      {m.stats.stuckItems} travei
-                    </Chip>
-                  )}
-                </div>
-              </CardBody>
-            </Card>
-          ))}
+    <>
+      <PageHeader
+        eyebrow="Visão do administrador"
+        title="Dashboard"
+        description="Acompanhe o progresso do ciclo atual e o engajamento dos membros."
+      />
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard icon={Users} label="Membros ativos" value={totalMembers} />
+        <StatCard icon={BookOpen} label="Planos atribuídos" value={totalPlans} />
+        <StatCard icon={Activity} label="Itens concluídos" value={totalDone} />
+        <StatCard
+          icon={AlertTriangle}
+          label="Itens travados"
+          value={totalStuck}
+        />
       </div>
-    </div>
+
+      <section className="mt-10">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-foreground tracking-tight">
+            Membros do ciclo
+          </h2>
+          <p className="text-sm text-foreground-muted">
+            {totalMembers} {totalMembers === 1 ? 'membro' : 'membros'}
+          </p>
+        </div>
+        {members.length === 0 ? (
+          <p className="text-sm text-foreground-muted italic">
+            Nenhum membro cadastrado ainda.
+          </p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {members.map((m) => (
+              <MemberCard
+                key={m.id}
+                member={{
+                  id: m.id,
+                  name: m.name,
+                  email: m.email,
+                  avatarUrl: m.pictureUrl,
+                }}
+                stats={{
+                  done: m.stats.doneItems,
+                  stuck: m.stats.stuckItems,
+                }}
+                onViewPlan={() => router.push(`/admin/members/${m.id}`)}
+              />
+            ))}
+          </div>
+        )}
+      </section>
+    </>
   );
 }
