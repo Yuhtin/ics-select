@@ -4,6 +4,8 @@ import { Avatar, Card, CardBody, CardHeader, Chip } from '@heroui/react';
 import { useQuery } from '@tanstack/react-query';
 import { use } from 'react';
 import { apiFetch } from '../../../../../lib/api/client';
+import { DiagnoseCard } from '../../../../../components/ai/diagnose-card';
+import { ContextChat } from '../../../../../components/ai/context-chat';
 
 type Overview = {
   user: { id: string; name: string; email: string; pictureUrl: string | null };
@@ -78,6 +80,9 @@ export default function AdminMemberDetailPage({ params }: { params: Promise<{ id
           )}
         </CardBody>
       </Card>
+
+      <DiagnoseCard memberId={id} />
+      <ContextChat memberId={id} />
     </div>
   );
 }
