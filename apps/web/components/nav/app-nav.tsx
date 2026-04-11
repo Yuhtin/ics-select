@@ -27,9 +27,14 @@ export function AppNav() {
             </Link>
           </>
         ) : (
-          <Link href="/me" className="text-foreground/80 hover:text-foreground">
-            Meu plano
-          </Link>
+          <>
+            <Link href="/me" className="text-foreground/80 hover:text-foreground">
+              Meu plano
+            </Link>
+            <Link href="/me/availability" className="text-foreground/80 hover:text-foreground">
+              Disponibilidade
+            </Link>
+          </>
         )}
         <div className="flex items-center gap-2">
           <Avatar src={user.pictureUrl ?? undefined} name={user.name} size="sm" />
