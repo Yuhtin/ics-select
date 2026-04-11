@@ -13,7 +13,7 @@ function fakePrisma() {
   return {
     store,
     refreshToken: {
-      create: jest.fn(async ({ data }: { data: Omit<Stored, 'id'> }) => {
+      create: jest.fn(async ({ data }: { data: Omit<Stored, 'id' | 'revokedAt'> }) => {
         const id = `rt-${store.size + 1}`;
         const rec: Stored = { id, revokedAt: null, ...data };
         store.set(id, rec);
