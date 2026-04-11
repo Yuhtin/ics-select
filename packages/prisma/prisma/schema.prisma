@@ -254,3 +254,13 @@ model AiGeneration {
   metadata       Json?
   createdAt      DateTime @default(now())
 }
+
+model WhatsappLog {
+  id          String    @id @default(cuid())
+  userId      String
+  kind        String
+  payload     Json
+  sentAt      DateTime  @default(now())
+  deliveredAt DateTime?
+  error       String?
+}
