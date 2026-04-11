@@ -17,3 +17,4 @@ generated/
 # Local reference PDFs (too large for git, kept only on dev machine)
 *.pdf
 .vercel
+.claude/
