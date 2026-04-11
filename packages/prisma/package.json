@@ -1,0 +1,25 @@
+{
+  "name": "@ics-select/prisma",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "echo \"(prisma) no lint\"",
+    "typecheck": "tsc --noEmit",
+    "test": "echo \"(prisma) no tests\"",
+    "build": "prisma generate",
+    "postinstall": "prisma generate || echo \"(prisma) skipping generate, will run later\""
+  },
+  "devDependencies": {
+    "prisma": "^5.22.0",
+    "typescript": "^5.6.0"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.22.0"
+  }
+}
