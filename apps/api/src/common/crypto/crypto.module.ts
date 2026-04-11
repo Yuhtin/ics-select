@@ -8,8 +8,12 @@ import { AesGcmService } from './aes-gcm.service.js';
     {
       provide: AesGcmService,
       useFactory: (config: ConfigService) => {
-        const key = config.get<Buffer>('ENCRYPTION_KEY');
-        if (!key) throw new Error('ENCRYPTION_KEY not configured');
+        const raw = config.get<Buffer | string>('ENCRYPTION_KEY');
+        if (!raw) throw new Error('ENCRYPTION_KEY not configured');
+        // ConfigService may return either the Buffer from `loadEnv`'s transform
+        // (when resolving from the internalConfig) or the raw base64 string
+        // (when resolving from process.env, which takes precedence).
+        const key = Buffer.isBuffer(raw) ? raw : Buffer.from(raw, 'base64');
         return new AesGcmService(key);
       },
       inject: [ConfigService],

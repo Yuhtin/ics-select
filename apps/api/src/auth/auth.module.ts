@@ -30,8 +30,17 @@ import { RefreshTokenService } from './tokens/refresh-token.service.js';
     {
       provide: BOOTSTRAP_ADMIN_EMAILS_TOKEN,
       inject: [ConfigService],
-      useFactory: (config: ConfigService) =>
-        config.getOrThrow<string[]>('BOOTSTRAP_ADMIN_EMAILS'),
+      useFactory: (config: ConfigService): string[] => {
+        // ConfigService may return the already-parsed string[] from loadEnv
+        // (via internalConfig) or the raw CSV string from process.env. Handle both.
+        const raw = config.get<string[] | string>('BOOTSTRAP_ADMIN_EMAILS');
+        if (Array.isArray(raw)) return raw;
+        if (typeof raw !== 'string') return [];
+        return raw
+          .split(',')
+          .map((e) => e.trim().toLowerCase())
+          .filter(Boolean);
+      },
     },
   ],
   exports: [AuthService, JwtTokenService, RefreshTokenService],
