@@ -48,7 +48,11 @@ function formatDateRange(weekStart: string, weekEnd: string): string {
     const start = new Date(weekStart);
     const end = new Date(weekEnd);
     if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return '';
-    const fmt = new Intl.DateTimeFormat('pt-BR', { day: 'numeric', month: 'long' });
+    const fmt = new Intl.DateTimeFormat('pt-BR', {
+      day: 'numeric',
+      month: 'long',
+      timeZone: 'UTC',
+    });
     return `${fmt.format(start)} a ${fmt.format(end)}`;
   } catch {
     return '';
@@ -71,9 +75,9 @@ export default function MeHomePage() {
   if (!current) {
     return (
       <PageHeader
-        eyebrow="Meu plano"
-        title="Nenhum plano ativo"
-        description="Aguarde o administrador publicar o próximo plano semanal."
+        eyebrow="Esta semana"
+        title="Meu plano"
+        description="Nenhum plano ativo. Aguarde o administrador publicar o próximo plano semanal."
       />
     );
   }
