@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import * as cheerio from 'cheerio';
 
 export type ImportedMetadata = {
@@ -12,7 +12,11 @@ export type ImportedMetadata = {
 
 @Injectable()
 export class UrlImportService {
-  constructor(private readonly fetcher: typeof fetch = fetch) {}
+  private readonly fetcher: typeof fetch;
+
+  constructor(@Optional() fetcher?: typeof fetch) {
+    this.fetcher = fetcher ?? fetch;
+  }
 
   async extract(url: string): Promise<ImportedMetadata> {
     const host = safeHost(url);

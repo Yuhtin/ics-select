@@ -12,6 +12,7 @@ import { RolesGuard } from './auth/guards/roles.guard.js';
 import { UsersModule } from './users/users.module.js';
 import { CyclesModule } from './cycles/cycles.module.js';
 import { PrivacyModule } from './privacy/privacy.module.js';
+import { LibraryModule } from './library/library.module.js';
 import { loadEnv } from './config/env.js';
 
 @Module({
@@ -42,6 +43,7 @@ import { loadEnv } from './config/env.js';
     UsersModule,
     CyclesModule,
     PrivacyModule,
+    LibraryModule,
     HealthModule,
   ],
   providers: [

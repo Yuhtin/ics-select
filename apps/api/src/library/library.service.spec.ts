@@ -49,7 +49,7 @@ function fakePrisma() {
     },
     $executeRawUnsafe: jest.fn(async (_sql: string, ...values: unknown[]) => {
       const [id, vectorLiteral] = values as [string, string];
-      const nums = vectorLiteral.replace(/[\[\]]/g, '').split(',').map(Number);
+      const nums = vectorLiteral.replace(/[[\]]/g, '').split(',').map(Number);
       raw.push({ id, embeddingRaw: nums });
       return 1;
     }),
