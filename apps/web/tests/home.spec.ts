@@ -1,16 +1,13 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Landing page', () => {
-  test('shows the project name and tagline', async ({ page }) => {
+  test('shows the login welcome heading and description', async ({ page }) => {
     await page.goto('/login');
-    await expect(page.getByRole('heading', { name: 'ICS Select' })).toBeVisible();
     await expect(
-      page.getByText('Programa de Preparação Avançada para Entrevistas Técnicas'),
+      page.getByRole('heading', { name: 'Bem-vindo ao ICS Select' }),
     ).toBeVisible();
-  });
-
-  test('has the Google login button', async ({ page }) => {
-    await page.goto('/login');
-    await expect(page.getByRole('button', { name: 'Entrar com Google' })).toBeVisible();
+    await expect(
+      page.getByText('Acesse a plataforma de preparação técnica para consultoria.'),
+    ).toBeVisible();
   });
 });
