@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 export type SendTextInput = { to: string; text: string };
@@ -9,7 +9,7 @@ export class EvolutionApiClient {
 
   constructor(
     private readonly config: ConfigService,
-    private readonly fetcher: typeof fetch = fetch,
+    @Optional() private readonly fetcher: typeof fetch = fetch,
   ) {}
 
   get isConfigured(): boolean {
