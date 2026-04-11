@@ -10,10 +10,63 @@ datasource db {
   extensions = [vector]
 }
 
-// Placeholder so `prisma generate` succeeds in Phase 0.
-// Prisma 5 refuses to generate a client with zero models.
-// This model is intentionally not part of any migration and
-// will be replaced by real domain models in Phase 1.
-model Phase0Marker {
-  id Int @id @default(autoincrement())
+enum Role {
+  ADMIN
+  MEMBER
+}
+
+enum CycleStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+model User {
+  id                String    @id @default(cuid())
+  email             String    @unique
+  name              String
+  pictureUrl        String?
+  role              Role      @default(MEMBER)
+  privacyAcceptedAt DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  refreshTokens RefreshToken[]
+  memberships   CycleMembership[]
+}
+
+model RefreshToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+  revokedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Cycle {
+  id        String      @id @default(cuid())
+  name      String      @unique
+  startsAt  DateTime
+  endsAt    DateTime
+  status    CycleStatus @default(ACTIVE)
+  createdAt DateTime    @default(now())
+
+  memberships CycleMembership[]
+}
+
+model CycleMembership {
+  id       String   @id @default(cuid())
+  userId   String
+  cycleId  String
+  joinedAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cycle Cycle @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, cycleId])
+  @@index([cycleId])
 }

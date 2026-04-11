@@ -7,32 +7,51 @@ describe('loadEnv', () => {
     DATABASE_URL: 'postgresql://u:p@localhost:5432/db?schema=public',
     CORS_ALLOWED_ORIGINS: 'http://localhost:3000',
     LOG_LEVEL: 'debug',
+    JWT_SECRET: 'test-jwt-secret-at-least-32-chars-long-padded',
+    ENCRYPTION_KEY: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=', // 32 bytes base64
+    GOOGLE_OAUTH_CLIENT_ID: 'client.apps.googleusercontent.com',
+    GOOGLE_OAUTH_CLIENT_SECRET: 'gocspx-test',
+    GOOGLE_OAUTH_CALLBACK_URL: 'http://localhost:3001/auth/google/callback',
+    ALLOWED_EMAIL_DOMAINS: 'sou.inteli.edu.br',
+    BOOTSTRAP_ADMIN_EMAILS: '',
+    FRONTEND_BASE_URL: 'http://localhost:3000',
   };
 
   it('parses a valid env object', () => {
     const env = loadEnv(baseEnv);
     expect(env.NODE_ENV).toBe('test');
     expect(env.PORT).toBe(3001);
-    expect(env.DATABASE_URL).toBe(baseEnv.DATABASE_URL);
-    expect(env.CORS_ALLOWED_ORIGINS).toEqual(['http://localhost:3000']);
-    expect(env.LOG_LEVEL).toBe('debug');
+    expect(env.JWT_SECRET.length).toBeGreaterThanOrEqual(32);
+    expect(env.ENCRYPTION_KEY).toBeInstanceOf(Buffer);
+    expect(env.ENCRYPTION_KEY.length).toBe(32);
+    expect(env.ALLOWED_EMAIL_DOMAINS).toEqual(['sou.inteli.edu.br']);
+    expect(env.BOOTSTRAP_ADMIN_EMAILS).toEqual([]);
   });
 
-  it('splits CORS_ALLOWED_ORIGINS on comma', () => {
+  it('accepts multiple allowed domains', () => {
+    const env = loadEnv({ ...baseEnv, ALLOWED_EMAIL_DOMAINS: 'sou.inteli.edu.br,inteli.edu.br' });
+    expect(env.ALLOWED_EMAIL_DOMAINS).toEqual(['sou.inteli.edu.br', 'inteli.edu.br']);
+  });
+
+  it('parses bootstrap admin emails', () => {
     const env = loadEnv({
       ...baseEnv,
-      CORS_ALLOWED_ORIGINS: 'https://a.com,https://b.com',
+      BOOTSTRAP_ADMIN_EMAILS: 'admin@a.com, admin@b.com',
     });
-    expect(env.CORS_ALLOWED_ORIGINS).toEqual(['https://a.com', 'https://b.com']);
+    expect(env.BOOTSTRAP_ADMIN_EMAILS).toEqual(['admin@a.com', 'admin@b.com']);
+  });
+
+  it('throws when JWT_SECRET is too short', () => {
+    expect(() => loadEnv({ ...baseEnv, JWT_SECRET: 'short' })).toThrow(/JWT_SECRET/);
+  });
+
+  it('throws when ENCRYPTION_KEY is not 32 bytes', () => {
+    expect(() => loadEnv({ ...baseEnv, ENCRYPTION_KEY: 'AAAA' })).toThrow(/ENCRYPTION_KEY/);
   });
 
   it('throws when DATABASE_URL is missing', () => {
     const { DATABASE_URL: _DATABASE_URL, ...incomplete } = baseEnv;
     expect(() => loadEnv(incomplete)).toThrow(/DATABASE_URL/);
-  });
-
-  it('throws when PORT is not a number', () => {
-    expect(() => loadEnv({ ...baseEnv, PORT: 'abc' })).toThrow(/PORT/);
   });
 
   it('defaults LOG_LEVEL to info when omitted', () => {

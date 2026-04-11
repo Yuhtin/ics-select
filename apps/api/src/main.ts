@@ -1,4 +1,5 @@
 import 'reflect-metadata';
+import cookieParser from 'cookie-parser';
 import { NestFactory } from '@nestjs/core';
 import { Logger } from 'nestjs-pino';
 import { AppModule } from './app.module.js';
@@ -11,6 +12,7 @@ async function bootstrap() {
 
   app.useLogger(app.get(Logger));
   app.useGlobalFilters(new HttpExceptionFilter());
+  app.use(cookieParser());
 
   app.enableCors({
     origin: env.CORS_ALLOWED_ORIGINS,
