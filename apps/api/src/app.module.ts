@@ -10,6 +10,7 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard.js';
 import { RolesGuard } from './auth/guards/roles.guard.js';
 import { UsersModule } from './users/users.module.js';
 import { CyclesModule } from './cycles/cycles.module.js';
+import { PrivacyModule } from './privacy/privacy.module.js';
 import { loadEnv } from './config/env.js';
 
 @Module({
@@ -38,6 +39,7 @@ import { loadEnv } from './config/env.js';
     AuthModule,
     UsersModule,
     CyclesModule,
+    PrivacyModule,
     HealthModule,
   ],
   providers: [
