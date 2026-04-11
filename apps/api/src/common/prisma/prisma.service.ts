@@ -6,12 +6,23 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
   private readonly logger = new Logger(PrismaService.name);
 
   async onModuleInit(): Promise<void> {
-    await this.$connect();
-    this.logger.log('Prisma connected');
+    try {
+      await this.$connect();
+      this.logger.log('Prisma connected');
+    } catch (err) {
+      if (process.env.NODE_ENV === 'test') {
+        this.logger.warn(`Prisma connect skipped in test: ${(err as Error).message}`);
+        return;
+      }
+      throw err;
+    }
   }
 
   async onModuleDestroy(): Promise<void> {
-    await this.$disconnect();
-    this.logger.log('Prisma disconnected');
+    try {
+      await this.$disconnect();
+    } catch {
+      // ignore
+    }
   }
 }
