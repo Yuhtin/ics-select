@@ -17,6 +17,7 @@ import { GoogleCalendarModule } from './google-calendar/google-calendar.module.j
 import { AvailabilityModule } from './availability/availability.module.js';
 import { WeeklyPlansModule } from './weekly-plans/weekly-plans.module.js';
 import { ClassesModule } from './classes/classes.module.js';
+import { AdminDashboardModule } from './admin-dashboard/admin-dashboard.module.js';
 import { loadEnv } from './config/env.js';
 
 @Module({
@@ -52,6 +53,7 @@ import { loadEnv } from './config/env.js';
     AvailabilityModule,
     WeeklyPlansModule,
     ClassesModule,
+    AdminDashboardModule,
     HealthModule,
   ],
   providers: [
