@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@ics-select/prisma';
 import { PrismaService } from '../common/prisma/prisma.service.js';
 import type { Usage } from '../common/anthropic/anthropic.provider.js';
 
@@ -23,7 +24,7 @@ export class UsageLoggerService {
         promptTokens: input.usage.inputTokens,
         responseTokens: input.usage.outputTokens,
         costUsd: input.usage.costUsd,
-        metadata: input.metadata ?? undefined,
+        metadata: (input.metadata ?? undefined) as Prisma.InputJsonValue | undefined,
       },
     });
   }
