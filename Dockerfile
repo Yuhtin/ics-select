@@ -22,12 +22,6 @@ RUN pnpm --filter @ics-select/prisma exec prisma generate
 RUN pnpm --filter @ics-select/shared build
 RUN pnpm --filter @ics-select/api build
 RUN pnpm --filter @ics-select/api deploy --prod /out
-# pnpm deploy flattens workspace deps into /out/node_modules but does NOT include
-# the compiled dist/ of the shared package. Copy it explicitly so @ics-select/shared
-# is resolvable at runtime.
-RUN mkdir -p /out/node_modules/@ics-select/shared/dist && \
-    cp -R /repo/packages/shared/dist/. /out/node_modules/@ics-select/shared/dist/ && \
-    cp /repo/packages/shared/package.json /out/node_modules/@ics-select/shared/package.json
 
 # Stage 3: runtime
 FROM node:${NODE_VERSION} AS runtime
