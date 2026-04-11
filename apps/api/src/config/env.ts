@@ -38,6 +38,10 @@ const EnvSchema = z.object({
   FRONTEND_BASE_URL: z.string().url(),
   OPENAI_API_KEY: z.string().min(1),
   ANTHROPIC_API_KEY: z.string().min(1),
+  EVOLUTION_API_BASE_URL: z.string().url().optional(),
+  EVOLUTION_API_KEY: z.string().optional(),
+  EVOLUTION_INSTANCE: z.string().optional(),
+  ADMIN_WHATSAPP_NUMBER: z.string().optional(),
 });
 
 export type Env = z.infer<typeof EnvSchema>;
