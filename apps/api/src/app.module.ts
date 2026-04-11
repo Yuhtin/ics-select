@@ -22,6 +22,7 @@ import { AdminDashboardModule } from './admin-dashboard/admin-dashboard.module.j
 import { AiModule } from './ai/ai.module.js';
 import { WhatsappModule } from './whatsapp/whatsapp.module.js';
 import { NotificationsModule } from './notifications/notifications.module.js';
+import { MeModule } from './me/me.module.js';
 import { loadEnv } from './config/env.js';
 
 @Module({
@@ -62,6 +63,7 @@ import { loadEnv } from './config/env.js';
     AiModule,
     WhatsappModule,
     NotificationsModule,
+    MeModule,
     HealthModule,
   ],
   providers: [
