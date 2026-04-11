@@ -16,6 +16,7 @@ import { LibraryModule } from './library/library.module.js';
 import { GoogleCalendarModule } from './google-calendar/google-calendar.module.js';
 import { AvailabilityModule } from './availability/availability.module.js';
 import { WeeklyPlansModule } from './weekly-plans/weekly-plans.module.js';
+import { ClassesModule } from './classes/classes.module.js';
 import { loadEnv } from './config/env.js';
 
 @Module({
@@ -50,6 +51,7 @@ import { loadEnv } from './config/env.js';
     GoogleCalendarModule,
     AvailabilityModule,
     WeeklyPlansModule,
+    ClassesModule,
     HealthModule,
   ],
   providers: [
