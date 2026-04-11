@@ -8,6 +8,7 @@ import { CryptoModule } from './common/crypto/crypto.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard.js';
 import { RolesGuard } from './auth/guards/roles.guard.js';
+import { UsersModule } from './users/users.module.js';
 import { loadEnv } from './config/env.js';
 
 @Module({
@@ -34,6 +35,7 @@ import { loadEnv } from './config/env.js';
     PrismaModule,
     CryptoModule,
     AuthModule,
+    UsersModule,
     HealthModule,
   ],
   providers: [
