@@ -1975,7 +1975,7 @@ COPY --from=build /out/dist ./dist
 COPY --from=build /repo/packages/prisma/generated ./node_modules/@ics-select/prisma/generated
 COPY --from=build /repo/packages/prisma/prisma ./node_modules/@ics-select/prisma/prisma
 EXPOSE 3001
-CMD ["node", "dist/main.js"]
+CMD ["node", "dist/src/main.js"]
 ```
 
 - [ ] **Step 3: Build the image locally**
