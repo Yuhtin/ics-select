@@ -242,3 +242,15 @@ model MemberAvailability {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
+
+model AiGeneration {
+  id             String   @id @default(cuid())
+  userId         String?
+  purpose        String
+  model          String
+  promptTokens   Int
+  responseTokens Int
+  costUsd        Decimal  @db.Decimal(10, 6)
+  metadata       Json?
+  createdAt      DateTime @default(now())
+}
