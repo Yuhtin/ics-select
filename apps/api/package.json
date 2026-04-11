@@ -12,7 +12,6 @@
     "test:e2e": "jest --config test/jest-e2e.config.js"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.88.0",
     "@ics-select/prisma": "workspace:*",
     "@ics-select/shared": "workspace:*",
     "@nestjs/common": "^10.4.0",

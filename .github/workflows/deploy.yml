@@ -13,8 +13,6 @@ jobs:
     permissions:
       contents: read
       packages: write
-    outputs:
-      image: ${{ steps.meta.outputs.image }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -31,8 +29,9 @@ jobs:
         id: meta
         run: |
           SHA_SHORT=$(echo "${{ github.event.workflow_run.head_sha }}" | cut -c1-7)
-          echo "image=ghcr.io/${{ github.repository_owner }}/ics-select-api:${SHA_SHORT}" >> "$GITHUB_OUTPUT"
-          echo "latest=ghcr.io/${{ github.repository_owner }}/ics-select-api:latest" >> "$GITHUB_OUTPUT"
+          OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          echo "image=ghcr.io/${OWNER_LC}/ics-select-api:${SHA_SHORT}" >> "$GITHUB_OUTPUT"
+          echo "latest=ghcr.io/${OWNER_LC}/ics-select-api:latest" >> "$GITHUB_OUTPUT"
 
       - name: Build and push
         uses: docker/build-push-action@v6
@@ -44,20 +43,7 @@ jobs:
             ${{ steps.meta.outputs.image }}
             ${{ steps.meta.outputs.latest }}
 
-  deploy:
-    needs: build-and-push
-    runs-on: ubuntu-latest
-    steps:
-      - name: SSH into VPS and redeploy
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          script: |
-            set -euo pipefail
-            cd /opt/ics-select
-            docker compose -f docker-compose.prod.yml pull api migrate
-            docker compose -f docker-compose.prod.yml run --rm migrate
-            docker compose -f docker-compose.prod.yml up -d postgres api caddy
-            docker image prune -f
+      - name: Summary
+        run: |
+          echo "Image pushed to GHCR. EasyPanel will pull on next deploy."
+          echo "Pull: ${{ steps.meta.outputs.latest }}"

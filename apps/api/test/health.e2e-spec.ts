@@ -19,7 +19,6 @@ describe('GET /health (e2e)', () => {
     process.env.BOOTSTRAP_ADMIN_EMAILS = '';
     process.env.FRONTEND_BASE_URL = 'http://localhost:3000';
     process.env.OPENAI_API_KEY = 'sk-test-key';
-    process.env.ANTHROPIC_API_KEY = 'sk-ant-test-key';
     const moduleRef: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();

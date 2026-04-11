@@ -2,9 +2,6 @@
 
 Plataforma interna do ICS Select — Programa de Preparação Avançada para Entrevistas Técnicas (Inteli Consulting Society).
 
-- **Design spec:** [`docs/superpowers/specs/2026-04-11-ics-select-design.md`](docs/superpowers/specs/2026-04-11-ics-select-design.md)
-- **Plano de entrega:** [`docs/superpowers/plans/`](docs/superpowers/plans/)
-
 ## Stack
 
 - Monorepo: pnpm 9 + Turborepo 2
@@ -66,27 +63,20 @@ O deploy é automático via GitHub Actions em merges na branch `main`:
 2. Deploy workflow builda a imagem Docker e faz push pra `ghcr.io/yuhtin/ics-select-api`
 3. SSH na VPS → `docker compose pull && migrate && up -d`
 
-**VPS setup inicial (uma vez):**
+**Deploy via EasyPanel:**
 
-```bash
-# Na VPS, como root ou sudo
-mkdir -p /opt/ics-select
-cd /opt/ics-select
+A API é deployada com EasyPanel na VPS, que importa a imagem publicada no GHCR pelo workflow `.github/workflows/deploy.yml`. Não há SSH no pipeline — o CI só builda e empurra a imagem; o EasyPanel cuida do pull e do restart.
 
-# Copiar docker-compose.prod.yml, Caddyfile e criar .env
-scp docker-compose.prod.yml user@vps:/opt/ics-select/
-scp Caddyfile user@vps:/opt/ics-select/
-scp .env.prod.example user@vps:/opt/ics-select/.env
-# depois editar o .env com senhas reais
+Setup único no EasyPanel:
+1. Criar um app do tipo "App" apontando para a imagem `ghcr.io/yuhtin/ics-select-api:latest`.
+2. Adicionar credenciais do registry privado (usuário `Yuhtin` + PAT com escopo `read:packages`).
+3. Criar um serviço Postgres (com extensão `pgvector` — use a imagem `pgvector/pgvector:pg16`).
+4. Criar um serviço Evolution API (opcional, Fase 7).
+5. Configurar todas as variáveis de ambiente (ver tabela abaixo). `DATABASE_URL` deve apontar para o serviço Postgres criado pelo EasyPanel.
+6. Configurar o domínio `ics-api.daviduarte.com.br` apontando para o app — EasyPanel gera o certificado TLS automaticamente.
+7. Criar um "Job" / comando de deploy para rodar `cd /app/node_modules/@ics-select/prisma && npx prisma migrate deploy` antes de cada rollout.
 
-# Login no GHCR com o PAT
-echo $GHCR_PAT | docker login ghcr.io -u Yuhtin --password-stdin
-
-# Primeira subida
-docker compose -f docker-compose.prod.yml pull
-docker compose -f docker-compose.prod.yml run --rm migrate
-docker compose -f docker-compose.prod.yml up -d
-```
+A cada merge em `main`, o workflow de CI roda os testes; passando, o workflow de Deploy builda a imagem e publica duas tags no GHCR (`:<sha-curto>` e `:latest`). Basta configurar o EasyPanel pra auto-pull em cima do `:latest` (ou apontar manualmente para uma tag específica para rollback).
 
 ### Frontend (Vercel)
 
@@ -100,37 +90,23 @@ docker compose -f docker-compose.prod.yml up -d
 
 ## Secrets necessários no GitHub
 
-| Nome | Descrição |
-|---|---|
-| `VPS_HOST` | IP ou hostname da VPS |
-| `VPS_USER` | Usuário SSH |
-| `VPS_SSH_KEY` | Chave privada (PEM) |
+Nenhum secret de SSH é necessário — o workflow só usa `GITHUB_TOKEN` (automático) pra publicar no GHCR. As credenciais da VPS ficam do lado do EasyPanel.
 
 ## Rollback
 
-Para voltar pra uma versão anterior da API:
-
-```bash
-# Na VPS
-cd /opt/ics-select
-# Substitua <sha> pela tag que você quer (veja GHCR)
-sed -i 's/IMAGE_TAG=.*/IMAGE_TAG=<sha>/' .env
-docker compose -f docker-compose.prod.yml pull api
-docker compose -f docker-compose.prod.yml up -d api
-```
+No EasyPanel, troque a tag da imagem (`ghcr.io/yuhtin/ics-select-api:<sha-anterior>`) e dispare um redeploy. As tags `:<sha-curto>` persistem indefinidamente no GHCR.
 
 ## Saúde e logs
 
 - Health: `curl -sS https://ics-api.daviduarte.com.br/health`
-- Logs: `docker compose -f docker-compose.prod.yml logs -f api`
-- Caddy: `docker compose -f docker-compose.prod.yml logs -f caddy`
-- Postgres shell: `docker compose -f docker-compose.prod.yml exec postgres psql -U ics ics_select`
+- Logs: pela interface do EasyPanel (aba do app).
+- Postgres shell: pela interface do EasyPanel (aba do serviço Postgres).
 
 ## Troubleshooting
 
 - **CI falha em "Apply Prisma migrations":** a service do Postgres não subiu a tempo; GitHub Actions retenta até 10x mas se falhar consistentemente, aumentar `--health-retries`.
 - **Playwright snapshot diff no CI:** rodar `pnpm --filter @ics-select/web test:update` localmente no mesmo SO (use Docker se estiver no macOS) e commitar os snapshots novos.
-- **Deploy falha em "SSH into VPS":** verificar que `VPS_SSH_KEY` no GitHub Secrets é a chave privada completa, incluindo `-----BEGIN ... -----` e `-----END ... -----`.
+- **EasyPanel não consegue puxar a imagem do GHCR:** confirmar que as credenciais do registry privado estão válidas e que o PAT tem escopo `read:packages`.
 
 ## Novidades das Fases 5–8
 
@@ -141,14 +117,14 @@ Estas fases consolidam o produto: presença, dashboards, IA, WhatsApp, LGPD e re
 - **Aulas presenciais:** modelos `ClassSession` + `ClassAttendance`. Endpoint admin para registrar presença em lote (`POST /cycles/:id/classes/:classId/attendance`).
 - **Dashboard do admin:** `GET /admin/dashboard` retorna métricas de coorte (total de membros, planos publicados, % de itens concluídos, taxa de presença) e visão por membro. UI em `/admin/dashboard` e `/admin/members/[id]`.
 
-### Fase 6 — IA (Anthropic Claude)
+### Fase 6 — IA (OpenAI `gpt-5.4-mini`)
 
 - **Draft de plano:** `POST /ai/draft-plan` gera um plano semanal sugerido a partir do histórico do membro e da biblioteca disponível.
 - **Brief → plano:** `POST /ai/brief-plan` recebe texto livre do admin e converte em itens estruturados.
 - **Diagnóstico do membro:** `GET /members/:id/diagnose` cacheado por 24h, retorna resumo de pontos fortes/fracos.
 - **Chat streaming:** `POST /members/:memberId/chat` (SSE) — coach interno do admin com contexto do membro.
 - **Auditoria de custo:** todas as chamadas registram em `AiGeneration` (tokens, custo USD). Dashboard de uso em `/admin/ai-usage`.
-- Requer `ANTHROPIC_API_KEY` no `.env`.
+- Usa a mesma `OPENAI_API_KEY` dos embeddings — não há chave separada.
 
 ### Fase 7 — WhatsApp via Evolution API
 
@@ -191,8 +167,7 @@ Resumo das variáveis suportadas pelo `apps/api`. Ver `apps/api/.env.example` pa
 | `ALLOWED_EMAIL_DOMAINS` | sim | CSV de domínios autorizados |
 | `BOOTSTRAP_ADMIN_EMAILS` | não | CSV de e-mails que viram ADMIN no primeiro login |
 | `FRONTEND_BASE_URL` | sim | URL pública do web (para redirect pós-login) |
-| `OPENAI_API_KEY` | sim | OpenAI (embeddings da biblioteca) |
-| `ANTHROPIC_API_KEY` | sim | Claude (Fase 6) |
+| `OPENAI_API_KEY` | sim | OpenAI — embeddings + chat (`gpt-5.4-mini`) das features de IA |
 | `EVOLUTION_API_BASE_URL` | não | URL do Evolution API self-hosted (Fase 7) |
 | `EVOLUTION_API_KEY` | não | API key do Evolution |
 | `EVOLUTION_INSTANCE` | não | Nome da instância pareada |

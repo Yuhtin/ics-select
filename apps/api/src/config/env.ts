@@ -37,7 +37,6 @@ const EnvSchema = z.object({
     .transform((s) => s.split(',').map((e) => e.trim().toLowerCase()).filter(Boolean)),
   FRONTEND_BASE_URL: z.string().url(),
   OPENAI_API_KEY: z.string().min(1),
-  ANTHROPIC_API_KEY: z.string().min(1),
   EVOLUTION_API_BASE_URL: z.string().url().optional(),
   EVOLUTION_API_KEY: z.string().optional(),
   EVOLUTION_INSTANCE: z.string().optional(),

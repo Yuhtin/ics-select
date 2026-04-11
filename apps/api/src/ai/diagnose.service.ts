@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { AnthropicProvider, MODEL } from '../common/anthropic/anthropic.provider.js';
+import { OpenAiChatProvider, MODEL } from '../common/openai/openai-chat.provider.js';
 import { WeeklyPlansService } from '../weekly-plans/weekly-plans.service.js';
 import { UsageLoggerService } from './usage-logger.service.js';
 
@@ -12,7 +12,7 @@ export class DiagnoseService {
   private readonly cache = new Map<string, CacheEntry>();
 
   constructor(
-    private readonly anthropic: AnthropicProvider,
+    private readonly chat: OpenAiChatProvider,
     private readonly plans: WeeklyPlansService,
     private readonly usage: UsageLoggerService,
   ) {}
@@ -56,7 +56,7 @@ export class DiagnoseService {
 
 Seja direto e prático. Cite itens e tags específicos. Não passe de 300 palavras.`;
 
-    const result = await this.anthropic.callText({
+    const result = await this.chat.callText({
       system,
       messages: [{ role: 'user', content: summary }],
       maxTokens: 1000,

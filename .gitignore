@@ -13,3 +13,6 @@ test-results/
 generated/
 !packages/prisma/generated/.gitkeep
 *.tsbuildinfo
+
+# Local reference PDFs (too large for git, kept only on dev machine)
+*.pdf
