@@ -28,6 +28,9 @@ export function AppNav() {
             <Link href="/admin/library" className="text-foreground/80 hover:text-foreground">
               Acervo
             </Link>
+            <Link href="/admin/ai-usage" className="text-foreground/80 hover:text-foreground">
+              Uso de IA
+            </Link>
           </>
         ) : (
           <>

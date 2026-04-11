@@ -6,6 +6,7 @@ import { PrismaModule } from './common/prisma/prisma.module.js';
 import { HealthModule } from './health/health.module.js';
 import { CryptoModule } from './common/crypto/crypto.module.js';
 import { OpenAiModule } from './common/openai/openai.module.js';
+import { AnthropicModule } from './common/anthropic/anthropic.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard.js';
 import { RolesGuard } from './auth/guards/roles.guard.js';
@@ -18,6 +19,7 @@ import { AvailabilityModule } from './availability/availability.module.js';
 import { WeeklyPlansModule } from './weekly-plans/weekly-plans.module.js';
 import { ClassesModule } from './classes/classes.module.js';
 import { AdminDashboardModule } from './admin-dashboard/admin-dashboard.module.js';
+import { AiModule } from './ai/ai.module.js';
 import { loadEnv } from './config/env.js';
 
 @Module({
@@ -44,6 +46,7 @@ import { loadEnv } from './config/env.js';
     PrismaModule,
     CryptoModule,
     OpenAiModule,
+    AnthropicModule,
     AuthModule,
     UsersModule,
     CyclesModule,
@@ -54,6 +57,7 @@ import { loadEnv } from './config/env.js';
     WeeklyPlansModule,
     ClassesModule,
     AdminDashboardModule,
+    AiModule,
     HealthModule,
   ],
   providers: [

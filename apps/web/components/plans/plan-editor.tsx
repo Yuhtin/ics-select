@@ -91,6 +91,60 @@ export function PlanEditor({ memberId, cycleId }: { memberId: string; cycleId: s
       }),
   });
 
+  const draftMutation = useMutation({
+    mutationFn: () =>
+      apiFetch<{ draft: { items: Array<{ libraryItemId: string; order: number; rationale: string }>; narrative: string; totalMinutes: number } }>(`/ai/draft-plan`, {
+        method: 'POST',
+        body: JSON.stringify({ memberId }),
+      }),
+    onSuccess: async (result) => {
+      // Resolve each libraryItemId into the full item so we can display it
+      const items: PlanItemRef[] = [];
+      for (const i of result.draft.items) {
+        const li = (searchResults ?? []).find((x) => x.id === i.libraryItemId);
+        if (li) items.push({ libraryItemId: li.id, order: i.order, libraryItem: li });
+      }
+      // If the search cache doesn't have the items, fetch them individually
+      if (items.length < result.draft.items.length) {
+        for (const i of result.draft.items) {
+          if (items.find((it) => it.libraryItemId === i.libraryItemId)) continue;
+          try {
+            const li = await apiFetch<LibraryItem>(`/library/${i.libraryItemId}`);
+            items.push({ libraryItemId: li.id, order: i.order, libraryItem: li });
+          } catch {
+            // ignore
+          }
+        }
+      }
+      items.sort((a, b) => a.order - b.order);
+      setDraft((d) => ({ ...d, items }));
+      alert(`Rascunho gerado. Narrativa: ${result.draft.narrative}`);
+    },
+  });
+
+  const [briefText, setBriefText] = useState('');
+  const briefMutation = useMutation({
+    mutationFn: () =>
+      apiFetch<{ draft: { items: Array<{ libraryItemId: string; order: number; rationale: string }>; narrative: string; totalMinutes: number } }>(`/ai/brief-plan`, {
+        method: 'POST',
+        body: JSON.stringify({ memberId, briefText }),
+      }),
+    onSuccess: async (result) => {
+      const items: PlanItemRef[] = [];
+      for (const i of result.draft.items) {
+        try {
+          const li = await apiFetch<LibraryItem>(`/library/${i.libraryItemId}`);
+          items.push({ libraryItemId: li.id, order: i.order, libraryItem: li });
+        } catch {
+          // ignore
+        }
+      }
+      items.sort((a, b) => a.order - b.order);
+      setDraft((d) => ({ ...d, items }));
+      setBriefText('');
+    },
+  });
+
   const publishMutation = useMutation({
     mutationFn: (planId: string) =>
       apiFetch(`/plans/${planId}/publish`, { method: 'POST' }),
@@ -144,6 +198,23 @@ export function PlanEditor({ memberId, cycleId }: { memberId: string; cycleId: s
       <Card>
         <CardBody className="space-y-3">
           <h2 className="text-lg font-semibold">Plano da semana</h2>
+          <div className="space-y-2 rounded-md border border-foreground/10 p-3">
+            <p className="text-xs font-medium text-foreground/70">Gerar com IA</p>
+            <div className="flex gap-2">
+              <Button size="sm" variant="flat" color="secondary" isLoading={draftMutation.isPending} onPress={() => draftMutation.mutate()}>
+                Rascunho do histórico
+              </Button>
+            </div>
+            <Input
+              size="sm"
+              placeholder="Brief: ex. foco em grafos, 1 vídeo + 4 exercícios"
+              value={briefText}
+              onChange={(e) => setBriefText(e.target.value)}
+            />
+            <Button size="sm" variant="flat" color="secondary" isDisabled={!briefText} isLoading={briefMutation.isPending} onPress={() => briefMutation.mutate()}>
+              Montar por brief
+            </Button>
+          </div>
           <div className="grid grid-cols-2 gap-2">
             <Input
               type="date"
