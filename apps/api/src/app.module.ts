@@ -13,6 +13,7 @@ import { UsersModule } from './users/users.module.js';
 import { CyclesModule } from './cycles/cycles.module.js';
 import { PrivacyModule } from './privacy/privacy.module.js';
 import { LibraryModule } from './library/library.module.js';
+import { GoogleCalendarModule } from './google-calendar/google-calendar.module.js';
 import { loadEnv } from './config/env.js';
 
 @Module({
@@ -44,6 +45,7 @@ import { loadEnv } from './config/env.js';
     CyclesModule,
     PrivacyModule,
     LibraryModule,
+    GoogleCalendarModule,
     HealthModule,
   ],
   providers: [
