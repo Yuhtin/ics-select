@@ -47,6 +47,9 @@ const config: Config = {
           soft: 'hsl(var(--info-soft) / <alpha-value>)',
         },
       },
+      borderColor: {
+        DEFAULT: 'hsl(var(--border) / <alpha-value>)',
+      },
       fontFamily: {
         sans: ['var(--font-inter)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
       },
@@ -89,6 +92,9 @@ const config: Config = {
               DEFAULT: '#e5e7eb',
               foreground: '#0f172a',
             },
+            // IMPORTANT: primary.DEFAULT (#18a0fb) fails WCAG AA as text on white (3.4:1).
+            // Use brand only for backgrounds/borders/large icons (≥24px). For "brand-colored text",
+            // use `brand-soft-foreground` (#0c4a6e, AAA) via the Tailwind token.
             primary: {
               50: '#e0f2fe',
               100: '#bae6fd',
