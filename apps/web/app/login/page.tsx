@@ -11,7 +11,7 @@ export default function LoginPage() {
     <main className="min-h-screen bg-background flex items-center justify-center p-6 relative overflow-hidden">
       {/* Background decoration — blobs sutis (light mode friendly) */}
       <div
-        className="absolute top-[-10%] left-[-10%] h-[40%] w-[40%] rounded-full bg-brand/8 blur-3xl pointer-events-none"
+        className="absolute top-[-10%] left-[-10%] h-[40%] w-[40%] rounded-full bg-brand/[0.08] blur-3xl pointer-events-none"
         aria-hidden="true"
       />
       <div
@@ -21,7 +21,7 @@ export default function LoginPage() {
 
       <div className="relative z-10 w-full max-w-md flex flex-col items-center">
         {/* Brand mobile: lockup fora do card */}
-        <div className="mb-8 sm:mb-0 sm:hidden">
+        <div className="mb-8 sm:hidden">
           <BrandLockup size="xl" />
         </div>
 
