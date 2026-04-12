@@ -1,30 +1,65 @@
 'use client';
 
-import { use } from 'react';
-import { Avatar, Button, Card, CardBody, Chip, Progress, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from '@heroui/react';
+import { use, useMemo, useState } from 'react';
+import {
+  Avatar,
+  Button,
+  Card,
+  CardBody,
+  Chip,
+  Input,
+  Progress,
+  Table,
+  TableBody,
+  TableCell,
+  TableColumn,
+  TableHeader,
+  TableRow,
+} from '@heroui/react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Calendar, Download, Trash2, Users } from 'lucide-react';
+import { Calendar, Clock, Download, Lock, Plus, Search, Trash2, Users, BookOpen, FileText } from 'lucide-react';
+import Link from 'next/link';
 import { apiFetch, getAccessToken } from '../../../../../lib/api/client';
 import { StatCard } from '../../../../../components/admin/stat-card';
 
+type User = { id: string; name: string; email: string; pictureUrl: string | null };
+type Membership = { id: string; user: User };
+type PlanItem = { status: string };
+type WeeklyPlan = {
+  id: string;
+  userId: string;
+  weekStart: string;
+  weekEnd: string;
+  status: string;
+  _count: { items: number };
+  items: PlanItem[];
+};
 type CycleDetail = {
   id: string;
   name: string;
   startsAt: string;
   endsAt: string;
   status: string;
-  memberships: Array<{
-    id: string;
-    user: { id: string; name: string; email: string; pictureUrl: string | null };
-  }>;
-  weeklyPlans?: Array<{
-    id: string;
-    userId: string;
-    weekStart: string;
-    weekEnd: string;
-    status: string;
-    items: Array<{ id: string; status: string }>;
-  }>;
+  memberships: Membership[];
+  weeklyPlans?: WeeklyPlan[];
+};
+type MemberListItem = { id: string; name: string; email: string; pictureUrl: string | null };
+
+type DisplayStatus = 'ACTIVE' | 'UPCOMING' | 'ENDED' | 'ARCHIVED';
+
+function getDisplayStatus(c: { status: string; startsAt: string; endsAt: string }): DisplayStatus {
+  if (c.status === 'ARCHIVED') return 'ARCHIVED';
+  const now = new Date();
+  if (new Date(c.startsAt) > now) return 'UPCOMING';
+  if (new Date(c.endsAt) < now) return 'ENDED';
+  return 'ACTIVE';
+}
+
+const statusConfig: Record<DisplayStatus, { label: string; color: 'primary' | 'warning' | 'danger' | 'default' }> = {
+  ACTIVE: { label: 'Ativo', color: 'primary' },
+  UPCOMING: { label: 'Futuro', color: 'warning' },
+  ENDED: { label: 'Encerrado', color: 'danger' },
+  ARCHIVED: { label: 'Arquivado', color: 'default' },
 };
 
 function formatDate(iso: string): string {
@@ -33,13 +68,35 @@ function formatDate(iso: string): string {
   } catch { return iso; }
 }
 
+function formatDateFull(iso: string): string {
+  try {
+    return new Intl.DateTimeFormat('pt-BR', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(new Date(iso));
+  } catch { return iso; }
+}
+
 export default function CycleDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const queryClient = useQueryClient();
+  const [memberSearch, setMemberSearch] = useState('');
+  const [showAddMember, setShowAddMember] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ['cycle', id],
     queryFn: () => apiFetch<CycleDetail>(`/cycles/${id}`),
+  });
+
+  const { data: allMembers } = useQuery({
+    queryKey: ['members'],
+    queryFn: () => apiFetch<MemberListItem[]>('/members'),
+    enabled: showAddMember,
+  });
+
+  const addMember = useMutation({
+    mutationFn: (userId: string) => apiFetch(`/cycles/${id}/members`, { method: 'POST', body: JSON.stringify({ userId }) }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cycle', id] });
+      setMemberSearch('');
+    },
   });
 
   const removeMember = useMutation({
@@ -67,25 +124,56 @@ export default function CycleDetailPage({ params }: { params: Promise<{ id: stri
     URL.revokeObjectURL(url);
   };
 
+  // Members not yet in this cycle (for the add dropdown)
+  const existingMemberIds = useMemo(
+    () => new Set(data?.memberships.map((m) => m.user.id) ?? []),
+    [data?.memberships],
+  );
+  const availableMembers = useMemo(() => {
+    if (!allMembers) return [];
+    const filtered = allMembers.filter((m) => !existingMemberIds.has(m.id));
+    if (!memberSearch.trim()) return filtered;
+    const q = memberSearch.toLowerCase();
+    return filtered.filter((m) => m.name.toLowerCase().includes(q) || m.email.toLowerCase().includes(q));
+  }, [allMembers, existingMemberIds, memberSearch]);
+
+  // Plans grouped by member
+  const plansByMember = useMemo(() => {
+    const map = new Map<string, WeeklyPlan[]>();
+    for (const plan of data?.weeklyPlans ?? []) {
+      const list = map.get(plan.userId) ?? [];
+      list.push(plan);
+      map.set(plan.userId, list);
+    }
+    return map;
+  }, [data?.weeklyPlans]);
+
   if (isLoading || !data) {
     return <p className="text-sm text-foreground-muted">Carregando ciclo...</p>;
   }
 
+  const displayStatus = getDisplayStatus(data);
+  const cfg = statusConfig[displayStatus];
   const members = data.memberships;
+  const totalPlans = data.weeklyPlans?.length ?? 0;
+  const doneItems = data.weeklyPlans?.flatMap((p) => p.items).filter((i) => i.status === 'DONE').length ?? 0;
+  const totalItems = data.weeklyPlans?.flatMap((p) => p.items).length ?? 0;
+  const avgProgress = totalItems === 0 ? 0 : Math.round((doneItems / totalItems) * 100);
 
   return (
     <div className="space-y-8">
+      {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-bold text-foreground">{data.name}</h1>
-            <Chip size="sm" color={data.status === 'ACTIVE' ? 'primary' : 'default'} variant="flat">
-              {data.status === 'ACTIVE' ? 'Ativo' : 'Arquivado'}
+            <Chip size="sm" color={cfg.color} variant="flat">
+              {cfg.label}
             </Chip>
           </div>
           <p className="text-sm text-foreground-muted mt-1 flex items-center gap-1.5">
             <Calendar className="h-4 w-4" />
-            {formatDate(data.startsAt)} — {formatDate(data.endsAt)}
+            {formatDateFull(data.startsAt)} — {formatDateFull(data.endsAt)}
           </p>
         </div>
         <div className="flex gap-2">
@@ -100,47 +188,168 @@ export default function CycleDetailPage({ params }: { params: Promise<{ id: stri
         </div>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+      {/* Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard icon={Users} label="Membros" value={members.length} />
-        <StatCard icon={Calendar} label="Status" value={data.status === 'ACTIVE' ? 'Ativo' : 'Arquivado'} />
+        <StatCard icon={FileText} label="Planos semanais" value={totalPlans} />
+        <StatCard icon={BookOpen} label="Itens concluidos" value={`${doneItems}/${totalItems}`} />
+        <StatCard icon={Calendar} label="Progresso medio" value={`${avgProgress}%`} />
       </div>
 
-      <div>
-        <h2 className="text-base font-bold text-foreground mb-3">Membros</h2>
-        <Table aria-label="Membros do ciclo" shadow="sm">
-          <TableHeader>
-            <TableColumn>Membro</TableColumn>
-            <TableColumn>Email</TableColumn>
-            <TableColumn>Acoes</TableColumn>
-          </TableHeader>
-          <TableBody emptyContent="Nenhum membro neste ciclo.">
-            {members.map((m) => (
-              <TableRow key={m.id}>
-                <TableCell>
-                  <div className="flex items-center gap-3">
-                    <Avatar src={m.user.pictureUrl ?? undefined} name={m.user.name.charAt(0)} size="sm" />
-                    <span className="text-sm font-medium">{m.user.name}</span>
+      {/* Members section */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-bold text-foreground">Membros ({members.length})</h2>
+          <Button
+            size="sm"
+            color="primary"
+            variant={showAddMember ? 'flat' : 'bordered'}
+            startContent={<Plus className="h-4 w-4" />}
+            onPress={() => setShowAddMember(!showAddMember)}
+          >
+            Adicionar membro
+          </Button>
+        </div>
+
+        {/* Add member panel */}
+        {showAddMember && (
+          <Card shadow="sm">
+            <CardBody className="p-4 space-y-3">
+              <Input
+                placeholder="Buscar por nome ou email..."
+                value={memberSearch}
+                onValueChange={setMemberSearch}
+                startContent={<Search className="h-4 w-4 text-foreground-muted" />}
+                size="sm"
+              />
+              {availableMembers.length > 0 ? (
+                <div className="max-h-48 overflow-y-auto space-y-1">
+                  {availableMembers.map((m) => (
+                    <div
+                      key={m.id}
+                      className="flex items-center justify-between p-2 rounded-lg hover:bg-surface-subtle transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Avatar src={m.pictureUrl ?? undefined} name={m.name.charAt(0)} size="sm" />
+                        <div>
+                          <p className="text-sm font-medium text-foreground">{m.name}</p>
+                          <p className="text-xs text-foreground-muted">{m.email}</p>
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        color="primary"
+                        variant="flat"
+                        isLoading={addMember.isPending}
+                        onPress={() => addMember.mutate(m.id)}
+                      >
+                        Adicionar
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-foreground-muted text-center py-2">
+                  {allMembers ? 'Nenhum membro disponivel.' : 'Carregando...'}
+                </p>
+              )}
+            </CardBody>
+          </Card>
+        )}
+
+        {/* Members table with plans */}
+        <div className="space-y-3">
+          {members.map((m) => {
+            const userPlans = plansByMember.get(m.user.id) ?? [];
+            const userDone = userPlans.flatMap((p) => p.items).filter((i) => i.status === 'DONE').length;
+            const userTotal = userPlans.flatMap((p) => p.items).length;
+            const userPct = userTotal === 0 ? 0 : Math.round((userDone / userTotal) * 100);
+
+            return (
+              <Card key={m.id} shadow="sm">
+                <CardBody className="p-4">
+                  <div className="flex items-center justify-between gap-4">
+                    {/* Member info */}
+                    <div className="flex items-center gap-3 min-w-0">
+                      <Avatar src={m.user.pictureUrl ?? undefined} name={m.user.name.charAt(0)} size="sm" />
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">{m.user.name}</p>
+                        <p className="text-xs text-foreground-muted truncate">{m.user.email}</p>
+                      </div>
+                    </div>
+
+                    {/* Plan stats */}
+                    <div className="flex items-center gap-3 flex-shrink-0">
+                      {userPlans.length > 0 ? (
+                        <div className="flex items-center gap-2">
+                          <div className="text-right">
+                            <p className="text-xs text-foreground-muted">{userPlans.length} plano{userPlans.length !== 1 ? 's' : ''}</p>
+                            <p className="text-xs font-medium text-foreground">{userPct}% concluido</p>
+                          </div>
+                          <Progress value={userPct} color="primary" size="sm" className="w-20" />
+                        </div>
+                      ) : (
+                        <span className="text-xs text-foreground-muted">Sem planos</span>
+                      )}
+
+                      <Button
+                        as={Link}
+                        href={`/admin/plans/${m.user.id}`}
+                        size="sm"
+                        color="primary"
+                        variant="flat"
+                        startContent={<Plus className="h-3 w-3" />}
+                      >
+                        Plano
+                      </Button>
+
+                      <Button
+                        size="sm"
+                        color="danger"
+                        variant="light"
+                        isIconOnly
+                        onPress={() => removeMember.mutate(m.user.id)}
+                        aria-label="Remover membro"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
-                </TableCell>
-                <TableCell>
-                  <span className="text-sm text-foreground-muted">{m.user.email}</span>
-                </TableCell>
-                <TableCell>
-                  <Button
-                    size="sm"
-                    color="danger"
-                    variant="light"
-                    isIconOnly
-                    onPress={() => removeMember.mutate(m.user.id)}
-                    aria-label="Remover membro"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+
+                  {/* Inline plan list */}
+                  {userPlans.length > 0 && (
+                    <div className="mt-3 pt-3 border-t border-border">
+                      <div className="flex flex-wrap gap-2">
+                        {userPlans.map((p) => {
+                          const pDone = p.items.filter((i) => i.status === 'DONE').length;
+                          const pTotal = p.items.length;
+                          const pPct = pTotal === 0 ? 0 : Math.round((pDone / pTotal) * 100);
+                          return (
+                            <Chip
+                              key={p.id}
+                              size="sm"
+                              variant="flat"
+                              color={p.status === 'PUBLISHED' ? (pPct === 100 ? 'success' : 'primary') : 'default'}
+                            >
+                              {formatDate(p.weekStart)} — {formatDate(p.weekEnd)} ({pPct}%)
+                            </Chip>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </CardBody>
+              </Card>
+            );
+          })}
+
+          {members.length === 0 && (
+            <div className="text-center py-8">
+              <p className="text-foreground-muted text-sm">Nenhum membro neste ciclo.</p>
+              <p className="text-foreground-muted text-xs mt-1">Use o botao acima para adicionar membros.</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

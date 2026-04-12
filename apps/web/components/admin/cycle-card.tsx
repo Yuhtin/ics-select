@@ -1,18 +1,27 @@
 'use client';
 
 import { Button, Card, CardBody, Chip, Progress } from '@heroui/react';
-import { Calendar, Users } from 'lucide-react';
+import { Calendar, Clock, Lock, Users } from 'lucide-react';
 import Link from 'next/link';
+
+type DisplayStatus = 'ACTIVE' | 'UPCOMING' | 'ENDED' | 'ARCHIVED';
 
 interface CycleCardProps {
   id: string;
   name: string;
   startsAt: string;
   endsAt: string;
-  status: 'ACTIVE' | 'ARCHIVED';
+  displayStatus: DisplayStatus;
   memberCount?: number;
   avgProgress?: number;
 }
+
+const statusConfig: Record<DisplayStatus, { label: string; color: 'primary' | 'warning' | 'default' | 'danger'; icon: typeof Calendar }> = {
+  ACTIVE: { label: 'Ativo', color: 'primary', icon: Calendar },
+  UPCOMING: { label: 'Futuro', color: 'warning', icon: Clock },
+  ENDED: { label: 'Encerrado', color: 'danger', icon: Lock },
+  ARCHIVED: { label: 'Arquivado', color: 'default', icon: Lock },
+};
 
 function formatDate(iso: string): string {
   try {
@@ -20,19 +29,20 @@ function formatDate(iso: string): string {
   } catch { return iso; }
 }
 
-export function CycleCard({ id, name, startsAt, endsAt, status, memberCount = 0, avgProgress = 0 }: CycleCardProps) {
-  const isActive = status === 'ACTIVE';
+export function CycleCard({ id, name, startsAt, endsAt, displayStatus, memberCount = 0, avgProgress = 0 }: CycleCardProps) {
+  const cfg = statusConfig[displayStatus];
+  const isActive = displayStatus === 'ACTIVE';
 
   return (
     <Card
       shadow="sm"
-      className={isActive ? 'border-2 border-brand/40 ring-2 ring-brand/10' : 'opacity-75'}
+      className={isActive ? 'border-2 border-brand/40 ring-2 ring-brand/10' : displayStatus === 'UPCOMING' ? 'border border-warning/30' : 'opacity-75'}
     >
       <CardBody className="p-6 space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-bold text-foreground">{name}</h3>
-          <Chip size="sm" color={isActive ? 'primary' : 'default'} variant="flat">
-            {isActive ? 'Ativo' : 'Arquivado'}
+          <Chip size="sm" color={cfg.color} variant="flat">
+            {cfg.label}
           </Chip>
         </div>
 

@@ -15,7 +15,10 @@ export class CyclesService {
   }
 
   list() {
-    return this.prisma.cycle.findMany({ orderBy: { startsAt: 'desc' } });
+    return this.prisma.cycle.findMany({
+      orderBy: { startsAt: 'desc' },
+      include: { _count: { select: { memberships: true } } },
+    });
   }
 
   async getById(id: string) {
@@ -24,8 +27,20 @@ export class CyclesService {
       include: {
         memberships: {
           include: {
-            user: true,
+            user: { select: { id: true, name: true, email: true, pictureUrl: true } },
           },
+        },
+        weeklyPlans: {
+          select: {
+            id: true,
+            userId: true,
+            weekStart: true,
+            weekEnd: true,
+            status: true,
+            _count: { select: { items: true } },
+            items: { select: { status: true } },
+          },
+          orderBy: { weekStart: 'desc' },
         },
       },
     });

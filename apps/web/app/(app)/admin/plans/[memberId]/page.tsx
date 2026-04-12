@@ -6,7 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { PlanEditor } from '../../../../../components/plans/plan-editor';
 import { apiFetch } from '../../../../../lib/api/client';
 
-type Cycle = { id: string; name: string; status: string };
+type Cycle = { id: string; name: string; startsAt: string; endsAt: string; status: string };
 
 export default function AdminPlanEditorPage({ params }: { params: Promise<{ memberId: string }> }) {
   const { memberId } = use(params);
@@ -14,7 +14,11 @@ export default function AdminPlanEditorPage({ params }: { params: Promise<{ memb
     queryKey: ['cycles'],
     queryFn: () => apiFetch<Cycle[]>('/cycles'),
   });
-  const activeCycle = cycles?.find((c) => c.status === 'ACTIVE');
+  const now = new Date();
+  const activeCycle = cycles?.find((c) => {
+    if (c.status !== 'ACTIVE') return false;
+    return new Date(c.startsAt) <= now && new Date(c.endsAt) >= now;
+  }) ?? cycles?.find((c) => c.status === 'ACTIVE');
 
   if (!activeCycle) {
     return (
