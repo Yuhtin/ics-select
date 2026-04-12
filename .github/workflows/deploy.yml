@@ -43,7 +43,15 @@ jobs:
             ${{ steps.meta.outputs.image }}
             ${{ steps.meta.outputs.latest }}
 
+      - name: Trigger EasyPanel deploy
+        run: |
+          curl -fsSL "${{ secrets.BACKEND_DEPLOY_URL }}" \
+            --max-time 30 \
+            --retry 2 \
+            --retry-delay 5
+          echo "EasyPanel deploy triggered."
+
       - name: Summary
         run: |
-          echo "Image pushed to GHCR. EasyPanel will pull on next deploy."
+          echo "Image pushed and EasyPanel deploy triggered."
           echo "Pull: ${{ steps.meta.outputs.latest }}"
