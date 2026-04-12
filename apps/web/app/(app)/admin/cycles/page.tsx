@@ -1,28 +1,11 @@
 'use client';
 
-import {
-  Button,
-  Input,
-  Modal,
-  ModalBody,
-  ModalContent,
-  ModalFooter,
-  ModalHeader,
-  Table,
-  TableBody,
-  TableCell,
-  TableColumn,
-  TableHeader,
-  TableRow,
-  useDisclosure,
-} from '@heroui/react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Button, useDisclosure } from '@heroui/react';
 import { Plus } from 'lucide-react';
-import Link from 'next/link';
-import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { apiFetch } from '../../../../lib/api/client';
-import { PageHeader } from '../../../../components/shell/page-header';
-import { DataTable } from '../../../../components/ui/data-table';
+import { CycleCard } from '../../../../components/admin/cycle-card';
+import { CreateCycleModal } from '../../../../components/admin/create-cycle-modal';
 
 type Cycle = {
   id: string;
@@ -30,120 +13,82 @@ type Cycle = {
   startsAt: string;
   endsAt: string;
   status: 'ACTIVE' | 'ARCHIVED';
+  memberships?: Array<{ id: string }>;
 };
 
-export default function AdminCyclesPage() {
-  const queryClient = useQueryClient();
+export default function CyclesPage() {
+  const { isOpen, onOpen, onClose } = useDisclosure();
   const { data, isLoading } = useQuery({
     queryKey: ['cycles'],
     queryFn: () => apiFetch<Cycle[]>('/cycles'),
   });
-  const { isOpen, onOpen, onClose } = useDisclosure();
-  const [form, setForm] = useState({ name: '', startsAt: '', endsAt: '' });
 
-  const createMutation = useMutation({
-    mutationFn: (payload: typeof form) =>
-      apiFetch<Cycle>('/cycles', { method: 'POST', body: JSON.stringify(payload) }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cycles'] });
-      onClose();
-      setForm({ name: '', startsAt: '', endsAt: '' });
-    },
-  });
+  if (isLoading) {
+    return <p className="text-sm text-foreground-muted">Carregando ciclos...</p>;
+  }
+
+  const cycles = data ?? [];
+  const active = cycles.filter((c) => c.status === 'ACTIVE');
+  const archived = cycles.filter((c) => c.status === 'ARCHIVED');
 
   return (
-    <>
-      <PageHeader
-        title="Ciclos"
-        description="Gerencie os ciclos do programa."
-        actions={
-          <Button
-            color="primary"
-            startContent={<Plus className="h-4 w-4" />}
-            onPress={onOpen}
-          >
-            Novo ciclo
-          </Button>
-        }
-      />
+    <div className="space-y-8">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Ciclos</h1>
+          <p className="text-sm text-foreground-muted mt-1">Gerencie os ciclos do programa</p>
+        </div>
+        <Button color="primary" startContent={<Plus className="h-4 w-4" />} onPress={onOpen}>
+          Novo ciclo
+        </Button>
+      </div>
 
-      {isLoading ? (
-        <p className="text-sm text-foreground-muted">Carregando ciclos...</p>
-      ) : (
-        <DataTable>
-          <Table aria-label="Ciclos" removeWrapper>
-            <TableHeader>
-              <TableColumn>Nome</TableColumn>
-              <TableColumn>Início</TableColumn>
-              <TableColumn>Fim</TableColumn>
-              <TableColumn>Status</TableColumn>
-            </TableHeader>
-            <TableBody emptyContent="Nenhum ciclo ainda.">
-              {(data ?? []).map((cycle) => (
-                <TableRow key={cycle.id}>
-                  <TableCell>
-                    <Link
-                      href={`/admin/cycles/${cycle.id}`}
-                      className="font-medium text-foreground hover:text-brand transition-colors"
-                    >
-                      {cycle.name}
-                    </Link>
-                  </TableCell>
-                  <TableCell>
-                    {new Date(cycle.startsAt).toLocaleDateString('pt-BR', {
-                      timeZone: 'UTC',
-                    })}
-                  </TableCell>
-                  <TableCell>
-                    {new Date(cycle.endsAt).toLocaleDateString('pt-BR', {
-                      timeZone: 'UTC',
-                    })}
-                  </TableCell>
-                  <TableCell>{cycle.status}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </DataTable>
+      {active.length > 0 && (
+        <div>
+          <h2 className="text-base font-bold text-foreground mb-3">Ativos</h2>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {active.map((c) => (
+              <CycleCard
+                key={c.id}
+                id={c.id}
+                name={c.name}
+                startsAt={c.startsAt}
+                endsAt={c.endsAt}
+                status={c.status}
+                memberCount={c.memberships?.length ?? 0}
+              />
+            ))}
+          </div>
+        </div>
       )}
 
-      <Modal isOpen={isOpen} onClose={onClose}>
-        <ModalContent>
-          <ModalHeader>Novo ciclo</ModalHeader>
-          <ModalBody className="space-y-3">
-            <Input
-              label="Nome"
-              placeholder="2026.1"
-              value={form.name}
-              onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-            />
-            <Input
-              type="date"
-              label="Início"
-              value={form.startsAt}
-              onChange={(e) => setForm((f) => ({ ...f, startsAt: e.target.value }))}
-            />
-            <Input
-              type="date"
-              label="Fim"
-              value={form.endsAt}
-              onChange={(e) => setForm((f) => ({ ...f, endsAt: e.target.value }))}
-            />
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="flat" onPress={onClose}>
-              Cancelar
-            </Button>
-            <Button
-              color="primary"
-              isLoading={createMutation.isPending}
-              onPress={() => createMutation.mutate(form)}
-            >
-              Criar
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
-    </>
+      {archived.length > 0 && (
+        <div>
+          <h2 className="text-base font-bold text-foreground mb-3">Arquivados</h2>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {archived.map((c) => (
+              <CycleCard
+                key={c.id}
+                id={c.id}
+                name={c.name}
+                startsAt={c.startsAt}
+                endsAt={c.endsAt}
+                status={c.status}
+                memberCount={c.memberships?.length ?? 0}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {cycles.length === 0 && (
+        <div className="text-center py-12">
+          <p className="text-foreground-muted">Nenhum ciclo ainda.</p>
+          <Button color="primary" className="mt-4" onPress={onOpen}>Criar primeiro ciclo</Button>
+        </div>
+      )}
+
+      <CreateCycleModal isOpen={isOpen} onClose={onClose} />
+    </div>
   );
 }

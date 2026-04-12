@@ -1,9 +1,11 @@
 'use client';
 
-import { Avatar, Card, CardBody, Chip } from '@heroui/react';
+import { useState } from 'react';
+import { Avatar, Chip, Input, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from '@heroui/react';
+import { Search } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
-import Link from 'next/link';
 import { apiFetch } from '../../../../lib/api/client';
+import { MemberDrawer } from '../../../../components/admin/member-drawer';
 
 type Member = {
   id: string;
@@ -13,42 +15,70 @@ type Member = {
   role: 'ADMIN' | 'MEMBER';
 };
 
-export default function AdminMembersPage() {
+export default function MembersPage() {
+  const [search, setSearch] = useState('');
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+
   const { data, isLoading } = useQuery({
     queryKey: ['members'],
     queryFn: () => apiFetch<Member[]>('/members'),
   });
 
+  if (isLoading) {
+    return <p className="text-sm text-foreground-muted">Carregando membros...</p>;
+  }
+
+  const members = (data ?? []).filter((m) => {
+    if (!search) return true;
+    const q = search.toLowerCase();
+    return m.name.toLowerCase().includes(q) || m.email.toLowerCase().includes(q);
+  });
+
   return (
-    <div className="mx-auto max-w-5xl space-y-4">
-      <h1 className="text-2xl font-semibold">Membros</h1>
-      <Card>
-        <CardBody>
-          {isLoading ? (
-            <p>Carregando...</p>
-          ) : (data ?? []).length === 0 ? (
-            <p className="text-foreground-muted">Nenhum membro cadastrado.</p>
-          ) : (
-            <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-              {(data ?? []).map((m) => (
-                <li key={m.id}>
-                  <Link
-                    href={`/admin/plans/${m.id}`}
-                    className="flex flex-col items-center gap-2 rounded-md border border-border p-4 hover:border-border-strong"
-                  >
-                    <Avatar src={m.pictureUrl ?? undefined} name={m.name} size="lg" />
-                    <span className="text-sm font-medium">{m.name}</span>
-                    <span className="text-xs text-foreground-muted">{m.email}</span>
-                    <Chip size="sm" variant="flat" color={m.role === 'ADMIN' ? 'primary' : 'default'}>
-                      {m.role}
-                    </Chip>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-        </CardBody>
-      </Card>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-foreground">Membros</h1>
+        <p className="text-sm text-foreground-muted mt-1">Todos os usuarios da plataforma</p>
+      </div>
+
+      <Input
+        placeholder="Buscar por nome ou email..."
+        value={search}
+        onValueChange={setSearch}
+        startContent={<Search className="h-4 w-4 text-foreground-muted" />}
+        variant="bordered"
+        className="max-w-md"
+      />
+
+      <Table aria-label="Lista de membros" shadow="sm" isStriped selectionMode="single" onRowAction={(key) => setSelectedId(key as string)}>
+        <TableHeader>
+          <TableColumn>Membro</TableColumn>
+          <TableColumn>Email</TableColumn>
+          <TableColumn>Tipo</TableColumn>
+        </TableHeader>
+        <TableBody emptyContent="Nenhum membro encontrado.">
+          {members.map((m) => (
+            <TableRow key={m.id} className="cursor-pointer">
+              <TableCell>
+                <div className="flex items-center gap-3">
+                  <Avatar src={m.pictureUrl ?? undefined} name={m.name.charAt(0)} size="sm" />
+                  <span className="text-sm font-medium">{m.name}</span>
+                </div>
+              </TableCell>
+              <TableCell>
+                <span className="text-sm text-foreground-muted">{m.email}</span>
+              </TableCell>
+              <TableCell>
+                <Chip size="sm" variant="flat" color={m.role === 'ADMIN' ? 'primary' : 'default'}>
+                  {m.role === 'ADMIN' ? 'Admin' : 'Membro'}
+                </Chip>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+
+      <MemberDrawer memberId={selectedId} onClose={() => setSelectedId(null)} />
     </div>
   );
 }

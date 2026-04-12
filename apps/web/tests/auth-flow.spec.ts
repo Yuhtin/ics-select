@@ -42,16 +42,10 @@ test.describe('Auth flow', () => {
 
     await page.goto('/');
 
-    // Wait for the authenticated shell to render (main content heading is visible
-    // on both desktop and mobile).
+    // Wait for the authenticated shell to render — admin lands on cycles page with navbar.
     await expect(page.getByRole('heading', { name: 'Ciclos' })).toBeVisible();
 
-    // On mobile the sidebar lives inside a drawer — open it if the menu button is visible.
-    const menuButton = page.getByRole('button', { name: 'Abrir menu' });
-    if (await menuButton.isVisible()) {
-      await menuButton.click();
-    }
-
+    // Navbar should show Ciclos link (visible on desktop).
     await expect(page.getByRole('link', { name: 'Ciclos' })).toBeVisible();
   });
 });

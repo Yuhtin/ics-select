@@ -1,119 +1,185 @@
 'use client';
 
-import { Button, Card, CardBody, Input, Select, SelectItem } from '@heroui/react';
-import { Plus, Search } from 'lucide-react';
-import Link from 'next/link';
-import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
+import { Button, Chip, Input, Select, SelectItem, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow, useDisclosure } from '@heroui/react';
+import { Plus, Search, Trash2, Pencil } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from '../../../../lib/api/client';
-import { LibraryItemCard, type LibraryItemCardProps } from '../../../../components/library/library-item-card';
-import { PageHeader } from '../../../../components/shell/page-header';
+import { CreateMaterialModal } from '../../../../components/admin/create-material-modal';
 
-const FORMAT_OPTIONS = [
-  { key: 'VIDEO', label: 'Vídeo' },
-  { key: 'ARTICLE', label: 'Artigo' },
-  { key: 'BOOK', label: 'Livro' },
-  { key: 'PROBLEM', label: 'Problema' },
-  { key: 'OTHER', label: 'Outro' },
-];
+type Item = {
+  id: string;
+  title: string;
+  url: string | null;
+  description: string | null;
+  format: string;
+  difficulty: string;
+  estimatedMinutes: number;
+  tags: string[];
+  source: string | null;
+};
 
-const DIFFICULTY_OPTIONS = [
-  { key: 'EASY', label: 'Fácil' },
-  { key: 'MEDIUM', label: 'Médio' },
-  { key: 'HARD', label: 'Difícil' },
-];
+const FORMAT_COLORS: Record<string, 'secondary' | 'primary' | 'warning' | 'success' | 'default'> = {
+  VIDEO: 'secondary',
+  ARTICLE: 'primary',
+  PROBLEM: 'warning',
+  BOOK: 'success',
+  OTHER: 'default',
+};
 
-type Item = LibraryItemCardProps & { description: string | null };
+const FORMAT_LABELS: Record<string, string> = {
+  VIDEO: 'Video',
+  ARTICLE: 'Artigo',
+  PROBLEM: 'Problema',
+  BOOK: 'Livro',
+  OTHER: 'Outro',
+};
 
-export default function AdminLibraryPage() {
-  const [query, setQuery] = useState('');
-  const [format, setFormat] = useState<string[]>([]);
-  const [difficulty, setDifficulty] = useState<string[]>([]);
+const DIFFICULTY_LABELS: Record<string, string> = {
+  EASY: 'Facil',
+  MEDIUM: 'Medio',
+  HARD: 'Dificil',
+};
+
+export default function LibraryPage() {
+  const [search, setSearch] = useState('');
+  const [formatFilter, setFormatFilter] = useState('');
+  const [difficultyFilter, setDifficultyFilter] = useState('');
+  const [editItem, setEditItem] = useState<Item | null>(null);
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
-    queryKey: ['library', query, format, difficulty],
-    queryFn: async () => {
-      if (!query && format.length === 0 && difficulty.length === 0) {
-        return apiFetch<Item[]>('/library');
-      }
-      const body = {
-        query: query || undefined,
-        format: format.length > 0 ? format : undefined,
-        difficulty: difficulty.length > 0 ? difficulty : undefined,
-      };
-      const res = await apiFetch<{ data: Item[] }>('/library/search', {
-        method: 'POST',
-        body: JSON.stringify(body),
-      });
-      return res.data;
-    },
+    queryKey: ['library'],
+    queryFn: () => apiFetch<Item[]>('/library'),
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => apiFetch(`/library/${id}`, { method: 'DELETE' }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['library'] }),
+  });
+
+  if (isLoading) {
+    return <p className="text-sm text-foreground-muted">Carregando biblioteca...</p>;
+  }
+
+  const items = (data ?? []).filter((item) => {
+    if (search && !item.title.toLowerCase().includes(search.toLowerCase())) return false;
+    if (formatFilter && item.format !== formatFilter) return false;
+    if (difficultyFilter && item.difficulty !== difficultyFilter) return false;
+    return true;
+  });
+
+  const handleEdit = (item: Item) => {
+    setEditItem(item);
+    onOpen();
+  };
+
+  const handleCreate = () => {
+    setEditItem(null);
+    onOpen();
+  };
+
+  const handleClose = () => {
+    setEditItem(null);
+    onClose();
+  };
+
   return (
-    <>
-      <PageHeader
-        title="Acervo"
-        description="Catálogo de materiais de estudo disponíveis para os planos semanais."
-        actions={
-          <Button
-            as={Link}
-            href="/admin/library/new"
-            color="primary"
-            startContent={<Plus className="h-4 w-4" />}
-          >
-            Novo item
-          </Button>
-        }
-      />
-
-      <Card>
-        <CardBody className="space-y-3">
-          <Input
-            placeholder="Buscar (semântica + full-text)"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            startContent={<Search className="h-4 w-4 text-foreground/50" />}
-          />
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <Select
-              selectionMode="multiple"
-              label="Formato"
-              selectedKeys={format}
-              onSelectionChange={(keys) => setFormat(Array.from(keys as Set<string>))}
-            >
-              {FORMAT_OPTIONS.map((o) => (
-                <SelectItem key={o.key}>{o.label}</SelectItem>
-              ))}
-            </Select>
-            <Select
-              selectionMode="multiple"
-              label="Dificuldade"
-              selectedKeys={difficulty}
-              onSelectionChange={(keys) => setDifficulty(Array.from(keys as Set<string>))}
-            >
-              {DIFFICULTY_OPTIONS.map((o) => (
-                <SelectItem key={o.key}>{o.label}</SelectItem>
-              ))}
-            </Select>
-          </div>
-        </CardBody>
-      </Card>
-
-      {isLoading ? (
-        <p className="text-foreground/60">Carregando...</p>
-      ) : (data ?? []).length === 0 ? (
-        <Card>
-          <CardBody>
-            <p className="text-foreground/60">Nenhum item. Clique em "Novo item" para começar.</p>
-          </CardBody>
-        </Card>
-      ) : (
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-          {(data ?? []).map((item) => (
-            <LibraryItemCard key={item.id} {...item} />
-          ))}
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Biblioteca</h1>
+          <p className="text-sm text-foreground-muted mt-1">Materiais de estudo disponiveis</p>
         </div>
-      )}
-    </>
+        <Button color="primary" startContent={<Plus className="h-4 w-4" />} onPress={handleCreate}>
+          Novo material
+        </Button>
+      </div>
+
+      <div className="flex flex-wrap gap-3">
+        <Input
+          placeholder="Buscar..."
+          value={search}
+          onValueChange={setSearch}
+          startContent={<Search className="h-4 w-4 text-foreground-muted" />}
+          variant="bordered"
+          className="max-w-xs"
+        />
+        <Select
+          placeholder="Formato"
+          selectedKeys={formatFilter ? [formatFilter] : []}
+          onSelectionChange={(keys) => setFormatFilter([...keys][0] as string ?? '')}
+          variant="bordered"
+          className="max-w-[160px]"
+        >
+          {Object.entries(FORMAT_LABELS).map(([key, label]) => (
+            <SelectItem key={key}>{label}</SelectItem>
+          ))}
+        </Select>
+        <Select
+          placeholder="Dificuldade"
+          selectedKeys={difficultyFilter ? [difficultyFilter] : []}
+          onSelectionChange={(keys) => setDifficultyFilter([...keys][0] as string ?? '')}
+          variant="bordered"
+          className="max-w-[160px]"
+        >
+          {Object.entries(DIFFICULTY_LABELS).map(([key, label]) => (
+            <SelectItem key={key}>{label}</SelectItem>
+          ))}
+        </Select>
+      </div>
+
+      <Table aria-label="Biblioteca de materiais" shadow="sm" isStriped>
+        <TableHeader>
+          <TableColumn>Titulo</TableColumn>
+          <TableColumn>Formato</TableColumn>
+          <TableColumn>Dificuldade</TableColumn>
+          <TableColumn>Tempo</TableColumn>
+          <TableColumn>Acoes</TableColumn>
+        </TableHeader>
+        <TableBody emptyContent="Nenhum material encontrado.">
+          {items.map((item) => (
+            <TableRow key={item.id}>
+              <TableCell>
+                <div>
+                  <p className="text-sm font-medium">{item.title}</p>
+                  {item.tags.length > 0 && (
+                    <div className="flex gap-1 mt-1">
+                      {item.tags.slice(0, 3).map((t) => (
+                        <Chip key={t} size="sm" variant="flat" className="text-[10px]">{t}</Chip>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </TableCell>
+              <TableCell>
+                <Chip size="sm" color={FORMAT_COLORS[item.format] ?? 'default'} variant="flat">
+                  {FORMAT_LABELS[item.format] ?? item.format}
+                </Chip>
+              </TableCell>
+              <TableCell>
+                <span className="text-sm">{DIFFICULTY_LABELS[item.difficulty] ?? item.difficulty}</span>
+              </TableCell>
+              <TableCell>
+                <span className="text-sm">{item.estimatedMinutes}min</span>
+              </TableCell>
+              <TableCell>
+                <div className="flex gap-1">
+                  <Button size="sm" variant="light" isIconOnly onPress={() => handleEdit(item)} aria-label="Editar">
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button size="sm" variant="light" color="danger" isIconOnly onPress={() => deleteMutation.mutate(item.id)} aria-label="Excluir">
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+
+      <CreateMaterialModal isOpen={isOpen} onClose={handleClose} editItem={editItem} />
+    </div>
   );
 }

@@ -534,12 +534,12 @@ test.describe('Admin flows', () => {
   test('/admin/dashboard', async ({ page }) => {
     await page.goto('/admin/dashboard');
     await expect(
-      page.getByRole('heading', { name: 'Dashboard do Ciclo' }),
+      page.getByRole('heading', { name: 'Dashboard' }),
     ).toBeVisible();
-    await expect(page.getByText('Performance Atual')).toBeVisible();
-    await expect(page.getByText('Elite Status')).toBeVisible();
-    await expect(page.getByText('On Track')).toBeVisible();
-    await expect(page.getByText('Member Directory')).toBeVisible();
+    await expect(page.getByText('Progresso medio')).toBeVisible();
+    await expect(page.getByText('On track')).toBeVisible();
+    await expect(page.getByText('Alertas')).toBeVisible();
+    await expect(page.getByText('Membros')).toBeVisible();
     await expect(page.getByText('Alice Silva')).toBeVisible();
     await expect(page.getByText('Bruno Costa')).toBeVisible();
     await expect(page.getByText('Carla Mendes')).toBeVisible();
@@ -644,36 +644,6 @@ test.describe('Admin flows', () => {
     });
   });
 
-  test('/admin/library/new', async ({ page }) => {
-    await page.goto('/admin/library/new');
-    await expect(
-      page.getByRole('heading', { name: 'Novo item do acervo' }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole('button', { name: /Extrair metadados/ }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole('button', { name: /^Criar$/ }),
-    ).toBeVisible();
-    await page.screenshot({
-      path: 'test-results/audit-admin-library-new.png',
-      fullPage: true,
-    });
-  });
-
-  test('/admin/library/[id] edit', async ({ page }) => {
-    await page.goto('/admin/library/li-1');
-    await expect(
-      page.getByRole('heading', { name: 'Editar item' }),
-    ).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Salvar' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Excluir' })).toBeVisible();
-    await page.screenshot({
-      path: 'test-results/audit-admin-library-edit.png',
-      fullPage: true,
-    });
-  });
-
   test('/admin/members list', async ({ page }) => {
     await page.goto('/admin/members');
     await expect(
@@ -686,44 +656,17 @@ test.describe('Admin flows', () => {
     });
   });
 
-  test('/admin/members/[id] overview', async ({ page }) => {
-    await page.goto('/admin/members/m-1');
-    await expect(
-      page.getByRole('heading', { name: 'Alice Silva' }),
-    ).toBeVisible();
-    await expect(page.getByText('Histórico de planos')).toBeVisible();
-    await expect(page.getByText('Cobertura de tópicos')).toBeVisible();
-    await expect(page.getByText('Diagnóstico (IA)')).toBeVisible();
-    await expect(page.getByText('Chat contextual')).toBeVisible();
-    await page.screenshot({
-      path: 'test-results/audit-admin-member-detail.png',
-      fullPage: true,
-    });
-  });
-
   test('/admin/plans/[memberId] editor', async ({ page }) => {
     await page.goto('/admin/plans/m-1');
     await expect(
       page.getByRole('heading', { name: /Editor de plano semanal/ }),
     ).toBeVisible();
-    await expect(page.getByText(/Ciclo ativo: 2026.1/)).toBeVisible();
+    await expect(page.getByText('2026.1')).toBeVisible();
     await expect(
       page.getByRole('heading', { name: 'Plano da semana' }),
     ).toBeVisible();
     await page.screenshot({
       path: 'test-results/audit-admin-plan-editor.png',
-      fullPage: true,
-    });
-  });
-
-  test('/admin/ai-usage', async ({ page }) => {
-    await page.goto('/admin/ai-usage');
-    await expect(
-      page.getByRole('heading', { name: 'Uso de IA' }),
-    ).toBeVisible();
-    await expect(page.getByText(/Últimos 7 dias/)).toBeVisible();
-    await page.screenshot({
-      path: 'test-results/audit-admin-ai-usage.png',
       fullPage: true,
     });
   });

@@ -1,6 +1,7 @@
 'use client';
 
 import { use } from 'react';
+import { Chip } from '@heroui/react';
 import { useQuery } from '@tanstack/react-query';
 import { PlanEditor } from '../../../../../components/plans/plan-editor';
 import { apiFetch } from '../../../../../lib/api/client';
@@ -16,13 +17,21 @@ export default function AdminPlanEditorPage({ params }: { params: Promise<{ memb
   const activeCycle = cycles?.find((c) => c.status === 'ACTIVE');
 
   if (!activeCycle) {
-    return <p className="text-foreground/60">Crie um ciclo antes de montar um plano.</p>;
+    return (
+      <div className="text-center py-12">
+        <p className="text-foreground-muted">Crie um ciclo antes de montar um plano.</p>
+      </div>
+    );
   }
 
   return (
-    <div className="mx-auto max-w-6xl space-y-4">
-      <h1 className="text-2xl font-semibold">Editor de plano semanal</h1>
-      <p className="text-sm text-foreground/60">Ciclo ativo: {activeCycle.name}</p>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-foreground">Editor de plano semanal</h1>
+        <p className="text-sm text-foreground-muted mt-1 flex items-center gap-2">
+          Ciclo ativo: <Chip size="sm" color="primary" variant="flat">{activeCycle.name}</Chip>
+        </p>
+      </div>
       <PlanEditor memberId={memberId} cycleId={activeCycle.id} />
     </div>
   );
