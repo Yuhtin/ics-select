@@ -30,4 +30,6 @@ export const UpdatePlanSchema = z.object({
 export const MarkItemDoneSchema = z.object({
   rating: z.enum(['EASY', 'HARD']).optional(),
   reflection: z.string().optional(),
+  completionStatus: z.enum(['DONE', 'STUCK', 'DOUBTS']).optional(),
+  feedback: z.string().max(2000).optional(),
 });

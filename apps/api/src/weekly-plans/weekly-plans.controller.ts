@@ -51,6 +51,16 @@ export class WeeklyPlansController {
     return this.plans.listForMember(memberId);
   }
 
+  @Get('me/plans')
+  myPlans(@CurrentUser() user: JwtStrategyPayload) {
+    return this.plans.listAllForMember(user.sub);
+  }
+
+  @Get('me/cohort/progress')
+  myCohortProgress(@CurrentUser() user: JwtStrategyPayload) {
+    return this.plans.cohortProgress(user.sub);
+  }
+
   @Get('me/week')
   myWeek(@CurrentUser() user: JwtStrategyPayload) {
     return this.plans.listForMember(user.sub);

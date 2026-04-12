@@ -12,7 +12,7 @@ export default function RootPage() {
     if (isLoading) return;
     if (!user) router.replace('/login');
     else if (!user.privacyAcceptedAt) router.replace('/privacy');
-    else router.replace(user.role === 'ADMIN' ? '/admin/cycles' : '/me');
+    else router.replace(user.role === 'ADMIN' ? '/admin/cycles' : '/map');
   }, [user, isLoading, router]);
 
   return (

@@ -91,6 +91,62 @@ export class WeeklyPlansService {
     return plan;
   }
 
+  async cohortProgress(userId: string) {
+    const membership = await this.prisma.cycleMembership.findFirst({
+      where: { userId, cycle: { status: 'ACTIVE' } },
+      select: { cycleId: true },
+    });
+    if (!membership) return [];
+
+    const memberships = await this.prisma.cycleMembership.findMany({
+      where: { cycleId: membership.cycleId },
+      include: {
+        user: { select: { id: true, name: true, pictureUrl: true } },
+      },
+    });
+
+    const plans = await this.prisma.weeklyPlan.findMany({
+      where: { cycleId: membership.cycleId, status: 'PUBLISHED' },
+      orderBy: { weekStart: 'desc' },
+      include: { items: { select: { id: true, status: true } } },
+    });
+
+    return memberships
+      .map((m) => {
+        const userPlans = plans.filter((p) => p.userId === m.userId);
+        const currentPlan = userPlans[0];
+        const done = currentPlan?.items.filter((i) => i.status === 'DONE').length ?? 0;
+        const total = currentPlan?.items.length ?? 0;
+        return {
+          userId: m.user.id,
+          name: m.user.name,
+          pictureUrl: m.user.pictureUrl,
+          done,
+          total,
+          percent: total === 0 ? 0 : Math.round((done / total) * 100),
+        };
+      })
+      .sort((a, b) => b.percent - a.percent);
+  }
+
+  listAllForMember(userId: string) {
+    return this.prisma.weeklyPlan.findMany({
+      where: { userId },
+      orderBy: { weekStart: 'asc' },
+      select: {
+        id: true,
+        weekStart: true,
+        weekEnd: true,
+        status: true,
+        cycleId: true,
+        cycle: { select: { name: true } },
+        items: {
+          select: { id: true, status: true },
+        },
+      },
+    });
+  }
+
   listForMember(userId: string) {
     return this.prisma.weeklyPlan.findMany({
       where: { userId },
@@ -105,11 +161,17 @@ export class WeeklyPlansService {
     planId: string,
     itemId: string,
     userId: string,
-    input: { rating?: 'EASY' | 'HARD'; reflection?: string },
+    input: {
+      rating?: 'EASY' | 'HARD';
+      reflection?: string;
+      completionStatus?: 'DONE' | 'STUCK' | 'DOUBTS';
+      feedback?: string;
+    },
   ) {
     const plan = await this.prisma.weeklyPlan.findUnique({ where: { id: planId } });
     if (!plan) throw new NotFoundException('plan not found');
     if (plan.userId !== userId) throw new NotFoundException('plan not found');
+    const cs = input.completionStatus ?? 'DONE';
     return this.prisma.weeklyPlanItem.update({
       where: { id: itemId },
       data: {
@@ -117,6 +179,10 @@ export class WeeklyPlansService {
         completedAt: new Date(),
         difficultyRating: input.rating ?? null,
         reflection: input.reflection ?? null,
+        completionStatus: cs,
+        feedback: input.feedback ?? null,
+        stuck: cs === 'STUCK',
+        stuckAt: cs === 'STUCK' ? new Date() : null,
       },
     });
   }

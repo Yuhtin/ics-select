@@ -3,27 +3,46 @@
 @tailwind utilities;
 
 :root {
-  --background: 240 100% 99%;
-  --foreground: 216 16% 11%;
+  /* Warm base */
+  --background: 30 50% 98%;
+  --foreground: 30 30% 12%;
   --surface: 0 0% 100%;
-  --surface-muted: 237 71% 97%;
-  --surface-subtle: 235 47% 95%;
-  --border: 222 16% 80%;
-  --border-strong: 222 9% 48%;
-  --foreground-muted: 216 13% 29%;
-  --foreground-subtle: 222 9% 48%;
-  --brand: 210 100% 35%;
-  --brand-hover: 213 100% 28%;
-  --brand-soft: 221 100% 92%;
-  --brand-soft-foreground: 213 100% 12%;
+  --surface-muted: 30 30% 96%;
+  --surface-subtle: 30 20% 94%;
+  --border: 30 10% 82%;
+  --border-strong: 30 6% 52%;
+  --foreground-muted: 30 10% 32%;
+  --foreground-subtle: 30 6% 52%;
+
+  /* Accent — coral quente */
+  --brand: 24 95% 53%;
+  --brand-hover: 21 90% 45%;
+  --brand-soft: 24 100% 93%;
+  --brand-soft-foreground: 21 80% 20%;
+
+  /* Status */
   --success: 160 84% 39%;
   --success-soft: 152 76% 90%;
   --warning: 38 92% 50%;
   --warning-soft: 48 96% 89%;
-  --danger: 0 72% 41%;
-  --danger-soft: 0 100% 92%;
-  --info: 210 100% 35%;
-  --info-soft: 221 100% 92%;
+  --danger: 0 72% 51%;
+  --danger-soft: 0 100% 94%;
+  --info: 24 95% 53%;
+  --info-soft: 24 100% 93%;
+
+  /* Platform colors */
+  --platform-youtube: 0 100% 50%;
+  --platform-leetcode: 36 100% 54%;
+  --platform-medium: 0 0% 10%;
+  --platform-github: 263 70% 58%;
+  --platform-article: 174 84% 29%;
+  --platform-book: 33 90% 43%;
+
+  /* Map-specific */
+  --map-path: 30 20% 80%;
+  --map-path-done: 24 95% 53%;
+  --map-bg-start: 30 50% 98%;
+  --map-bg-end: 24 40% 96%;
 }
 
 html,
