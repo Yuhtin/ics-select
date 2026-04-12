@@ -59,9 +59,9 @@ export function MapNode({ status, format, x, y, onHover, onHoverEnd, onClick }: 
       whileTap={isLocked ? undefined : { scale: 0.95 }}
       animate={isActive ? {
         boxShadow: [
-          '0 0 0 0 rgba(249,115,22,0.3)',
-          '0 0 0 12px rgba(249,115,22,0)',
-          '0 0 0 0 rgba(249,115,22,0.3)',
+          '0 0 0 0 rgba(79,70,229,0.3)',
+          '0 0 0 12px rgba(79,70,229,0)',
+          '0 0 0 0 rgba(79,70,229,0.3)',
         ],
       } : undefined}
       transition={isActive ? { repeat: Infinity, duration: 2 } : undefined}

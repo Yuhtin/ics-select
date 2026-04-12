@@ -3,32 +3,37 @@
 @tailwind utilities;
 
 :root {
-  /* Warm base */
-  --background: 30 50% 98%;
-  --foreground: 30 30% 12%;
+  /* Background — creme quente */
+  --background: 40 20% 97%;
+  --foreground: 0 0% 10%;
   --surface: 0 0% 100%;
-  --surface-muted: 30 30% 96%;
-  --surface-subtle: 30 20% 94%;
-  --border: 30 10% 82%;
-  --border-strong: 30 6% 52%;
-  --foreground-muted: 30 10% 32%;
-  --foreground-subtle: 30 6% 52%;
+  --surface-muted: 40 14% 95%;
+  --surface-subtle: 40 10% 92%;
+  --border: 40 6% 85%;
+  --border-strong: 0 0% 42%;
+  --foreground-muted: 0 0% 42%;
+  --foreground-subtle: 0 0% 64%;
 
-  /* Accent — coral quente */
-  --brand: 24 95% 53%;
-  --brand-hover: 21 90% 45%;
-  --brand-soft: 24 100% 93%;
-  --brand-soft-foreground: 21 80% 20%;
+  /* Primary — Indigo moderno */
+  --brand: 243 75% 59%;
+  --brand-hover: 243 75% 51%;
+  --brand-soft: 226 100% 97%;
+  --brand-soft-foreground: 244 47% 20%;
+
+  /* Accent — Coral quente (FOMO, CTAs) */
+  --accent: 24 95% 53%;
+  --accent-hover: 21 90% 48%;
+  --accent-soft: 33 100% 96%;
 
   /* Status */
   --success: 160 84% 39%;
   --success-soft: 152 76% 90%;
   --warning: 38 92% 50%;
   --warning-soft: 48 96% 89%;
-  --danger: 0 72% 51%;
+  --danger: 0 84% 60%;
   --danger-soft: 0 100% 94%;
-  --info: 24 95% 53%;
-  --info-soft: 24 100% 93%;
+  --info: 243 75% 59%;
+  --info-soft: 226 100% 97%;
 
   /* Platform colors */
   --platform-youtube: 0 100% 50%;
@@ -39,10 +44,10 @@
   --platform-book: 33 90% 43%;
 
   /* Map-specific */
-  --map-path: 30 20% 80%;
-  --map-path-done: 24 95% 53%;
-  --map-bg-start: 30 50% 98%;
-  --map-bg-end: 24 40% 96%;
+  --map-path: 40 10% 82%;
+  --map-path-done: 243 75% 59%;
+  --map-bg-start: 40 20% 97%;
+  --map-bg-end: 40 14% 95%;
 }
 
 html,
@@ -52,4 +57,25 @@ body {
 
 body {
   @apply font-sans bg-background text-foreground antialiased;
+}
+
+/* Accent CTA button glow */
+.btn-accent-glow {
+  @apply bg-accent text-white shadow-glow-accent;
+}
+.btn-accent-glow:hover {
+  @apply bg-accent-hover scale-[1.02];
+}
+
+/* FOMO badge with gradient */
+.badge-exclusive {
+  @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-pill text-caption font-semibold;
+  background: linear-gradient(135deg, hsl(var(--accent)) 0%, hsl(24 100% 60%) 100%);
+  color: white;
+  box-shadow: 0 0 16px rgba(249, 115, 22, 0.2);
+}
+
+/* Primary glow for highlighted elements */
+.ring-glow-primary {
+  box-shadow: 0 0 0 2px hsl(var(--brand) / 0.2), 0 0 16px hsl(var(--brand) / 0.1);
 }
