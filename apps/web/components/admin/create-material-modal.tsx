@@ -81,7 +81,7 @@ export function CreateMaterialModal({ isOpen, onClose, editItem }: CreateMateria
   });
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="lg" scrollBehavior="inside">
+    <Modal isOpen={isOpen} onClose={onClose} size="lg" scrollBehavior="inside" backdrop="opaque">
       <ModalContent>
         <ModalHeader>{editItem ? 'Editar material' : 'Novo material'}</ModalHeader>
         <ModalBody className="space-y-4">

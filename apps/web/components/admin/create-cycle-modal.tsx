@@ -32,7 +32,7 @@ export function CreateCycleModal({ isOpen, onClose }: CreateCycleModalProps) {
   });
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="lg">
+    <Modal isOpen={isOpen} onClose={onClose} size="lg" backdrop="opaque">
       <ModalContent>
         <ModalHeader>Novo ciclo</ModalHeader>
         <ModalBody className="space-y-4">
