@@ -75,6 +75,12 @@ body {
   box-shadow: 0 0 16px rgba(249, 115, 22, 0.2);
 }
 
+/* Marquee animation */
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
 /* Primary glow for highlighted elements */
 .ring-glow-primary {
   box-shadow: 0 0 0 2px hsl(var(--brand) / 0.2), 0 0 16px hsl(var(--brand) / 0.1);
