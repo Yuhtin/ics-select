@@ -3,27 +3,27 @@
 @tailwind utilities;
 
 :root {
-  --background: 220 29% 99%;
-  --foreground: 222 47% 11%;
+  --background: 240 100% 99%;
+  --foreground: 216 16% 11%;
   --surface: 0 0% 100%;
-  --surface-muted: 220 14% 97%;
-  --surface-subtle: 220 14% 95%;
-  --border: 220 13% 91%;
-  --border-strong: 220 13% 83%;
-  --foreground-muted: 215 25% 32%;
-  --foreground-subtle: 215 20% 65%;
-  --brand: 202 96% 54%;
-  --brand-hover: 203 89% 48%;
-  --brand-soft: 204 94% 94%;
-  --brand-soft-foreground: 202 80% 24%;
+  --surface-muted: 237 71% 97%;
+  --surface-subtle: 235 47% 95%;
+  --border: 222 16% 80%;
+  --border-strong: 222 9% 48%;
+  --foreground-muted: 216 13% 29%;
+  --foreground-subtle: 222 9% 48%;
+  --brand: 210 100% 35%;
+  --brand-hover: 213 100% 28%;
+  --brand-soft: 221 100% 92%;
+  --brand-soft-foreground: 213 100% 12%;
   --success: 160 84% 39%;
   --success-soft: 152 76% 90%;
   --warning: 38 92% 50%;
   --warning-soft: 48 96% 89%;
-  --danger: 0 84% 60%;
-  --danger-soft: 0 93% 94%;
-  --info: 217 91% 60%;
-  --info-soft: 214 95% 92%;
+  --danger: 0 72% 41%;
+  --danger-soft: 0 100% 92%;
+  --info: 210 100% 35%;
+  --info-soft: 221 100% 92%;
 }
 
 html,
