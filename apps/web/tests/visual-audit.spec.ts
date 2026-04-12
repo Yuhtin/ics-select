@@ -304,6 +304,15 @@ async function installCommonMocks(
     if (path === '/me/week') {
       return json(route, [WEEK_PLAN]);
     }
+    if (path === '/me/plans') {
+      return json(route, [WEEK_PLAN]);
+    }
+    if (path === '/me/cohort/progress') {
+      return json(route, [
+        { userId: 'u-2', name: 'Alice Silva', pictureUrl: null, done: 3, total: 5, percent: 60 },
+        { userId: 'u-3', name: 'Bruno Costa', pictureUrl: null, done: 2, total: 5, percent: 40 },
+      ]);
+    }
     if (path === '/me/availability') {
       if (method === 'PATCH') {
         return json(route, {
@@ -729,15 +738,13 @@ test.describe('Member flows', () => {
     await installCommonMocks(page, MEMBER_USER);
   });
 
-  test('/me weekly plan', async ({ page }) => {
-    await page.goto('/me');
-    await expect(page.getByRole('heading', { name: 'Plano de Estudo Semanal' })).toBeVisible();
+  test('/map learning map', async ({ page }) => {
+    await page.goto('/map');
+    await expect(page.getByRole('heading', { name: 'Mapa de Estudo' })).toBeVisible();
     await expect(page.getByText('Progresso Semanal')).toBeVisible();
-    await expect(page.getByText('Módulos da Semana')).toBeVisible();
-    await expect(page.getByText('Recursos Adicionais')).toBeVisible();
-    await expect(page.getByText('Flashcards Master')).toBeVisible();
+    await expect(page.getByText('Ver todos os mundos')).toBeVisible();
     await page.screenshot({
-      path: 'test-results/audit-me-home.png',
+      path: 'test-results/audit-map-home.png',
       fullPage: true,
     });
   });
