@@ -1,6 +1,6 @@
 'use client';
 
-import { Building2, Info } from 'lucide-react';
+import { Building2, Clock, Info } from 'lucide-react';
 import { BrandLockup } from '../../components/shell/brand-lockup';
 
 export default function LoginPage() {
@@ -93,13 +93,7 @@ export default function LoginPage() {
           />
 
           {/* Top: badge + hero text */}
-          <div className="relative z-10">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface shadow-sm border border-border/50 mb-6">
-              <span className="w-2 h-2 rounded-full bg-warning" />
-              <span className="text-xs font-bold text-foreground tracking-wide uppercase">
-                Plataforma Exclusiva
-              </span>
-            </div>
+          <div className="relative z-10">            
             <h2 className="text-4xl lg:text-5xl font-extrabold text-foreground leading-[1.1] tracking-tight">
               Fomentando a próxima geração de{' '}
               <span className="text-brand">líderes técnicos</span>.
@@ -115,8 +109,8 @@ export default function LoginPage() {
                   M
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-foreground">Membro verificado</p>
-                  <p className="text-xs text-foreground-muted">Ciclo de Performance 2024.1</p>
+                  <p className="text-sm font-bold text-foreground">Membro</p>
+                  <p className="text-xs text-foreground-muted">Ciclo 2026.1</p>
                 </div>
                 <div className="ml-auto bg-success-soft text-success text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-tighter">
                   Ativo
@@ -124,11 +118,11 @@ export default function LoginPage() {
               </div>
               <div className="space-y-2">
                 <div className="h-1.5 w-full bg-surface-subtle rounded-full overflow-hidden">
-                  <div className="h-full bg-brand w-[85%] rounded-full" />
+                  <div className="h-full bg-brand w-[1%] rounded-full" />
                 </div>
                 <div className="flex justify-between text-[10px] font-bold text-foreground-muted uppercase">
                   <span>Progresso do Ciclo</span>
-                  <span>85%</span>
+                  <span>1%</span>
                 </div>
               </div>
             </div>
@@ -136,16 +130,16 @@ export default function LoginPage() {
             {/* Stat mini-cards */}
             <div className="bg-surface/70 backdrop-blur-md p-5 rounded-xl border border-surface shadow-lg flex flex-col items-center justify-center text-center">
               <Building2 className="h-7 w-7 text-brand mb-2" aria-hidden="true" />
-              <span className="text-xl font-extrabold text-foreground">4.8</span>
+              <span className="text-xl font-extrabold text-foreground">12</span>
               <span className="text-[10px] font-bold text-foreground-muted uppercase tracking-widest">
-                NPS Médio
+                Membros
               </span>
             </div>
             <div className="bg-surface/70 backdrop-blur-md p-5 rounded-xl border border-surface shadow-lg flex flex-col items-center justify-center text-center">
-              <Building2 className="h-7 w-7 text-warning mb-2" aria-hidden="true" />
-              <span className="text-xl font-extrabold text-foreground">12k+</span>
+              <Clock className="h-7 w-7 text-warning mb-2" aria-hidden="true" />
+              <span className="text-xl font-extrabold text-foreground">1</span>
               <span className="text-[10px] font-bold text-foreground-muted uppercase tracking-widest">
-                Entregas
+                Ciclo(s)
               </span>
             </div>
           </div>
@@ -154,11 +148,11 @@ export default function LoginPage() {
           <div className="relative z-10 pt-8 mt-auto">
             <div className="flex items-center gap-4 opacity-60">
               <span className="text-sm font-bold tracking-widest text-foreground-muted uppercase">
-                Powered by
+                Feito Por
               </span>
               <div className="w-px h-4 bg-border" />
-              <span className="text-lg font-black tracking-tighter text-foreground italic">
-                INTELI
+              <span className="text-lg font-black tracking-tighter text-foreground">
+                Davi Duarte
               </span>
             </div>
           </div>
