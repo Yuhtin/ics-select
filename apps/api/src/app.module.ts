@@ -39,10 +39,15 @@ import { loadEnv } from './config/env.js';
     LoggerModule.forRoot({
       pinoHttp: {
         level: process.env.LOG_LEVEL ?? 'info',
-        transport:
-          process.env.NODE_ENV !== 'production'
-            ? { target: 'pino-pretty', options: { singleLine: true } }
-            : undefined,
+        transport: {
+          target: 'pino-pretty',
+          options: {
+            singleLine: true,
+            colorize: process.env.NODE_ENV !== 'production',
+            translateTime: 'HH:MM:ss',
+            ignore: 'pid,hostname',
+          },
+        },
         redact: ['req.headers.authorization', 'req.headers.cookie'],
       },
     }),
