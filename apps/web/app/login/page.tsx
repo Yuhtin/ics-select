@@ -9,13 +9,36 @@ export default function LoginPage() {
 
   return (
     <main className="min-h-screen bg-background flex items-center justify-center p-6 relative overflow-hidden">
-      {/* Background decoration — blobs sutis (light mode friendly) */}
+      {/* Dot grid — fades radially from center */}
       <div
-        className="absolute top-[-10%] left-[-10%] h-[40%] w-[40%] rounded-full bg-brand/[0.08] blur-3xl pointer-events-none"
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage:
+            'radial-gradient(circle, rgb(15 23 42 / 0.08) 1px, transparent 1px)',
+          backgroundSize: '22px 22px',
+          maskImage:
+            'radial-gradient(ellipse 70% 60% at center, black 20%, transparent 75%)',
+          WebkitMaskImage:
+            'radial-gradient(ellipse 70% 60% at center, black 20%, transparent 75%)',
+        }}
         aria-hidden="true"
       />
+
+      {/* Brand glow — top-left, grounds the identity */}
       <div
-        className="absolute bottom-[-10%] right-[-10%] h-[30%] w-[30%] rounded-full bg-brand/5 blur-3xl pointer-events-none"
+        className="absolute top-[-20%] left-[-10%] h-[55%] w-[55%] rounded-full bg-brand/[0.12] blur-3xl pointer-events-none"
+        aria-hidden="true"
+      />
+
+      {/* Brand glow — bottom-right, adds depth */}
+      <div
+        className="absolute bottom-[-15%] right-[-10%] h-[45%] w-[45%] rounded-full bg-brand/[0.09] blur-3xl pointer-events-none"
+        aria-hidden="true"
+      />
+
+      {/* Top radial glow — hero beam behind card */}
+      <div
+        className="absolute top-0 left-1/2 -translate-x-1/2 h-[400px] w-[700px] rounded-full bg-brand/[0.06] blur-[120px] pointer-events-none"
         aria-hidden="true"
       />
 
@@ -31,7 +54,7 @@ export default function LoginPage() {
             <BrandLockup size="lg" />
           </div>
 
-          <div className="text-center sm:text-left">
+          <div className="text-center">
             <h1 className="text-2xl font-bold tracking-tight text-foreground">
               Bem-vindo ao ICS Select
             </h1>
@@ -64,31 +87,6 @@ export default function LoginPage() {
               <span className="text-brand font-semibold">@inteli.edu.br</span> para autenticação
               automática.
             </p>
-          </div>
-
-          <div className="mt-8 pt-6 border-t border-border text-center">
-            <a
-              href="#"
-              className="text-[11px] font-semibold uppercase tracking-wide text-foreground-muted hover:text-brand transition-colors"
-            >
-              Problemas com o acesso? Fale com o suporte
-            </a>
-          </div>
-        </div>
-
-        <div className="hidden sm:flex items-center gap-6 mt-10 opacity-50">
-          <div className="flex flex-col items-center">
-            <span className="text-xs font-bold text-foreground tracking-tighter">SSO</span>
-            <span className="text-[10px] uppercase tracking-widest text-foreground-subtle">
-              Ativo
-            </span>
-          </div>
-          <div className="w-1 h-1 rounded-full bg-border-strong" />
-          <div className="flex flex-col items-center">
-            <span className="text-xs font-bold text-foreground tracking-tighter">DATA</span>
-            <span className="text-[10px] uppercase tracking-widest text-foreground-subtle">
-              Criptografado
-            </span>
           </div>
         </div>
       </div>
