@@ -263,6 +263,15 @@ model AiGeneration {
   createdAt      DateTime @default(now())
 }
 
+model InterestSubmission {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  createdAt DateTime @default(now())
+
+  @@index([email])
+}
+
 model WhatsappLog {
   id          String    @id @default(cuid())
   userId      String

@@ -34,20 +34,30 @@ export function StatsCounter() {
   return (
     <section id="resultados" className="py-24 px-6 lg:px-8 bg-surface-muted">
       <div className="mx-auto max-w-6xl">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="text-center mb-14"
+        >
+          <p className="text-caption text-brand font-semibold uppercase tracking-[0.1em] mb-3">Resultados</p>
+          <h2 className="text-h1 text-foreground">Números que falam por si</h2>
+        </motion.div>
+
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
           {STATS.map((stat, i) => (
             <motion.div
               key={stat.label}
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.4, delay: i * 0.1 }}
+              transition={{ duration: 0.5, delay: i * 0.12 }}
               className="text-center"
             >
-              <p className="text-display text-brand">
+              <p className="text-display text-brand font-bold">
                 <CountUp target={stat.value} suffix={stat.suffix} />
               </p>
-              <p className="text-sm text-foreground-muted mt-1">{stat.label}</p>
+              <p className="text-sm text-foreground-muted mt-2">{stat.label}</p>
             </motion.div>
           ))}
         </div>

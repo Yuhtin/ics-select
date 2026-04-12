@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { BrandLockup } from '../shell/brand-lockup';
 
 const NAV_LINKS = [
@@ -37,12 +38,20 @@ export function LandingNavbar() {
           ))}
         </nav>
 
-        <a
-          href="#interesse"
-          className="btn-accent-glow px-5 py-2.5 rounded-pill text-sm font-semibold transition-transform"
-        >
-          Quero participar
-        </a>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/login"
+            className="hidden sm:inline-flex text-sm font-medium text-foreground-muted hover:text-foreground transition-colors"
+          >
+            Entrar
+          </Link>
+          <a
+            href="#interesse"
+            className="bg-brand hover:bg-brand-hover text-white px-5 py-2.5 rounded-pill text-sm font-semibold transition-all hover:scale-[1.02] shadow-glow-primary"
+          >
+            Quero participar
+          </a>
+        </div>
       </div>
     </header>
   );

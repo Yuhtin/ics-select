@@ -23,6 +23,7 @@ import { WhatsappModule } from './whatsapp/whatsapp.module.js';
 import { NotificationsModule } from './notifications/notifications.module.js';
 import { MeModule } from './me/me.module.js';
 import { ReportsModule } from './reports/reports.module.js';
+import { InterestModule } from './interest/interest.module.js';
 import { loadEnv } from './config/env.js';
 
 @Module({
@@ -69,6 +70,7 @@ import { loadEnv } from './config/env.js';
     NotificationsModule,
     MeModule,
     ReportsModule,
+    InterestModule,
     HealthModule,
   ],
   providers: [

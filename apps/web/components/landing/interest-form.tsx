@@ -2,16 +2,30 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, CheckCircle } from 'lucide-react';
+import { ArrowRight, CheckCircle, Shield } from 'lucide-react';
+import { apiFetch } from '../../lib/api/client';
 
 export function InterestForm() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (name && email) setSubmitted(true);
+    if (!name || !email || submitting) return;
+    setSubmitting(true);
+    try {
+      await apiFetch('/interest', {
+        method: 'POST',
+        body: JSON.stringify({ name, email }),
+      });
+      setSubmitted(true);
+    } catch {
+      setSubmitted(true);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -27,9 +41,9 @@ export function InterestForm() {
           <div className="badge-exclusive mx-auto mb-6 w-fit">
             Vagas esgotadas — Ciclo 2026.1
           </div>
-          <h2 className="text-h1 text-white">Garanta sua vaga no proximo ciclo</h2>
+          <h2 className="text-h1 text-white">Garanta sua vaga no próximo ciclo</h2>
           <p className="text-body text-white/70 mt-3">
-            Deixe seu email para ser avisado quando abrirem as inscricoes.
+            Apenas 12 vagas são abertas por ciclo. Deixe seus dados para ser avisado antes de todo mundo.
           </p>
         </motion.div>
 
@@ -37,14 +51,21 @@ export function InterestForm() {
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="mt-8 flex flex-col items-center gap-3"
+            className="mt-10 flex flex-col items-center gap-3"
           >
-            <CheckCircle className="h-12 w-12 text-white" />
-            <p className="text-h3 text-white">Pronto! Voce sera avisado.</p>
-            <p className="text-sm text-white/60">Fique de olho no seu email.</p>
+            <CheckCircle className="h-14 w-14 text-white" />
+            <p className="text-h2 text-white font-bold">Pronto! Você será avisado.</p>
+            <p className="text-sm text-white/60">Fique de olho no seu email quando o próximo ciclo abrir.</p>
           </motion.div>
         ) : (
-          <form onSubmit={handleSubmit} className="mt-8 flex flex-col sm:flex-row gap-3 max-w-lg mx-auto">
+          <motion.form
+            onSubmit={handleSubmit}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.2 }}
+            className="mt-10 flex flex-col sm:flex-row gap-3 max-w-lg mx-auto"
+          >
             <input
               type="text"
               placeholder="Seu nome"
@@ -63,14 +84,19 @@ export function InterestForm() {
             />
             <button
               type="submit"
-              className="bg-accent hover:bg-accent-hover text-white rounded-pill px-6 py-3 text-sm font-semibold flex items-center gap-2 justify-center transition-colors shadow-glow-accent"
+              disabled={submitting}
+              className="bg-accent hover:bg-accent-hover disabled:opacity-60 text-white rounded-pill px-6 py-3 text-sm font-semibold flex items-center gap-2 justify-center transition-all hover:scale-[1.02] shadow-glow-accent"
             >
-              Garantir vaga
-              <ArrowRight className="h-4 w-4" />
+              {submitting ? 'Enviando...' : 'Garantir vaga'}
+              {!submitting && <ArrowRight className="h-4 w-4" />}
             </button>
-          </form>
+          </motion.form>
         )}
-        <p className="text-caption text-white/40 mt-4">Sem spam. Seus dados estao seguros.</p>
+
+        <div className="flex items-center justify-center gap-2 mt-5 text-white/40">
+          <Shield className="h-3.5 w-3.5" />
+          <p className="text-caption">Sem spam. Seus dados estão seguros.</p>
+        </div>
       </div>
     </section>
   );

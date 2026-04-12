@@ -11,7 +11,6 @@ import { StatsCounter } from '../components/landing/stats-counter';
 import { TestimonialSection } from '../components/landing/testimonial-section';
 import { StepsTimeline } from '../components/landing/steps-timeline';
 import { InterestForm } from '../components/landing/interest-form';
-import { LandingFooter } from '../components/landing/landing-footer';
 
 export default function RootPage() {
   const router = useRouter();
@@ -51,7 +50,6 @@ export default function RootPage() {
         <StepsTimeline />
         <InterestForm />
       </main>
-      <LandingFooter />
     </div>
   );
 }

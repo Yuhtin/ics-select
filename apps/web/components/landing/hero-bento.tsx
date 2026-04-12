@@ -13,7 +13,7 @@ export function HeroBento() {
           transition={{ duration: 0.6 }}
         >
           <h1 className="text-display text-foreground leading-[1.1]">
-            Preparamos voce para as entrevistas que{' '}
+            Preparamos você para as entrevistas que{' '}
             <span className="relative inline-block">
               <span className="relative z-10">mudam carreiras</span>
               <span className="absolute bottom-1 left-0 right-0 h-3 bg-brand/20 -z-0 rounded-sm" />
@@ -24,7 +24,7 @@ export function HeroBento() {
             Programa exclusivo do Inteli que prepara os 12 melhores alunos para processos seletivos de Big Techs e consultorias de elite.
           </p>
           <div className="flex flex-wrap gap-3 mt-8">
-            <a href="#interesse" className="btn-accent-glow px-6 py-3 rounded-pill text-body font-semibold transition-transform">
+            <a href="#interesse" className="bg-brand hover:bg-brand-hover text-white px-6 py-3 rounded-pill text-body font-semibold transition-all hover:scale-[1.02] shadow-glow-primary">
               Quero participar
             </a>
             <a href="#programa" className="px-6 py-3 rounded-pill text-body font-medium text-foreground-muted border border-border hover:bg-surface-subtle transition-colors">
@@ -39,7 +39,11 @@ export function HeroBento() {
           transition={{ duration: 0.6, delay: 0.2 }}
           className="grid grid-cols-2 gap-3"
         >
-          <div className="col-span-2 bg-surface border border-border rounded-xl p-6 shadow-sm">
+          <motion.div
+            className="col-span-2 bg-surface border border-border rounded-xl p-6 shadow-sm"
+            whileHover={{ y: -2, shadow: 'md' }}
+            transition={{ duration: 0.2 }}
+          >
             <div className="flex items-center gap-3 mb-2">
               <div className="h-10 w-10 rounded-lg bg-brand-soft flex items-center justify-center">
                 <Crown className="h-5 w-5 text-brand" />
@@ -52,19 +56,27 @@ export function HeroBento() {
             <div className="badge-exclusive mt-3 w-fit">
               Programa Exclusivo
             </div>
-          </div>
+          </motion.div>
 
-          <div className="bg-surface border border-border rounded-xl p-5 shadow-sm">
+          <motion.div
+            className="bg-surface border border-border rounded-xl p-5 shadow-sm"
+            whileHover={{ y: -2 }}
+            transition={{ duration: 0.2 }}
+          >
             <Users className="h-5 w-5 text-brand mb-2" />
             <p className="text-h3 font-bold text-foreground">1 Ciclo</p>
             <p className="text-caption text-foreground-muted">Ativo agora</p>
-          </div>
+          </motion.div>
 
-          <div className="bg-surface border border-border rounded-xl p-5 shadow-sm">
+          <motion.div
+            className="bg-surface border border-border rounded-xl p-5 shadow-sm"
+            whileHover={{ y: -2 }}
+            transition={{ duration: 0.2 }}
+          >
             <Lock className="h-5 w-5 text-danger mb-2" />
             <p className="text-h3 font-bold text-foreground">Esgotado</p>
             <p className="text-caption text-foreground-muted">Ciclo 2026.1</p>
-          </div>
+          </motion.div>
         </motion.div>
       </div>
     </section>

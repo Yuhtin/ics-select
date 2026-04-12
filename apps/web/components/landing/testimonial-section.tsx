@@ -8,23 +8,25 @@ export function TestimonialSection() {
   return (
     <section className="py-24 px-6 lg:px-8">
       <div className="mx-auto max-w-6xl">
-        <motion.h2
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-h1 text-foreground text-center mb-14"
+          className="text-center mb-14"
         >
-          O que dizem nossos membros
-        </motion.h2>
+          <p className="text-caption text-brand font-semibold uppercase tracking-[0.1em] mb-3">Depoimentos</p>
+          <h2 className="text-h1 text-foreground">O que dizem nossos membros</h2>
+        </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {TESTIMONIALS.map((t, i) => (
             <motion.div
               key={i}
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.4, delay: i * 0.1 }}
+              transition={{ duration: 0.5, delay: i * 0.12 }}
+              whileHover={{ y: -4 }}
               className="bg-surface border border-border rounded-xl p-7 shadow-sm"
             >
               <Quote className="h-8 w-8 text-brand/30 mb-4" />
