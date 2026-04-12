@@ -71,6 +71,18 @@ docker compose up -d postgres                 # pgvector/pgvector:pg16 on :5432
 
 ## Architecture notes that matter
 
+### HeroUI + pnpm content path
+
+pnpm stores packages under `node_modules/.pnpm/` with symlinks — they do **not** live at the conventional `node_modules/@heroui/theme/` path. The Tailwind `content` array in `apps/web/tailwind.config.ts` must use the real pnpm path:
+
+```
+'../../node_modules/.pnpm/@heroui+theme@*/node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}'
+```
+
+If this path is wrong, HeroUI component styles (Modal backdrop, centering, shadows, `rounded-large`, `bg-content1`, etc.) silently fail — components render without any visual styling. This caused a production modal bug that was invisible in unit tests because Playwright tests don't check visual styles. **Always verify HeroUI components visually after changes to the Tailwind config or pnpm version.**
+
+The `<html>` element must also have `className="light"` and `data-theme="light"` for the HeroUI theme to apply to portal-rendered components like Modal (which render outside the React tree at `document.body`).
+
 ### Shared package build discipline
 
 `packages/shared/package.json` declares `"main": "./dist/index.js"` with `"files": ["dist"]` and builds via `tsc -p tsconfig.build.json` to CommonJS. When running the compiled API (`node dist/src/main.js` or the Docker image), `dist/` **must exist** — otherwise Node throws `ERR_MODULE_NOT_FOUND`. Jest in `apps/api` bypasses this via `moduleNameMapper` that resolves `@ics-select/shared` straight to `packages/shared/src/index.ts`, so unit tests don't need a pre-build.

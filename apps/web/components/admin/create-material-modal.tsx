@@ -81,45 +81,49 @@ export function CreateMaterialModal({ isOpen, onClose, editItem }: CreateMateria
   });
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="lg" scrollBehavior="inside" backdrop="opaque">
+    <Modal isOpen={isOpen} onClose={onClose} size="lg" scrollBehavior="inside" backdrop="blur">
       <ModalContent>
-        <ModalHeader>{editItem ? 'Editar material' : 'Novo material'}</ModalHeader>
-        <ModalBody className="space-y-4">
-          <Input label="Titulo" value={title} onValueChange={setTitle} variant="bordered" />
-          <Input label="URL" value={url} onValueChange={setUrl} variant="bordered" placeholder="https://..." />
-          <Textarea label="Descricao" value={description} onValueChange={setDescription} variant="bordered" />
-          <div className="grid grid-cols-2 gap-4">
-            <Select
-              label="Formato"
-              selectedKeys={format ? [format] : []}
-              onSelectionChange={(keys) => setFormat([...keys][0] as string)}
-              variant="bordered"
-            >
-              {FORMATS.map((f) => <SelectItem key={f.key}>{f.label}</SelectItem>)}
-            </Select>
-            <Select
-              label="Dificuldade"
-              selectedKeys={difficulty ? [difficulty] : []}
-              onSelectionChange={(keys) => setDifficulty([...keys][0] as string)}
-              variant="bordered"
-            >
-              {DIFFICULTIES.map((d) => <SelectItem key={d.key}>{d.label}</SelectItem>)}
-            </Select>
-          </div>
-          <Input label="Tempo estimado (min)" type="number" value={estimatedMinutes} onValueChange={setEstimatedMinutes} variant="bordered" />
-          <Input label="Tags (separadas por virgula)" value={tags} onValueChange={setTags} variant="bordered" />
-        </ModalBody>
-        <ModalFooter>
-          <Button variant="light" onPress={onClose}>Cancelar</Button>
-          <Button
-            color="primary"
-            onPress={() => mutation.mutate()}
-            isLoading={mutation.isPending}
-            isDisabled={!title || !format || !difficulty}
-          >
-            {editItem ? 'Salvar' : 'Criar'}
-          </Button>
-        </ModalFooter>
+        {(closeModal) => (
+          <>
+            <ModalHeader>{editItem ? 'Editar material' : 'Novo material'}</ModalHeader>
+            <ModalBody className="space-y-4">
+              <Input label="Titulo" value={title} onValueChange={setTitle} variant="bordered" />
+              <Input label="URL" value={url} onValueChange={setUrl} variant="bordered" placeholder="https://..." />
+              <Textarea label="Descricao" value={description} onValueChange={setDescription} variant="bordered" />
+              <div className="grid grid-cols-2 gap-4">
+                <Select
+                  label="Formato"
+                  selectedKeys={format ? [format] : []}
+                  onSelectionChange={(keys) => setFormat([...keys][0] as string)}
+                  variant="bordered"
+                >
+                  {FORMATS.map((f) => <SelectItem key={f.key}>{f.label}</SelectItem>)}
+                </Select>
+                <Select
+                  label="Dificuldade"
+                  selectedKeys={difficulty ? [difficulty] : []}
+                  onSelectionChange={(keys) => setDifficulty([...keys][0] as string)}
+                  variant="bordered"
+                >
+                  {DIFFICULTIES.map((d) => <SelectItem key={d.key}>{d.label}</SelectItem>)}
+                </Select>
+              </div>
+              <Input label="Tempo estimado (min)" type="number" value={estimatedMinutes} onValueChange={setEstimatedMinutes} variant="bordered" />
+              <Input label="Tags (separadas por virgula)" value={tags} onValueChange={setTags} variant="bordered" />
+            </ModalBody>
+            <ModalFooter>
+              <Button variant="light" onPress={closeModal}>Cancelar</Button>
+              <Button
+                color="primary"
+                onPress={() => mutation.mutate()}
+                isLoading={mutation.isPending}
+                isDisabled={!title || !format || !difficulty}
+              >
+                {editItem ? 'Salvar' : 'Criar'}
+              </Button>
+            </ModalFooter>
+          </>
+        )}
       </ModalContent>
     </Modal>
   );
