@@ -525,12 +525,12 @@ test.describe('Admin flows', () => {
   test('/admin/dashboard', async ({ page }) => {
     await page.goto('/admin/dashboard');
     await expect(
-      page.getByRole('heading', { name: 'Dashboard' }),
+      page.getByRole('heading', { name: 'Dashboard do Ciclo' }),
     ).toBeVisible();
-    await expect(page.getByText('Membros ativos')).toBeVisible();
-    await expect(page.getByText('Planos atribuídos')).toBeVisible();
-    await expect(page.getByText('Itens concluídos')).toBeVisible();
-    await expect(page.getByText('Itens travados')).toBeVisible();
+    await expect(page.getByText('Performance Atual')).toBeVisible();
+    await expect(page.getByText('Elite Status')).toBeVisible();
+    await expect(page.getByText('On Track')).toBeVisible();
+    await expect(page.getByText('Member Directory')).toBeVisible();
     await expect(page.getByText('Alice Silva')).toBeVisible();
     await expect(page.getByText('Bruno Costa')).toBeVisible();
     await expect(page.getByText('Carla Mendes')).toBeVisible();
@@ -731,12 +731,11 @@ test.describe('Member flows', () => {
 
   test('/me weekly plan', async ({ page }) => {
     await page.goto('/me');
-    await expect(page.getByRole('heading', { name: 'Meu plano' })).toBeVisible();
-    await expect(page.getByRole('progressbar')).toBeVisible();
-    await expect(
-      page.getByText('Two Pointers, do zero ao expert'),
-    ).toBeVisible();
-    await expect(page.getByText('Grafos: BFS e DFS')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Plano de Estudo Semanal' })).toBeVisible();
+    await expect(page.getByText('Progresso Semanal')).toBeVisible();
+    await expect(page.getByText('Módulos da Semana')).toBeVisible();
+    await expect(page.getByText('Recursos Adicionais')).toBeVisible();
+    await expect(page.getByText('Flashcards Master')).toBeVisible();
     await page.screenshot({
       path: 'test-results/audit-me-home.png',
       fullPage: true,
