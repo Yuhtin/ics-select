@@ -142,18 +142,29 @@ Members without an active `CycleMembership` see a blocking `NoCycleScreen` inste
 
 ## Visual identity and design system
 
-### Warm coral palette
+### Design system — Indigo + Coral on Creme
 
-The platform uses a warm, inviting palette — not corporate blue. The old `#005ab4` blue lives only in the logo mark (`BrandLockup`). All UI surfaces, accents, and interactive elements use the warm coral theme.
+**Font:** Satoshi (via Fontshare CDN `<link>` in layout.tsx). Geometric, tech, premium. Do NOT use `@import url()` in CSS — it blocks Next.js dev server compilation. Always use `<link>` in the `<head>`.
 
-| Token | HSL | Hex approx | Usage |
-|---|---|---|---|
-| `--background` | `30 50% 98%` | `#FDF8F3` | Page background (creme) |
-| `--foreground` | `30 30% 12%` | `#2D2418` | Primary text (warm brown) |
-| `--brand` | `24 95% 53%` | `#F97316` | Primary accent (coral) — buttons, active states, links |
-| `--brand-soft` | `24 100% 93%` | | Soft accent backgrounds |
-| `--surface` | `0 0% 100%` | `#FFFFFF` | Cards, modals |
-| `--surface-muted` | `30 30% 96%` | | Subtle card backgrounds |
+**Primary (brand):** Indigo `#4F46E5` — buttons, links, active states, logo mark. Token: `--brand`.
+
+**Accent:** Coral `#F97316` — FOMO elements, CTAs de urgencia, badges exclusivos. Token: `--accent`. NOT the primary color.
+
+**Backgrounds:** Creme `#FAFAF7` — warm, acolhedor, diferente do padrao tech frio.
+
+| Token | Hex | Usage |
+|---|---|---|
+| `--brand` | `#4F46E5` | Primary (indigo) — buttons, active states, links |
+| `--accent` | `#F97316` | Coral — FOMO, CTAs, badges exclusivos |
+| `--background` | `#FAFAF7` | Page background (creme) |
+| `--foreground` | `#1A1A1A` | Primary text |
+| `--surface` | `#FFFFFF` | Cards, modals |
+
+**Border radius:** Botoes/badges = pill (9999px). Cards = lg (16px) / xl (20px). Inputs = sm (8px).
+
+**Shadows:** Includes `shadow-glow-primary` (indigo glow) and `shadow-glow-accent` (coral glow) for highlighted elements.
+
+**Utility classes:** `.btn-accent-glow` (coral CTA), `.badge-exclusive` (gradient FOMO badge), `.ring-glow-primary` (indigo highlight ring).
 
 ### Platform colors (for study material nodes)
 

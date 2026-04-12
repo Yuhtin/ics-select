@@ -1,13 +1,6 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
 import { Providers } from './providers';
 import './globals.css';
-
-const inter = Inter({
-  subsets: ['latin'],
-  variable: '--font-inter',
-  display: 'swap',
-});
 
 export const metadata: Metadata = {
   title: 'ICS Select',
@@ -18,8 +11,11 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="pt-BR" suppressHydrationWarning className={`${inter.variable} light`} data-theme="light">
-      <body className="min-h-screen">
+    <html lang="pt-BR" suppressHydrationWarning className="light" data-theme="light">
+      <head>
+        <link href="https://api.fontshare.com/v2/css?f[]=satoshi@300,400,500,600,700,800,900&display=swap" rel="stylesheet" />
+      </head>
+      <body className="min-h-screen font-sans">
         <Providers>{children}</Providers>
       </body>
     </html>
