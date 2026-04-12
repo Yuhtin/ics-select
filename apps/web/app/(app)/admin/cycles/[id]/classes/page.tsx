@@ -154,19 +154,67 @@ export default function AdminCycleClassesPage({ params }: { params: Promise<{ id
         })}
       </div>
 
-      <Modal isOpen={isOpen} onClose={onClose}>
+      <Modal isOpen={isOpen} onClose={onClose} size="md" backdrop="blur" placement="center">
         <ModalContent>
-          <ModalHeader>Nova aula</ModalHeader>
-          <ModalBody className="space-y-3">
-            <Input label="Título" value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} />
-            <Input label="Tópico" value={form.topic} onChange={(e) => setForm((f) => ({ ...f, topic: e.target.value }))} />
-            <Input type="datetime-local" label="Data/hora" value={form.scheduledAt} onChange={(e) => setForm((f) => ({ ...f, scheduledAt: e.target.value }))} />
-            <Input type="number" label="Duração (min)" value={String(form.durationMin)} onChange={(e) => setForm((f) => ({ ...f, durationMin: Number(e.target.value) }))} />
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="flat" onPress={onClose}>Cancelar</Button>
-            <Button color="primary" isLoading={createMutation.isPending} onPress={() => createMutation.mutate()}>Criar</Button>
-          </ModalFooter>
+          {(closeModal) => (
+            <>
+              <ModalHeader className="flex flex-col gap-1 pb-2">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <span className="text-lg">🎓</span>
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold">Nova aula</h2>
+                    <p className="text-xs text-default-400 font-normal">Agende uma aula ao vivo para a turma</p>
+                  </div>
+                </div>
+              </ModalHeader>
+              <ModalBody className="gap-4 pb-2">
+                <Input
+                  label="Titulo da aula"
+                  placeholder="Ex: Revisao — Grafos e BFS"
+                  value={form.title}
+                  onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+                  variant="bordered"
+                  size="lg"
+                  classNames={{ label: 'text-default-600 font-medium', inputWrapper: 'shadow-none' }}
+                />
+                <Input
+                  label="Topico"
+                  placeholder="Ex: Estruturas de Dados"
+                  value={form.topic}
+                  onChange={(e) => setForm((f) => ({ ...f, topic: e.target.value }))}
+                  variant="bordered"
+                  classNames={{ label: 'text-default-600 font-medium', inputWrapper: 'shadow-none' }}
+                />
+                <div className="grid grid-cols-2 gap-3">
+                  <Input
+                    type="datetime-local"
+                    label="Data e hora"
+                    value={form.scheduledAt}
+                    onChange={(e) => setForm((f) => ({ ...f, scheduledAt: e.target.value }))}
+                    variant="bordered"
+                    classNames={{ label: 'text-default-600 font-medium', inputWrapper: 'shadow-none' }}
+                  />
+                  <Input
+                    type="number"
+                    label="Duracao (min)"
+                    placeholder="90"
+                    value={String(form.durationMin)}
+                    onChange={(e) => setForm((f) => ({ ...f, durationMin: Number(e.target.value) }))}
+                    variant="bordered"
+                    classNames={{ label: 'text-default-600 font-medium', inputWrapper: 'shadow-none' }}
+                  />
+                </div>
+              </ModalBody>
+              <ModalFooter className="pt-2">
+                <Button variant="flat" color="default" onPress={closeModal}>Cancelar</Button>
+                <Button color="primary" isLoading={createMutation.isPending} onPress={() => createMutation.mutate()}>
+                  Agendar aula
+                </Button>
+              </ModalFooter>
+            </>
+          )}
         </ModalContent>
       </Modal>
     </div>
