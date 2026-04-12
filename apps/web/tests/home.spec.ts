@@ -7,7 +7,7 @@ test.describe('Landing page', () => {
       page.getByRole('heading', { name: 'Bem-vindo ao ICS Select' }),
     ).toBeVisible();
     await expect(
-      page.getByText('Acesse a plataforma de preparação técnica para consultoria.'),
+      page.getByText('Acesse a plataforma de alta performance do Inteli.'),
     ).toBeVisible();
   });
 });

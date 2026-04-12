@@ -1,6 +1,6 @@
 'use client';
 
-import { Building2 } from 'lucide-react';
+import { Building2, Info } from 'lucide-react';
 import { BrandLockup } from '../../components/shell/brand-lockup';
 
 export default function LoginPage() {
@@ -8,85 +8,159 @@ export default function LoginPage() {
   const loginUrl = `${apiBase}/auth/google`;
 
   return (
-    <main className="min-h-screen bg-background flex items-center justify-center p-6 relative overflow-hidden">
-      {/* Dot grid — fades radially from center */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          backgroundImage:
-            'radial-gradient(circle, rgb(15 23 42 / 0.08) 1px, transparent 1px)',
-          backgroundSize: '22px 22px',
-          maskImage:
-            'radial-gradient(ellipse 70% 60% at center, black 20%, transparent 75%)',
-          WebkitMaskImage:
-            'radial-gradient(ellipse 70% 60% at center, black 20%, transparent 75%)',
-        }}
-        aria-hidden="true"
-      />
-
-      {/* Brand glow — top-left, grounds the identity */}
-      <div
-        className="absolute top-[-20%] left-[-10%] h-[55%] w-[55%] rounded-full bg-brand/[0.12] blur-3xl pointer-events-none"
-        aria-hidden="true"
-      />
-
-      {/* Brand glow — bottom-right, adds depth */}
-      <div
-        className="absolute bottom-[-15%] right-[-10%] h-[45%] w-[45%] rounded-full bg-brand/[0.09] blur-3xl pointer-events-none"
-        aria-hidden="true"
-      />
-
-      {/* Top radial glow — hero beam behind card */}
-      <div
-        className="absolute top-0 left-1/2 -translate-x-1/2 h-[400px] w-[700px] rounded-full bg-brand/[0.06] blur-[120px] pointer-events-none"
-        aria-hidden="true"
-      />
-
-      <div className="relative z-10 w-full max-w-md flex flex-col items-center">
-        {/* Brand mobile: lockup fora do card */}
-        <div className="mb-8 sm:hidden">
-          <BrandLockup size="xl" />
-        </div>
-
-        <div className="w-full rounded-xl border border-border bg-surface p-6 sm:p-8 shadow-md">
-          {/* Brand desktop: lockup dentro do card */}
-          <div className="hidden sm:flex justify-center mb-6">
-            <BrandLockup size="lg" />
+    <main className="min-h-screen bg-background flex items-center justify-center p-4 sm:p-6">
+      <div className="w-full max-w-6xl grid grid-cols-1 md:grid-cols-2 bg-surface rounded-xl overflow-hidden shadow-2xl border border-border/30">
+        {/* Left: Login Form */}
+        <div className="flex flex-col justify-center p-8 sm:p-12 lg:p-20 relative">
+          <div className="absolute top-8 left-8 sm:top-12 sm:left-12">
+            <BrandLockup size="md" />
           </div>
 
-          <div className="text-center">
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">
+          <div className="mt-16 sm:mt-12">
+            <h1 className="text-3xl font-extrabold text-foreground mb-2 tracking-tight">
               Bem-vindo ao ICS Select
             </h1>
-            <p className="text-sm text-foreground-muted leading-relaxed mt-2">
-              Acesse a plataforma de preparação técnica para consultoria.
+            <p className="text-foreground-muted mb-10 text-lg">
+              Acesse a plataforma de alta performance do Inteli.
             </p>
+
+            <div className="space-y-6">
+              <a
+                href={loginUrl}
+                role="button"
+                className="w-full flex items-center justify-center gap-3 bg-surface border border-border hover:bg-surface-muted transition-all duration-200 py-3.5 px-6 rounded-lg text-foreground font-semibold shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 active:scale-[0.98]"
+              >
+                <GoogleIcon />
+                <span>Entrar com Google</span>
+              </a>
+
+              <div className="flex items-center gap-3 px-2">
+                <div className="h-px bg-border/50 flex-grow" />
+                <span className="text-xs font-bold text-foreground-subtle uppercase tracking-widest">
+                  Restrição de Acesso
+                </span>
+                <div className="h-px bg-border/50 flex-grow" />
+              </div>
+
+              <div className="bg-brand-soft/30 p-4 rounded-lg flex items-start gap-3 border border-brand-soft">
+                <Info className="h-5 w-5 text-brand flex-shrink-0 mt-0.5" aria-hidden="true" />
+                <div>
+                  <p className="text-sm font-semibold text-brand-soft-foreground leading-tight">
+                    Uso exclusivo institucional
+                  </p>
+                  <p className="text-xs text-brand-soft-foreground/80 mt-1">
+                    Utilize obrigatoriamente seu e-mail institucional{' '}
+                    <span className="font-bold underline">@inteli.edu.br</span> para realizar o
+                    login.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-12 pt-8 border-t border-border/30">
+              <p className="text-xs text-foreground-muted leading-relaxed">
+                Ao entrar, você concorda com nossos{' '}
+                <a href="#" className="text-brand hover:underline font-medium">
+                  Termos de Serviço
+                </a>{' '}
+                e{' '}
+                <a href="#" className="text-brand hover:underline font-medium">
+                  Política de Privacidade
+                </a>
+                .
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Right: Hero Visual (hidden on mobile) */}
+        <div
+          className="hidden md:flex flex-col justify-between p-12 relative overflow-hidden"
+          style={{
+            backgroundColor: '#f9f9ff',
+            backgroundImage: 'radial-gradient(hsl(var(--brand-soft)) 0.5px, transparent 0.5px)',
+            backgroundSize: '24px 24px',
+          }}
+        >
+          {/* Decorative blurs */}
+          <div
+            className="absolute top-0 right-0 w-64 h-64 bg-brand/5 rounded-full -mr-20 -mt-20 blur-3xl pointer-events-none"
+            aria-hidden="true"
+          />
+          <div
+            className="absolute bottom-0 left-0 w-80 h-80 bg-brand-soft/30 rounded-full -ml-32 -mb-32 blur-3xl pointer-events-none"
+            aria-hidden="true"
+          />
+
+          {/* Top: badge + hero text */}
+          <div className="relative z-10">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface shadow-sm border border-border/50 mb-6">
+              <span className="w-2 h-2 rounded-full bg-warning" />
+              <span className="text-xs font-bold text-foreground tracking-wide uppercase">
+                Plataforma Exclusiva
+              </span>
+            </div>
+            <h2 className="text-4xl lg:text-5xl font-extrabold text-foreground leading-[1.1] tracking-tight">
+              Fomentando a próxima geração de{' '}
+              <span className="text-brand">líderes técnicos</span>.
+            </h2>
           </div>
 
-          <a
-            href={loginUrl}
-            role="button"
-            className="mt-8 w-full inline-flex items-center justify-center gap-3 px-6 py-3.5 bg-surface text-foreground text-sm font-semibold rounded-lg border border-border hover:border-brand/50 hover:bg-brand-soft/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-all active:scale-[0.98]"
-          >
-            <GoogleIcon />
-            Entrar com Google
-          </a>
+          {/* Bento cards */}
+          <div className="relative z-10 mt-8 grid grid-cols-2 gap-4">
+            {/* Member preview */}
+            <div className="col-span-2 bg-surface/70 backdrop-blur-md p-6 rounded-xl border border-surface shadow-lg">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-12 h-12 rounded-full bg-brand-soft text-brand flex items-center justify-center text-lg font-bold flex-shrink-0">
+                  M
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-foreground">Membro verificado</p>
+                  <p className="text-xs text-foreground-muted">Ciclo de Performance 2024.1</p>
+                </div>
+                <div className="ml-auto bg-success-soft text-success text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-tighter">
+                  Ativo
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="h-1.5 w-full bg-surface-subtle rounded-full overflow-hidden">
+                  <div className="h-full bg-brand w-[85%] rounded-full" />
+                </div>
+                <div className="flex justify-between text-[10px] font-bold text-foreground-muted uppercase">
+                  <span>Progresso do Ciclo</span>
+                  <span>85%</span>
+                </div>
+              </div>
+            </div>
 
-          <div className="flex items-center gap-4 py-6">
-            <div className="h-px flex-grow bg-border" />
-            <span className="text-[10px] uppercase tracking-widest font-bold text-foreground-subtle">
-              Segurança
-            </span>
-            <div className="h-px flex-grow bg-border" />
+            {/* Stat mini-cards */}
+            <div className="bg-surface/70 backdrop-blur-md p-5 rounded-xl border border-surface shadow-lg flex flex-col items-center justify-center text-center">
+              <Building2 className="h-7 w-7 text-brand mb-2" aria-hidden="true" />
+              <span className="text-xl font-extrabold text-foreground">4.8</span>
+              <span className="text-[10px] font-bold text-foreground-muted uppercase tracking-widest">
+                NPS Médio
+              </span>
+            </div>
+            <div className="bg-surface/70 backdrop-blur-md p-5 rounded-xl border border-surface shadow-lg flex flex-col items-center justify-center text-center">
+              <Building2 className="h-7 w-7 text-warning mb-2" aria-hidden="true" />
+              <span className="text-xl font-extrabold text-foreground">12k+</span>
+              <span className="text-[10px] font-bold text-foreground-muted uppercase tracking-widest">
+                Entregas
+              </span>
+            </div>
           </div>
 
-          <div className="flex items-center gap-3 p-4 rounded-lg bg-brand-soft/40 border border-brand/10">
-            <Building2 className="h-4 w-4 text-brand flex-shrink-0" aria-hidden="true" />
-            <p className="text-xs text-foreground-muted leading-tight">
-              Use seu e-mail institucional{' '}
-              <span className="text-brand font-semibold">@inteli.edu.br</span> para autenticação
-              automática.
-            </p>
+          {/* Powered by */}
+          <div className="relative z-10 pt-8 mt-auto">
+            <div className="flex items-center gap-4 opacity-60">
+              <span className="text-sm font-bold tracking-widest text-foreground-muted uppercase">
+                Powered by
+              </span>
+              <div className="w-px h-4 bg-border" />
+              <span className="text-lg font-black tracking-tighter text-foreground italic">
+                INTELI
+              </span>
+            </div>
           </div>
         </div>
       </div>
