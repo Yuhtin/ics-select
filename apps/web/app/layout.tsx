@@ -3,8 +3,13 @@ import { Providers } from './providers';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'ICS Select',
-  description: 'Programa de Preparação Avançada para Entrevistas Técnicas',
+  title: 'ICS Select — Preparacao para Big Techs | Inteli',
+  description: 'Programa exclusivo que prepara os 12 melhores alunos do Inteli para entrevistas em Google, Meta, Amazon e consultorias de elite.',
+  openGraph: {
+    title: 'ICS Select — Preparacao para Big Techs',
+    description: 'Programa exclusivo de preparacao para entrevistas tecnicas em Big Techs e consultorias de elite.',
+    type: 'website',
+  },
 };
 
 export default function RootLayout({
