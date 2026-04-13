@@ -1,8 +1,3 @@
-export const COMPANIES = [
-  'Google', 'Meta', 'Amazon', 'Apple', 'Microsoft', 'Netflix',
-  'McKinsey', 'BCG X', 'QuantumBlack', 'Bain', 'Accenture Strategy',
-];
-
 export const STATS = [
   { value: 12, label: 'Selecionados por ciclo' },
   { value: 50, label: 'Materiais no acervo', suffix: '+' },
