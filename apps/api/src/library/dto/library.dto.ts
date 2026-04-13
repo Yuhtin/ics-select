@@ -10,7 +10,7 @@ export const CreateLibraryItemSchema = z.object({
   format: ItemFormatSchema,
   difficulty: ItemDifficultySchema,
   estimatedMinutes: z.number().int().positive(),
-  source: z.string().nullable(),
+  source: z.string().nullable().optional().default(null),
   tags: z.array(z.string()).default([]),
 });
 
