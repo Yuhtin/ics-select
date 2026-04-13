@@ -4,8 +4,8 @@ import { useState } from 'react';
 import { Avatar, Chip, Input, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from '@heroui/react';
 import { Search } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
 import { apiFetch } from '../../../../lib/api/client';
-import { MemberDrawer } from '../../../../components/admin/member-drawer';
 
 type Member = {
   id: string;
@@ -17,7 +17,7 @@ type Member = {
 
 export default function MembersPage() {
   const [search, setSearch] = useState('');
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const router = useRouter();
 
   const { data, isLoading } = useQuery({
     queryKey: ['members'],
@@ -60,7 +60,7 @@ export default function MembersPage() {
       />
 
       <div className="glass rounded-xl overflow-hidden">
-        <Table aria-label="Lista de membros" shadow="none" isStriped selectionMode="single" onRowAction={(key) => setSelectedId(key as string)}>
+        <Table aria-label="Lista de membros" shadow="none" isStriped selectionMode="single" onRowAction={(key) => router.push(`/admin/members/${key}`)}>
           <TableHeader>
             <TableColumn>Membro</TableColumn>
             <TableColumn>Email</TableColumn>
@@ -89,7 +89,6 @@ export default function MembersPage() {
         </Table>
       </div>
 
-      <MemberDrawer memberId={selectedId} onClose={() => setSelectedId(null)} />
     </div>
   );
 }
