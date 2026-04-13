@@ -3,39 +3,6 @@ export const COMPANIES = [
   'McKinsey', 'BCG X', 'QuantumBlack', 'Bain', 'Accenture Strategy',
 ];
 
-export const FEATURES = [
-  {
-    title: 'Plano de estudo sob medida',
-    description: 'Cada semana, o Diretor Educacional monta um plano personalizado com vídeos, artigos e problemas selecionados para o seu nível.',
-    span: 2,
-    icon: '📋',
-  },
-  {
-    title: 'Sessões ao vivo de coding',
-    description: 'Aulas semanais onde resolvemos problemas reais de entrevistas técnicas em grupo.',
-    span: 1,
-    icon: '💻',
-  },
-  {
-    title: 'Google Calendar integrado',
-    description: 'Suas sessões de estudo são agendadas automaticamente no seu calendário.',
-    span: 1,
-    icon: '📅',
-  },
-  {
-    title: 'Mapa de progressão gamificado',
-    description: 'Acompanhe seu avanço em um mapa visual estilo jogo — cada módulo concluído é uma conquista.',
-    span: 1,
-    icon: '🗺️',
-  },
-  {
-    title: 'Acompanhamento inteligente com IA',
-    description: 'Diagnóstico individual do seu desempenho, sugestões personalizadas e chat contextual para tirar dúvidas.',
-    span: 2,
-    icon: '🤖',
-  },
-];
-
 export const STATS = [
   { value: 12, label: 'Selecionados por ciclo' },
   { value: 50, label: 'Materiais no acervo', suffix: '+' },
@@ -51,6 +18,6 @@ export const TESTIMONIALS = [
 
 export const STEPS = [
   { number: 1, title: 'Inscrição', description: 'Preencha o formulário de interesse e aguarde a abertura do próximo ciclo.' },
-  { number: 2, title: 'Seleção', description: 'Passamos por um processo seletivo técnico para escolher os 12 participantes.' },
-  { number: 3, title: 'Programa', description: 'Durante o ciclo, você segue planos de estudo semanais com acompanhamento individual.' },
+  { number: 2, title: 'Seleção', description: 'Passamos por um processo seletivo técnico rigoroso para escolher os 12 participantes.' },
+  { number: 3, title: 'Programa', description: 'Durante 12 semanas, você segue planos de estudo semanais com acompanhamento individual.' },
 ];
