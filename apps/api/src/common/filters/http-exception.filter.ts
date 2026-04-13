@@ -2,6 +2,7 @@ import {
   ArgumentsHost,
   BadRequestException,
   Catch,
+  ConflictException,
   ExceptionFilter,
   ForbiddenException,
   HttpException,
@@ -59,6 +60,16 @@ export class HttpExceptionFilter implements ExceptionFilter {
       return {
         status: 404,
         payload: { error: { code: 'NOT_FOUND', message: exception.message } },
+      };
+    }
+    if (exception instanceof ConflictException) {
+      const res = exception.getResponse();
+      if (typeof res === 'object' && res !== null && 'error' in res) {
+        return { status: 409, payload: res as ErrorPayload };
+      }
+      return {
+        status: 409,
+        payload: { error: { code: 'CONFLICT', message: exception.message } },
       };
     }
     if (exception instanceof HttpException) {
