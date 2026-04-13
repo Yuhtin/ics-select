@@ -7,7 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 import { PlanEditor } from '../../../../../components/plans/plan-editor';
 import { apiFetch } from '../../../../../lib/api/client';
 
-type Cycle = { id: string; name: string; startsAt: string; endsAt: string; status: string };
+type Cycle = { id: string; name: string; startsAt: string; endsAt: string; status: string; memberships?: Array<{ userId: string }> };
 
 export default function AdminPlanEditorPage({ params }: { params: Promise<{ memberId: string }> }) {
   const { memberId } = use(params);
@@ -16,10 +16,20 @@ export default function AdminPlanEditorPage({ params }: { params: Promise<{ memb
     queryFn: () => apiFetch<Cycle[]>('/cycles'),
   });
   const now = new Date();
-  const activeCycle = cycles?.find((c) => {
+
+  // First: cycles this member belongs to
+  const memberCycles = cycles?.filter((c) => c.memberships?.some((m) => m.userId === memberId)) ?? [];
+
+  // Pick the active cycle for this member: prefer one whose dates contain today, fallback to any ACTIVE membership
+  const activeCycle = memberCycles.find((c) => {
     if (c.status !== 'ACTIVE') return false;
     return new Date(c.startsAt) <= now && new Date(c.endsAt) >= now;
-  }) ?? cycles?.find((c) => c.status === 'ACTIVE');
+  }) ?? memberCycles.find((c) => c.status === 'ACTIVE')
+    // Last resort: any active cycle (member might not have membership yet)
+    ?? cycles?.find((c) => {
+      if (c.status !== 'ACTIVE') return false;
+      return new Date(c.startsAt) <= now && new Date(c.endsAt) >= now;
+    }) ?? cycles?.find((c) => c.status === 'ACTIVE');
 
   if (!cycles) {
     return (

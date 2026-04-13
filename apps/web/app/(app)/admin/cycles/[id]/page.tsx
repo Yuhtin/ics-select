@@ -93,13 +93,17 @@ export default function CycleDetailPage({ params }: { params: Promise<{ id: stri
     mutationFn: (userId: string) => apiFetch(`/cycles/${id}/members`, { method: 'POST', body: JSON.stringify({ userId }) }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['cycle', id] });
+      queryClient.invalidateQueries({ queryKey: ['cycles'] });
       setMemberSearch('');
     },
   });
 
   const removeMember = useMutation({
     mutationFn: (userId: string) => apiFetch(`/cycles/${id}/members/${userId}`, { method: 'DELETE' }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['cycle', id] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cycle', id] });
+      queryClient.invalidateQueries({ queryKey: ['cycles'] });
+    },
   });
 
   const archiveCycle = useMutation({

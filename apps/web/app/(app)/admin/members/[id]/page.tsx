@@ -40,7 +40,7 @@ type Cycle = {
   startsAt: string;
   endsAt: string;
   status: string;
-  memberships: Array<{ user: { id: string } }>;
+  memberships?: Array<{ userId: string }>;
 };
 
 type LibraryItem = {
@@ -142,7 +142,7 @@ export default function MemberDetailPage({ params }: { params: Promise<{ id: str
     if (!cycles || !plans) return [];
     const cycleIdsFromPlans = new Set(plans.map((p) => p.cycleId));
     const cycleIdsFromMemberships = new Set(
-      cycles.filter((c) => c.memberships?.some((m) => m.user.id === id)).map((c) => c.id),
+      cycles.filter((c) => c.memberships?.some((m) => m.userId === id)).map((c) => c.id),
     );
     const allCycleIds = new Set([...cycleIdsFromPlans, ...cycleIdsFromMemberships]);
     return cycles.filter((c) => allCycleIds.has(c.id));

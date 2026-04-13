@@ -168,12 +168,19 @@ export function PlanEditor({ memberId, cycleId }: { memberId: string; cycleId: s
   const totalMinutes = draft.items.reduce((sum, i) => sum + i.libraryItem.estimatedMinutes, 0);
   const alreadyAdded = new Set(draft.items.map((i) => i.libraryItemId));
 
+  const [publishError, setPublishError] = useState<string | null>(null);
+
   const handleCreateAndPublish = async () => {
+    setPublishError(null);
     const created = await createMutation.mutateAsync();
     try {
       await publishMutation.mutateAsync(created.id);
-    } catch (e) {
-      void e;
+    } catch (e: unknown) {
+      const msg =
+        (e as { error?: { message?: string } })?.error?.message
+        ?? (e as { message?: string })?.message
+        ?? 'Falha ao publicar o plano. O plano foi salvo como rascunho.';
+      setPublishError(msg);
     }
   };
 
@@ -405,7 +412,17 @@ export function PlanEditor({ memberId, cycleId }: { memberId: string; cycleId: s
           </div>
 
           {/* Footer with action */}
-          <div className="p-4 border-t border-border/20 bg-surface/30">
+          <div className="p-4 border-t border-border/20 bg-surface/30 space-y-2">
+            {publishError && (
+              <div className="rounded-lg bg-danger/10 border border-danger/20 p-3 text-sm text-danger">
+                {publishError}
+              </div>
+            )}
+            {createMutation.isSuccess && !publishMutation.isSuccess && !publishMutation.isPending && !publishError && (
+              <div className="rounded-lg bg-warning/10 border border-warning/20 p-3 text-sm text-warning-600">
+                Plano criado como rascunho.
+              </div>
+            )}
             <Button
               color="primary"
               isDisabled={draft.items.length === 0}

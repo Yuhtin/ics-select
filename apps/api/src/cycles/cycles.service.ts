@@ -17,7 +17,10 @@ export class CyclesService {
   list() {
     return this.prisma.cycle.findMany({
       orderBy: { startsAt: 'desc' },
-      include: { _count: { select: { memberships: true } } },
+      include: {
+        _count: { select: { memberships: true } },
+        memberships: { select: { userId: true } },
+      },
     });
   }
 
