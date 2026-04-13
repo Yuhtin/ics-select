@@ -1,7 +1,7 @@
 'use client';
 
-import { Button, Card, CardBody, Chip, Input, Select, SelectItem } from '@heroui/react';
-import { ArrowDown, ArrowUp, Search, Trash2 } from 'lucide-react';
+import { Button, Chip, Input } from '@heroui/react';
+import { ArrowDown, ArrowUp, BookOpen, Calendar, Clock, GripVertical, Plus, Search, Sparkles, Trash2, Zap } from 'lucide-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { apiFetch } from '../../lib/api/client';
@@ -23,6 +23,26 @@ type PlanDraft = {
   items: PlanItemRef[];
 };
 
+const FORMAT_ICONS: Record<string, string> = {
+  VIDEO: '🎬',
+  ARTICLE: '📝',
+  PROBLEM: '🧩',
+  BOOK: '📖',
+  OTHER: '📎',
+};
+
+const DIFFICULTY_COLORS: Record<string, string> = {
+  EASY: 'text-success',
+  MEDIUM: 'text-warning',
+  HARD: 'text-danger',
+};
+
+const DIFFICULTY_LABELS: Record<string, string> = {
+  EASY: 'Facil',
+  MEDIUM: 'Medio',
+  HARD: 'Dificil',
+};
+
 export function PlanEditor({ memberId, cycleId }: { memberId: string; cycleId: string }) {
   const queryClient = useQueryClient();
   const today = new Date();
@@ -39,7 +59,7 @@ export function PlanEditor({ memberId, cycleId }: { memberId: string; cycleId: s
   });
 
   const [query, setQuery] = useState('');
-  const { data: searchResults } = useQuery({
+  const { data: searchResults, isLoading: searchLoading } = useQuery({
     queryKey: ['library-search', query],
     queryFn: async () => {
       if (!query) return apiFetch<LibraryItem[]>('/library');
@@ -52,6 +72,7 @@ export function PlanEditor({ memberId, cycleId }: { memberId: string; cycleId: s
   });
 
   const addItem = (li: LibraryItem) => {
+    if (draft.items.some((i) => i.libraryItemId === li.id)) return;
     setDraft((d) => ({
       ...d,
       items: [
@@ -98,27 +119,22 @@ export function PlanEditor({ memberId, cycleId }: { memberId: string; cycleId: s
         body: JSON.stringify({ memberId }),
       }),
     onSuccess: async (result) => {
-      // Resolve each libraryItemId into the full item so we can display it
       const items: PlanItemRef[] = [];
       for (const i of result.draft.items) {
         const li = (searchResults ?? []).find((x) => x.id === i.libraryItemId);
         if (li) items.push({ libraryItemId: li.id, order: i.order, libraryItem: li });
       }
-      // If the search cache doesn't have the items, fetch them individually
       if (items.length < result.draft.items.length) {
         for (const i of result.draft.items) {
           if (items.find((it) => it.libraryItemId === i.libraryItemId)) continue;
           try {
             const li = await apiFetch<LibraryItem>(`/library/${i.libraryItemId}`);
             items.push({ libraryItemId: li.id, order: i.order, libraryItem: li });
-          } catch {
-            // ignore
-          }
+          } catch { /* ignore */ }
         }
       }
       items.sort((a, b) => a.order - b.order);
       setDraft((d) => ({ ...d, items }));
-      alert(`Rascunho gerado. Narrativa: ${result.draft.narrative}`);
     },
   });
 
@@ -135,9 +151,7 @@ export function PlanEditor({ memberId, cycleId }: { memberId: string; cycleId: s
         try {
           const li = await apiFetch<LibraryItem>(`/library/${i.libraryItemId}`);
           items.push({ libraryItemId: li.id, order: i.order, libraryItem: li });
-        } catch {
-          // ignore
-        }
+        } catch { /* ignore */ }
       }
       items.sort((a, b) => a.order - b.order);
       setDraft((d) => ({ ...d, items }));
@@ -152,127 +166,259 @@ export function PlanEditor({ memberId, cycleId }: { memberId: string; cycleId: s
   });
 
   const totalMinutes = draft.items.reduce((sum, i) => sum + i.libraryItem.estimatedMinutes, 0);
+  const alreadyAdded = new Set(draft.items.map((i) => i.libraryItemId));
 
   const handleCreateAndPublish = async () => {
     const created = await createMutation.mutateAsync();
     try {
       await publishMutation.mutateAsync(created.id);
-      alert('Plano publicado. Eventos criados no Calendar.');
     } catch (e) {
-      alert(`Falha ao publicar: ${(e as Error).message}`);
+      void e;
     }
   };
 
   return (
-    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-      <Card>
-        <CardBody className="space-y-3">
-          <h2 className="text-lg font-semibold">Acervo</h2>
-          <Input
-            placeholder="Buscar itens"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            startContent={<Search className="h-4 w-4 text-foreground/50" />}
-          />
-          <div className="max-h-[500px] space-y-2 overflow-y-auto">
-            {(searchResults ?? []).map((li) => (
-              <div
-                key={li.id}
-                className="flex items-center justify-between rounded-md border border-foreground/10 p-2"
-              >
-                <div>
-                  <p className="text-sm font-medium">{li.title}</p>
-                  <p className="text-xs text-foreground/60">
-                    {li.format} · {li.difficulty} · {li.estimatedMinutes}min
-                  </p>
-                </div>
-                <Button size="sm" variant="flat" onPress={() => addItem(li)}>
-                  +
-                </Button>
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
+      {/* Acervo - Left panel (2/5) */}
+      <div className="lg:col-span-2 space-y-4">
+        <div className="glass rounded-xl overflow-hidden">
+          <div className="p-4 border-b border-border/20">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="h-8 w-8 rounded-lg bg-brand-soft flex items-center justify-center">
+                <BookOpen className="h-4 w-4 text-brand" />
               </div>
-            ))}
-          </div>
-        </CardBody>
-      </Card>
-
-      <Card>
-        <CardBody className="space-y-3">
-          <h2 className="text-lg font-semibold">Plano da semana</h2>
-          <div className="space-y-2 rounded-md border border-foreground/10 p-3">
-            <p className="text-xs font-medium text-foreground/70">Gerar com IA</p>
-            <div className="flex gap-2">
-              <Button size="sm" variant="flat" color="secondary" isLoading={draftMutation.isPending} onPress={() => draftMutation.mutate()}>
-                Rascunho do histórico
-              </Button>
+              <h2 className="text-base font-semibold text-foreground">Acervo</h2>
             </div>
             <Input
+              placeholder="Buscar materiais..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              startContent={<Search className="h-4 w-4 text-foreground-muted" />}
+              variant="bordered"
               size="sm"
-              placeholder="Brief: ex. foco em grafos, 1 vídeo + 4 exercícios"
-              value={briefText}
-              onChange={(e) => setBriefText(e.target.value)}
+              classNames={{ inputWrapper: 'bg-surface/50' }}
             />
-            <Button size="sm" variant="flat" color="secondary" isDisabled={!briefText} isLoading={briefMutation.isPending} onPress={() => briefMutation.mutate()}>
-              Montar por brief
+          </div>
+
+          <div className="max-h-[calc(100vh-340px)] overflow-y-auto p-2">
+            {searchLoading ? (
+              <div className="space-y-2 p-2">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="h-16 skeleton-pulse rounded-lg" />
+                ))}
+              </div>
+            ) : (searchResults ?? []).length === 0 ? (
+              <div className="text-center py-12 px-4">
+                <div className="h-10 w-10 rounded-xl bg-surface-subtle flex items-center justify-center mx-auto mb-3">
+                  <BookOpen className="h-5 w-5 text-foreground-subtle" />
+                </div>
+                <p className="text-sm text-foreground-muted">Nenhum material encontrado.</p>
+                <p className="text-xs text-foreground-subtle mt-1">Adicione materiais na Biblioteca primeiro.</p>
+              </div>
+            ) : (
+              <div className="space-y-1">
+                {(searchResults ?? []).map((li) => {
+                  const added = alreadyAdded.has(li.id);
+                  return (
+                    <div
+                      key={li.id}
+                      className={`group flex items-center gap-3 p-3 rounded-lg transition-all duration-150 ${
+                        added
+                          ? 'bg-brand-soft/50 opacity-60'
+                          : 'hover:bg-surface-subtle/60 cursor-pointer'
+                      }`}
+                      onClick={() => !added && addItem(li)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => e.key === 'Enter' && !added && addItem(li)}
+                    >
+                      <span className="text-lg flex-shrink-0">{FORMAT_ICONS[li.format] ?? '📎'}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">{li.title}</p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className={`text-xs font-medium ${DIFFICULTY_COLORS[li.difficulty] ?? 'text-foreground-muted'}`}>
+                            {DIFFICULTY_LABELS[li.difficulty] ?? li.difficulty}
+                          </span>
+                          <span className="text-xs text-foreground-subtle flex items-center gap-0.5">
+                            <Clock className="h-3 w-3" />
+                            {li.estimatedMinutes}min
+                          </span>
+                        </div>
+                      </div>
+                      {!added && (
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Plus className="h-4 w-4 text-brand" />
+                        </div>
+                      )}
+                      {added && (
+                        <Chip size="sm" variant="flat" color="primary" className="text-[10px]">Adicionado</Chip>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Plano - Right panel (3/5) */}
+      <div className="lg:col-span-3 space-y-4">
+        {/* AI Section */}
+        <div className="glass rounded-xl p-4 space-y-3">
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-purple-100 to-brand-soft flex items-center justify-center">
+              <Sparkles className="h-4 w-4 text-brand" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-foreground">Gerar com IA</p>
+              <p className="text-xs text-foreground-muted">Crie um plano automaticamente</p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              variant="flat"
+              color="secondary"
+              startContent={<Zap className="h-3.5 w-3.5" />}
+              isLoading={draftMutation.isPending}
+              onPress={() => draftMutation.mutate()}
+            >
+              Rascunho do historico
             </Button>
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="flex gap-2">
+            <Input
+              size="sm"
+              placeholder="Brief: ex. foco em grafos, 1 video + 4 exercicios"
+              value={briefText}
+              onChange={(e) => setBriefText(e.target.value)}
+              variant="bordered"
+              classNames={{ inputWrapper: 'bg-surface/50' }}
+              className="flex-1"
+            />
+            <Button
+              size="sm"
+              variant="flat"
+              color="secondary"
+              isDisabled={!briefText}
+              isLoading={briefMutation.isPending}
+              onPress={() => briefMutation.mutate()}
+            >
+              Montar
+            </Button>
+          </div>
+        </div>
+
+        {/* Date range */}
+        <div className="glass rounded-xl p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Calendar className="h-4 w-4 text-foreground-muted" />
+            <p className="text-sm font-medium text-foreground">Periodo da semana</p>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
             <Input
               type="date"
-              label="Início"
+              label="Inicio"
               value={draft.weekStart}
               onChange={(e) => setDraft((d) => ({ ...d, weekStart: e.target.value }))}
+              variant="bordered"
+              size="sm"
+              classNames={{ inputWrapper: 'bg-surface/50' }}
             />
             <Input
               type="date"
               label="Fim"
               value={draft.weekEnd}
               onChange={(e) => setDraft((d) => ({ ...d, weekEnd: e.target.value }))}
+              variant="bordered"
+              size="sm"
+              classNames={{ inputWrapper: 'bg-surface/50' }}
             />
           </div>
-          <div className="space-y-2">
-            {draft.items.length === 0 && (
-              <p className="text-sm text-foreground/60">Adicione itens do acervo ao lado.</p>
-            )}
-            {draft.items.map((it, idx) => (
-              <div
-                key={`${it.libraryItemId}-${idx}`}
-                className="flex items-center justify-between rounded-md border border-foreground/10 p-2"
-              >
-                <div>
-                  <p className="text-sm font-medium">
-                    {idx + 1}. {it.libraryItem.title}
-                  </p>
-                  <p className="text-xs text-foreground/60">
-                    {it.libraryItem.estimatedMinutes}min
-                  </p>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Button isIconOnly size="sm" variant="light" onPress={() => moveItem(idx, -1)}>
-                    <ArrowUp className="h-4 w-4" />
-                  </Button>
-                  <Button isIconOnly size="sm" variant="light" onPress={() => moveItem(idx, 1)}>
-                    <ArrowDown className="h-4 w-4" />
-                  </Button>
-                  <Button isIconOnly size="sm" variant="light" color="danger" onPress={() => removeItem(idx)}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
+        </div>
+
+        {/* Plan items */}
+        <div className="glass rounded-xl overflow-hidden">
+          <div className="p-4 border-b border-border/20">
+            <div className="flex items-center justify-between">
+              <h2 className="text-base font-semibold text-foreground">Plano da semana</h2>
+              <div className="flex items-center gap-2">
+                <Chip size="sm" variant="flat" color={totalMinutes > 0 ? 'primary' : 'default'}>
+                  <Clock className="h-3 w-3 mr-1 inline" />
+                  {totalMinutes} min
+                </Chip>
+                <Chip size="sm" variant="flat">
+                  {draft.items.length} {draft.items.length === 1 ? 'item' : 'itens'}
+                </Chip>
               </div>
-            ))}
+            </div>
           </div>
-          <div className="flex items-center justify-between">
-            <Chip size="sm" variant="flat">{totalMinutes} min total</Chip>
+
+          <div className="p-3 min-h-[200px]">
+            {draft.items.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="h-12 w-12 rounded-xl bg-surface-subtle flex items-center justify-center mx-auto mb-3">
+                  <Plus className="h-5 w-5 text-foreground-subtle" />
+                </div>
+                <p className="text-sm text-foreground-muted font-medium">Nenhum item no plano</p>
+                <p className="text-xs text-foreground-subtle mt-1">Clique nos materiais do acervo ou use a IA para gerar.</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {draft.items.map((it, idx) => (
+                  <div
+                    key={`${it.libraryItemId}-${idx}`}
+                    className="group flex items-center gap-3 p-3 rounded-lg bg-surface/40 border border-border/20 hover:border-border/40 transition-all duration-150"
+                  >
+                    <div className="flex items-center gap-1 text-foreground-subtle">
+                      <GripVertical className="h-4 w-4 opacity-0 group-hover:opacity-60 transition-opacity" />
+                      <span className="text-xs font-mono font-bold text-brand w-5 text-center">{idx + 1}</span>
+                    </div>
+                    <span className="text-base flex-shrink-0">{FORMAT_ICONS[it.libraryItem.format] ?? '📎'}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{it.libraryItem.title}</p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className={`text-xs font-medium ${DIFFICULTY_COLORS[it.libraryItem.difficulty] ?? 'text-foreground-muted'}`}>
+                          {DIFFICULTY_LABELS[it.libraryItem.difficulty] ?? it.libraryItem.difficulty}
+                        </span>
+                        <span className="text-xs text-foreground-subtle">
+                          {it.libraryItem.estimatedMinutes}min
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button isIconOnly size="sm" variant="light" onPress={() => moveItem(idx, -1)} isDisabled={idx === 0}>
+                        <ArrowUp className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button isIconOnly size="sm" variant="light" onPress={() => moveItem(idx, 1)} isDisabled={idx === draft.items.length - 1}>
+                        <ArrowDown className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button isIconOnly size="sm" variant="light" color="danger" onPress={() => removeItem(idx)}>
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Footer with action */}
+          <div className="p-4 border-t border-border/20 bg-surface/30">
             <Button
               color="primary"
               isDisabled={draft.items.length === 0}
               isLoading={createMutation.isPending || publishMutation.isPending}
               onPress={handleCreateAndPublish}
+              className="w-full"
+              size="lg"
             >
               Criar e publicar
             </Button>
           </div>
-        </CardBody>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

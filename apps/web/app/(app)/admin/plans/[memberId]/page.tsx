@@ -2,6 +2,7 @@
 
 import { use } from 'react';
 import { Chip } from '@heroui/react';
+import { Calendar } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { PlanEditor } from '../../../../../components/plans/plan-editor';
 import { apiFetch } from '../../../../../lib/api/client';
@@ -20,10 +21,32 @@ export default function AdminPlanEditorPage({ params }: { params: Promise<{ memb
     return new Date(c.startsAt) <= now && new Date(c.endsAt) >= now;
   }) ?? cycles?.find((c) => c.status === 'ACTIVE');
 
+  if (!cycles) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <div className="h-8 w-64 skeleton-pulse rounded-lg" />
+          <div className="h-4 w-48 skeleton-pulse rounded-lg mt-2" />
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+          <div className="lg:col-span-2 glass rounded-xl h-96 skeleton-pulse" />
+          <div className="lg:col-span-3 space-y-4">
+            <div className="glass rounded-xl h-32 skeleton-pulse" />
+            <div className="glass rounded-xl h-64 skeleton-pulse" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!activeCycle) {
     return (
-      <div className="text-center py-12">
-        <p className="text-foreground-muted">Crie um ciclo antes de montar um plano.</p>
+      <div className="glass rounded-xl text-center py-16 px-8">
+        <div className="h-12 w-12 rounded-xl bg-brand-soft flex items-center justify-center mx-auto mb-4">
+          <Calendar className="h-6 w-6 text-brand" />
+        </div>
+        <p className="text-foreground-muted font-medium">Nenhum ciclo ativo encontrado.</p>
+        <p className="text-foreground-subtle text-sm mt-1">Crie um ciclo antes de montar um plano semanal.</p>
       </div>
     );
   }
