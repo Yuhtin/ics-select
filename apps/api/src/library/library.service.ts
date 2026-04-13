@@ -102,30 +102,33 @@ export class LibraryService {
       return items.map((i) => ({ ...i, score: null }));
     }
 
-    const embedding = await this.openai.embed(input.query!);
-    const vectorLiteral = `[${embedding.join(',')}]`;
-
-    // Raw hybrid query. Prisma's $queryRawUnsafe lets us parametrize with positional $1/$2.
+    // Full-text search with ILIKE fallback for partial matches
     const sql = `
       SELECT
         "id", "title", "url", "description", "format", "difficulty",
         "estimatedMinutes", "source", "tags", "createdAt", "updatedAt",
-        (1 - (embedding <=> $1::vector)) * 0.6
-          + COALESCE(ts_rank(search_vector, plainto_tsquery('portuguese', $2)), 0) * 0.4
-          AS score
+        CASE
+          WHEN search_vector @@ plainto_tsquery('portuguese', $1)
+            THEN ts_rank(search_vector, plainto_tsquery('portuguese', $1))
+          ELSE 0.01
+        END AS score
       FROM "LibraryItem"
       WHERE
-        ($3::"ItemFormat"[] IS NULL OR "format" = ANY($3::"ItemFormat"[]))
-        AND ($4::"ItemDifficulty"[] IS NULL OR "difficulty" = ANY($4::"ItemDifficulty"[]))
-        AND ($5::int IS NULL OR "estimatedMinutes" <= $5)
-        AND ($6::text[] IS NULL OR "tags" && $6::text[])
+        (
+          search_vector @@ plainto_tsquery('portuguese', $1)
+          OR "title" ILIKE '%' || $1 || '%'
+          OR "description" ILIKE '%' || $1 || '%'
+        )
+        AND ($2::"ItemFormat"[] IS NULL OR "format" = ANY($2::"ItemFormat"[]))
+        AND ($3::"ItemDifficulty"[] IS NULL OR "difficulty" = ANY($3::"ItemDifficulty"[]))
+        AND ($4::int IS NULL OR "estimatedMinutes" <= $4)
+        AND ($5::text[] IS NULL OR "tags" && $5::text[])
       ORDER BY score DESC
-      LIMIT $7
+      LIMIT $6
     `;
 
     const results = (await this.prisma.$queryRawUnsafe(
       sql,
-      vectorLiteral,
       input.query,
       input.format ?? null,
       input.difficulty ?? null,
