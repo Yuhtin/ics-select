@@ -1,6 +1,6 @@
 'use client';
 
-import { Avatar, Card, CardBody, Chip } from '@heroui/react';
+import { Avatar, Chip } from '@heroui/react';
 
 type Alert = {
   id: string;
@@ -37,12 +37,17 @@ export function AlertList({ members }: AlertListProps) {
   }
 
   if (alerts.length === 0) {
-    return <p className="text-sm text-foreground-muted">Nenhum alerta no momento.</p>;
+    return (
+      <div className="glass rounded-xl p-8 text-center">
+        <p className="text-sm text-foreground-muted">Nenhum alerta no momento.</p>
+        <p className="text-xs text-foreground-subtle mt-1">Todos os membros estao progredindo normalmente.</p>
+      </div>
+    );
   }
 
   return (
-    <Card shadow="sm">
-      <CardBody className="p-0 divide-y divide-border/50">
+    <div className="glass rounded-xl divide-y divide-border/30">
+      <div className="p-0">
         {alerts.map((a) => (
           <div key={`${a.id}-${a.type}`} className="flex items-center gap-3 px-5 py-3">
             <Avatar src={a.pictureUrl ?? undefined} name={a.name.charAt(0)} size="sm" />
@@ -55,7 +60,7 @@ export function AlertList({ members }: AlertListProps) {
             </Chip>
           </div>
         ))}
-      </CardBody>
-    </Card>
+      </div>
+    </div>
   );
 }

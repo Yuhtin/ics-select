@@ -25,7 +25,16 @@ export default function MembersPage() {
   });
 
   if (isLoading) {
-    return <p className="text-sm text-foreground-muted">Carregando membros...</p>;
+    return (
+      <div className="space-y-6">
+        <div>
+          <div className="h-8 w-40 skeleton-pulse rounded-lg" />
+          <div className="h-4 w-56 skeleton-pulse rounded-lg mt-2" />
+        </div>
+        <div className="h-10 w-80 skeleton-pulse rounded-lg" />
+        <div className="glass rounded-xl h-64 skeleton-pulse" />
+      </div>
+    );
   }
 
   const members = (data ?? []).filter((m) => {
@@ -50,33 +59,35 @@ export default function MembersPage() {
         className="max-w-md"
       />
 
-      <Table aria-label="Lista de membros" shadow="sm" isStriped selectionMode="single" onRowAction={(key) => setSelectedId(key as string)}>
-        <TableHeader>
-          <TableColumn>Membro</TableColumn>
-          <TableColumn>Email</TableColumn>
-          <TableColumn>Tipo</TableColumn>
-        </TableHeader>
-        <TableBody emptyContent="Nenhum membro encontrado.">
-          {members.map((m) => (
-            <TableRow key={m.id} className="cursor-pointer">
-              <TableCell>
-                <div className="flex items-center gap-3">
-                  <Avatar src={m.pictureUrl ?? undefined} name={m.name.charAt(0)} size="sm" />
-                  <span className="text-sm font-medium">{m.name}</span>
-                </div>
-              </TableCell>
-              <TableCell>
-                <span className="text-sm text-foreground-muted">{m.email}</span>
-              </TableCell>
-              <TableCell>
-                <Chip size="sm" variant="flat" color={m.role === 'ADMIN' ? 'primary' : 'default'}>
-                  {m.role === 'ADMIN' ? 'Admin' : 'Membro'}
-                </Chip>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+      <div className="glass rounded-xl overflow-hidden">
+        <Table aria-label="Lista de membros" shadow="none" isStriped selectionMode="single" onRowAction={(key) => setSelectedId(key as string)}>
+          <TableHeader>
+            <TableColumn>Membro</TableColumn>
+            <TableColumn>Email</TableColumn>
+            <TableColumn>Tipo</TableColumn>
+          </TableHeader>
+          <TableBody emptyContent="Nenhum membro encontrado.">
+            {members.map((m) => (
+              <TableRow key={m.id} className="cursor-pointer">
+                <TableCell>
+                  <div className="flex items-center gap-3">
+                    <Avatar src={m.pictureUrl ?? undefined} name={m.name.charAt(0)} size="sm" />
+                    <span className="text-sm font-medium">{m.name}</span>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <span className="text-sm text-foreground-muted">{m.email}</span>
+                </TableCell>
+                <TableCell>
+                  <Chip size="sm" variant="flat" color={m.role === 'ADMIN' ? 'primary' : 'default'}>
+                    {m.role === 'ADMIN' ? 'Admin' : 'Membro'}
+                  </Chip>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
 
       <MemberDrawer memberId={selectedId} onClose={() => setSelectedId(null)} />
     </div>

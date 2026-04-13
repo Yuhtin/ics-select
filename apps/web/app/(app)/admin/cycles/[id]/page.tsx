@@ -4,8 +4,6 @@ import { use, useMemo, useState } from 'react';
 import {
   Avatar,
   Button,
-  Card,
-  CardBody,
   Chip,
   Input,
   Progress,
@@ -149,7 +147,17 @@ export default function CycleDetailPage({ params }: { params: Promise<{ id: stri
   }, [data?.weeklyPlans]);
 
   if (isLoading || !data) {
-    return <p className="text-sm text-foreground-muted">Carregando ciclo...</p>;
+    return (
+      <div className="space-y-8">
+        <div className="h-8 w-64 skeleton-pulse rounded-lg" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="glass rounded-xl p-5 h-24 skeleton-pulse" />
+          ))}
+        </div>
+        <div className="glass rounded-xl h-48 skeleton-pulse" />
+      </div>
+    );
   }
 
   const displayStatus = getDisplayStatus(data);
@@ -213,8 +221,8 @@ export default function CycleDetailPage({ params }: { params: Promise<{ id: stri
 
         {/* Add member panel */}
         {showAddMember && (
-          <Card shadow="sm">
-            <CardBody className="p-4 space-y-3">
+          <div className="glass rounded-xl">
+            <div className="p-4 space-y-3">
               <Input
                 placeholder="Buscar por nome ou email..."
                 value={memberSearch}
@@ -253,8 +261,8 @@ export default function CycleDetailPage({ params }: { params: Promise<{ id: stri
                   {allMembers ? 'Nenhum membro disponivel.' : 'Carregando...'}
                 </p>
               )}
-            </CardBody>
-          </Card>
+            </div>
+          </div>
         )}
 
         {/* Members table with plans */}
@@ -266,8 +274,8 @@ export default function CycleDetailPage({ params }: { params: Promise<{ id: stri
             const userPct = userTotal === 0 ? 0 : Math.round((userDone / userTotal) * 100);
 
             return (
-              <Card key={m.id} shadow="sm">
-                <CardBody className="p-4">
+              <div key={m.id} className="glass rounded-xl">
+                <div className="p-4">
                   <div className="flex items-center justify-between gap-4">
                     {/* Member info */}
                     <div className="flex items-center gap-3 min-w-0">
@@ -338,8 +346,8 @@ export default function CycleDetailPage({ params }: { params: Promise<{ id: stri
                       </div>
                     </div>
                   )}
-                </CardBody>
-              </Card>
+                </div>
+              </div>
             );
           })}
 

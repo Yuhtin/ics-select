@@ -25,7 +25,21 @@ export default function AdminDashboardPage() {
   });
 
   if (isLoading) {
-    return <p className="text-sm text-foreground-muted">Carregando dashboard...</p>;
+    return (
+      <div className="space-y-8">
+        <div>
+          <div className="h-8 w-48 skeleton-pulse rounded-lg" />
+          <div className="h-4 w-64 skeleton-pulse rounded-lg mt-2" />
+        </div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="glass rounded-xl p-5 h-24 skeleton-pulse" />
+          ))}
+        </div>
+        <div className="h-4 w-32 skeleton-pulse rounded-lg" />
+        <div className="glass rounded-xl h-48 skeleton-pulse" />
+      </div>
+    );
   }
 
   const members = (data ?? []).filter((m) => m.role === 'MEMBER');
@@ -57,7 +71,8 @@ export default function AdminDashboardPage() {
 
       <div>
         <h2 className="text-base font-bold text-foreground mb-3">Membros</h2>
-        <Table aria-label="Membros do ciclo" shadow="sm" isStriped>
+        <div className="glass rounded-xl overflow-hidden">
+        <Table aria-label="Membros do ciclo" shadow="none" isStriped>
           <TableHeader>
             <TableColumn>Membro</TableColumn>
             <TableColumn>Progresso</TableColumn>
@@ -98,6 +113,7 @@ export default function AdminDashboardPage() {
             })}
           </TableBody>
         </Table>
+        </div>
       </div>
     </div>
   );

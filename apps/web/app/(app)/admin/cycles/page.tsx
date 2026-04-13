@@ -1,7 +1,7 @@
 'use client';
 
 import { Button, useDisclosure } from '@heroui/react';
-import { Plus } from 'lucide-react';
+import { Calendar, Plus } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { apiFetch } from '../../../../lib/api/client';
 import { CycleCard } from '../../../../components/admin/cycle-card';
@@ -34,7 +34,22 @@ export default function CyclesPage() {
   });
 
   if (isLoading) {
-    return <p className="text-sm text-foreground-muted">Carregando ciclos...</p>;
+    return (
+      <div className="space-y-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="h-8 w-32 skeleton-pulse rounded-lg" />
+            <div className="h-4 w-56 skeleton-pulse rounded-lg mt-2" />
+          </div>
+          <div className="h-10 w-32 skeleton-pulse rounded-lg" />
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="glass rounded-xl p-6 h-44 skeleton-pulse" />
+          ))}
+        </div>
+      </div>
+    );
   }
 
   const cycles = data ?? [];
@@ -82,9 +97,13 @@ export default function CyclesPage() {
       {renderSection('Arquivados', archived)}
 
       {cycles.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-foreground-muted">Nenhum ciclo ainda.</p>
-          <Button color="primary" className="mt-4" onPress={onOpen}>Criar primeiro ciclo</Button>
+        <div className="glass rounded-xl text-center py-16 px-8">
+          <div className="h-12 w-12 rounded-xl bg-brand-soft flex items-center justify-center mx-auto mb-4">
+            <Calendar className="h-6 w-6 text-brand" />
+          </div>
+          <p className="text-foreground-muted font-medium">Nenhum ciclo ainda.</p>
+          <p className="text-foreground-subtle text-sm mt-1">Crie o primeiro ciclo para comecar a gerenciar o programa.</p>
+          <Button color="primary" className="mt-6" onPress={onOpen}>Criar primeiro ciclo</Button>
         </div>
       )}
 

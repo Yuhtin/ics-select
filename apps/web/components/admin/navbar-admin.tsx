@@ -25,7 +25,7 @@ export function NavbarAdmin({ userName, email, avatarUrl, onLogout }: NavbarAdmi
   const initial = userName.charAt(0).toUpperCase();
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-40 hidden lg:flex items-center justify-between h-14 px-8 backdrop-blur-xl bg-surface/80 border-b border-border/30">
+    <header className="fixed top-0 left-0 right-0 z-40 hidden lg:flex items-center justify-between h-16 px-8 glass-navbar">
       <BrandLockup size="md" />
 
       <nav className="flex items-center gap-1">
@@ -35,10 +35,10 @@ export function NavbarAdmin({ userName, email, avatarUrl, onLogout }: NavbarAdmi
             <Link
               key={href}
               href={href}
-              className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
                 active
-                  ? 'bg-brand/10 text-brand'
-                  : 'text-foreground-muted hover:text-foreground hover:bg-surface-subtle'
+                  ? 'bg-brand/10 text-brand shadow-sm'
+                  : 'text-foreground-muted hover:text-foreground hover:bg-surface-subtle/60'
               }`}
             >
               <Icon className="h-4 w-4" />

@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, Card, CardBody, Chip, Progress } from '@heroui/react';
+import { Button, Chip, Progress } from '@heroui/react';
 import { Calendar, Clock, Lock, Users } from 'lucide-react';
 import Link from 'next/link';
 
@@ -34,11 +34,11 @@ export function CycleCard({ id, name, startsAt, endsAt, displayStatus, memberCou
   const isActive = displayStatus === 'ACTIVE';
 
   return (
-    <Card
-      shadow="sm"
-      className={isActive ? 'border-2 border-brand/40 ring-2 ring-brand/10' : displayStatus === 'UPCOMING' ? 'border border-warning/30' : 'opacity-75'}
+    <div
+      className={`glass rounded-xl p-6 space-y-4 card-hover ${
+        isActive ? 'ring-2 ring-brand/20 shadow-glow-primary' : displayStatus === 'UPCOMING' ? 'border-warning/30' : 'opacity-75'
+      }`}
     >
-      <CardBody className="p-6 space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-bold text-foreground">{name}</h3>
           <Chip size="sm" color={cfg.color} variant="flat">
@@ -70,14 +70,13 @@ export function CycleCard({ id, name, startsAt, endsAt, displayStatus, memberCou
         <Button
           as={Link}
           href={`/admin/cycles/${id}`}
-          variant={isActive ? 'solid' : 'bordered'}
+          variant={isActive ? 'solid' : 'flat'}
           color={isActive ? 'primary' : 'default'}
           size="sm"
           className="w-full"
         >
           Gerenciar
         </Button>
-      </CardBody>
-    </Card>
+    </div>
   );
 }
