@@ -8,6 +8,7 @@
   },
   "scripts": {
     "dev": "turbo run dev",
+    "dev:full": "./scripts/dev.sh",
     "build": "turbo run build",
     "lint": "turbo run lint",
     "test": "turbo run test",

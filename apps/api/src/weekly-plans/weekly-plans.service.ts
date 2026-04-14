@@ -133,17 +133,29 @@ export class WeeklyPlansService {
   }
 
   async cohortProgress(userId: string) {
-    const membership = await this.prisma.cycleMembership.findFirst({
+    const now = new Date();
+    // Prefer the cycle whose dates contain today; if none, the next upcoming cycle the member is in.
+    let membership = await this.prisma.cycleMembership.findFirst({
       where: {
         userId,
         cycle: {
           status: 'ACTIVE',
-          startsAt: { lte: new Date() },
-          endsAt: { gte: new Date() },
+          startsAt: { lte: now },
+          endsAt: { gte: now },
         },
       },
       select: { cycleId: true },
     });
+    if (!membership) {
+      membership = await this.prisma.cycleMembership.findFirst({
+        where: {
+          userId,
+          cycle: { status: 'ACTIVE', startsAt: { gt: now } },
+        },
+        orderBy: { cycle: { startsAt: 'asc' } },
+        select: { cycleId: true },
+      });
+    }
     if (!membership) return [];
 
     const memberships = await this.prisma.cycleMembership.findMany({
