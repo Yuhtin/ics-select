@@ -20,16 +20,20 @@ export default function AdminPlanEditorPage({ params }: { params: Promise<{ memb
   // First: cycles this member belongs to
   const memberCycles = cycles?.filter((c) => c.memberships?.some((m) => m.userId === memberId)) ?? [];
 
-  // Pick the active cycle for this member: prefer one whose dates contain today, fallback to any ACTIVE membership
-  const activeCycle = memberCycles.find((c) => {
-    if (c.status !== 'ACTIVE') return false;
-    return new Date(c.startsAt) <= now && new Date(c.endsAt) >= now;
-  }) ?? memberCycles.find((c) => c.status === 'ACTIVE')
-    // Last resort: any active cycle (member might not have membership yet)
-    ?? cycles?.find((c) => {
-      if (c.status !== 'ACTIVE') return false;
-      return new Date(c.startsAt) <= now && new Date(c.endsAt) >= now;
-    }) ?? cycles?.find((c) => c.status === 'ACTIVE');
+  // Pick the active cycle: prefer one whose dates contain today, else the next upcoming (soonest startsAt in the future),
+  // else any ACTIVE. Fall back to any cycle (member may not have a membership yet).
+  const pickActive = (list: Cycle[]) => {
+    const inProgress = list.find(
+      (c) => c.status === 'ACTIVE' && new Date(c.startsAt) <= now && new Date(c.endsAt) >= now,
+    );
+    if (inProgress) return inProgress;
+    const upcoming = list
+      .filter((c) => c.status === 'ACTIVE' && new Date(c.startsAt) > now)
+      .sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime());
+    if (upcoming[0]) return upcoming[0];
+    return list.find((c) => c.status === 'ACTIVE');
+  };
+  const activeCycle = pickActive(memberCycles) ?? (cycles ? pickActive(cycles) : undefined);
 
   if (!cycles) {
     return (
@@ -69,7 +73,12 @@ export default function AdminPlanEditorPage({ params }: { params: Promise<{ memb
           Ciclo ativo: <Chip size="sm" color="primary" variant="flat">{activeCycle.name}</Chip>
         </p>
       </div>
-      <PlanEditor memberId={memberId} cycleId={activeCycle.id} />
+      <PlanEditor
+        memberId={memberId}
+        cycleId={activeCycle.id}
+        cycleStartsAt={activeCycle.startsAt}
+        cycleEndsAt={activeCycle.endsAt}
+      />
     </div>
   );
 }

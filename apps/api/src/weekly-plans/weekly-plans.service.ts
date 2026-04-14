@@ -2,6 +2,7 @@ import { ConflictException, Injectable, NotFoundException, Optional } from '@nes
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../common/prisma/prisma.service.js';
 import { WhatsappService } from '../whatsapp/whatsapp.service.js';
+import { GoogleCalendarService } from '../google-calendar/google-calendar.service.js';
 
 type CreateInput = {
   userId: string;
@@ -23,9 +24,49 @@ export class WeeklyPlansService {
     private readonly prisma: PrismaService,
     @Optional() private readonly whatsapp?: WhatsappService,
     @Optional() private readonly config?: ConfigService,
+    @Optional() private readonly calendar?: GoogleCalendarService,
   ) {}
 
+  async remove(id: string) {
+    const plan = await this.prisma.weeklyPlan.findUnique({
+      where: { id },
+      include: { items: { include: { sessions: true } } },
+    });
+    if (!plan) throw new NotFoundException('plan not found');
+
+    if (this.calendar) {
+      for (const item of plan.items) {
+        for (const session of item.sessions) {
+          if (!session.googleEventId) continue;
+          try {
+            await this.calendar.deleteEvent(plan.userId, session.googleEventId);
+          } catch {
+            // best-effort — member may have revoked or deleted the event manually
+          }
+        }
+      }
+    }
+
+    await this.prisma.weeklyPlan.delete({ where: { id } });
+  }
+
   async createDraft(input: CreateInput) {
+    const cycle = await this.prisma.cycle.findUnique({ where: { id: input.cycleId } });
+    if (!cycle) throw new NotFoundException('cycle not found');
+    if (input.weekStart < cycle.startsAt || input.weekEnd > cycle.endsAt) {
+      throw new ConflictException({
+        error: {
+          code: 'PLAN_OUTSIDE_CYCLE',
+          message: 'A semana do plano precisa estar dentro do período do ciclo',
+          details: {
+            cycleStart: cycle.startsAt,
+            cycleEnd: cycle.endsAt,
+            weekStart: input.weekStart,
+            weekEnd: input.weekEnd,
+          },
+        },
+      });
+    }
     return this.prisma.weeklyPlan.create({
       data: {
         userId: input.userId,

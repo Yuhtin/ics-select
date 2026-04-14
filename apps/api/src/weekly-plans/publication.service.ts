@@ -15,6 +15,18 @@ export class PlanOverflowError extends ConflictException {
   }
 }
 
+const DEFAULT_AVAILABILITY = {
+  mondayMinutes: 60,
+  tuesdayMinutes: 60,
+  wednesdayMinutes: 60,
+  thursdayMinutes: 60,
+  fridayMinutes: 60,
+  saturdayMinutes: 0,
+  sundayMinutes: 0,
+  preferredSessionMinutes: 60,
+  timezone: 'America/Sao_Paulo',
+};
+
 @Injectable()
 export class PublicationService {
   constructor(
@@ -23,7 +35,20 @@ export class PublicationService {
     private readonly calendar: GoogleCalendarService,
   ) {}
 
-  async publish(planId: string, force: boolean) {
+  // Publishing a plan only flips status → PUBLISHED so the member sees it on the map.
+  // It does NOT touch Google Calendar. The member later opts-in via autoSchedule().
+  async publish(planId: string) {
+    const plan = await this.prisma.weeklyPlan.findUnique({ where: { id: planId } });
+    if (!plan) throw new NotFoundException('plan not found');
+    const updated = await this.prisma.weeklyPlan.update({
+      where: { id: planId },
+      data: { status: 'PUBLISHED', publishedAt: new Date() },
+    });
+    return { plan: updated };
+  }
+
+  // Member-initiated: allocate study sessions into their Google Calendar.
+  async autoSchedule(planId: string, force: boolean) {
     const plan = await this.prisma.weeklyPlan.findUnique({
       where: { id: planId },
       include: {
@@ -32,22 +57,15 @@ export class PublicationService {
     });
     if (!plan) throw new NotFoundException('plan not found');
 
-    const availability = await this.prisma.memberAvailability.findUnique({
+    const existing = await this.prisma.memberAvailability.findUnique({
       where: { userId: plan.userId },
     });
-    if (!availability) {
-      throw new ConflictException({
-        error: {
-          code: 'NO_AVAILABILITY',
-          message: 'Membro ainda não definiu disponibilidade',
-        },
-      });
-    }
+    const availability = existing ?? DEFAULT_AVAILABILITY;
 
     const input: SchedulerInput = {
       weekStart: plan.weekStart,
       availability,
-      busyByDay: { 0: [], 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] }, // simplification: Phase 4 ignores real Calendar free/busy
+      busyByDay: { 0: [], 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] },
       items: plan.items.map((i) => ({
         id: i.id,
         estimatedMinutes: i.libraryItem.estimatedMinutes,
@@ -59,13 +77,10 @@ export class PublicationService {
       throw new PlanOverflowError(result.overflow);
     }
 
-    // Remove any pre-existing sessions (re-publish) — Phase 4 uses "delete-all and recreate".
-    // Phase 5+ will diff.
     await this.prisma.studySession.deleteMany({
       where: { weeklyPlanItem: { weeklyPlanId: planId } },
     });
 
-    // Create sessions + Calendar events
     for (const session of result.sessions) {
       const item = plan.items.find((i) => i.id === session.itemId)!;
       const eventEnd = new Date(session.scheduledAt.getTime() + session.durationMinutes * 60 * 1000);
@@ -80,7 +95,6 @@ export class PublicationService {
           end: eventEnd,
         });
       } catch {
-        // If Calendar fails, still create the session record; admin can retry
         googleEventId = null;
       }
       await this.prisma.studySession.create({
@@ -94,13 +108,7 @@ export class PublicationService {
       });
     }
 
-    const updated = await this.prisma.weeklyPlan.update({
-      where: { id: planId },
-      data: { status: 'PUBLISHED', publishedAt: new Date() },
-    });
-
     return {
-      plan: updated,
       sessionsCreated: result.sessions.length,
       overflow: result.overflow,
     };

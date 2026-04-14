@@ -8,6 +8,13 @@ function fakePrisma() {
   return {
     plans,
     items,
+    cycle: {
+      findUnique: jest.fn(async () => ({
+        id: 'c-1',
+        startsAt: new Date('2026-04-01'),
+        endsAt: new Date('2026-06-30'),
+      })),
+    },
     weeklyPlan: {
       create: jest.fn(async ({ data }: any) => {
         const id = `p-${++pid}`;

@@ -1,9 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AnimatePresence } from 'framer-motion';
-import { Map } from 'lucide-react';
+import { CalendarPlus, Map } from 'lucide-react';
 import { apiFetch } from '../../../lib/api/client';
 import { NodeMap } from '../../../components/member/node-map';
 import { WorldSelect } from '../../../components/member/world-select';
@@ -57,10 +57,26 @@ function formatDateRange(weekStart: string, weekEnd: string): string {
 export default function MapPage() {
   const [view, setView] = useState<'map' | 'worlds'>('map');
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
   const { data: currentPlans, isLoading: loadingCurrent } = useQuery({
     queryKey: ['me-week'],
     queryFn: () => apiFetch<Plan[]>('/me/week'),
+  });
+
+  const autoSchedule = useMutation({
+    mutationFn: (planId: string) =>
+      apiFetch<{ sessionsCreated: number; overflow: Array<unknown> }>(
+        `/plans/${planId}/auto-schedule`,
+        { method: 'POST' },
+      ),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['me-week'] });
+      alert(`${data.sessionsCreated} sessões agendadas na sua agenda.`);
+    },
+    onError: (err: Error) => {
+      alert(err.message);
+    },
   });
 
   const { data: allPlans } = useQuery({
@@ -117,13 +133,24 @@ export default function MapPage() {
                     {formatDateRange(displayPlan.weekStart, displayPlan.weekEnd)}
                   </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setView('worlds')}
-                  className="text-sm text-brand font-medium hover:underline"
-                >
-                  Ver todos os mundos
-                </button>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => autoSchedule.mutate(displayPlan.id)}
+                    disabled={autoSchedule.isPending}
+                    className="inline-flex items-center gap-1.5 rounded-full bg-brand text-white text-sm font-medium px-4 py-2 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed shadow-glow-primary"
+                  >
+                    <CalendarPlus className="h-4 w-4" />
+                    {autoSchedule.isPending ? 'Alocando...' : 'Alocar Automaticamente'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setView('worlds')}
+                    className="text-sm text-brand font-medium hover:underline"
+                  >
+                    Ver todos os mundos
+                  </button>
+                </div>
               </div>
               <NodeMap planId={displayPlan.id} items={displayPlan.items} />
             </div>

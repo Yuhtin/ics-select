@@ -43,13 +43,32 @@ const DIFFICULTY_LABELS: Record<string, string> = {
   HARD: 'Dificil',
 };
 
-export function PlanEditor({ memberId, cycleId }: { memberId: string; cycleId: string }) {
+export function PlanEditor({
+  memberId,
+  cycleId,
+  cycleStartsAt,
+  cycleEndsAt,
+}: {
+  memberId: string;
+  cycleId: string;
+  cycleStartsAt: string;
+  cycleEndsAt: string;
+}) {
   const queryClient = useQueryClient();
+  const cycleStart = new Date(cycleStartsAt);
+  const cycleEnd = new Date(cycleEndsAt);
+  const minDate = cycleStartsAt.slice(0, 10);
+  const maxDate = cycleEndsAt.slice(0, 10);
+
+  // Default to current week clamped inside the cycle. If today is outside the cycle, default to the cycle's first week.
   const today = new Date();
-  const monday = new Date(today);
-  monday.setDate(today.getDate() - ((today.getDay() + 6) % 7));
+  const anchor = today < cycleStart ? cycleStart : today > cycleEnd ? cycleEnd : today;
+  const monday = new Date(anchor);
+  monday.setDate(anchor.getDate() - ((anchor.getDay() + 6) % 7));
+  if (monday < cycleStart) monday.setTime(cycleStart.getTime());
   const sunday = new Date(monday);
   sunday.setDate(monday.getDate() + 6);
+  if (sunday > cycleEnd) sunday.setTime(cycleEnd.getTime());
 
   const [draft, setDraft] = useState<PlanDraft>({
     cycleId,
@@ -57,6 +76,8 @@ export function PlanEditor({ memberId, cycleId }: { memberId: string; cycleId: s
     weekEnd: sunday.toISOString().slice(0, 10),
     items: [],
   });
+  const weekOutsideCycle =
+    draft.weekStart < minDate || draft.weekEnd > maxDate || draft.weekStart > draft.weekEnd;
 
   const [query, setQuery] = useState('');
   const { data: searchResults, isLoading: searchLoading } = useQuery({
@@ -328,6 +349,8 @@ export function PlanEditor({ memberId, cycleId }: { memberId: string; cycleId: s
               type="date"
               label="Inicio"
               value={draft.weekStart}
+              min={minDate}
+              max={maxDate}
               onChange={(e) => setDraft((d) => ({ ...d, weekStart: e.target.value }))}
               variant="bordered"
               size="sm"
@@ -337,12 +360,22 @@ export function PlanEditor({ memberId, cycleId }: { memberId: string; cycleId: s
               type="date"
               label="Fim"
               value={draft.weekEnd}
+              min={minDate}
+              max={maxDate}
               onChange={(e) => setDraft((d) => ({ ...d, weekEnd: e.target.value }))}
               variant="bordered"
               size="sm"
               classNames={{ inputWrapper: 'bg-surface/50' }}
             />
           </div>
+          <p className="text-xs text-foreground-muted mt-2">
+            Dentro do ciclo: {minDate} — {maxDate}
+          </p>
+          {weekOutsideCycle && (
+            <p className="text-xs text-danger mt-1">
+              A semana precisa estar dentro do período do ciclo.
+            </p>
+          )}
         </div>
 
         {/* Plan items */}
@@ -425,7 +458,7 @@ export function PlanEditor({ memberId, cycleId }: { memberId: string; cycleId: s
             )}
             <Button
               color="primary"
-              isDisabled={draft.items.length === 0}
+              isDisabled={draft.items.length === 0 || weekOutsideCycle}
               isLoading={createMutation.isPending || publishMutation.isPending}
               onPress={handleCreateAndPublish}
               className="w-full"

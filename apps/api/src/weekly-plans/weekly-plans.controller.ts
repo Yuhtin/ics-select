@@ -1,4 +1,4 @@
-import { Body, Controller, Get, NotFoundException, Param, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, NotFoundException, Param, Patch, Post, Query } from '@nestjs/common';
 import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
 import { Roles } from '../auth/decorators/roles.decorator.js';
 import type { JwtStrategyPayload } from '../auth/strategies/jwt.strategy.js';
@@ -28,9 +28,30 @@ export class WeeklyPlansController {
   }
 
   @Roles('ADMIN')
+  @Delete('plans/:id')
+  @HttpCode(204)
+  async remove(@Param('id') id: string) {
+    await this.plans.remove(id);
+  }
+
+  @Roles('ADMIN')
   @Post('plans/:id/publish')
-  publish(@Param('id') id: string, @Query('force') force?: string) {
-    return this.publication.publish(id, force === 'true');
+  publish(@Param('id') id: string) {
+    return this.publication.publish(id);
+  }
+
+  @Post('plans/:id/auto-schedule')
+  async autoSchedule(
+    @Param('id') id: string,
+    @Query('force') force: string | undefined,
+    @CurrentUser() user: JwtStrategyPayload,
+  ) {
+    const plan = await this.plans.getById(id);
+    if (!plan) throw new NotFoundException('plan not found');
+    if (user.role !== 'ADMIN' && plan.userId !== user.sub) {
+      throw new NotFoundException('plan not found');
+    }
+    return this.publication.autoSchedule(id, force === 'true');
   }
 
   @Get('plans/:id')

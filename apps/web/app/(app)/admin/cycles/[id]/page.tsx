@@ -281,14 +281,17 @@ export default function CycleDetailPage({ params }: { params: Promise<{ id: stri
               <div key={m.id} className="glass rounded-xl">
                 <div className="p-4">
                   <div className="flex items-center justify-between gap-4">
-                    {/* Member info */}
-                    <div className="flex items-center gap-3 min-w-0">
+                    {/* Member info — click to open member detail filtered by this cycle */}
+                    <Link
+                      href={`/admin/members/${m.user.id}?cycleId=${data.id}`}
+                      className="flex items-center gap-3 min-w-0 flex-1 hover:opacity-80 transition-opacity"
+                    >
                       <Avatar src={m.user.pictureUrl ?? undefined} name={m.user.name.charAt(0)} size="sm" />
                       <div className="min-w-0">
                         <p className="text-sm font-medium text-foreground truncate">{m.user.name}</p>
                         <p className="text-xs text-foreground-muted truncate">{m.user.email}</p>
                       </div>
-                    </div>
+                    </Link>
 
                     {/* Plan stats */}
                     <div className="flex items-center gap-3 flex-shrink-0">

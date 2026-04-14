@@ -9,7 +9,7 @@ import {
   Select,
   SelectItem,
 } from '@heroui/react';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   ArrowLeft,
   BookOpen,
@@ -19,10 +19,12 @@ import {
   ExternalLink,
   FileText,
   Target,
+  Trash2,
   TrendingUp,
   XCircle,
 } from 'lucide-react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { apiFetch } from '../../../../../lib/api/client';
 import { StatCard } from '../../../../../components/admin/stat-card';
 
@@ -119,8 +121,22 @@ function formatDateFull(iso: string): string {
 
 export default function MemberDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const [selectedCycleId, setSelectedCycleId] = useState<string>('');
+  const searchParams = useSearchParams();
+  const cycleIdFromQuery = searchParams.get('cycleId') ?? '';
+  const [selectedCycleId, setSelectedCycleId] = useState<string>(cycleIdFromQuery);
   const [expandedPlanId, setExpandedPlanId] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+
+  const deletePlan = useMutation({
+    mutationFn: (planId: string) =>
+      apiFetch<void>(`/plans/${planId}`, { method: 'DELETE' }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['member-plans', id] });
+    },
+    onError: (err: Error) => {
+      alert(err.message);
+    },
+  });
 
   const { data: member } = useQuery({
     queryKey: ['member', id],
@@ -148,8 +164,11 @@ export default function MemberDetailPage({ params }: { params: Promise<{ id: str
     return cycles.filter((c) => allCycleIds.has(c.id));
   }, [cycles, plans, id]);
 
-  // Auto-select first cycle
-  const activeCycleId = selectedCycleId || memberCycles[0]?.id || '';
+  // Auto-select: query param (if valid), else first cycle
+  const activeCycleId = useMemo(() => {
+    if (selectedCycleId && memberCycles.some((c) => c.id === selectedCycleId)) return selectedCycleId;
+    return memberCycles[0]?.id ?? '';
+  }, [selectedCycleId, memberCycles]);
 
   // Plans filtered by selected cycle
   const cyclePlans = useMemo(() => {
@@ -375,30 +394,47 @@ export default function MemberDetailPage({ params }: { params: Promise<{ id: str
                   return (
                     <div key={plan.id} className="glass rounded-xl overflow-hidden">
                       {/* Plan header - clickable */}
-                      <button
-                        type="button"
-                        className="w-full p-4 flex items-center gap-4 text-left hover:bg-surface/30 transition-colors"
-                        onClick={() => setExpandedPlanId(isExpanded ? null : plan.id)}
-                      >
-                        <div className="h-10 w-10 rounded-lg bg-brand-soft flex items-center justify-center flex-shrink-0">
-                          <Calendar className="h-5 w-5 text-brand" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-foreground">
-                            {formatDate(plan.weekStart)} — {formatDate(plan.weekEnd)}
-                          </p>
-                          <p className="text-xs text-foreground-muted mt-0.5">
-                            {doneCount}/{totalCount} itens concluidos
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-3 flex-shrink-0">
-                          <Progress value={pct} color={pct === 100 ? 'success' : 'primary'} size="sm" className="w-24" />
-                          <span className="text-sm font-medium text-foreground w-10 text-right">{pct}%</span>
-                          <Chip size="sm" variant="flat" color={plan.status === 'PUBLISHED' ? 'primary' : 'default'}>
-                            {plan.status === 'PUBLISHED' ? 'Publicado' : 'Rascunho'}
-                          </Chip>
-                        </div>
-                      </button>
+                      <div className="w-full p-4 flex items-center gap-4 text-left hover:bg-surface/30 transition-colors">
+                        <button
+                          type="button"
+                          className="flex items-center gap-4 flex-1 min-w-0 text-left"
+                          onClick={() => setExpandedPlanId(isExpanded ? null : plan.id)}
+                        >
+                          <div className="h-10 w-10 rounded-lg bg-brand-soft flex items-center justify-center flex-shrink-0">
+                            <Calendar className="h-5 w-5 text-brand" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-foreground">
+                              {formatDate(plan.weekStart)} — {formatDate(plan.weekEnd)}
+                            </p>
+                            <p className="text-xs text-foreground-muted mt-0.5">
+                              {doneCount}/{totalCount} itens concluidos
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-3 flex-shrink-0">
+                            <Progress value={pct} color={pct === 100 ? 'success' : 'primary'} size="sm" className="w-24" />
+                            <span className="text-sm font-medium text-foreground w-10 text-right">{pct}%</span>
+                            <Chip size="sm" variant="flat" color={plan.status === 'PUBLISHED' ? 'primary' : 'default'}>
+                              {plan.status === 'PUBLISHED' ? 'Publicado' : 'Rascunho'}
+                            </Chip>
+                          </div>
+                        </button>
+                        <Button
+                          size="sm"
+                          color="danger"
+                          variant="light"
+                          isIconOnly
+                          isLoading={deletePlan.isPending && deletePlan.variables === plan.id}
+                          onPress={() => {
+                            if (confirm('Deletar este plano? Sessões agendadas no Calendar também serão removidas.')) {
+                              deletePlan.mutate(plan.id);
+                            }
+                          }}
+                          aria-label="Deletar plano"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
 
                       {/* Expanded items */}
                       {isExpanded && (

@@ -86,7 +86,7 @@ export default function AdminDashboardPage() {
               const statusColor = m.stats.stuckItems > 0 ? 'danger' : m.stats.doneItems > 0 ? 'success' : 'warning';
               const statusLabel = m.stats.stuckItems > 0 ? 'Travou' : m.stats.doneItems > 0 ? 'On track' : 'Atrasado';
               return (
-                <TableRow key={m.id} className="cursor-pointer" onClick={() => router.push(`/admin/plans/${m.id}`)}>
+                <TableRow key={m.id} className="cursor-pointer" onClick={() => router.push(`/admin/members/${m.id}`)}>
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <Avatar src={m.pictureUrl ?? undefined} name={m.name.charAt(0)} size="sm" />
