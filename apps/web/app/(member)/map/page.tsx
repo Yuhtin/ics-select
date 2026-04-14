@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { addToast } from '@heroui/react';
 import { AnimatePresence } from 'framer-motion';
 import { CalendarPlus, Map } from 'lucide-react';
 import { apiFetch } from '../../../lib/api/client';
@@ -72,10 +73,14 @@ export default function MapPage() {
       ),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['me-week'] });
-      alert(`${data.sessionsCreated} sessões agendadas na sua agenda.`);
+      addToast({
+        title: 'Sessões agendadas',
+        description: `${data.sessionsCreated} sessão${data.sessionsCreated === 1 ? '' : 'ões'} criada${data.sessionsCreated === 1 ? '' : 's'} na sua agenda.`,
+        color: 'success',
+      });
     },
     onError: (err: Error) => {
-      alert(err.message);
+      addToast({ title: 'Erro ao alocar', description: err.message, color: 'danger' });
     },
   });
 

@@ -8,7 +8,9 @@ import {
   Progress,
   Select,
   SelectItem,
+  addToast,
 } from '@heroui/react';
+import { ConfirmDialog } from '../../../../../components/ui/confirm-dialog';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   ArrowLeft,
@@ -125,6 +127,7 @@ export default function MemberDetailPage({ params }: { params: Promise<{ id: str
   const cycleIdFromQuery = searchParams.get('cycleId') ?? '';
   const [selectedCycleId, setSelectedCycleId] = useState<string>(cycleIdFromQuery);
   const [expandedPlanId, setExpandedPlanId] = useState<string | null>(null);
+  const [planToDelete, setPlanToDelete] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
   const deletePlan = useMutation({
@@ -132,9 +135,11 @@ export default function MemberDetailPage({ params }: { params: Promise<{ id: str
       apiFetch<void>(`/plans/${planId}`, { method: 'DELETE' }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['member-plans', id] });
+      setPlanToDelete(null);
+      addToast({ title: 'Plano deletado', color: 'success' });
     },
     onError: (err: Error) => {
-      alert(err.message);
+      addToast({ title: 'Erro ao deletar plano', description: err.message, color: 'danger' });
     },
   });
 
@@ -424,12 +429,7 @@ export default function MemberDetailPage({ params }: { params: Promise<{ id: str
                           color="danger"
                           variant="light"
                           isIconOnly
-                          isLoading={deletePlan.isPending && deletePlan.variables === plan.id}
-                          onPress={() => {
-                            if (confirm('Deletar este plano? Sessões agendadas no Calendar também serão removidas.')) {
-                              deletePlan.mutate(plan.id);
-                            }
-                          }}
+                          onPress={() => setPlanToDelete(plan.id)}
                           aria-label="Deletar plano"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -553,6 +553,15 @@ export default function MemberDetailPage({ params }: { params: Promise<{ id: str
           </div>
         </>
       )}
+      <ConfirmDialog
+        isOpen={planToDelete !== null}
+        onClose={() => setPlanToDelete(null)}
+        onConfirm={() => planToDelete && deletePlan.mutate(planToDelete)}
+        title="Deletar plano?"
+        description="Esta ação não pode ser desfeita. Sessões agendadas na agenda do aluno também serão removidas."
+        confirmLabel="Deletar"
+        isLoading={deletePlan.isPending}
+      />
     </div>
   );
 }
