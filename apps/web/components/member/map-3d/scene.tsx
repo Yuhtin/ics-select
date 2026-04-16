@@ -11,10 +11,12 @@ import { Nodes } from './nodes';
 import { Car } from './car';
 import { useKeyboard } from './input';
 import { Trees, Mountains, Crystals, Clouds, Sun } from './props';
+import { FpsMonitor } from './fps-monitor';
 import type { Plan } from '../../../lib/queries/plan';
 
 interface SceneProps {
   plan: Plan;
+  onFpsFallback?: () => void;
 }
 
 const PATH_POINTS_FALLBACK: Array<[number, number]> = [
@@ -54,7 +56,7 @@ function PathAndNodes({
   );
 }
 
-export function Scene({ plan }: SceneProps) {
+export function Scene({ plan, onFpsFallback }: SceneProps) {
   useKeyboard();
   const carPositionRef = useRef(new Vector3(0, 0, 0));
   const nodePositionsRef = useRef(new Map<string, Vector3>());
@@ -73,6 +75,7 @@ export function Scene({ plan }: SceneProps) {
     >
       <OrthographicCamera makeDefault position={[0, 70, 55]} near={0.1} far={400} />
       <CameraRig carPositionRef={carPositionRef} nodePositionsRef={nodePositionsRef} />
+      {onFpsFallback && <FpsMonitor onFallback={onFpsFallback} />}
 
       <directionalLight
         position={[60, 90, 30]}

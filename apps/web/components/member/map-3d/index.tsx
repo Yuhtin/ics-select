@@ -70,7 +70,13 @@ export default function Map3D({ plan }: Map3DProps) {
 
   return (
     <div className="fixed inset-0 z-0 bg-[#FEE9D2]">
-      <Scene plan={plan} />
+      <Scene
+        plan={plan}
+        onFpsFallback={() => {
+          localStorage.setItem('ics:map3d', 'off');
+          window.location.reload();
+        }}
+      />
       <Hud plan={plan} />
       {focusedItem && (
         <FocusCard
