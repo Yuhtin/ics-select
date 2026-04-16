@@ -19,3 +19,4 @@ generated/
 .vercel
 .claude/
 /.playwright-mcp
+.superpowers/
