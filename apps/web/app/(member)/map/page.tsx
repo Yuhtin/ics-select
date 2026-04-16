@@ -6,7 +6,7 @@ import { addToast } from '@heroui/react';
 import { AnimatePresence } from 'framer-motion';
 import { CalendarPlus, Map } from 'lucide-react';
 import { apiFetch } from '../../../lib/api/client';
-import { NodeMap } from '../../../components/member/node-map';
+import { NodeMap } from '../../../components/member/map-2d/node-map';
 import { WorldSelect } from '../../../components/member/world-select';
 import { StatsSidebar } from '../../../components/member/stats-sidebar';
 import { StatsBannerMobile } from '../../../components/member/stats-banner-mobile';

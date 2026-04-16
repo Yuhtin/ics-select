@@ -3,9 +3,9 @@
 import { motion } from 'framer-motion';
 import { ExternalLink, X as XIcon, Check, HelpCircle } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiFetch } from '../../lib/api/client';
+import { apiFetch } from '../../../lib/api/client';
 import { getPlatformKey, PLATFORM_BORDER_CLASS, PLATFORM_LABEL } from './platform-colors';
-import { FeedbackForm } from './feedback-form';
+import { FeedbackForm } from '../feedback-form';
 
 interface NodeExpandedCardProps {
   planId: string;
