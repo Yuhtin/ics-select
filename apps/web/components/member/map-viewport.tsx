@@ -1,9 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, lazy, useEffect, useState } from 'react';
 import { shouldUse3DMap } from '../../lib/capabilities';
 import { NodeMap } from './map-2d/node-map';
 import type { Plan } from '../../lib/queries/plan';
+
+const Map3D = lazy(() => import('./map-3d'));
 
 interface MapViewportProps {
   plan: Plan;
@@ -19,9 +21,18 @@ export function MapViewport({ plan }: MapViewportProps) {
     return () => window.removeEventListener('resize', onResize);
   }, []);
 
-  // Fase 1: 3D ainda não existe — sempre cai no 2D. Será plugado em Fase 2.
   if (use3D) {
-    return <NodeMap planId={plan.id} items={plan.items} />;
+    return (
+      <Suspense
+        fallback={
+          <div className="flex items-center justify-center min-h-[60vh] text-sm text-foreground-muted">
+            Carregando mundo 3D…
+          </div>
+        }
+      >
+        <Map3D plan={plan} />
+      </Suspense>
+    );
   }
   return <NodeMap planId={plan.id} items={plan.items} />;
 }
