@@ -4,6 +4,7 @@ import { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Group } from 'three';
 import { heightAt } from './terrain';
+import { prefersReducedMotion } from '../../../lib/capabilities';
 
 const CRYSTAL_COLORS = ['#8B5CF6', '#F97316', '#FBBF24', '#EC4899', '#4F46E5'];
 
@@ -93,8 +94,10 @@ export function Mountains() {
 export function Crystals() {
   const positions = useMemo(() => samplePositions(18, 20, 105, PATH_AVOID, 6, 2), []);
   const refs = useRef<Array<{ mesh: Group | null; phase: number; baseY: number }>>([]);
+  const reduced = useMemo(() => prefersReducedMotion(), []);
 
   useFrame(() => {
+    if (reduced) return;
     const t = performance.now() * 0.001;
     refs.current.forEach((r, i) => {
       if (!r || !r.mesh) return;
@@ -155,8 +158,10 @@ export function Clouds() {
     });
   }, []);
   const groupRefs = useRef<Array<Group | null>>([]);
+  const reduced = useMemo(() => prefersReducedMotion(), []);
 
   useFrame(() => {
+    if (reduced) return;
     const t = performance.now() * 0.001;
     groupRefs.current.forEach((g, i) => {
       if (!g) return;
