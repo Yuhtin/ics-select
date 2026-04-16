@@ -23,7 +23,7 @@ export function Hud({ plan }: HudProps) {
 
   return (
     <>
-      <div className="fixed top-4 left-1/2 -translate-x-1/2 z-30 bg-white/90 backdrop-blur rounded-xl px-4 py-2 shadow pointer-events-none text-center">
+      <div className="fixed top-20 left-6 z-30 bg-white/90 backdrop-blur rounded-xl px-4 py-2 shadow pointer-events-none">
         <div className="text-sm font-bold text-foreground">Mapa de Estudo</div>
         <div className="text-[11px] text-foreground-muted">
           {formatRange(plan.weekStart, plan.weekEnd)} · {done}/{plan.items.length} nodes

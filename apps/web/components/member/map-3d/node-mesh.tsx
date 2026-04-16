@@ -83,7 +83,7 @@ export function NodeMesh({ position, status, number, isNearest }: NodeMeshProps)
 
   const labelMaterial = useMemo(() => {
     const tex = buildLabelTexture(status, number);
-    return new SpriteMaterial({ map: tex, transparent: true, depthWrite: false });
+    return new SpriteMaterial({ map: tex, transparent: true, depthWrite: false, depthTest: false });
   }, [status, number]);
 
   const c = COLORS[status];
@@ -134,7 +134,7 @@ export function NodeMesh({ position, status, number, isNearest }: NodeMeshProps)
       >
         <meshStandardMaterial color={c.edge} flatShading />
       </mesh>
-      <sprite material={labelMaterial} scale={[2.8, 2.8, 1]} position={[0, 1, 0]} />
+      <sprite material={labelMaterial} scale={[2.8, 2.8, 1]} position={[0, 1.6, 0]} renderOrder={10} />
       {status === 'active' && (
         <mesh ref={glowRef} geometry={glowGeo} rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.65, 0]}>
           <meshBasicMaterial color="#6366F1" transparent opacity={0.28} depthWrite={false} />

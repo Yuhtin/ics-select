@@ -33,12 +33,25 @@ export function TopbarMember({ userName, avatarUrl, onLogout }: TopbarMemberProp
   }, [menuOpen]);
 
   const initial = userName.charAt(0).toUpperCase();
+  const isMap = pathname === '/map';
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-40 hidden lg:flex items-center justify-between h-14 px-6 backdrop-blur-xl bg-background/70 border-b border-border/40">
-      <BrandLockup size="md" />
+    <header
+      className={
+        isMap
+          ? 'fixed top-0 left-0 right-0 z-40 hidden lg:flex items-center justify-end gap-3 h-14 px-6 pointer-events-none'
+          : 'fixed top-0 left-0 right-0 z-40 hidden lg:flex items-center justify-between h-14 px-6 backdrop-blur-xl bg-background/70 border-b border-border/40'
+      }
+    >
+      {!isMap && <BrandLockup size="md" />}
 
-      <nav className="flex items-center gap-1">
+      <nav
+        className={
+          isMap
+            ? 'flex items-center gap-1 bg-white/80 backdrop-blur-xl rounded-full px-2 py-1 shadow-md pointer-events-auto'
+            : 'flex items-center gap-1'
+        }
+      >
         {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
           const active = pathname.startsWith(href);
           return (
@@ -58,11 +71,15 @@ export function TopbarMember({ userName, avatarUrl, onLogout }: TopbarMemberProp
         })}
       </nav>
 
-      <div className="relative" ref={menuRef}>
+      <div className={isMap ? 'relative pointer-events-auto' : 'relative'} ref={menuRef}>
         <button
           type="button"
           onClick={() => setMenuOpen(!menuOpen)}
-          className="h-9 w-9 rounded-full bg-brand-soft text-brand flex items-center justify-center text-sm font-bold overflow-hidden"
+          className={
+            isMap
+              ? 'h-10 w-10 rounded-full bg-white text-brand flex items-center justify-center text-sm font-bold overflow-hidden shadow-md'
+              : 'h-9 w-9 rounded-full bg-brand-soft text-brand flex items-center justify-center text-sm font-bold overflow-hidden'
+          }
         >
           {avatarUrl ? (
             <img src={avatarUrl} alt={userName} className="h-full w-full object-cover" />

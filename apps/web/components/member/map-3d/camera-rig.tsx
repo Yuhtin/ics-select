@@ -5,8 +5,8 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { OrthographicCamera, Vector3 } from 'three';
 import { useSceneStore } from './scene-store';
 
-const CAM_OFFSET_FOLLOW = new Vector3(0, 70, 55);
-const CAM_OFFSET_FOCUS = new Vector3(-12, 30, 18);
+const CAM_OFFSET_FOLLOW = new Vector3(0, 55, 42);
+const CAM_OFFSET_FOCUS = new Vector3(-10, 26, 14);
 
 interface CameraRigProps {
   carPositionRef: React.MutableRefObject<Vector3>;
@@ -21,7 +21,7 @@ export function CameraRig({ carPositionRef, nodePositionsRef }: CameraRigProps) 
 
   useEffect(() => {
     if (!(camera instanceof OrthographicCamera)) return;
-    const frustum = 50;
+    const frustum = 32;
     const aspect = size.width / size.height;
     camera.left = -frustum * aspect;
     camera.right = frustum * aspect;

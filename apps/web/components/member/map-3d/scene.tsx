@@ -39,7 +39,7 @@ function OrthoCamera() {
   const camRef = useRef<OrthographicCameraThree | null>(null);
 
   if (!camRef.current) {
-    const frustum = 50;
+    const frustum = 32;
     const aspect = size.width / Math.max(size.height, 1);
     camRef.current = new OrthographicCameraThree(
       -frustum * aspect,
@@ -52,6 +52,17 @@ function OrthoCamera() {
     camRef.current.position.set(0, 70, 55);
     camRef.current.lookAt(0, 0, 0);
   }
+
+  useEffect(() => {
+    if (!camRef.current) return;
+    const frustum = 32;
+    const aspect = size.width / Math.max(size.height, 1);
+    camRef.current.left = -frustum * aspect;
+    camRef.current.right = frustum * aspect;
+    camRef.current.top = frustum;
+    camRef.current.bottom = -frustum;
+    camRef.current.updateProjectionMatrix();
+  }, [size.width, size.height]);
 
   useEffect(() => {
     if (camRef.current) set({ camera: camRef.current });
