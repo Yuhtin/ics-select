@@ -60,7 +60,7 @@ export default function MembersPage() {
       />
 
       <div className="glass rounded-xl overflow-hidden">
-        <Table aria-label="Lista de membros" shadow="none" isStriped selectionMode="single" onRowAction={(key) => router.push(`/admin/members/${key}`)}>
+        <Table aria-label="Lista de membros" shadow="none" isStriped selectionMode="single" onRowAction={(key) => router.push(`/admin/members/${String(key)}`)}>
           <TableHeader>
             <TableColumn>Membro</TableColumn>
             <TableColumn>Email</TableColumn>
