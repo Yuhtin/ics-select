@@ -1,17 +1,34 @@
 'use client';
 
-import { Suspense, useCallback, useRef } from 'react';
+import { Suspense, useCallback, useMemo, useRef } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrthographicCamera } from '@react-three/drei';
 import { Vector3, Color, Fog } from 'three';
-import { Terrain } from './terrain';
+import { Terrain, heightAt } from './terrain';
 import { CameraRig } from './camera-rig';
 import { Path, usePathPoints } from './path';
 import { Nodes } from './nodes';
+import { Car } from './car';
+import { useKeyboard } from './input';
 import type { Plan } from '../../../lib/queries/plan';
 
 interface SceneProps {
   plan: Plan;
+}
+
+const PATH_POINTS_FALLBACK: Array<[number, number]> = [
+  [-65,  55], [-35,  45], [-10,  28], [ 20,  12],
+  [ 42,  -8], [ 28, -38], [ -5, -52], [-38, -48],
+  [-55, -30], [-65,   0], [-60,  30], [-70,  55],
+];
+
+function computeSpawn(plan: Plan): Vector3 {
+  const firstPending = plan.items.findIndex((i) => i.status === 'PENDING');
+  const idx = firstPending >= 0 ? firstPending : 0;
+  const [x, z] = PATH_POINTS_FALLBACK[idx] ?? PATH_POINTS_FALLBACK[0];
+  const sx = x + 4;
+  const sz = z + 4;
+  return new Vector3(sx, heightAt(sx, sz) + 0.5, sz);
 }
 
 function PathAndNodes({
@@ -37,8 +54,10 @@ function PathAndNodes({
 }
 
 export function Scene({ plan }: SceneProps) {
+  useKeyboard();
   const carPositionRef = useRef(new Vector3(0, 0, 0));
   const nodePositionsRef = useRef(new Map<string, Vector3>());
+  const spawn = useMemo(() => computeSpawn(plan), [plan]);
 
   return (
     <Canvas
@@ -73,6 +92,11 @@ export function Scene({ plan }: SceneProps) {
       <Suspense fallback={null}>
         <Terrain />
         <PathAndNodes plan={plan} nodePositionsRef={nodePositionsRef} />
+        <Car
+          positionRef={carPositionRef}
+          spawnPosition={spawn}
+          nodePositionsRef={nodePositionsRef}
+        />
       </Suspense>
     </Canvas>
   );
