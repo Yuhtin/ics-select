@@ -18,3 +18,8 @@ export function shouldUse3DMap(): boolean {
   if (localStorage.getItem('ics:map3d') === 'off') return false;
   return hasWebGL();
 }
+
+export function prefersReducedMotion(): boolean {
+  if (typeof window === 'undefined') return false;
+  return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+}

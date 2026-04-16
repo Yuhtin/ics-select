@@ -3,6 +3,7 @@
 import { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { CanvasTexture, CircleGeometry, ExtrudeGeometry, Shape, SpriteMaterial, Vector3, Group, Mesh, MeshBasicMaterial } from 'three';
+import { prefersReducedMotion } from '../../../lib/capabilities';
 
 export type NodeVisualStatus = 'done' | 'active' | 'pending';
 
@@ -86,11 +87,17 @@ export function NodeMesh({ position, status, number, isNearest }: NodeMeshProps)
   }, [status, number]);
 
   const c = COLORS[status];
+  const reduced = useMemo(() => prefersReducedMotion(), []);
 
   useFrame((_, delta) => {
     if (!groupRef.current) return;
     const t = performance.now() * 0.001;
-    if (status === 'active') {
+    if (reduced) {
+      // Subtle pulse only on active; others static
+      if (status === 'active') {
+        groupRef.current.position.y = baseY + Math.sin(t * 2) * 0.1;
+      }
+    } else if (status === 'active') {
       groupRef.current.position.y = baseY + Math.sin(t * 2) * 0.25;
       if (glowRef.current) {
         const s = 1 + Math.sin(t * 2.5) * 0.15;
