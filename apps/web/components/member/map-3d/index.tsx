@@ -63,6 +63,11 @@ export default function Map3D({ plan }: Map3DProps) {
     );
   }
 
+  const orderedItems = useMemo(
+    () => [...plan.items].sort((a, b) => a.order - b.order),
+    [plan.items],
+  );
+
   return (
     <div className="fixed inset-0 z-0 bg-[#FEE9D2]">
       <Scene plan={plan} />
@@ -77,6 +82,25 @@ export default function Map3D({ plan }: Map3DProps) {
           }}
         />
       )}
+      <ul
+        className="sr-only"
+        aria-label="Lista de nodes do plano (alternativa acessível ao mapa 3D)"
+      >
+        {orderedItems.map((item, i) => (
+          <li key={item.id}>
+            Node {i + 1}: {item.libraryItem.title} —{' '}
+            {item.status === 'DONE' ? 'concluído' : 'pendente'}
+            {item.libraryItem.url && (
+              <>
+                {' '}
+                <a href={item.libraryItem.url} target="_blank" rel="noopener noreferrer">
+                  (abrir material)
+                </a>
+              </>
+            )}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
