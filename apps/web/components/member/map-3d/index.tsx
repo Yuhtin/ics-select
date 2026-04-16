@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Scene } from './scene';
 import { Hud } from './hud';
 import { FocusCard } from './focus-card';
+import { CarPicker } from './car-picker';
 import { useSceneStore } from './scene-store';
 import { NodeMap } from '../map-2d/node-map';
 import type { Plan } from '../../../lib/queries/plan';
@@ -14,6 +15,7 @@ interface Map3DProps {
 
 export default function Map3D({ plan }: Map3DProps) {
   const [glError, setGlError] = useState(false);
+  const [carPickerOpen, setCarPickerOpen] = useState(false);
   const reset = useSceneStore((s) => s.reset);
   const focusedId = useSceneStore((s) => s.focusedNodeId);
   const setMode = useSceneStore((s) => s.setMode);
@@ -77,7 +79,8 @@ export default function Map3D({ plan }: Map3DProps) {
           window.location.reload();
         }}
       />
-      <Hud plan={plan} />
+      <Hud plan={plan} onOpenCarPicker={() => setCarPickerOpen(true)} />
+      <CarPicker open={carPickerOpen} onClose={() => setCarPickerOpen(false)} />
       {focusedItem && (
         <FocusCard
           planId={plan.id}

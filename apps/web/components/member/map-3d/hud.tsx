@@ -1,10 +1,12 @@
 'use client';
 
+import { Car as CarIcon } from 'lucide-react';
 import { useSceneStore } from './scene-store';
 import type { Plan } from '../../../lib/queries/plan';
 
 interface HudProps {
   plan: Plan;
+  onOpenCarPicker: () => void;
 }
 
 function formatRange(start: string, end: string): string {
@@ -16,7 +18,7 @@ function formatRange(start: string, end: string): string {
   }
 }
 
-export function Hud({ plan }: HudProps) {
+export function Hud({ plan, onOpenCarPicker }: HudProps) {
   const nearestId = useSceneStore((s) => s.nearestNodeId);
   const mode = useSceneStore((s) => s.cameraMode);
   const done = plan.items.filter((i) => i.status === 'DONE').length;
@@ -29,6 +31,16 @@ export function Hud({ plan }: HudProps) {
           {formatRange(plan.weekStart, plan.weekEnd)} · {done}/{plan.items.length} nodes
         </div>
       </div>
+
+      <button
+        type="button"
+        onClick={onOpenCarPicker}
+        className="fixed top-20 right-6 z-30 bg-white/90 hover:bg-white backdrop-blur rounded-full px-3 py-2 shadow text-xs font-semibold text-foreground flex items-center gap-1.5 transition-colors"
+        aria-label="Trocar carrinho"
+      >
+        <CarIcon className="h-3.5 w-3.5" />
+        Trocar carrinho
+      </button>
 
       <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-30 bg-white/90 backdrop-blur rounded-full px-4 py-2 shadow pointer-events-none text-[11px] text-foreground-secondary">
         <kbd className="inline-block mx-0.5 px-1.5 py-0.5 rounded border border-stone-300 bg-stone-50 font-bold">W</kbd>
