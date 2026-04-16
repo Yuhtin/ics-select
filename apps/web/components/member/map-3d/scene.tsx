@@ -1,9 +1,8 @@
 'use client';
 
-import { Suspense, useCallback, useMemo, useRef } from 'react';
-import { Canvas } from '@react-three/fiber';
-import { OrthographicCamera } from '@react-three/drei';
-import { Vector3, Color, Fog } from 'three';
+import { Suspense, useCallback, useEffect, useMemo, useRef } from 'react';
+import { Canvas, useThree } from '@react-three/fiber';
+import { Vector3, Color, Fog, OrthographicCamera as OrthographicCameraThree } from 'three';
 import { Terrain, heightAt } from './terrain';
 import { CameraRig } from './camera-rig';
 import { Path, usePathPoints } from './path';
@@ -32,6 +31,33 @@ function computeSpawn(plan: Plan): Vector3 {
   const sx = x + 4;
   const sz = z + 4;
   return new Vector3(sx, heightAt(sx, sz) + 0.5, sz);
+}
+
+function OrthoCamera() {
+  const set = useThree((s) => s.set);
+  const size = useThree((s) => s.size);
+  const camRef = useRef<OrthographicCameraThree | null>(null);
+
+  if (!camRef.current) {
+    const frustum = 50;
+    const aspect = size.width / Math.max(size.height, 1);
+    camRef.current = new OrthographicCameraThree(
+      -frustum * aspect,
+      frustum * aspect,
+      frustum,
+      -frustum,
+      0.1,
+      400,
+    );
+    camRef.current.position.set(0, 70, 55);
+    camRef.current.lookAt(0, 0, 0);
+  }
+
+  useEffect(() => {
+    if (camRef.current) set({ camera: camRef.current });
+  }, [set]);
+
+  return null;
 }
 
 function PathAndNodes({
@@ -73,7 +99,7 @@ export function Scene({ plan, onFpsFallback }: SceneProps) {
         scene.fog = new Fog('#FDBA74', 100, 220);
       }}
     >
-      <OrthographicCamera makeDefault position={[0, 70, 55]} near={0.1} far={400} />
+      <OrthoCamera />
       <CameraRig carPositionRef={carPositionRef} nodePositionsRef={nodePositionsRef} />
       {onFpsFallback && <FpsMonitor onFallback={onFpsFallback} />}
 
