@@ -1,6 +1,6 @@
 'use client';
 
-import { getPlatformKey, PLATFORM_BG_CLASS, PLATFORM_BORDER_CLASS } from './platform-colors';
+import { getPlatformKey, PLATFORM_BG_CLASS, PLATFORM_BORDER_CLASS } from './map-2d/platform-colors';
 
 interface CalendarSessionCardProps {
   title: string;
