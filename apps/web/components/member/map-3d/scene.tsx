@@ -10,6 +10,7 @@ import { Path, usePathPoints } from './path';
 import { Nodes } from './nodes';
 import { Car } from './car';
 import { useKeyboard } from './input';
+import { Trees, Mountains, Crystals, Clouds, Sun } from './props';
 import type { Plan } from '../../../lib/queries/plan';
 
 interface SceneProps {
@@ -91,6 +92,11 @@ export function Scene({ plan }: SceneProps) {
 
       <Suspense fallback={null}>
         <Terrain />
+        <Trees />
+        <Mountains />
+        <Crystals />
+        <Clouds />
+        <Sun />
         <PathAndNodes plan={plan} nodePositionsRef={nodePositionsRef} />
         <Car
           positionRef={carPositionRef}
