@@ -176,6 +176,7 @@ apps/web/components/member/
 ```
 
 - `activePlanId` (= plano atualmente carregado na viewport, distinto da "semana atual" do membro) vem de estado local do page. Inicializa com `currentPlans[0].id` de `/me/week` (plano ativo hoje; array porque a API devolve `Plan[]` mesmo tendo sempre no máximo 1 item no caso comum). Muda quando o usuário clica num tile diferente do Plan Dock.
+- Quando `activePlanId` corresponde ao plano de `/me/week[0]`, reusa esses dados sem refetch. Quando é outro, dispara `useQuery(['plan', id], () => GET /plans/:id)`. A consulta de summary `/me/plans` já é chamada uma vez no mount.
 - Prefetch na hover de tile: `queryClient.prefetchQuery(['me-plan', planId], ...)`.
 - `<Map3D>` recebe `planData` como prop; seu `useEffect` detecta mudança de `planData.id` e chama `loadPlan(planData)` no scene-store → componentes de nodes/path re-renderizam, terreno/car permanecem.
 
@@ -191,30 +192,13 @@ apps/web/components/member/
 
 ## 4. Backend
 
-### 4.1 Novo endpoint
+**Zero mudanças no backend.** A auditoria do código existente mostrou que todos os endpoints necessários já existem:
 
-**`GET /me/plans/:id`** — retorna o plano semanal completo do membro autenticado.
+- `GET /me/plans` (summary para o Plan Dock) — `weekly-plans.controller.ts:75`.
+- `GET /plans/:id` (plano completo com items + libraryItem + sessions + ownership check) — `weekly-plans.controller.ts:57`. Retorna exatamente o shape que precisamos para trocar de mundo.
+- `POST /plans/:planId/items/:itemId/done` e `/stuck` continuam alimentando o focus card.
 
-**Controller** (`apps/api/src/weekly-plans/weekly-plans.controller.ts`):
-
-```ts
-@Get('/me/plans/:id')
-async getMyPlan(@CurrentUser() user: JwtUser, @Param('id') id: string) {
-  return this.weeklyPlansService.getPlanForMember(user.sub, id);
-}
-```
-
-**Service** (`weekly-plans.service.ts`):
-
-- Carrega o `WeeklyPlan` por id com `include: { items: { include: { libraryItem: true, sessions: true } }, cycle: true }`.
-- Verifica ownership: `plan.userId === user.sub` ou role ADMIN. Se não, `ForbiddenException`.
-- Shape de retorno idêntico ao que `/me/week` já devolve, mas só um plano (não array).
-
-### 4.2 Nenhuma outra mudança
-
-- `/me/plans` (summary) continua existindo e alimenta o dock de tiles.
-- `PATCH /items/:itemId/completion` e rotas de auto-schedule permanecem idênticas.
-- Nenhuma migration, nenhuma mudança em Prisma.
+Nenhuma migration, nenhum service novo, nenhuma mudança em Prisma. O frontend consome as rotas existentes.
 
 ---
 
@@ -378,17 +362,15 @@ Checklist pré-merge:
 
 Uma vez aprovado, a implementação segue estes marcos (detalhado no plan posterior):
 
-1. **Backend**: endpoint `GET /me/plans/:id` + testes.
-2. **Refactor 2D**: mover `node-map.tsx` e filhos para `components/member/map-2d/`. `MapViewport` switcher. Fallback toggle via localStorage.
-3. **Plan Dock**: componente compartilhado 2D+3D, já plugado no switcher, substituindo `WorldSelect`.
-4. **3D foundation**: R3F instalado, Canvas, terreno, lights, câmera ortográfica, loading.
-5. **Car + controls**: modelo box, input keyboard, movement.
-6. **Nodes + path**: rendering dos nodes a partir do plano, spline do path.
-7. **Focus + feedback**: proximity, E key, card DOM, integração com mutation existente.
-8. **Props + polish**: árvores, montanhas, cristais, nuvens (instanced).
-9. **A11y + perf**: reduced motion, aria, bundle analyzer, FPS monitor.
+1. **Refactor 2D + Plan Dock**: mover `node-map.tsx` e filhos para `components/member/map-2d/`. `MapViewport` switcher. `PlanDock` consumindo `/me/plans` e `/plans/:id`. Substitui `WorldSelect` e corrige o bug de plano não-ativo vazio.
+2. **3D foundation**: R3F + drei + zustand instalados, Canvas, terreno, lights, câmera ortográfica, loading, capabilities detection.
+3. **3D content**: nodes hex posicionados pelo spline, path amarelo, sprite labels.
+4. **Car + controls**: modelo box, input keyboard, movement direcional, camera follow.
+5. **Focus + feedback**: proximity, E key, card DOM, integração com mutations existentes.
+6. **Props + polish**: árvores, montanhas, cristais, nuvens (instanced quando possível).
+7. **A11y + perf**: reduced motion, aria, offscreen node list, FPS monitor.
 
-Cada marco ≈ 1 PR. Marcos 1-3 são seguros pra deploy mesmo sem o 3D pronto — o switcher simplesmente sempre cai no 2D atual.
+Cada marco ≈ 1 PR. Marco 1 é seguro pra deploy mesmo sem o 3D pronto — o switcher simplesmente sempre cai no 2D atual.
 
 ---
 
