@@ -1,6 +1,6 @@
 'use client';
 
-import { Calendar, Compass, LogOut, Settings, Users } from 'lucide-react';
+import { Calendar, Car as CarIcon, Compass, LogOut, Settings, Users } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, useRef, useEffect } from 'react';
@@ -89,7 +89,20 @@ export function TopbarMember({ userName, avatarUrl, onLogout }: TopbarMemberProp
         </button>
 
         {menuOpen && (
-          <div className="absolute right-0 top-12 w-48 bg-surface border border-border rounded-xl shadow-md py-2 z-50">
+          <div className="absolute right-0 top-12 w-52 bg-surface border border-border rounded-xl shadow-md py-2 z-50">
+            {isMap && (
+              <button
+                type="button"
+                onClick={() => {
+                  setMenuOpen(false);
+                  window.dispatchEvent(new CustomEvent('ics:open-car-picker'));
+                }}
+                className="flex items-center gap-2 px-4 py-2 text-sm text-foreground-muted hover:bg-surface-subtle w-full text-left"
+              >
+                <CarIcon className="h-4 w-4" />
+                Trocar carrinho
+              </button>
+            )}
             <Link
               href="/me/availability"
               className="flex items-center gap-2 px-4 py-2 text-sm text-foreground-muted hover:bg-surface-subtle"

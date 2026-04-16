@@ -1,12 +1,11 @@
 'use client';
 
 import { useMemo, useRef } from 'react';
-import { useFrame } from '@react-three/fiber';
-import { Group } from 'three';
+import { useFrame, useLoader } from '@react-three/fiber';
+import { Group, Mesh, MeshStandardMaterial } from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { heightAt } from './terrain';
 import { prefersReducedMotion } from '../../../lib/capabilities';
-
-const CRYSTAL_COLORS = ['#8B5CF6', '#F97316', '#FBBF24', '#EC4899', '#4F46E5'];
 
 const PATH_AVOID: Array<[number, number]> = [
   [-65,  55], [-35,  45], [-10,  28], [ 20,  12],
@@ -22,16 +21,26 @@ function hashRandom(seed: number): () => number {
   };
 }
 
-function samplePositions(
+interface Placement {
+  x: number;
+  z: number;
+  scale: number;
+  rot: number;
+  variant: number;
+}
+
+function samplePlacements(
   count: number,
   minR: number,
   maxR: number,
-  avoid: Array<[number, number]>,
   minAvoid: number,
   seed: number,
-): Array<{ x: number; z: number; s: number }> {
+  scaleMin = 0.6,
+  scaleMax = 1.3,
+  variants = 1,
+): Placement[] {
   const rand = hashRandom(seed);
-  const out: Array<{ x: number; z: number; s: number }> = [];
+  const out: Placement[] = [];
   let attempts = 0;
   while (out.length < count && attempts < count * 20) {
     attempts++;
@@ -39,99 +48,104 @@ function samplePositions(
     const r = minR + rand() * (maxR - minR);
     const x = Math.cos(a) * r;
     const z = Math.sin(a) * r;
-    const tooClose = avoid.some(([ax, az]) => Math.hypot(ax - x, az - z) < minAvoid);
-    if (tooClose) continue;
-    out.push({ x, z, s: 0.6 + rand() * 0.8 });
+    if (PATH_AVOID.some(([ax, az]) => Math.hypot(ax - x, az - z) < minAvoid)) continue;
+    if (out.some((o) => Math.hypot(o.x - x, o.z - z) < 3)) continue;
+    out.push({
+      x,
+      z,
+      scale: scaleMin + rand() * (scaleMax - scaleMin),
+      rot: rand() * Math.PI * 2,
+      variant: Math.floor(rand() * variants),
+    });
   }
   return out;
 }
 
-export function Trees() {
-  const positions = useMemo(() => samplePositions(140, 18, 128, PATH_AVOID, 8, 1), []);
+function prepareScene(scene: Group): Group {
+  const cloned = scene.clone(true);
+  cloned.traverse((obj) => {
+    if ((obj as Mesh).isMesh) {
+      const mesh = obj as Mesh;
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      const mat = mesh.material as MeshStandardMaterial | MeshStandardMaterial[];
+      if (Array.isArray(mat)) {
+        mat.forEach((m) => {
+          if (m && 'flatShading' in m) m.flatShading = true;
+        });
+      } else if (mat && 'flatShading' in mat) {
+        mat.flatShading = true;
+      }
+    }
+  });
+  return cloned;
+}
+
+function PropInstance({ source, x, z, scale, rot, yOffset = 0 }: {
+  source: Group;
+  x: number;
+  z: number;
+  scale: number;
+  rot: number;
+  yOffset?: number;
+}) {
+  const cloned = useMemo(() => prepareScene(source), [source]);
+  const y = heightAt(x, z) + yOffset;
   return (
-    <group>
-      {positions.map((p, i) => {
-        const y = heightAt(p.x, p.z);
-        return (
-          <group key={i} position={[p.x, y, p.z]} scale={[p.s, p.s, p.s]}>
-            <mesh position={[0, 0.9, 0]} castShadow>
-              <cylinderGeometry args={[0.35, 0.45, 1.8, 6]} />
-              <meshStandardMaterial color="#78350F" flatShading />
-            </mesh>
-            <mesh position={[0, 3.1, 0]} castShadow>
-              <coneGeometry args={[1.7, 3.4, 6]} />
-              <meshStandardMaterial color="#065F46" flatShading />
-            </mesh>
-          </group>
-        );
-      })}
-    </group>
+    <primitive object={cloned} position={[x, y, z]} rotation={[0, rot, 0]} scale={scale} />
   );
 }
 
-const MOUNTAIN_SPEC: Array<{ x: number; z: number; h: number; c: string }> = [
-  { x: -120, z: -70, h: 32, c: '#F97316' },
-  { x:  110, z: -90, h: 38, c: '#EA580C' },
-  { x: -130, z:  40, h: 28, c: '#FB923C' },
-  { x:  125, z:  60, h: 30, c: '#F97316' },
-  { x:   80, z: -10, h: 22, c: '#FB923C' },
-  { x:  -90, z:  90, h: 26, c: '#EA580C' },
-];
+export function Trees() {
+  const tree1 = useLoader(GLTFLoader, '/models/props/tree-1.glb');
+  const tree2 = useLoader(GLTFLoader, '/models/props/tree-2.glb');
 
-export function Mountains() {
+  const placements = useMemo(
+    () => samplePlacements(90, 18, 128, 10, 1, 0.9, 1.8, 2),
+    [],
+  );
+
   return (
     <>
-      {MOUNTAIN_SPEC.map((m, i) => (
-        <mesh key={i} position={[m.x, heightAt(m.x, m.z) + m.h / 2, m.z]} castShadow>
-          <coneGeometry args={[m.h * 0.7, m.h, 5]} />
-          <meshStandardMaterial color={m.c} flatShading />
-        </mesh>
-      ))}
+      {placements.map((p, i) => {
+        const source = p.variant === 0 ? tree1.scene : tree2.scene;
+        return (
+          <PropInstance
+            key={i}
+            source={source}
+            x={p.x}
+            z={p.z}
+            scale={p.scale * 1.4}
+            rot={p.rot}
+          />
+        );
+      })}
     </>
   );
 }
 
-export function Crystals() {
-  const positions = useMemo(() => samplePositions(18, 20, 105, PATH_AVOID, 6, 2), []);
-  const refs = useRef<Array<{ mesh: Group | null; phase: number; baseY: number }>>([]);
-  const reduced = useMemo(() => prefersReducedMotion(), []);
+export function Rocks() {
+  const rock = useLoader(GLTFLoader, '/models/props/rock.glb');
+  const rockLarge = useLoader(GLTFLoader, '/models/props/rock-large.glb');
 
-  useFrame(() => {
-    if (reduced) return;
-    const t = performance.now() * 0.001;
-    refs.current.forEach((r, i) => {
-      if (!r || !r.mesh) return;
-      r.mesh.position.y = r.baseY + Math.sin(t * 1.2 + r.phase) * 0.3;
-      r.mesh.rotation.y = t * 0.5 + i;
-    });
-  });
+  const placements = useMemo(
+    () => samplePlacements(28, 22, 120, 12, 2, 0.5, 1.2, 2),
+    [],
+  );
 
   return (
     <>
-      {positions.map((p, i) => {
-        const baseY = heightAt(p.x, p.z) + 2.2;
-        const color = CRYSTAL_COLORS[i % CRYSTAL_COLORS.length];
-        const phase = (i * 0.7) % (Math.PI * 2);
+      {placements.map((p, i) => {
+        const source = p.variant === 0 ? rock.scene : rockLarge.scene;
         return (
-          <group
+          <PropInstance
             key={i}
-            position={[p.x, baseY, p.z]}
-            ref={(el) => {
-              refs.current[i] = { mesh: el, phase, baseY };
-            }}
-          >
-            <mesh castShadow>
-              <octahedronGeometry args={[1.1]} />
-              <meshStandardMaterial
-                color={color}
-                flatShading
-                metalness={0.3}
-                roughness={0.3}
-                emissive={color}
-                emissiveIntensity={0.35}
-              />
-            </mesh>
-          </group>
+            source={source}
+            x={p.x}
+            z={p.z}
+            scale={p.scale * 1.6}
+            rot={p.rot}
+          />
         );
       })}
     </>

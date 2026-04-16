@@ -7,12 +7,12 @@ import { prefersReducedMotion } from '../../../lib/capabilities';
 
 export type NodeVisualStatus = 'done' | 'active' | 'pending';
 
-const R = 2.2;
+const R = 2.6;
 
-const COLORS: Record<NodeVisualStatus, { body: string; edge: string; emi: string; ei: number }> = {
-  done:    { body: '#10B981', edge: '#065F46', emi: '#065F46', ei: 0.15 },
-  active:  { body: '#6366F1', edge: '#3730A3', emi: '#4F46E5', ei: 0.55 },
-  pending: { body: '#D6D3D1', edge: '#78716C', emi: '#000000', ei: 0 },
+const COLORS: Record<NodeVisualStatus, { body: string; edge: string; emi: string; ei: number; badgeBg: string; badgeFg: string }> = {
+  done:    { body: '#10B981', edge: '#065F46', emi: '#065F46', ei: 0.15, badgeBg: '#ECFDF5', badgeFg: '#047857' },
+  active:  { body: '#6366F1', edge: '#3730A3', emi: '#4F46E5', ei: 0.55, badgeBg: '#EEF2FF', badgeFg: '#3730A3' },
+  pending: { body: '#D6D3D1', edge: '#78716C', emi: '#000000', ei: 0,    badgeBg: '#F5F5F4', badgeFg: '#44403C' },
 };
 
 function buildHexShape(): Shape {
@@ -27,31 +27,62 @@ function buildHexShape(): Shape {
   return s;
 }
 
+function roundedRectPath(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number): void {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
 function buildLabelTexture(status: NodeVisualStatus, number: number): CanvasTexture {
   const cv = document.createElement('canvas');
-  cv.width = 128;
-  cv.height = 128;
+  cv.width = 256;
+  cv.height = 256;
   const ctx = cv.getContext('2d');
   if (!ctx) return new CanvasTexture(cv);
-  ctx.fillStyle = status === 'pending' ? '#57534E' : 'white';
-  ctx.font = 'bold 84px system-ui, -apple-system, sans-serif';
+  const c = COLORS[status];
+
+  // Drop shadow below the pill
+  ctx.fillStyle = 'rgba(15, 23, 42, 0.28)';
+  roundedRectPath(ctx, 38, 72, 180, 132, 62);
+  ctx.fill();
+
+  // Pill background
+  ctx.fillStyle = c.badgeBg;
+  roundedRectPath(ctx, 34, 62, 188, 132, 62);
+  ctx.fill();
+
+  // Inner accent border (2px) using edge color
+  ctx.strokeStyle = c.badgeFg;
+  ctx.lineWidth = 6;
+  roundedRectPath(ctx, 37, 65, 182, 126, 60);
+  ctx.stroke();
+
+  // Content
+  ctx.fillStyle = c.badgeFg;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
+
   if (status === 'done') {
-    ctx.strokeStyle = 'white';
-    ctx.lineWidth = 14;
+    ctx.strokeStyle = c.badgeFg;
+    ctx.lineWidth = 18;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     ctx.beginPath();
-    ctx.moveTo(36, 66);
-    ctx.lineTo(58, 90);
-    ctx.lineTo(94, 40);
+    ctx.moveTo(82, 132);
+    ctx.lineTo(118, 166);
+    ctx.lineTo(176, 92);
     ctx.stroke();
   } else {
-    ctx.fillText(String(number), 64, 70);
+    ctx.font = '900 116px system-ui, -apple-system, "Segoe UI", sans-serif';
+    ctx.fillText(String(number), 128, 138);
   }
+
   const t = new CanvasTexture(cv);
-  t.anisotropy = 4;
+  t.anisotropy = 8;
   return t;
 }
 
@@ -134,7 +165,7 @@ export function NodeMesh({ position, status, number, isNearest }: NodeMeshProps)
       >
         <meshStandardMaterial color={c.edge} flatShading />
       </mesh>
-      <sprite material={labelMaterial} scale={[2.8, 2.8, 1]} position={[0, 1.6, 0]} renderOrder={10} />
+      <sprite material={labelMaterial} scale={[4.8, 4.8, 1]} position={[0, 3, 0]} renderOrder={10} />
       {status === 'active' && (
         <mesh ref={glowRef} geometry={glowGeo} rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.65, 0]}>
           <meshBasicMaterial color="#6366F1" transparent opacity={0.28} depthWrite={false} />

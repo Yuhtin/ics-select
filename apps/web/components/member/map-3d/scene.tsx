@@ -9,7 +9,7 @@ import { Path, usePathPoints } from './path';
 import { Nodes } from './nodes';
 import { Car } from './car';
 import { useKeyboard } from './input';
-import { Trees, Mountains, Crystals, Clouds, Sun } from './props';
+import { Trees, Rocks, Clouds, Sun } from './props';
 import { FpsMonitor } from './fps-monitor';
 import type { Plan } from '../../../lib/queries/plan';
 
@@ -133,8 +133,7 @@ export function Scene({ plan, onFpsFallback }: SceneProps) {
       <Suspense fallback={null}>
         <Terrain />
         <Trees />
-        <Mountains />
-        <Crystals />
+        <Rocks />
         <Clouds />
         <Sun />
         <PathAndNodes plan={plan} nodePositionsRef={nodePositionsRef} />

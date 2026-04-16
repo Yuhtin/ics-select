@@ -33,6 +33,12 @@ export default function Map3D({ plan }: Map3DProps) {
   }, []);
 
   useEffect(() => {
+    const onOpen = () => setCarPickerOpen(true);
+    window.addEventListener('ics:open-car-picker', onOpen);
+    return () => window.removeEventListener('ics:open-car-picker', onOpen);
+  }, []);
+
+  useEffect(() => {
     if (glError) return;
     const onKey = (e: KeyboardEvent) => {
       const k = e.key.toLowerCase();
@@ -79,7 +85,7 @@ export default function Map3D({ plan }: Map3DProps) {
           window.location.reload();
         }}
       />
-      <Hud plan={plan} onOpenCarPicker={() => setCarPickerOpen(true)} />
+      <Hud plan={plan} />
       <CarPicker open={carPickerOpen} onClose={() => setCarPickerOpen(false)} />
       {focusedItem && (
         <FocusCard
