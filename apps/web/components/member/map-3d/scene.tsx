@@ -1,18 +1,42 @@
 'use client';
 
-import { Suspense, useRef } from 'react';
+import { Suspense, useCallback, useRef } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrthographicCamera } from '@react-three/drei';
 import { Vector3, Color, Fog } from 'three';
 import { Terrain } from './terrain';
 import { CameraRig } from './camera-rig';
+import { Path, usePathPoints } from './path';
+import { Nodes } from './nodes';
 import type { Plan } from '../../../lib/queries/plan';
 
 interface SceneProps {
   plan: Plan;
 }
 
-export function Scene({ plan: _plan }: SceneProps) {
+function PathAndNodes({
+  plan,
+  nodePositionsRef,
+}: {
+  plan: Plan;
+  nodePositionsRef: React.MutableRefObject<Map<string, Vector3>>;
+}) {
+  const points = usePathPoints(plan.items.length);
+  const handlePositions = useCallback(
+    (m: Map<string, Vector3>) => {
+      nodePositionsRef.current = m;
+    },
+    [nodePositionsRef],
+  );
+  return (
+    <>
+      <Path points={points} />
+      <Nodes items={plan.items} onPositions={handlePositions} />
+    </>
+  );
+}
+
+export function Scene({ plan }: SceneProps) {
   const carPositionRef = useRef(new Vector3(0, 0, 0));
   const nodePositionsRef = useRef(new Map<string, Vector3>());
 
@@ -48,6 +72,7 @@ export function Scene({ plan: _plan }: SceneProps) {
 
       <Suspense fallback={null}>
         <Terrain />
+        <PathAndNodes plan={plan} nodePositionsRef={nodePositionsRef} />
       </Suspense>
     </Canvas>
   );
