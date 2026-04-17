@@ -39,6 +39,31 @@ export class GoogleCalendarService {
       .map((b) => ({ start: new Date(b.start!), end: new Date(b.end!) }));
   }
 
+  async listEventsInRange(
+    userId: string,
+    timeMin: Date,
+    timeMax: Date,
+  ): Promise<Array<{ id: string; summary: string; description: string; start: Date; end: Date }>> {
+    const client = await this.clientFor(userId);
+    const res = await client.events.list({
+      calendarId: 'primary',
+      timeMin: timeMin.toISOString(),
+      timeMax: timeMax.toISOString(),
+      singleEvents: true,
+      orderBy: 'startTime',
+    });
+    const events = res.data.items ?? [];
+    return events
+      .filter((e) => e.id && (e.start?.dateTime || e.start?.date) && (e.end?.dateTime || e.end?.date))
+      .map((e) => ({
+        id: e.id!,
+        summary: e.summary ?? '',
+        description: e.description ?? '',
+        start: new Date(e.start!.dateTime ?? e.start!.date!),
+        end: new Date(e.end!.dateTime ?? e.end!.date!),
+      }));
+  }
+
   async createEvent(userId: string, input: CreateEventInput): Promise<string> {
     const description = input.icsId
       ? embedIcsId(input.description, input.icsId)

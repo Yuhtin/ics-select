@@ -26,7 +26,7 @@ const aes = {
 
 type MockCalendar = {
   freebusy: { query: jest.Mock };
-  events: { insert: jest.Mock; patch: jest.Mock; delete: jest.Mock };
+  events: { insert: jest.Mock; patch: jest.Mock; delete: jest.Mock; list: jest.Mock };
 };
 
 function mockClient(): MockCalendar {
@@ -36,6 +36,7 @@ function mockClient(): MockCalendar {
       insert: jest.fn().mockResolvedValue({ data: { id: 'evt-1' } }),
       patch: jest.fn().mockResolvedValue({ data: { id: 'evt-1' } }),
       delete: jest.fn().mockResolvedValue({}),
+      list: jest.fn().mockResolvedValue({ data: { items: [] } }),
     },
   };
 }
@@ -110,5 +111,73 @@ describe('GoogleCalendarService', () => {
     const client = mockClient();
     const svc = new GoogleCalendarService(prisma as any, aes as any, () => client as any);
     await expect(svc.getFreeBusy('u', new Date(), new Date())).rejects.toThrow(/GoogleAccount/);
+  });
+
+  it('listEventsInRange maps Calendar event shape into the normalized shape', async () => {
+    const row = {
+      accessTokenEnc: 'enc(plain-access)',
+      refreshTokenEnc: 'enc(plain-refresh)',
+      expiresAt: new Date(Date.now() + 30 * 60 * 1000),
+      scope: 'calendar.events',
+    };
+    const prisma = fakePrisma(row);
+    const client = mockClient();
+    client.events.list.mockResolvedValueOnce({
+      data: {
+        items: [
+          {
+            id: 'evt-a',
+            summary: 'Leetcode · binary search',
+            description: 'Link: https://leetcode.com\n\nICS ID: plan-1/item-1',
+            start: { dateTime: '2026-04-17T12:10:00Z' },
+            end: { dateTime: '2026-04-17T13:10:00Z' },
+          },
+          {
+            id: 'evt-b',
+            summary: 'All-day',
+            description: '',
+            start: { date: '2026-04-17' },
+            end: { date: '2026-04-18' },
+          },
+          {
+            // dropped because no id
+            summary: 'No id',
+            start: { dateTime: '2026-04-17T14:00:00Z' },
+            end: { dateTime: '2026-04-17T15:00:00Z' },
+          },
+        ],
+      },
+    });
+    const svc = new GoogleCalendarService(prisma as any, aes as any, () => client as any);
+    const result = await svc.listEventsInRange(
+      'user-1',
+      new Date('2026-04-17T12:00:00Z'),
+      new Date('2026-04-17T13:00:00Z'),
+    );
+    expect(client.events.list).toHaveBeenCalledWith(
+      expect.objectContaining({
+        calendarId: 'primary',
+        singleEvents: true,
+        orderBy: 'startTime',
+        timeMin: '2026-04-17T12:00:00.000Z',
+        timeMax: '2026-04-17T13:00:00.000Z',
+      }),
+    );
+    expect(result).toEqual([
+      {
+        id: 'evt-a',
+        summary: 'Leetcode · binary search',
+        description: 'Link: https://leetcode.com\n\nICS ID: plan-1/item-1',
+        start: new Date('2026-04-17T12:10:00Z'),
+        end: new Date('2026-04-17T13:10:00Z'),
+      },
+      {
+        id: 'evt-b',
+        summary: 'All-day',
+        description: '',
+        start: new Date('2026-04-17'),
+        end: new Date('2026-04-18'),
+      },
+    ]);
   });
 });
