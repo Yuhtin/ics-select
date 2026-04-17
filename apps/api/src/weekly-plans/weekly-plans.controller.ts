@@ -4,7 +4,7 @@ import { Roles } from '../auth/decorators/roles.decorator.js';
 import type { JwtStrategyPayload } from '../auth/strategies/jwt.strategy.js';
 import { WeeklyPlansService } from './weekly-plans.service.js';
 import { PublicationService } from './publication.service.js';
-import { CreatePlanSchema, SetItemOutcomeDto, UpdatePlanSchema } from './dto.js';
+import { CreatePlanSchema, SetItemOutcomeSchema, UpdatePlanSchema } from './dto.js';
 
 @Controller()
 export class WeeklyPlansController {
@@ -92,11 +92,12 @@ export class WeeklyPlansController {
     @Param('planId') _planId: string,
     @Param('itemId') itemId: string,
     @CurrentUser() user: JwtStrategyPayload,
-    @Body() body: SetItemOutcomeDto,
+    @Body() body: unknown,
   ) {
+    const input = SetItemOutcomeSchema.parse(body);
     return this.plans.setItemOutcome(itemId, user.sub, {
-      outcome: body.outcome,
-      reflection: body.reflection,
+      outcome: input.outcome,
+      reflection: input.reflection,
     });
   }
 }

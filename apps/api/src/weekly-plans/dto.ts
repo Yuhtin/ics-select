@@ -1,6 +1,5 @@
 import { z } from 'zod';
-import { IsIn, IsOptional, IsString, MaxLength } from 'class-validator';
-import { ITEM_OUTCOMES, type ItemOutcome } from '@ics-select/shared';
+import { ITEM_OUTCOMES } from '@ics-select/shared';
 
 export const CreatePlanSchema = z.object({
   cycleId: z.string().min(1),
@@ -29,12 +28,8 @@ export const UpdatePlanSchema = z.object({
     .optional(),
 });
 
-export class SetItemOutcomeDto {
-  @IsIn(ITEM_OUTCOMES as unknown as string[])
-  outcome!: ItemOutcome;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(2000)
-  reflection?: string;
-}
+export const SetItemOutcomeSchema = z.object({
+  outcome: z.enum(ITEM_OUTCOMES),
+  reflection: z.string().max(2000).optional(),
+});
+export type SetItemOutcomeInput = z.infer<typeof SetItemOutcomeSchema>;
