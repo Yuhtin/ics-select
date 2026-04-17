@@ -3,195 +3,54 @@
 @tailwind utilities;
 
 :root {
-  /* Background — creme quente */
-  --background: 40 20% 97%;
-  --foreground: 0 0% 10%;
-  --surface: 0 0% 100%;
-  --surface-muted: 40 14% 95%;
-  --surface-subtle: 40 10% 92%;
-  --border: 40 6% 85%;
-  --border-strong: 0 0% 42%;
-  --foreground-muted: 0 0% 42%;
-  --foreground-subtle: 0 0% 64%;
+  /* Magazine Editorial palette */
+  --paper: 40 30% 97%;         /* #FAFAF7 */
+  --paper-warm: 40 17% 92%;    /* #EFEEE8 */
+  --surface: 0 0% 100%;        /* #FFFFFF */
+  --ink: 0 0% 10%;             /* #1A1A1A */
+  --ink-soft: 24 9% 25%;       /* #44403C */
+  --ink-mute: 24 5% 47%;       /* #78716C */
+  --ink-faint: 25 6% 63%;      /* #A8A29E */
+  --rule: 40 8% 89%;           /* #E5E4DF */
+  --accent: 15 56% 50%;        /* #C45D3A terracotta */
 
-  /* Primary — Indigo moderno */
-  --brand: 243 75% 59%;
-  --brand-hover: 243 75% 51%;
-  --brand-soft: 226 100% 97%;
-  --brand-soft-foreground: 244 47% 20%;
+  /* Outcome tokens (dot 6-10px or border-left 3px only) */
+  --outcome-pending: 25 6% 63%;        /* #A8A29E */
+  --outcome-done-easy: 161 82% 17%;    /* #065F46 */
+  --outcome-done-hard: 27 88% 35%;     /* #B45309 */
+  --outcome-doubts: 271 78% 40%;       /* #6B21A8 */
+  --outcome-stuck: 0 74% 35%;          /* #991B1B */
 
-  /* Accent — Coral quente (FOMO, CTAs) */
-  --accent: 24 95% 53%;
-  --accent-hover: 21 90% 48%;
-  --accent-soft: 33 100% 96%;
-
-  /* Status */
-  --success: 160 84% 39%;
-  --success-soft: 152 76% 90%;
-  --warning: 38 92% 50%;
-  --warning-soft: 48 96% 89%;
-  --danger: 0 84% 60%;
-  --danger-soft: 0 100% 94%;
-  --info: 243 75% 59%;
-  --info-soft: 226 100% 97%;
-
-  /* Platform colors */
+  /* Platform colors (unchanged from prior palette) */
   --platform-youtube: 0 100% 50%;
   --platform-leetcode: 36 100% 54%;
   --platform-medium: 0 0% 10%;
   --platform-github: 263 70% 58%;
   --platform-article: 174 84% 29%;
   --platform-book: 33 90% 43%;
-
-  /* Map-specific */
-  --map-path: 40 10% 82%;
-  --map-path-done: 243 75% 59%;
-  --map-bg-start: 40 20% 97%;
-  --map-bg-end: 40 14% 95%;
 }
 
 html,
 body {
   height: 100%;
+  background: hsl(var(--paper));
+  color: hsl(var(--ink));
+}
+
+html {
+  /* Keep class="light" requirement for HeroUI portal-rendered components */
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 body {
-  @apply font-sans bg-background text-foreground antialiased;
+  @apply antialiased;
+  font-feature-settings: 'kern', 'liga', 'calt';
 }
 
-/* Accent CTA button glow */
-.btn-accent-glow {
-  @apply bg-accent text-white shadow-glow-accent;
-}
-.btn-accent-glow:hover {
-  @apply bg-accent-hover scale-[1.02];
-}
-
-/* FOMO badge with gradient */
-.badge-exclusive {
-  @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-pill text-caption font-semibold;
-  background: linear-gradient(135deg, hsl(var(--accent)) 0%, hsl(24 100% 60%) 100%);
-  color: white;
-  box-shadow: 0 0 16px rgba(249, 115, 22, 0.2);
-}
-
-/* Marquee animation */
-@keyframes marquee {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
-}
-
-/* Primary glow for highlighted elements */
-.ring-glow-primary {
-  box-shadow: 0 0 0 2px hsl(var(--brand) / 0.2), 0 0 16px hsl(var(--brand) / 0.1);
-}
-
-/* Glassmorphism card */
-.glass {
-  background: hsl(var(--surface) / 0.6);
-  backdrop-filter: blur(16px) saturate(180%);
-  border: 1px solid hsl(var(--border) / 0.3);
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
-}
-
-/* Glassmorphism navbar */
-.glass-navbar {
-  background: hsl(var(--surface) / 0.7);
-  backdrop-filter: blur(20px) saturate(200%);
-  border-bottom: 1px solid hsl(var(--border) / 0.2);
-}
-
-/* Subtle glassmorphism */
-.glass-subtle {
-  background: hsl(var(--surface) / 0.4);
-  backdrop-filter: blur(12px) saturate(150%);
-  border: 1px solid hsl(var(--border) / 0.15);
-}
-
-/* Interactive card hover */
-.card-hover {
-  transition: all 0.2s ease;
-  cursor: pointer;
-}
-.card-hover:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
-}
-
-/* Mesh gradient background with decorative blobs */
-.bg-mesh {
-  position: relative;
-}
-.bg-mesh::before,
-.bg-mesh::after {
-  content: "";
-  position: fixed;
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: -1;
-}
-.bg-mesh::before {
-  top: -20%;
-  right: -10%;
-  width: 60%;
-  height: 60%;
-  background: radial-gradient(circle, hsl(var(--brand) / 0.07) 0%, transparent 70%);
-}
-.bg-mesh::after {
-  bottom: -20%;
-  left: -10%;
-  width: 50%;
-  height: 50%;
-  background: radial-gradient(circle, hsl(var(--accent) / 0.06) 0%, transparent 70%);
-}
-
-/* Skeleton shimmer loading */
-@keyframes skeleton-pulse {
-  0% {
-    background-position: 200% 0;
-  }
-  100% {
-    background-position: -200% 0;
-  }
-}
-.skeleton-pulse {
-  background: linear-gradient(
-    90deg,
-    hsl(var(--surface-muted)) 25%,
-    hsl(var(--surface-subtle)) 50%,
-    hsl(var(--surface-muted)) 75%
-  );
-  background-size: 200% 100%;
-  animation: skeleton-pulse 1.8s ease-in-out infinite;
-  border-radius: 8px;
-}
-
-/* Status dot indicators */
-.status-dot {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: hsl(var(--foreground-subtle));
-  flex-shrink: 0;
-}
-.status-dot-success {
-  background: hsl(var(--success));
-}
-.status-dot-danger {
-  background: hsl(var(--danger));
-}
-.status-dot-warning {
-  background: hsl(var(--warning));
-}
-
-/* Empty state container */
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 3rem 1.5rem;
-  color: hsl(var(--foreground-muted));
+/* Utility: tabular numerics for dense-data surfaces */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
 }
