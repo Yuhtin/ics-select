@@ -6,7 +6,7 @@ import { Calendar, Compass, User, Users } from 'lucide-react';
 import { clsx } from 'clsx';
 
 const NAV = [
-  { href: '/home', label: 'Today', icon: Compass },
+  { href: '/me', label: 'Today', icon: Compass },
   { href: '/cohort', label: 'Cohort', icon: Users },
   { href: '/calendar', label: 'Calendar', icon: Calendar },
 ] as const;
@@ -16,7 +16,7 @@ export function TopbarMember() {
   return (
     <header className="sticky top-0 z-40 hidden border-b border-rule/60 bg-paper/80 backdrop-blur md:block">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6">
-        <Link href="/home" className="font-serif text-lg font-semibold tracking-tight">
+        <Link href="/me" className="font-serif text-lg font-semibold tracking-tight">
           ICS Select
         </Link>
         <nav className="flex items-center gap-1 font-sans text-sm">

@@ -26,7 +26,7 @@ export default function RootPage() {
     if (!user.privacyAcceptedAt) {
       router.replace('/privacy');
     } else {
-      router.replace(user.role === 'ADMIN' ? '/admin/cycles' : '/home');
+      router.replace(user.role === 'ADMIN' ? '/admin/cycles' : '/me');
     }
   }, [user, isLoading, router]);
 

@@ -6,7 +6,7 @@ import { Calendar, Compass, User, Users } from 'lucide-react';
 import { clsx } from 'clsx';
 
 const TABS = [
-  { href: '/home', label: 'Today', icon: Compass },
+  { href: '/me', label: 'Today', icon: Compass },
   { href: '/cohort', label: 'Cohort', icon: Users },
   { href: '/calendar', label: 'Calendar', icon: Calendar },
   { href: '/settings', label: 'Settings', icon: User },
