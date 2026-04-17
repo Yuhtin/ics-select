@@ -17,6 +17,26 @@ export class UsersService {
     return user;
   }
 
+  async getMeById(id: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      include: {
+        googleAccount: { select: { id: true } },
+        memberships: {
+          where: { cycle: { status: 'ACTIVE' } },
+          select: { track: true },
+          take: 1,
+        },
+      },
+    });
+    if (!user) throw new NotFoundException('user not found');
+    return {
+      ...user,
+      googleConnected: user.googleAccount !== null,
+      membership: user.memberships[0] ?? null,
+    };
+  }
+
   async list() {
     return this.prisma.user.findMany({
       orderBy: { createdAt: 'desc' },

@@ -24,7 +24,7 @@ export class UsersController {
 
   @Get('me')
   async me(@CurrentUser() current: JwtStrategyPayload) {
-    const user = await this.users.getByIdOrThrow(current.sub);
+    const user = await this.users.getMeById(current.sub);
     return {
       id: user.id,
       email: user.email,
@@ -32,6 +32,9 @@ export class UsersController {
       pictureUrl: user.pictureUrl,
       role: user.role,
       privacyAcceptedAt: user.privacyAcceptedAt,
+      whatsappPhone: user.whatsappPhone ?? null,
+      targetTrack: user.membership?.track ?? null,
+      googleConnected: user.googleConnected,
     };
   }
 
