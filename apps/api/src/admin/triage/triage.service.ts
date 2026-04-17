@@ -1,6 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import type { AlertType } from '@ics-select/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import {
+  computeWeekPosition,
+  resolveActiveCycle,
+} from '../../common/cycle/active-cycle';
 
 export type TriageAlert = {
   id: string;
@@ -29,9 +33,11 @@ export type CohortStripEntry = {
 export type CycleInfo = {
   cycleId: string;
   cycleName: string;
-  weekNumber: number;
+  weekNumber: number;      // 0 when the cycle hasn't started yet
   weeksTotal: number;
   daysUntilWeekEnds: number;
+  hasStarted: boolean;
+  daysUntilStart: number;  // 0 once the cycle is running
 };
 
 export type TriageResponse = {
@@ -116,7 +122,7 @@ export class TriageService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getTriage(now: Date = new Date(), adminUserId?: string): Promise<TriageResponse> {
-    const cycle = await this.prisma.cycle.findFirst({ where: { status: 'ACTIVE' } });
+    const cycle = await resolveActiveCycle(this.prisma, now);
     if (!cycle) {
       return { alerts: [], cohortStrip: [], cycleInfo: null };
     }
@@ -492,22 +498,17 @@ export class TriageService {
   private computeCycleInfo(
     cycle: { id: string; name: string; startsAt: Date; endsAt: Date },
     now: Date,
-    weekEnd: Date,
+    _weekEnd: Date,
   ): CycleInfo {
-    const totalMs = cycle.endsAt.getTime() - cycle.startsAt.getTime();
-    const weeksTotal = Math.max(1, Math.ceil(totalMs / (7 * DAY_MS)));
-    const elapsedMs = Math.max(0, now.getTime() - cycle.startsAt.getTime());
-    const weekNumber = Math.min(
-      weeksTotal,
-      Math.max(1, Math.ceil(elapsedMs / (7 * DAY_MS)) || 1),
-    );
-    const daysUntilWeekEnds = this.daysUntilWeekEnds(weekEnd, now);
+    const pos = computeWeekPosition(cycle, now);
     return {
       cycleId: cycle.id,
       cycleName: cycle.name,
-      weekNumber,
-      weeksTotal,
-      daysUntilWeekEnds,
+      weekNumber: pos.weekNumber,
+      weeksTotal: pos.weeksTotal,
+      daysUntilWeekEnds: pos.daysUntilWeekEnds,
+      hasStarted: pos.hasStarted,
+      daysUntilStart: pos.daysUntilStart,
     };
   }
 

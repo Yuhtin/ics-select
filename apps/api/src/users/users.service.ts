@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service.js';
+import { resolveActiveMembership } from '../common/cycle/active-cycle.js';
 
 type InviteInput = { email: string; name: string };
 
@@ -22,18 +23,14 @@ export class UsersService {
       where: { id },
       include: {
         googleAccount: { select: { id: true } },
-        memberships: {
-          where: { cycle: { status: 'ACTIVE' } },
-          select: { track: true },
-          take: 1,
-        },
       },
     });
     if (!user) throw new NotFoundException('user not found');
+    const membership = await resolveActiveMembership(this.prisma, id);
     return {
       ...user,
       googleConnected: user.googleAccount !== null,
-      membership: user.memberships[0] ?? null,
+      membership: membership ? { track: (membership as any).track } : null,
     };
   }
 

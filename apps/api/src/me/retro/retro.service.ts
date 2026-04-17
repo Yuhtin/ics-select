@@ -1,5 +1,6 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service.js';
+import { resolveActiveMembership } from '../../common/cycle/active-cycle.js';
 import type { SubmitRetroInput } from './dto.js';
 
 @Injectable()
@@ -31,9 +32,7 @@ export class RetroService {
       throw new ConflictException('Retro window is closed — try again Fri 18:00 to Sun 23:59 local time.');
     }
 
-    const membership = await this.prisma.cycleMembership.findFirst({
-      where: { userId, cycle: { status: 'ACTIVE' } },
-    });
+    const membership = await resolveActiveMembership(this.prisma, userId, now);
     if (!membership) throw new NotFoundException('No active cycle membership');
 
     return this.prisma.weeklyRetro.upsert({

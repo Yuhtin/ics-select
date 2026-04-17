@@ -1,5 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service.js';
+import {
+  computeWeekPosition,
+  resolveActiveMembership,
+} from '../../common/cycle/active-cycle.js';
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 const POSITIVE = new Set(['DONE_EASY', 'DONE_HARD']);
@@ -140,10 +144,14 @@ export class PlanContextService {
     });
     if (!member) throw new NotFoundException('member not found');
 
-    const membership = await this.prisma.cycleMembership.findFirst({
-      where: { userId: input.memberId, cycle: { status: 'ACTIVE' } },
-      include: { cycle: true },
-    });
+    const membership = (await resolveActiveMembership(
+      this.prisma,
+      input.memberId,
+      now,
+    )) as {
+      track: string | null;
+      cycle: { id: string; name: string; startsAt: Date; endsAt: Date };
+    } | null;
     if (!membership) throw new NotFoundException('member has no active cycle');
 
     const cycle = membership.cycle as {
@@ -371,15 +379,7 @@ export class PlanContextService {
     endsAt: Date,
     now: Date,
   ): { weekNumber: number; weeksTotal: number } {
-    const weeksTotal = Math.max(
-      1,
-      Math.ceil((endsAt.getTime() - startsAt.getTime()) / WEEK_MS),
-    );
-    const elapsed = Math.max(0, now.getTime() - startsAt.getTime());
-    const weekNumber = Math.min(
-      weeksTotal,
-      Math.max(1, Math.ceil((elapsed + 1) / WEEK_MS)),
-    );
-    return { weekNumber, weeksTotal };
+    const pos = computeWeekPosition({ id: '', startsAt, endsAt }, now);
+    return { weekNumber: pos.weekNumber, weeksTotal: pos.weeksTotal };
   }
 }

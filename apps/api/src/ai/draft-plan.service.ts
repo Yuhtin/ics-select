@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { OpenAiChatProvider, MODEL } from '../common/openai/openai-chat.provider.js';
 import { LibraryService } from '../library/library.service.js';
 import { PrismaService } from '../common/prisma/prisma.service.js';
+import { resolveActiveMembership } from '../common/cycle/active-cycle.js';
 import { UsageLoggerService } from './usage-logger.service.js';
 import { searchLibraryTool, makeLibraryToolExecutor } from './library-tool.js';
 
@@ -41,10 +42,12 @@ export class DraftPlanService {
 
   async run(input: DraftInput): Promise<{ draft: Draft; usage: any }> {
     // 1) Active-cycle membership + member identity
-    const membership = await this.prisma.cycleMembership.findFirst({
-      where: { userId: input.memberId, cycle: { status: 'ACTIVE' } },
-      include: { cycle: true, user: true },
-    });
+    const membership = await resolveActiveMembership(
+      this.prisma,
+      input.memberId,
+      new Date(),
+      { user: true } as any,
+    );
     const track = (membership as any)?.track ?? null;
     const memberName =
       (membership as any)?.user?.name ??

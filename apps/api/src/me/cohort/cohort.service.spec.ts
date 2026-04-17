@@ -37,9 +37,17 @@ describe('CohortService', () => {
         id: 'c-1',
         name: '2026.1',
         rankingVisibleToMembers: false,
+        startsAt: new Date('2026-04-01T00:00:00Z'),
         endsAt: new Date('2026-06-30T00:00:00Z'),
-        memberships: [{ userId: 'user-1' }, { userId: 'user-2' }],
       },
+    } as any);
+    prisma.cycle.findUnique.mockResolvedValue({
+      id: 'c-1',
+      name: '2026.1',
+      rankingVisibleToMembers: false,
+      startsAt: new Date('2026-04-01T00:00:00Z'),
+      endsAt: new Date('2026-06-30T00:00:00Z'),
+      memberships: [{ userId: 'user-1' }, { userId: 'user-2' }],
     } as any);
     prisma.weeklyPlan.findMany.mockResolvedValue([]);
     prisma.weeklyPlanItem.findMany.mockResolvedValue([]);
@@ -56,12 +64,20 @@ describe('CohortService', () => {
         id: 'c-1',
         name: '2026.1',
         rankingVisibleToMembers: true,
+        startsAt: new Date('2026-04-01T00:00:00Z'),
         endsAt: new Date('2026-06-30T00:00:00Z'),
-        memberships: [
-          { userId: 'user-1', user: { id: 'user-1', name: 'Me', pictureUrl: null } },
-          { userId: 'user-2', user: { id: 'user-2', name: 'Alice', pictureUrl: null } },
-        ],
       },
+    } as any);
+    prisma.cycle.findUnique.mockResolvedValue({
+      id: 'c-1',
+      name: '2026.1',
+      rankingVisibleToMembers: true,
+      startsAt: new Date('2026-04-01T00:00:00Z'),
+      endsAt: new Date('2026-06-30T00:00:00Z'),
+      memberships: [
+        { userId: 'user-1', user: { id: 'user-1', name: 'Me', pictureUrl: null } },
+        { userId: 'user-2', user: { id: 'user-2', name: 'Alice', pictureUrl: null } },
+      ],
     } as any);
     prisma.weeklyPlan.findMany.mockResolvedValue([
       { id: 'plan-me', userId: 'user-1', items: [{ outcome: 'DONE_EASY' }, { outcome: 'PENDING' }] },
@@ -84,9 +100,17 @@ describe('CohortService', () => {
         id: 'c-1',
         name: '2026.1',
         rankingVisibleToMembers: false,
+        startsAt: new Date('2026-04-01T00:00:00Z'),
         endsAt: new Date('2026-06-30T00:00:00Z'),
-        memberships: [{ userId: 'user-1' }, { userId: 'user-2' }],
       },
+    } as any);
+    prisma.cycle.findUnique.mockResolvedValue({
+      id: 'c-1',
+      name: '2026.1',
+      rankingVisibleToMembers: false,
+      startsAt: new Date('2026-04-01T00:00:00Z'),
+      endsAt: new Date('2026-06-30T00:00:00Z'),
+      memberships: [{ userId: 'user-1' }, { userId: 'user-2' }],
     } as any);
     prisma.weeklyPlan.findMany.mockResolvedValue([]);
     prisma.weeklyPlanItem.findMany.mockResolvedValue([

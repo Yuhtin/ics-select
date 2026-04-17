@@ -1,15 +1,13 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service.js';
+import { resolveActiveMembership } from '../../common/cycle/active-cycle.js';
 
 @Injectable()
 export class PlanDraftsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getOrCreateDraft(input: { memberId: string; weekStart: Date }) {
-    const membership = await this.prisma.cycleMembership.findFirst({
-      where: { userId: input.memberId, cycle: { status: 'ACTIVE' } },
-      include: { cycle: true },
-    });
+    const membership = await resolveActiveMembership(this.prisma, input.memberId);
     if (!membership) throw new NotFoundException('member has no active cycle');
     const cycle = (membership as any).cycle;
     const weekEnd = new Date(input.weekStart.getTime() + 7 * 24 * 60 * 60 * 1000 - 1);
