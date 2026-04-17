@@ -21,10 +21,19 @@ export type MemberRank = {
   isMe: boolean;
 };
 
+export type CohortMember = {
+  userId: string;
+  name: string;
+  email: string;
+  pictureUrl: string | null;
+  isMe: boolean;
+};
+
 export type CohortResponse = {
   cycleName: string;
   memberCount: number;
   weekEndsAt: string | null;
+  members: CohortMember[];
   feed: CohortEvent[];
   ranking?: MemberRank[];
 };

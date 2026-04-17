@@ -21,10 +21,19 @@ type MemberRank = {
   isMe: boolean;
 };
 
+type CohortMember = {
+  userId: string;
+  name: string;
+  email: string;
+  pictureUrl: string | null;
+  isMe: boolean;
+};
+
 export type CohortResponse = {
   cycleName: string;
   memberCount: number;
   weekEndsAt: string | null;
+  members: CohortMember[];
   feed: CohortEvent[];
   ranking?: MemberRank[];
 };
@@ -52,7 +61,7 @@ export class CohortService {
       | null;
 
     if (!membership) {
-      return { cycleName: '', memberCount: 0, weekEndsAt: null, feed: [] };
+      return { cycleName: '', memberCount: 0, weekEndsAt: null, members: [], feed: [] };
     }
 
     // Load the full cycle (with memberships) separately — the helper only
@@ -61,12 +70,16 @@ export class CohortService {
       where: { id: membership.cycle.id },
       include: {
         memberships: {
-          include: { user: { select: { id: true, name: true, pictureUrl: true } } },
+          include: {
+            user: {
+              select: { id: true, name: true, email: true, pictureUrl: true },
+            },
+          },
         },
       },
     });
     if (!cycle) {
-      return { cycleName: '', memberCount: 0, weekEndsAt: null, feed: [] };
+      return { cycleName: '', memberCount: 0, weekEndsAt: null, members: [], feed: [] };
     }
     const userIds = cycle.memberships.map((m: any) => m.userId);
 
@@ -174,10 +187,25 @@ export class CohortService {
         .sort((a: MemberRank, b: MemberRank) => b.percent - a.percent);
     }
 
+    const members: CohortMember[] = (cycle as any).memberships
+      .map((m: any) => ({
+        userId: m.userId,
+        name: m.user.name,
+        email: m.user.email,
+        pictureUrl: m.user.pictureUrl ?? null,
+        isMe: m.userId === userId,
+      }))
+      .sort((a: CohortMember, b: CohortMember) => {
+        if (a.isMe && !b.isMe) return -1;
+        if (!a.isMe && b.isMe) return 1;
+        return a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' });
+      });
+
     return {
       cycleName: (cycle as any).name,
       memberCount: cycle.memberships.length,
       weekEndsAt: weekEnd.toISOString(),
+      members,
       feed,
       ranking,
     };
