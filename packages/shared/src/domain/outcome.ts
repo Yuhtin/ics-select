@@ -16,3 +16,17 @@ export const POSITIVE_OUTCOMES: ReadonlySet<ItemOutcome> = new Set([
 export function isPositiveOutcome(o: ItemOutcome): boolean {
   return POSITIVE_OUTCOMES.has(o);
 }
+
+export function summarizeOutcomes(
+  items: ReadonlyArray<{ outcome: ItemOutcome }>,
+): Record<ItemOutcome, number> {
+  const counts: Record<ItemOutcome, number> = {
+    PENDING: 0,
+    DONE_EASY: 0,
+    DONE_HARD: 0,
+    DOUBTS: 0,
+    STUCK: 0,
+  };
+  for (const item of items) counts[item.outcome]++;
+  return counts;
+}

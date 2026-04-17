@@ -29,25 +29,8 @@ export class WeeklyPlansService {
   ) {}
 
   async remove(id: string) {
-    const plan = await this.prisma.weeklyPlan.findUnique({
-      where: { id },
-      include: { items: { include: { sessions: true } } },
-    });
+    const plan = await this.prisma.weeklyPlan.findUnique({ where: { id } });
     if (!plan) throw new NotFoundException('plan not found');
-
-    if (this.calendar) {
-      for (const item of plan.items) {
-        for (const session of item.sessions) {
-          if (!session.googleEventId) continue;
-          try {
-            await this.calendar.deleteEvent(plan.userId, session.googleEventId);
-          } catch {
-            // best-effort — member may have revoked or deleted the event manually
-          }
-        }
-      }
-    }
-
     await this.prisma.weeklyPlan.delete({ where: { id } });
   }
 
@@ -83,7 +66,7 @@ export class WeeklyPlansService {
           })),
         },
       },
-      include: { items: { include: { libraryItem: true, sessions: true } } },
+      include: { items: { include: { libraryItem: true } } },
     });
   }
 
@@ -111,7 +94,7 @@ export class WeeklyPlansService {
             }
           : {}),
       },
-      include: { items: { include: { libraryItem: true, sessions: true } } },
+      include: { items: { include: { libraryItem: true } } },
     });
   }
 
@@ -120,7 +103,7 @@ export class WeeklyPlansService {
       where: { id },
       include: {
         items: {
-          include: { libraryItem: true, sessions: true },
+          include: { libraryItem: true },
           orderBy: { order: 'asc' },
         },
       },
@@ -169,14 +152,14 @@ export class WeeklyPlansService {
     const plans = await this.prisma.weeklyPlan.findMany({
       where: { cycleId: membership.cycleId, status: 'PUBLISHED' },
       orderBy: { weekStart: 'desc' },
-      include: { items: { select: { id: true, status: true } } },
+      include: { items: { select: { id: true, outcome: true } } },
     });
 
     return memberships
       .map((m) => {
         const userPlans = plans.filter((p) => p.userId === m.userId);
         const currentPlan = userPlans[0];
-        const done = currentPlan?.items.filter((i) => i.status === 'DONE').length ?? 0;
+        const done = currentPlan?.items.filter((i) => i.outcome === 'DONE_EASY' || i.outcome === 'DONE_HARD').length ?? 0;
         const total = currentPlan?.items.length ?? 0;
         return {
           userId: m.user.id,
@@ -202,7 +185,7 @@ export class WeeklyPlansService {
         cycleId: true,
         cycle: { select: { name: true } },
         items: {
-          select: { id: true, status: true },
+          select: { id: true, outcome: true },
         },
       },
     });
@@ -213,7 +196,7 @@ export class WeeklyPlansService {
       where: { userId },
       orderBy: { weekStart: 'desc' },
       include: {
-        items: { include: { libraryItem: true, sessions: true }, orderBy: { order: 'asc' } },
+        items: { include: { libraryItem: true }, orderBy: { order: 'asc' } },
       },
     });
   }

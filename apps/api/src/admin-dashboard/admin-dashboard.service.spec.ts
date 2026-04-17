@@ -11,8 +11,8 @@ function fakePrisma() {
       userId: 'u-1',
       status: 'PUBLISHED',
       items: [
-        { id: 'i-1', status: 'DONE', stuck: false, libraryItem: { tags: ['arrays'] } },
-        { id: 'i-2', status: 'PENDING', stuck: false, libraryItem: { tags: ['dp'] } },
+        { id: 'i-1', outcome: 'DONE_EASY', libraryItem: { tags: ['arrays'] } },
+        { id: 'i-2', outcome: 'PENDING', libraryItem: { tags: ['dp'] } },
       ],
     },
   ];
@@ -32,8 +32,8 @@ function fakePrisma() {
       count: jest.fn(async ({ where }: any) => {
         const rel = plans.filter((p) => p.userId === where.weeklyPlan.userId);
         const items = rel.flatMap((p) => p.items);
-        if (where.status === 'DONE') return items.filter((i) => i.status === 'DONE').length;
-        if (where.stuck === true) return items.filter((i) => i.stuck).length;
+        if (where.outcome?.in) return items.filter((i) => where.outcome.in.includes(i.outcome)).length;
+        if (where.outcome === 'STUCK') return items.filter((i) => i.outcome === 'STUCK').length;
         return items.length;
       }),
     },

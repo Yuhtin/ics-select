@@ -15,7 +15,7 @@ export class MeService {
         where: { userId },
         include: {
           items: {
-            include: { libraryItem: true, sessions: true },
+            include: { libraryItem: true },
             orderBy: { order: 'asc' },
           },
         },

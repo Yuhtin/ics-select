@@ -41,7 +41,7 @@ export class CyclesService {
             weekEnd: true,
             status: true,
             _count: { select: { items: true } },
-            items: { select: { status: true } },
+            items: { select: { outcome: true } },
           },
           orderBy: { weekStart: 'desc' },
         },
