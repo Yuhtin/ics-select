@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Plus, Archive } from 'lucide-react';
 import { clsx } from 'clsx';
@@ -11,16 +11,97 @@ import {
 import { Eyebrow } from '../../../../components/ui/eyebrow';
 import { NewCycleModal } from '../../../../components/admin/cycles/new-cycle-modal';
 
+type Phase = 'active' | 'upcoming' | 'past' | 'archived';
+
 function formatRange(start: string, end: string): string {
   const s = new Date(start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   const e = new Date(end).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   return `${s} – ${e}`;
 }
 
+/**
+ * Resolve which single cycle the app considers "active" (current or nearest upcoming).
+ * Must mirror the backend helper in apps/api/src/common/cycle/active-cycle.ts so the
+ * admin sees the same cycle the runtime is treating as active.
+ */
+function resolveActiveCycleId(cycles: CycleRow[], now: Date): string | null {
+  const activeCandidates = cycles.filter((c) => c.status === 'ACTIVE');
+  const contains = activeCandidates.filter((c) => {
+    const start = new Date(c.startsAt).getTime();
+    const end = new Date(c.endsAt).getTime();
+    return start <= now.getTime() && now.getTime() <= end;
+  });
+  if (contains.length > 0) {
+    contains.sort(
+      (a, b) => new Date(b.startsAt).getTime() - new Date(a.startsAt).getTime(),
+    );
+    return contains[0]!.id;
+  }
+  const upcoming = activeCandidates.filter(
+    (c) => new Date(c.startsAt).getTime() > now.getTime(),
+  );
+  if (upcoming.length === 0) return null;
+  upcoming.sort(
+    (a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime(),
+  );
+  return upcoming[0]!.id;
+}
+
+function phaseOf(cycle: CycleRow, activeId: string | null, now: Date): Phase {
+  if (cycle.status === 'ARCHIVED') return 'archived';
+  if (cycle.id === activeId) return 'active';
+  if (new Date(cycle.startsAt).getTime() > now.getTime()) return 'upcoming';
+  return 'past';
+}
+
+const PHASE_CLASS: Record<Phase, string> = {
+  active: 'bg-ink text-paper border-ink',
+  upcoming: 'bg-paper text-ink border-ink/40',
+  past: 'bg-paper-warm text-ink-mute border-rule',
+  archived: 'bg-paper text-ink-faint border-rule',
+};
+
+const PHASE_LABEL: Record<Phase, string> = {
+  active: 'Active',
+  upcoming: 'Upcoming',
+  past: 'Past',
+  archived: 'Archived',
+};
+
+const PHASE_ORDER: Record<Phase, number> = {
+  active: 0,
+  upcoming: 1,
+  past: 2,
+  archived: 3,
+};
+
 export default function AdminCyclesPage() {
   const { data, isLoading } = useAdminCycles();
   const archive = useArchiveCycle();
   const [newOpen, setNewOpen] = useState(false);
+  const now = useMemo(() => new Date(), []);
+
+  const activeId = useMemo(
+    () => (data ? resolveActiveCycleId(data, now) : null),
+    [data, now],
+  );
+
+  const rows = useMemo(() => {
+    if (!data) return [] as Array<{ cycle: CycleRow; phase: Phase }>;
+    const annotated = data.map((cycle) => ({
+      cycle,
+      phase: phaseOf(cycle, activeId, now),
+    }));
+    annotated.sort((a, b) => {
+      const pa = PHASE_ORDER[a.phase];
+      const pb = PHASE_ORDER[b.phase];
+      if (pa !== pb) return pa - pb;
+      return (
+        new Date(b.cycle.startsAt).getTime() - new Date(a.cycle.startsAt).getTime()
+      );
+    });
+    return annotated;
+  }, [data, activeId, now]);
 
   const confirmArchive = (cycle: CycleRow) => {
     if (!confirm(`Archive cycle "${cycle.name}"?`)) return;
@@ -52,19 +133,24 @@ export default function AdminCyclesPage() {
         <p className="font-mono text-xs uppercase tracking-label text-ink-mute">
           Loading…
         </p>
-      ) : (data?.length ?? 0) === 0 ? (
+      ) : rows.length === 0 ? (
         <p className="font-mono text-xs text-ink-mute py-12 text-center border border-dashed border-rule rounded-card">
           No cycles yet. Create one to get started.
         </p>
       ) : (
         <ul className="divide-y divide-rule border border-rule rounded-card bg-surface">
-          {(data ?? []).map((cycle) => {
+          {rows.map(({ cycle, phase }) => {
             const memberCount =
               cycle._count?.memberships ?? cycle.memberships?.length ?? 0;
             return (
               <li
                 key={cycle.id}
-                className="flex items-center gap-4 px-4 py-3 hover:bg-paper-warm/60 transition-colors"
+                className={clsx(
+                  'flex items-center gap-4 px-4 py-3 transition-colors',
+                  phase === 'active'
+                    ? 'bg-paper-warm/40'
+                    : 'hover:bg-paper-warm/60',
+                )}
               >
                 <Link
                   href={`/admin/cycle/${cycle.id}`}
@@ -84,12 +170,10 @@ export default function AdminCyclesPage() {
                   <span
                     className={clsx(
                       'font-mono text-[10px] uppercase tracking-label px-2 py-0.5 rounded-pill border',
-                      cycle.status === 'ACTIVE'
-                        ? 'text-ink border-ink/40 bg-paper'
-                        : 'text-ink-mute border-rule',
+                      PHASE_CLASS[phase],
                     )}
                   >
-                    {cycle.status}
+                    {PHASE_LABEL[phase]}
                   </span>
                 </Link>
                 {cycle.status === 'ACTIVE' && (
@@ -97,6 +181,7 @@ export default function AdminCyclesPage() {
                     onClick={() => confirmArchive(cycle)}
                     disabled={archive.isPending}
                     className="inline-flex items-center gap-1 font-mono text-[11px] text-ink-mute hover:text-ink disabled:opacity-40"
+                    title="Archive this cycle"
                   >
                     <Archive className="h-3 w-3" strokeWidth={1.5} />
                     archive
