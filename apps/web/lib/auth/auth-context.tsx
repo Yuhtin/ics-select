@@ -11,6 +11,9 @@ type User = {
   pictureUrl: string | null;
   role: 'ADMIN' | 'MEMBER';
   privacyAcceptedAt: string | null;
+  whatsappPhone: string | null;
+  targetTrack: string | null;
+  googleConnected: boolean;
 };
 
 type AuthContextValue = {
