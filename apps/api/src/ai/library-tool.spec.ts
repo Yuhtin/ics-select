@@ -17,7 +17,7 @@ describe('searchLibraryTool', () => {
 describe('makeLibraryToolExecutor', () => {
   function makeLibrary() {
     return {
-      search: jest.fn(async (input: any) => [
+      search: jest.fn(async (_input: any) => [
         {
           id: 'li-1',
           title: 'DP intro',
