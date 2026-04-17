@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import OpenAI from 'openai';
+import type { ToolDefinition, ToolExecutor, ToolCall } from './tool-calling.js';
 
 export const MODEL = 'gpt-5.4-mini';
 
@@ -33,6 +34,89 @@ export class OpenAiChatProvider {
     if (!content) throw new Error('No text content in response');
     const data = JSON.parse(content) as T;
     return { data, usage: toUsage(response.usage) };
+  }
+
+  async callJsonWithTools<T>(input: {
+    system: string;
+    messages: Array<{ role: 'user' | 'assistant'; content: string }>;
+    tools: ToolDefinition[];
+    executeTool: ToolExecutor;
+    maxIterations?: number;
+    maxTokens?: number;
+  }): Promise<{ data: T; usage: Usage; toolCalls: ToolCall[] }> {
+    const maxIter = input.maxIterations ?? 5;
+    const openaiMessages: any[] = [
+      { role: 'system', content: input.system },
+      ...input.messages,
+    ];
+    const openaiTools = input.tools.map((t) => ({
+      type: 'function' as const,
+      function: {
+        name: t.name,
+        description: t.description,
+        parameters: t.parameters,
+      },
+    }));
+
+    const toolCalls: ToolCall[] = [];
+    const totalUsage: Usage = { inputTokens: 0, outputTokens: 0, costUsd: 0 };
+
+    for (let iter = 0; iter < maxIter; iter += 1) {
+      const isFinalIter = iter === maxIter - 1;
+      const response = await this.client.chat.completions.create({
+        model: MODEL,
+        max_completion_tokens: input.maxTokens ?? 2048,
+        messages: openaiMessages,
+        // On the last iteration, force JSON object output and drop tools
+        // so the model must answer rather than attempting another tool call.
+        ...(isFinalIter
+          ? { response_format: { type: 'json_object' as const } }
+          : { tools: openaiTools }),
+      });
+
+      const usage = toUsage(response.usage);
+      totalUsage.inputTokens += usage.inputTokens;
+      totalUsage.outputTokens += usage.outputTokens;
+      totalUsage.costUsd += usage.costUsd;
+
+      const message = response.choices[0]?.message;
+      if (!message) throw new Error('OpenAI returned no message');
+
+      if (message.tool_calls && message.tool_calls.length > 0 && !isFinalIter) {
+        // Echo the assistant message (with tool_calls) back into history
+        openaiMessages.push(message);
+        for (const call of message.tool_calls as any[]) {
+          const name = call.function.name as string;
+          const argString = (call.function.arguments ?? '{}') as string;
+          let parsedArgs: unknown;
+          try {
+            parsedArgs = JSON.parse(argString);
+          } catch {
+            parsedArgs = {};
+          }
+          toolCalls.push({ id: call.id, name, args: parsedArgs });
+          const result = await input.executeTool(name, parsedArgs);
+          openaiMessages.push({
+            role: 'tool',
+            tool_call_id: call.id,
+            content: JSON.stringify(result ?? null),
+          });
+        }
+        continue;
+      }
+
+      // Model returned final content (or last iteration reached)
+      const content = message.content;
+      if (!content) {
+        throw new Error(
+          `OpenAI returned no content after iteration ${iter + 1}`,
+        );
+      }
+      const data = JSON.parse(content) as T;
+      return { data, usage: totalUsage, toolCalls };
+    }
+
+    throw new Error(`Tool-calling loop exceeded ${maxIter} iterations`);
   }
 
   async callText(input: CallInput): Promise<{ text: string; usage: Usage }> {
