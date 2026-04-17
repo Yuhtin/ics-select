@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { LucideIcon } from 'lucide-react';
-import { Bell, BookOpen, CalendarDays, CircleDot, Sparkles, Users } from 'lucide-react';
+import { Bell, BookOpen, CircleDot, Sparkles, Users } from 'lucide-react';
 import { clsx } from 'clsx';
 
 type NavItem = {
@@ -15,11 +15,10 @@ type NavItem = {
 
 const NAV: readonly NavItem[] = [
   { href: '/admin', label: 'Triage', icon: Bell, exact: true },
-  { href: '/admin/cohort', label: 'Cohort', icon: Users },
-  { href: '/admin/plans', label: 'Plans', icon: CalendarDays },
-  { href: '/admin/library', label: 'Library', icon: BookOpen },
+  { href: '/admin/members', label: 'Members', icon: Users },
   { href: '/admin/cycles', label: 'Cycles', icon: CircleDot },
-  { href: '/admin/ai-usage', label: 'AI', icon: Sparkles },
+  { href: '/admin/library', label: 'Library', icon: BookOpen },
+  { href: '/admin/ai-usage', label: 'AI usage', icon: Sparkles },
 ];
 
 export function SidebarAdmin() {
