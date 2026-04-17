@@ -30,6 +30,9 @@ export function ItemFocus({ item }: ItemFocusProps) {
 
   const platform = detectPlatform(item.libraryItem.url, item.libraryItem.format);
 
+  const isRunningLate =
+    !isDone && item.scheduledAt !== null && new Date(item.scheduledAt) < now;
+
   const eyebrowText = (() => {
     if (isDone && item.completedAt) return `Marked · ${formatDateShort(item.completedAt)}`;
     if (item.scheduledAt) {
@@ -39,6 +42,8 @@ export function ItemFocus({ item }: ItemFocusProps) {
     }
     return 'Pending';
   })();
+
+  const eyebrowClass = isRunningLate ? '!text-outcome-stuck' : '';
 
   async function handleSave() {
     if (!outcome) return;
@@ -60,8 +65,8 @@ export function ItemFocus({ item }: ItemFocusProps) {
         ← Back
       </Link>
 
-      <header>
-        <Eyebrow>{eyebrowText}</Eyebrow>
+      <header className={isRunningLate ? 'border-l-4 border-outcome-stuck pl-5 md:pl-6' : ''}>
+        <Eyebrow className={eyebrowClass}>{eyebrowText}</Eyebrow>
         <h1 className="mt-3 font-serif text-[40px] font-medium leading-[1.05] tracking-tight">
           {item.libraryItem.title}
         </h1>
@@ -93,8 +98,8 @@ export function ItemFocus({ item }: ItemFocusProps) {
       )}
 
       {item.carriedFrom && (
-        <section className="border-l-2 border-rule pl-4">
-          <Eyebrow>Carried from last week · your note</Eyebrow>
+        <section className="border-l-4 border-accent pl-5 md:pl-6">
+          <Eyebrow className="!text-accent">Carried from last week · your note</Eyebrow>
           {item.carriedFrom.reflection ? (
             <p className="mt-2 font-serif italic text-ink-soft">&ldquo;{item.carriedFrom.reflection}&rdquo;</p>
           ) : (
@@ -151,9 +156,14 @@ export function ItemFocus({ item }: ItemFocusProps) {
       </section>
 
       {item.outcome === 'STUCK' && (
-        <p className="font-mono text-xs uppercase tracking-label text-ink-mute">
-          The program director has been notified — talk to them when you can.
-        </p>
+        <aside className="border-l-4 border-outcome-stuck pl-5 py-2 md:pl-6">
+          <p className="font-mono text-[10px] uppercase tracking-eyebrow font-semibold text-outcome-stuck">
+            Stuck — help requested
+          </p>
+          <p className="mt-1 font-sans text-sm text-ink-soft">
+            The program director has been notified. Talk to them when you can.
+          </p>
+        </aside>
       )}
     </div>
   );

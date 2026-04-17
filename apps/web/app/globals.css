@@ -12,7 +12,8 @@
   --ink-mute: 24 5% 47%;       /* #78716C */
   --ink-faint: 25 6% 63%;      /* #A8A29E */
   --rule: 40 8% 89%;           /* #E5E4DF */
-  --accent: 15 56% 50%;        /* #C45D3A terracotta */
+  --accent: 15 56% 50%;        /* #C45D3A terracotta — reflective, carry-over, AI rationale */
+  --focus: 243 75% 59%;        /* #4F46E5 indigo — act-now, momentum, start CTA */
 
   /* Outcome tokens (dot 6-10px or border-left 3px only) */
   --outcome-pending: 25 6% 63%;        /* #A8A29E */

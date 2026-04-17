@@ -1,10 +1,12 @@
 'use client';
 
 import Link from 'next/link';
+import { clsx } from 'clsx';
 import type { HomeResponse, HomeItem } from '../../lib/queries/me-home';
 import { Eyebrow } from '../ui/eyebrow';
 import { Pill } from '../ui/pill';
 import { Button } from '../ui/button';
+import { OutcomeDot } from '../ui/outcome-dot';
 import { formatTimeUtc, formatRelative, formatDateShort } from '../../lib/format/time';
 import { platformLabel, detectPlatform } from '../../lib/format/platform';
 
@@ -12,12 +14,30 @@ interface HomeHeroProps {
   hero: HomeResponse['hero'];
 }
 
+type Accent = 'neutral' | 'now' | 'late' | 'done';
+
+const EYEBROW_CLASS: Record<Accent, string> = {
+  neutral: '',
+  now: '!text-focus',
+  late: '!text-outcome-stuck',
+  done: '!text-outcome-done-easy',
+};
+
+const BORDER_CLASS: Record<Accent, string> = {
+  neutral: '',
+  now: 'border-l-4 border-focus pl-5 md:pl-6',
+  late: 'border-l-4 border-outcome-stuck pl-5 md:pl-6',
+  done: '',
+};
+
 function HeroItemLayout({
+  accent,
   eyebrow,
   item,
   ctaHref,
   ctaLabel,
 }: {
+  accent: Accent;
   eyebrow: string;
   item: HomeItem;
   ctaHref: string;
@@ -25,8 +45,8 @@ function HeroItemLayout({
 }) {
   const platform = detectPlatform(item.url, item.format);
   return (
-    <section className="max-w-3xl">
-      <Eyebrow>{eyebrow}</Eyebrow>
+    <section className={clsx('max-w-3xl', BORDER_CLASS[accent])}>
+      <Eyebrow className={EYEBROW_CLASS[accent]}>{eyebrow}</Eyebrow>
       <h1 className="mt-3 font-serif text-[40px] font-medium leading-[1.05] tracking-tight">
         {item.title}
       </h1>
@@ -37,7 +57,12 @@ function HeroItemLayout({
       </div>
       <div className="mt-6 flex gap-2">
         <Link href={ctaHref}>
-          <Button variant="primary">{ctaLabel}</Button>
+          <Button
+            variant="primary"
+            className={clsx(accent === 'now' && 'bg-focus hover:bg-focus/90')}
+          >
+            {ctaLabel}
+          </Button>
         </Link>
       </div>
     </section>
@@ -62,6 +87,7 @@ export function HomeHero({ hero }: HomeHeroProps) {
   if (hero.state === 'now') {
     return (
       <HeroItemLayout
+        accent="now"
         eyebrow={`Now · ${formatTimeUtc(hero.item.scheduledAt) ?? ''}`}
         item={hero.item}
         ctaHref={`/me/item/${hero.item.id}`}
@@ -72,6 +98,7 @@ export function HomeHero({ hero }: HomeHeroProps) {
   if (hero.state === 'up_next') {
     return (
       <HeroItemLayout
+        accent="neutral"
         eyebrow={`Up next · ${formatRelative(hero.minutesUntil)}`}
         item={hero.item}
         ctaHref={`/me/item/${hero.item.id}`}
@@ -82,6 +109,7 @@ export function HomeHero({ hero }: HomeHeroProps) {
   if (hero.state === 'running_late') {
     return (
       <HeroItemLayout
+        accent="late"
         eyebrow={`Running late · was at ${formatTimeUtc(hero.item.scheduledAt) ?? ''}`}
         item={hero.item}
         ctaHref={`/me/item/${hero.item.id}`}
@@ -92,7 +120,10 @@ export function HomeHero({ hero }: HomeHeroProps) {
   if (hero.state === 'all_done') {
     return (
       <section className="max-w-3xl">
-        <Eyebrow>All done today</Eyebrow>
+        <div className="flex items-center gap-2">
+          <OutcomeDot outcome="DONE_EASY" size="sm" />
+          <Eyebrow className="!text-outcome-done-easy">All done today</Eyebrow>
+        </div>
         <h1 className="mt-3 font-serif text-[36px] font-medium leading-tight tracking-tight">
           Nothing more scheduled today.
         </h1>

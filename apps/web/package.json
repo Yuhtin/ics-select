@@ -3,8 +3,8 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 3000",
-    "build": "next build",
+    "dev": "next dev --turbopack -p 3000",
+    "build": "next build --turbopack",
     "start": "next start -p 3000",
     "lint": "echo \"(web) lint deferred; next lint is deprecated — configure eslint flat config in a future phase\"",
     "typecheck": "tsc --noEmit"
