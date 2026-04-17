@@ -16,5 +16,5 @@ export function extractIcsId(
   if (!description) return null;
   const match = description.match(PATTERN);
   if (!match) return null;
-  return { planId: match[1], itemId: match[2] };
+  return { planId: match[1]!, itemId: match[2]! };
 }
