@@ -7,11 +7,18 @@ import { clsx } from 'clsx';
 import { useMeRetroCurrent } from '../../lib/queries/me-retro';
 import { ThemeToggle } from '../ui/theme-toggle';
 
-const NAV = [
+type NavItem = {
+  href: string;
+  label: string;
+  icon: typeof Compass;
+  exact?: boolean;
+};
+
+const NAV: readonly NavItem[] = [
   { href: '/me', label: 'Today', icon: Compass, exact: true },
   { href: '/me/plan', label: 'Week', icon: CalendarDays },
   { href: '/me/cohort', label: 'Cohort', icon: Users },
-] as const;
+];
 
 export function TopbarMember() {
   const pathname = usePathname();
