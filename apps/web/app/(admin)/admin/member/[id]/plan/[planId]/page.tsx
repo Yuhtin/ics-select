@@ -27,16 +27,6 @@ import {
   type OverflowItem,
 } from '../../../../../../../components/admin/plan-editor/overflow-modal';
 
-function nextMondayUTC(now: Date = new Date()): Date {
-  const d = new Date(
-    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
-  );
-  const day = d.getUTCDay();
-  const daysAhead = day === 1 ? 7 : (8 - day) % 7 || 7;
-  d.setUTCDate(d.getUTCDate() + daysAhead);
-  return d;
-}
-
 export default function PlanEditorPage({
   params,
 }: {
@@ -68,9 +58,10 @@ export default function PlanEditorPage({
     if (plan) return;
     if (initialPlanId === 'new') {
       if (getOrCreate.isPending || getOrCreate.isSuccess) return;
-      const weekStart = nextMondayUTC().toISOString();
+      // Omit weekStart so the backend picks the next plannable week
+      // (first week inside cycle bounds that doesn't already have a plan).
       getOrCreate.mutate(
-        { memberId, weekStart },
+        { memberId },
         {
           onSuccess: (created) => {
             setPlan(created);
@@ -296,6 +287,17 @@ export default function PlanEditorPage({
           <p className="inline-flex items-center gap-2 rounded-pill bg-outcome-stuck/10 px-3 py-1.5 font-mono text-xs uppercase tracking-label text-outcome-stuck">
             Failed to load plan · {planError.message}
           </p>
+        ) : getOrCreate.error ? (
+          <div className="rounded-card border border-outcome-stuck/30 bg-outcome-stuck/5 p-4 font-mono text-xs uppercase tracking-label text-outcome-stuck">
+            <p>Failed to create draft · {(getOrCreate.error as Error).message}</p>
+            <button
+              type="button"
+              onClick={() => getOrCreate.reset()}
+              className="mt-2 rounded-pill bg-outcome-stuck px-3 py-1 font-mono text-[10px] uppercase tracking-label text-paper hover:opacity-90"
+            >
+              Retry
+            </button>
+          </div>
         ) : !plan ? (
           <p className="font-mono text-xs uppercase tracking-label text-ink-mute">
             {initialPlanId === 'new' ? 'Creating draft…' : 'Loading plan…'}

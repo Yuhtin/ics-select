@@ -52,10 +52,10 @@ export function usePlan(planId: string | null | undefined) {
 
 export function useGetOrCreateDraft() {
   return useMutation({
-    mutationFn: (input: { memberId: string; weekStart: string }) =>
+    mutationFn: (input: { memberId: string; weekStart?: string }) =>
       apiFetch<WeeklyPlan>(`/admin/member/${input.memberId}/plan-drafts`, {
         method: 'POST',
-        body: JSON.stringify({ weekStart: input.weekStart }),
+        body: JSON.stringify(input.weekStart ? { weekStart: input.weekStart } : {}),
       }),
   });
 }

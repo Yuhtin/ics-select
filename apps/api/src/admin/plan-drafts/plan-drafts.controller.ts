@@ -3,7 +3,9 @@ import { z } from 'zod';
 import { Roles } from '../../auth/decorators/roles.decorator.js';
 import { PlanDraftsService } from './plan-drafts.service.js';
 
-const GetOrCreateSchema = z.object({ weekStart: z.coerce.date() });
+const GetOrCreateSchema = z.object({
+  weekStart: z.coerce.date().optional(),
+});
 
 @Roles('ADMIN')
 @Controller('admin/member')
@@ -12,7 +14,7 @@ export class PlanDraftsController {
 
   @Post(':id/plan-drafts')
   getOrCreate(@Param('id') id: string, @Body() body: unknown) {
-    const { weekStart } = GetOrCreateSchema.parse(body);
+    const { weekStart } = GetOrCreateSchema.parse(body ?? {});
     return this.drafts.getOrCreateDraft({ memberId: id, weekStart });
   }
 }
