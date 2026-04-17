@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import type { Track } from '@ics-select/shared';
 import { PrismaService } from '../common/prisma/prisma.service.js';
 import { OpenAiService } from '../common/openai/openai.service.js';
 
@@ -21,6 +22,8 @@ export type SearchInput = {
   format?: ('VIDEO' | 'ARTICLE' | 'BOOK' | 'PROBLEM' | 'OTHER')[];
   difficulty?: ('EASY' | 'MEDIUM' | 'HARD')[];
   tags?: string[];
+  tracks?: Track[];
+  topicId?: string;
   maxMinutes?: number;
   limit?: number;
 };
@@ -95,6 +98,10 @@ export class LibraryService {
           ...(input.difficulty ? { difficulty: { in: input.difficulty } } : {}),
           ...(input.maxMinutes ? { estimatedMinutes: { lte: input.maxMinutes } } : {}),
           ...(input.tags && input.tags.length > 0 ? { tags: { hasSome: input.tags } } : {}),
+          ...(input.tracks && input.tracks.length > 0
+            ? { tracks: { hasSome: input.tracks } }
+            : {}),
+          ...(input.topicId ? { topicId: input.topicId } : {}),
         },
         orderBy: { createdAt: 'desc' },
         take: limit,
@@ -102,11 +109,14 @@ export class LibraryService {
       return items.map((i) => ({ ...i, score: null }));
     }
 
-    // Full-text search with ILIKE fallback for partial matches
+    // Full-text search with ILIKE fallback for partial matches.
+    // Note: tracks + topicId are applied as an in-memory filter after the tsquery
+    // to keep the SQL manageable. The SELECT includes those columns so the filter works.
     const sql = `
       SELECT
         "id", "title", "url", "description", "format", "difficulty",
-        "estimatedMinutes", "source", "tags", "createdAt", "updatedAt",
+        "estimatedMinutes", "source", "tags", "tracks", "topicId",
+        "createdAt", "updatedAt",
         CASE
           WHEN search_vector @@ plainto_tsquery('portuguese', $1)
             THEN ts_rank(search_vector, plainto_tsquery('portuguese', $1))
@@ -136,7 +146,22 @@ export class LibraryService {
       input.tags ?? null,
       limit,
     )) as unknown[];
-    return results;
+
+    let filtered = results as Array<Record<string, unknown>>;
+    if (input.tracks && input.tracks.length > 0) {
+      const wanted = input.tracks;
+      filtered = filtered.filter((i) => {
+        const tracks = i.tracks;
+        return (
+          Array.isArray(tracks) && tracks.some((t: unknown) => wanted.includes(t as Track))
+        );
+      });
+    }
+    if (input.topicId) {
+      const wantedTopic = input.topicId;
+      filtered = filtered.filter((i) => i.topicId === wantedTopic);
+    }
+    return filtered;
   }
 
   private async writeEmbedding(

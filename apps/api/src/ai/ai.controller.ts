@@ -10,12 +10,18 @@ import { UsageLoggerService } from './usage-logger.service.js';
 
 const DraftInputSchema = z.object({
   memberId: z.string().min(1),
-  basePlanId: z.string().optional(),
+  weekStart: z.coerce.date(),
+  weekEnd: z.coerce.date(),
+  carryOverItemIds: z.array(z.string()).optional(),
+  briefText: z.string().optional(),
 });
 
 const BriefInputSchema = z.object({
   memberId: z.string().min(1),
+  weekStart: z.coerce.date(),
+  weekEnd: z.coerce.date(),
   briefText: z.string().min(1),
+  carryOverItemIds: z.array(z.string()).optional(),
 });
 
 const ChatInputSchema = z.object({
