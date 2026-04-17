@@ -13,8 +13,17 @@ export function Providers({ children }: { children: ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <HeroUIProvider navigate={router.push}>
-        <ToastProvider placement="top-right" toastProps={{ timeout: 4000, variant: 'flat', radius: 'lg' }} />
-        <NextThemesProvider attribute="class" forcedTheme="light">
+        <ToastProvider
+          placement="top-right"
+          toastProps={{ timeout: 4000, variant: 'flat', radius: 'lg' }}
+        />
+        <NextThemesProvider
+          attribute="data-theme"
+          defaultTheme="light"
+          enableSystem={false}
+          themes={['light', 'dark']}
+          storageKey="ics-theme"
+        >
           <AuthProvider>{children}</AuthProvider>
         </NextThemesProvider>
       </HeroUIProvider>
