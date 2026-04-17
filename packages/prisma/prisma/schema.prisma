@@ -111,7 +111,7 @@ model GoogleAccount {
   id              String   @id @default(cuid())
   userId          String   @unique
   accessTokenEnc  String
-  refreshTokenEnc String
+  refreshTokenEnc String?
   expiresAt       DateTime
   scope           String
   updatedAt       DateTime @updatedAt
