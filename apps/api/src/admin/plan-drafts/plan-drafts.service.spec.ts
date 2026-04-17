@@ -78,4 +78,47 @@ describe('PlanDraftsService', () => {
     }));
     expect(result.id).toBe('new-plan');
   });
+
+  describe('auto-pick (no weekStart)', () => {
+    // Cycle: Apr 23 – Jun 26 (a Thursday through a Friday for easy Monday math)
+    const cycle = {
+      id: 'c-hot',
+      startsAt: new Date('2026-04-23T00:00:00Z'),
+      endsAt: new Date('2026-06-26T23:59:59Z'),
+    };
+
+    it('creates a draft starting at the cycle.startsAt Monday when today is before the cycle starts', async () => {
+      const prisma = makePrisma();
+      prisma.cycleMembership.findFirst.mockResolvedValue({ cycle });
+      prisma.weeklyPlan.findFirst.mockResolvedValue(null);
+      prisma.weeklyPlan.create.mockResolvedValue({ id: 'new-auto', status: 'DRAFT', items: [] });
+      const svc = new PlanDraftsService(prisma as any);
+      // Today = Apr 17 (Fri), cycle starts Thu Apr 23 — Monday of that week is Apr 20.
+      await svc.getOrCreateDraft(
+        { memberId: 'm1' },
+        new Date('2026-04-17T12:00:00Z'),
+      );
+      const created = prisma.weeklyPlan.create.mock.calls[0][0].data;
+      // Monday-of-cycle-startsAt = Apr 20 (Mon).
+      expect(created.weekStart.toISOString()).toBe('2026-04-20T00:00:00.000Z');
+    });
+
+    it('skips weeks that already have a plan and picks the next free one', async () => {
+      const prisma = makePrisma();
+      prisma.cycleMembership.findFirst.mockResolvedValue({ cycle });
+      // First week occupied, second week free.
+      prisma.weeklyPlan.findFirst
+        .mockResolvedValueOnce({ id: 'existing', status: 'PUBLISHED' })
+        .mockResolvedValueOnce(null);
+      prisma.weeklyPlan.create.mockResolvedValue({ id: 'new-auto', status: 'DRAFT', items: [] });
+      const svc = new PlanDraftsService(prisma as any);
+      await svc.getOrCreateDraft(
+        { memberId: 'm1' },
+        new Date('2026-04-17T12:00:00Z'),
+      );
+      const created = prisma.weeklyPlan.create.mock.calls[0][0].data;
+      // First free week after Apr 20 is Apr 27.
+      expect(created.weekStart.toISOString()).toBe('2026-04-27T00:00:00.000Z');
+    });
+  });
 });
