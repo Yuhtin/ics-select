@@ -20,61 +20,12 @@ enum CycleStatus {
   ARCHIVED
 }
 
-model User {
-  id                String    @id @default(cuid())
-  email             String    @unique
-  name              String
-  pictureUrl        String?
-  role              Role      @default(MEMBER)
-  privacyAcceptedAt DateTime?
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-
-  refreshTokens RefreshToken[]
-  memberships   CycleMembership[]
-  googleAccount GoogleAccount?
-  availability  MemberAvailability?
-  weeklyPlans   WeeklyPlan[]
-  attendance    ClassAttendance[]
-}
-
-model RefreshToken {
-  id        String    @id @default(cuid())
-  userId    String
-  tokenHash String    @unique
-  expiresAt DateTime
-  createdAt DateTime  @default(now())
-  revokedAt DateTime?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-}
-
-model Cycle {
-  id        String      @id @default(cuid())
-  name      String      @unique
-  startsAt  DateTime
-  endsAt    DateTime
-  status    CycleStatus @default(ACTIVE)
-  createdAt DateTime    @default(now())
-
-  memberships CycleMembership[]
-  weeklyPlans WeeklyPlan[]
-  classes     ClassSession[]
-}
-
-model CycleMembership {
-  id       String   @id @default(cuid())
-  userId   String
-  cycleId  String
-  joinedAt DateTime @default(now())
-
-  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  cycle Cycle @relation(fields: [cycleId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, cycleId])
-  @@index([cycleId])
+enum Track {
+  BIG_TECH
+  CONSULTING_TECH
+  COMPETITIVE_PROGRAMMING
+  STARTUP
+  OTHER
 }
 
 enum ItemFormat {
@@ -91,38 +42,6 @@ enum ItemDifficulty {
   HARD
 }
 
-model LibraryItem {
-  id               String         @id @default(cuid())
-  title            String
-  url              String?
-  description      String?
-  format           ItemFormat
-  difficulty       ItemDifficulty
-  estimatedMinutes Int
-  source           String?
-  tags             String[]
-  createdById      String
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
-
-  planItems WeeklyPlanItem[]
-
-  @@index([format])
-  @@index([difficulty])
-}
-
-model GoogleAccount {
-  id              String   @id @default(cuid())
-  userId          String   @unique
-  accessTokenEnc  String
-  refreshTokenEnc String?
-  expiresAt       DateTime
-  scope           String
-  updatedAt       DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
 enum WeeklyPlanStatus {
   DRAFT
   PUBLISHED
@@ -130,27 +49,171 @@ enum WeeklyPlanStatus {
   ARCHIVED
 }
 
-enum ItemStatus {
+enum ItemOutcome {
   PENDING
-  DONE
-}
-
-enum DifficultyRating {
-  EASY
-  HARD
-}
-
-enum CompletionStatus {
-  DONE
-  STUCK
+  DONE_EASY
+  DONE_HARD
   DOUBTS
+  STUCK
 }
 
-enum StudySessionStatus {
-  SCHEDULED
-  COMPLETED
-  MISSED
-  RESCHEDULED
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+}
+
+enum AlertType {
+  STUCK_RECENT
+  DISAPPEARED
+  STUCK_REPEATEDLY
+  FINISHED_EARLY
+  SKIPPED_RETROS
+  PLAN_PENDING
+  CALENDAR_BROKEN
+}
+
+model User {
+  id                  String    @id @default(cuid())
+  email               String    @unique
+  name                String
+  pictureUrl          String?
+  role                Role      @default(MEMBER)
+  whatsappPhone       String?
+  privacyAcceptedAt   DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  refreshTokens       RefreshToken[]
+  memberships         CycleMembership[]
+  googleAccount       GoogleAccount?
+  availability        MemberAvailability?
+  weeklyPlans         WeeklyPlan[]
+  attendance          ClassAttendance[]
+  retros              WeeklyRetro[]
+  adminNotesAuthored  AdminNote[]        @relation("author")
+  adminNotesAbout     AdminNote[]        @relation("about")
+  dismissedAlerts     DismissedAlert[]
+}
+
+model RefreshToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+  revokedAt DateTime?
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
+}
+
+model GoogleAccount {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  accessTokenEnc  String
+  refreshTokenEnc String
+  expiresAt       DateTime
+  scope           String
+  updatedAt       DateTime @updatedAt
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Cycle {
+  id                      String      @id @default(cuid())
+  name                    String      @unique
+  startsAt                DateTime
+  endsAt                  DateTime
+  status                  CycleStatus @default(ACTIVE)
+  rankingVisibleToMembers Boolean     @default(false)
+  createdAt               DateTime    @default(now())
+
+  memberships CycleMembership[]
+  classes     ClassSession[]
+  weeklyPlans WeeklyPlan[]
+  retros      WeeklyRetro[]
+}
+
+model CycleMembership {
+  id       String   @id @default(cuid())
+  userId   String
+  cycleId  String
+  track    Track?
+  joinedAt DateTime @default(now())
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cycle    Cycle    @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  @@unique([userId, cycleId])
+}
+
+model MemberAvailability {
+  id                      String   @id @default(cuid())
+  userId                  String   @unique
+  mondayMinutes           Int      @default(0)
+  tuesdayMinutes          Int      @default(0)
+  wednesdayMinutes        Int      @default(0)
+  thursdayMinutes         Int      @default(0)
+  fridayMinutes           Int      @default(0)
+  saturdayMinutes         Int      @default(0)
+  sundayMinutes           Int      @default(0)
+  preferredSessionMinutes Int      @default(60)
+  timezone                String   @default("America/Sao_Paulo")
+  updatedAt               DateTime @updatedAt
+  user                    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ClassSession {
+  id          String   @id @default(cuid())
+  cycleId     String
+  title       String
+  topic       String?
+  scheduledAt DateTime
+  durationMin Int      @default(90)
+  notes       String?
+  cycle       Cycle    @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  attendance  ClassAttendance[]
+}
+
+model ClassAttendance {
+  id             String           @id @default(cuid())
+  classSessionId String
+  userId         String
+  status         AttendanceStatus
+  classSession   ClassSession     @relation(fields: [classSessionId], references: [id], onDelete: Cascade)
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([classSessionId, userId])
+}
+
+model Topic {
+  id        String        @id @default(cuid())
+  slug      String        @unique
+  label     String
+  order     Int           @default(0)
+  createdAt DateTime      @default(now())
+  items     LibraryItem[]
+}
+
+model LibraryItem {
+  id               String                       @id @default(cuid())
+  title            String
+  url              String?
+  description      String?
+  format           ItemFormat
+  difficulty       ItemDifficulty
+  estimatedMinutes Int
+  topicId          String?
+  tracks           Track[]                      @default([])
+  source           String?
+  tags             String[]
+  embedding        Unsupported("vector(1536)")?
+  searchVector     Unsupported("tsvector")?
+  createdById      String
+  createdAt        DateTime                     @default(now())
+  updatedAt        DateTime                     @updatedAt
+
+  topic     Topic?           @relation(fields: [topicId], references: [id])
+  planItems WeeklyPlanItem[]
+  @@index([format])
+  @@index([difficulty])
+  @@index([topicId])
 }
 
 model WeeklyPlan {
@@ -167,88 +230,64 @@ model WeeklyPlan {
   user  User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   cycle Cycle            @relation(fields: [cycleId], references: [id])
   items WeeklyPlanItem[]
-
   @@index([userId, weekStart])
 }
 
 model WeeklyPlanItem {
-  id               String            @id @default(cuid())
-  weeklyPlanId     String
-  libraryItemId    String
-  order            Int
-  status           ItemStatus        @default(PENDING)
-  difficultyRating DifficultyRating?
-  stuck            Boolean           @default(false)
-  stuckAt          DateTime?
-  reflection       String?
-  completedAt      DateTime?
-  completionStatus CompletionStatus?
-  feedback         String?
+  id                String      @id @default(cuid())
+  weeklyPlanId      String
+  libraryItemId     String
+  order             Int
+  outcome           ItemOutcome @default(PENDING)
+  reflection        String?
+  completedAt       DateTime?
+  carriedFromItemId String?
 
-  weeklyPlan  WeeklyPlan     @relation(fields: [weeklyPlanId], references: [id], onDelete: Cascade)
-  libraryItem LibraryItem    @relation(fields: [libraryItemId], references: [id])
-  sessions    StudySession[]
-
+  weeklyPlan  WeeklyPlan       @relation(fields: [weeklyPlanId], references: [id], onDelete: Cascade)
+  libraryItem LibraryItem      @relation(fields: [libraryItemId], references: [id])
+  carriedFrom WeeklyPlanItem?  @relation("carry", fields: [carriedFromItemId], references: [id])
+  carriedTo   WeeklyPlanItem[] @relation("carry")
   @@unique([weeklyPlanId, order])
 }
 
-model StudySession {
-  id               String             @id @default(cuid())
-  weeklyPlanItemId String
-  scheduledAt      DateTime
-  durationMinutes  Int
-  googleEventId    String?
-  status           StudySessionStatus @default(SCHEDULED)
+model WeeklyRetro {
+  id           String   @id @default(cuid())
+  userId       String
+  cycleId      String
+  weekStart    DateTime
+  whatClicked  String?
+  whatStuck    String?
+  nextWeekWish String?
+  submittedAt  DateTime @default(now())
 
-  weeklyPlanItem WeeklyPlanItem @relation(fields: [weeklyPlanItemId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cycle Cycle @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  @@unique([userId, weekStart])
+  @@index([cycleId, weekStart])
 }
 
-enum AttendanceStatus {
-  PRESENT
-  ABSENT
-  LATE
+model AdminNote {
+  id        String   @id @default(cuid())
+  aboutId   String
+  authorId  String
+  text      String
+  createdAt DateTime @default(now())
+
+  about  User @relation("about",  fields: [aboutId],  references: [id], onDelete: Cascade)
+  author User @relation("author", fields: [authorId], references: [id])
+  @@index([aboutId])
 }
 
-model ClassSession {
-  id          String   @id @default(cuid())
-  cycleId     String
-  title       String
-  topic       String?
-  scheduledAt DateTime
-  durationMin Int      @default(90)
-  notes       String?
-
-  cycle      Cycle             @relation(fields: [cycleId], references: [id], onDelete: Cascade)
-  attendance ClassAttendance[]
-}
-
-model ClassAttendance {
-  id             String           @id @default(cuid())
-  classSessionId String
-  userId         String
-  status         AttendanceStatus
-
-  classSession ClassSession @relation(fields: [classSessionId], references: [id], onDelete: Cascade)
-  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([classSessionId, userId])
-}
-
-model MemberAvailability {
-  id                      String   @id @default(cuid())
-  userId                  String   @unique
-  mondayMinutes           Int      @default(0)
-  tuesdayMinutes          Int      @default(0)
-  wednesdayMinutes        Int      @default(0)
-  thursdayMinutes         Int      @default(0)
-  fridayMinutes           Int      @default(0)
-  saturdayMinutes         Int      @default(0)
-  sundayMinutes           Int      @default(0)
-  preferredSessionMinutes Int      @default(60)
-  timezone                String   @default("America/Sao_Paulo")
-  updatedAt               DateTime @updatedAt
+model DismissedAlert {
+  id          String    @id @default(cuid())
+  userId      String
+  alertType   AlertType
+  targetId    String
+  dismissedAt DateTime  @default(now())
+  expiresAt   DateTime
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId, expiresAt])
 }
 
 model AiGeneration {
