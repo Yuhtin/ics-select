@@ -1,0 +1,11 @@
+-- Revamp foundation migration (PR 1)
+-- Adds: Track, ItemOutcome, AlertType enums;
+--        Topic, WeeklyRetro, AdminNote, DismissedAlert tables;
+--        User.whatsappPhone, Cycle.rankingVisibleToMembers,
+--        CycleMembership.track, LibraryItem.topicId,
+--        LibraryItem.tracks, WeeklyPlanItem.outcome,
+--        WeeklyPlanItem.carriedFromItemId.
+-- Removes: StudySession table;
+--          WeeklyPlanItem.status, WeeklyPlanItem.stuck,
+--          WeeklyPlanItem.stuckAt, WeeklyPlanItem.difficultyRating.
+-- Destructive: no production users, no backfill.
