@@ -2,12 +2,14 @@ import { Injectable, NotFoundException, Optional } from '@nestjs/common';
 import { google, type calendar_v3 } from 'googleapis';
 import { PrismaService } from '../common/prisma/prisma.service.js';
 import { AesGcmService } from '../common/crypto/aes-gcm.service.js';
+import { embedIcsId } from '../common/ics-id/ics-id.js';
 
 export type CreateEventInput = {
   summary: string;
   description: string;
   start: Date;
   end: Date;
+  icsId?: { planId: string; itemId: string };
 };
 
 export type FreeBusyBlock = { start: Date; end: Date };
@@ -37,13 +39,43 @@ export class GoogleCalendarService {
       .map((b) => ({ start: new Date(b.start!), end: new Date(b.end!) }));
   }
 
+  async listEventsInRange(
+    userId: string,
+    timeMin: Date,
+    timeMax: Date,
+  ): Promise<Array<{ id: string; summary: string; description: string; start: Date; end: Date }>> {
+    const client = await this.clientFor(userId);
+    const res = await client.events.list({
+      calendarId: 'primary',
+      timeMin: timeMin.toISOString(),
+      timeMax: timeMax.toISOString(),
+      singleEvents: true,
+      orderBy: 'startTime',
+    });
+    const events = res.data.items ?? [];
+    // Drop all-day events (no dateTime). Study sessions always have explicit start/end times;
+    // all-day entries would produce misleading minutesAway values downstream.
+    return events
+      .filter((e) => e.id && e.start?.dateTime && e.end?.dateTime)
+      .map((e) => ({
+        id: e.id!,
+        summary: e.summary ?? '',
+        description: e.description ?? '',
+        start: new Date(e.start!.dateTime!),
+        end: new Date(e.end!.dateTime!),
+      }));
+  }
+
   async createEvent(userId: string, input: CreateEventInput): Promise<string> {
+    const description = input.icsId
+      ? embedIcsId(input.description, input.icsId)
+      : input.description;
     const client = await this.clientFor(userId);
     const res = await client.events.insert({
       calendarId: 'primary',
       requestBody: {
         summary: input.summary,
-        description: input.description,
+        description,
         start: { dateTime: input.start.toISOString() },
         end: { dateTime: input.end.toISOString() },
       },

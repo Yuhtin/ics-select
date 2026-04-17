@@ -54,4 +54,20 @@ describe('CyclesService', () => {
     const archived = await svc.archive(cycle.id);
     expect(archived.status).toBe('ARCHIVED');
   });
+
+  it('update persists rankingVisibleToMembers toggle', async () => {
+    const prisma = fakePrisma();
+    const svc = new CyclesService(prisma as any);
+    const cycle = await svc.create({
+      name: '2026.1',
+      startsAt: new Date('2026-04-01'),
+      endsAt: new Date('2026-07-01'),
+    });
+    const updated = await svc.update(cycle.id, { rankingVisibleToMembers: true });
+    expect(prisma.cycle.update).toHaveBeenCalledWith({
+      where: { id: cycle.id },
+      data: { rankingVisibleToMembers: true },
+    });
+    expect((updated as any).rankingVisibleToMembers).toBe(true);
+  });
 });

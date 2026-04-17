@@ -62,10 +62,30 @@ export class PublicationService {
     });
     const availability = existing ?? DEFAULT_AVAILABILITY;
 
+    const busyBlocks = await this.calendar
+      .getFreeBusy(plan.userId, plan.weekStart, plan.weekEnd)
+      .catch(() => [] as Array<{ start: Date; end: Date }>);
+
+    const busyByDay: Record<number, Array<{ startMinute: number; endMinute: number }>> = {
+      0: [], 1: [], 2: [], 3: [], 4: [], 5: [], 6: [],
+    };
+    for (const block of busyBlocks) {
+      const dayIdx = Math.floor(
+        (block.start.getTime() - plan.weekStart.getTime()) / (24 * 60 * 60 * 1000),
+      );
+      if (dayIdx < 0 || dayIdx > 6) continue;
+      const durationMinutes = Math.max(
+        0,
+        Math.round((block.end.getTime() - block.start.getTime()) / 60000),
+      );
+      if (durationMinutes === 0) continue;
+      busyByDay[dayIdx]!.push({ startMinute: 0, endMinute: durationMinutes });
+    }
+
     const input: SchedulerInput = {
       weekStart: plan.weekStart,
       availability,
-      busyByDay: { 0: [], 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] },
+      busyByDay,
       items: plan.items.map((i) => ({
         id: i.id,
         estimatedMinutes: i.libraryItem.estimatedMinutes,
@@ -88,9 +108,10 @@ export class PublicationService {
             : 'ICS Select study session',
           start: session.scheduledAt,
           end: eventEnd,
+          icsId: { planId: plan.id, itemId: item.id },
         });
       } catch {
-        // Calendar failure is non-fatal; PR 3 will embed ICS ID in description
+        // Calendar failure is non-fatal
       }
     }
 

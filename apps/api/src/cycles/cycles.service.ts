@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service.js';
 
 type CreateInput = { name: string; startsAt: Date; endsAt: Date };
-type UpdateInput = Partial<CreateInput>;
+type UpdateInput = Partial<CreateInput> & { rankingVisibleToMembers?: boolean };
 
 @Injectable()
 export class CyclesService {

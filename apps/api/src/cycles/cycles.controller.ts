@@ -9,7 +9,9 @@ const CreateCycleSchema = z.object({
   endsAt: z.coerce.date(),
 });
 
-const UpdateCycleSchema = CreateCycleSchema.partial();
+const UpdateCycleSchema = CreateCycleSchema.partial().extend({
+  rankingVisibleToMembers: z.boolean().optional(),
+});
 
 const AddMemberSchema = z.object({
   userId: z.string().min(1),
