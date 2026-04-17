@@ -47,7 +47,10 @@ describe('CohortService', () => {
       rankingVisibleToMembers: false,
       startsAt: new Date('2026-04-01T00:00:00Z'),
       endsAt: new Date('2026-06-30T00:00:00Z'),
-      memberships: [{ userId: 'user-1' }, { userId: 'user-2' }],
+      memberships: [
+        { userId: 'user-1', user: { id: 'user-1', name: 'Me', email: 'me@inteli.edu.br', pictureUrl: null } },
+        { userId: 'user-2', user: { id: 'user-2', name: 'Alice', email: 'alice@inteli.edu.br', pictureUrl: null } },
+      ],
     } as any);
     prisma.weeklyPlan.findMany.mockResolvedValue([]);
     prisma.weeklyPlanItem.findMany.mockResolvedValue([]);
@@ -75,8 +78,8 @@ describe('CohortService', () => {
       startsAt: new Date('2026-04-01T00:00:00Z'),
       endsAt: new Date('2026-06-30T00:00:00Z'),
       memberships: [
-        { userId: 'user-1', user: { id: 'user-1', name: 'Me', pictureUrl: null } },
-        { userId: 'user-2', user: { id: 'user-2', name: 'Alice', pictureUrl: null } },
+        { userId: 'user-1', user: { id: 'user-1', name: 'Me', email: 'me@inteli.edu.br', pictureUrl: null } },
+        { userId: 'user-2', user: { id: 'user-2', name: 'Alice', email: 'alice@inteli.edu.br', pictureUrl: null } },
       ],
     } as any);
     prisma.weeklyPlan.findMany.mockResolvedValue([
@@ -110,7 +113,10 @@ describe('CohortService', () => {
       rankingVisibleToMembers: false,
       startsAt: new Date('2026-04-01T00:00:00Z'),
       endsAt: new Date('2026-06-30T00:00:00Z'),
-      memberships: [{ userId: 'user-1' }, { userId: 'user-2' }],
+      memberships: [
+        { userId: 'user-1', user: { id: 'user-1', name: 'Me', email: 'me@inteli.edu.br', pictureUrl: null } },
+        { userId: 'user-2', user: { id: 'user-2', name: 'Alice', email: 'alice@inteli.edu.br', pictureUrl: null } },
+      ],
     } as any);
     prisma.weeklyPlan.findMany.mockResolvedValue([]);
     prisma.weeklyPlanItem.findMany.mockResolvedValue([
