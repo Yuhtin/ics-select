@@ -18,6 +18,7 @@ import { AvailabilityModule } from './availability/availability.module.js';
 import { WeeklyPlansModule } from './weekly-plans/weekly-plans.module.js';
 import { ClassesModule } from './classes/classes.module.js';
 import { AdminDashboardModule } from './admin-dashboard/admin-dashboard.module.js';
+import { AdminModule } from './admin/admin.module.js';
 import { AiModule } from './ai/ai.module.js';
 import { WhatsappModule } from './whatsapp/whatsapp.module.js';
 import { NotificationsModule } from './notifications/notifications.module.js';
@@ -65,6 +66,7 @@ import { loadEnv } from './config/env.js';
     WeeklyPlansModule,
     ClassesModule,
     AdminDashboardModule,
+    AdminModule,
     AiModule,
     WhatsappModule,
     NotificationsModule,
