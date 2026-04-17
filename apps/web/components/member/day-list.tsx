@@ -8,7 +8,8 @@ import { formatTimeUtc, formatMinutes } from '../../lib/format/time';
 import { platformLabel, detectPlatform } from '../../lib/format/platform';
 
 interface DayListProps {
-  label: string;
+  /** Header label. Pass null or empty string to render without the internal header. */
+  label?: string | null;
   hint?: string;
   items: HomeItem[];
   activeItemId?: string | null;
@@ -39,9 +40,9 @@ export function DayList({ label, hint, items, activeItemId, now }: DayListProps)
   const ref = now ?? new Date();
   return (
     <div>
-      <DayHeader label={label} hint={hint} />
+      {label && <DayHeader label={label} hint={hint} />}
       {items.length === 0 ? (
-        <p className="py-4 font-sans text-sm text-ink-mute">Nothing scheduled.</p>
+        <p className="py-4 font-sans text-sm text-fg-mute">Nothing scheduled.</p>
       ) : (
         items.map((item) => {
           const platform = detectPlatform(item.url, item.format);

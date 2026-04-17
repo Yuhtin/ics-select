@@ -24,11 +24,30 @@ type HeroState =
   | { state: 'all_done'; nextAt: string | null }
   | { state: 'free_day'; nextAt: string | null };
 
+export type CarryOverReflection = {
+  itemId: string;
+  title: string;
+  reflection: string;
+  submittedAt: string;
+  weekLabel: string;
+};
+
+export type TopicCoverage = {
+  topicId: string;
+  slug: string;
+  label: string;
+  order: number;
+  itemsPlanned: number;
+  itemsDone: number;
+};
+
 export type HomeResponse = {
   hero: HeroState | null;
   today: HomeItem[];
   days: { label: string; date: string; items: HomeItem[] }[];
   streak: { current: number; last7: boolean[] };
+  carryOverReflection: CarryOverReflection | null;
+  topicCoverage: TopicCoverage[];
 };
 
 const NOW_WINDOW_MINUTES = 15;
@@ -90,7 +109,14 @@ export class HomeService {
 
     if (!plan) {
       const streak = await this.computeStreak(userId, now);
-      return { hero: null, today: [], days: [], streak };
+      return {
+        hero: null,
+        today: [],
+        days: [],
+        streak,
+        carryOverReflection: null,
+        topicCoverage: [],
+      };
     }
 
     const rawItems = await this.prisma.weeklyPlanItem.findMany({
@@ -132,9 +158,87 @@ export class HomeService {
       }));
 
     const hero = this.pickHero(today, days, now);
-    const streak = await this.computeStreak(userId, now);
+    const [streak, carryOverReflection, topicCoverage] = await Promise.all([
+      this.computeStreak(userId, now),
+      this.pickCarryOverReflection(userId, plan.id),
+      this.computeTopicCoverage(userId, plan.cycleId),
+    ]);
 
-    return { hero, today, days, streak };
+    return { hero, today, days, streak, carryOverReflection, topicCoverage };
+  }
+
+  private async pickCarryOverReflection(
+    userId: string,
+    currentPlanId: string,
+  ): Promise<CarryOverReflection | null> {
+    // Latest reflection on a DOUBTS or STUCK item from a prior published plan.
+    // Used to surface a "carried over" memory on the home page.
+    const row = await this.prisma.weeklyPlanItem.findFirst({
+      where: {
+        weeklyPlan: { userId, status: 'PUBLISHED' },
+        weeklyPlanId: { not: currentPlanId },
+        outcome: { in: ['DOUBTS', 'STUCK'] },
+        reflection: { not: null },
+        completedAt: { not: null },
+      },
+      orderBy: { completedAt: 'desc' },
+      include: {
+        libraryItem: { select: { title: true } },
+        weeklyPlan: { select: { weekStart: true } },
+      },
+    });
+    if (!row || !row.reflection || !row.completedAt) return null;
+    return {
+      itemId: row.id,
+      title: row.libraryItem.title,
+      reflection: row.reflection,
+      submittedAt: row.completedAt.toISOString(),
+      weekLabel: new Intl.DateTimeFormat('en-US', {
+        weekday: 'short',
+        timeZone: 'UTC',
+      }).format(row.weeklyPlan.weekStart),
+    };
+  }
+
+  private async computeTopicCoverage(
+    userId: string,
+    cycleId: string,
+  ): Promise<TopicCoverage[]> {
+    const [topics, items] = await Promise.all([
+      this.prisma.topic.findMany({ orderBy: { order: 'asc' } }),
+      this.prisma.weeklyPlanItem.findMany({
+        where: { weeklyPlan: { userId, cycleId } },
+        select: {
+          outcome: true,
+          libraryItem: { select: { topicId: true } },
+        },
+      }),
+    ]);
+
+    const byTopic = new Map<string, { planned: number; done: number }>();
+    for (const t of topics) byTopic.set(t.id, { planned: 0, done: 0 });
+    for (const it of items) {
+      const topicId = it.libraryItem?.topicId;
+      if (!topicId) continue;
+      const stat = byTopic.get(topicId);
+      if (!stat) continue;
+      stat.planned += 1;
+      if (it.outcome === 'DONE_EASY' || it.outcome === 'DONE_HARD') {
+        stat.done += 1;
+      }
+    }
+
+    return topics.map((t) => {
+      const stat = byTopic.get(t.id) ?? { planned: 0, done: 0 };
+      return {
+        topicId: t.id,
+        slug: t.slug,
+        label: t.label,
+        order: t.order,
+        itemsPlanned: stat.planned,
+        itemsDone: stat.done,
+      };
+    });
   }
 
   private pickHero(
