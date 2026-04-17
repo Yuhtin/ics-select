@@ -1,4 +1,5 @@
 import { DraftPlanService } from './draft-plan.service';
+import { searchLibraryTool } from './library-tool';
 
 function makePrisma(overrides: Partial<Record<string, any>> = {}) {
   return {
@@ -44,7 +45,7 @@ function makeLibrary() {
 }
 
 function makeChat() {
-  return { callJson: jest.fn() };
+  return { callJsonWithTools: jest.fn() };
 }
 
 function makeUsage() {
@@ -91,7 +92,7 @@ describe('DraftPlanService', () => {
       },
     });
     const chat = makeChat();
-    chat.callJson.mockResolvedValueOnce({
+    chat.callJsonWithTools.mockResolvedValueOnce({
       data: {
         items: [{ libraryItemId: 'li-1', order: 0, rationale: 'seguir arrays' }],
         alternates: [],
@@ -99,22 +100,28 @@ describe('DraftPlanService', () => {
         totalMinutes: 30,
       },
       usage: { inputTokens: 100, outputTokens: 50, costUsd: 0.001 },
+      toolCalls: [],
     });
     const library = makeLibrary();
     const usage = makeUsage();
     const svc = new DraftPlanService(chat as any, library as any, prisma as any, usage as any);
     await svc.run({ memberId: 'u1', weekStart: WEEK_START, weekEnd: WEEK_END });
 
-    const callArgs = chat.callJson.mock.calls[0]![0] as {
+    const callArg = chat.callJsonWithTools.mock.calls[0]![0] as {
       system: string;
       messages: Array<{ role: string; content: string }>;
+      tools: Array<{ name: string }>;
     };
-    const prompt = callArgs.messages[0]!.content;
+    const prompt = callArg.messages[0]!.content;
+    expect(prompt).toMatch(/MEMBRO/);
     expect(prompt).toMatch(/track: Big Tech/);
     expect(prompt).toMatch(/DONE_HARD/);
     expect(prompt).toMatch(/STUCK/);
     expect(prompt).toMatch(/travei/);
     expect(prompt).toMatch(/difícil mas saiu/);
+    expect(callArg.tools).toHaveLength(1);
+    expect(callArg.tools[0]!.name).toBe('search_library');
+    expect(callArg.tools[0]).toBe(searchLibraryTool);
   });
 
   it('includes RETRÔ section with content when retro is present', async () => {
@@ -128,9 +135,10 @@ describe('DraftPlanService', () => {
       },
     });
     const chat = makeChat();
-    chat.callJson.mockResolvedValueOnce({
+    chat.callJsonWithTools.mockResolvedValueOnce({
       data: { items: [], alternates: [], narrative: '', totalMinutes: 0 },
       usage: { inputTokens: 10, outputTokens: 5, costUsd: 0.0001 },
+      toolCalls: [],
     });
     const svc = new DraftPlanService(
       chat as any,
@@ -139,7 +147,7 @@ describe('DraftPlanService', () => {
       makeUsage() as any,
     );
     await svc.run({ memberId: 'u1', weekStart: WEEK_START, weekEnd: WEEK_END });
-    const prompt = (chat.callJson.mock.calls[0]![0] as any).messages[0].content as string;
+    const prompt = (chat.callJsonWithTools.mock.calls[0]![0] as any).messages[0].content as string;
     expect(prompt).toMatch(/RETRÔ \(semana anterior\):/);
     expect(prompt).toMatch(/consegui fazer DP/);
     expect(prompt).toMatch(/grafos me travaram/);
@@ -148,9 +156,10 @@ describe('DraftPlanService', () => {
 
   it('emits (sem retrô submetido) when no retro exists', async () => {
     const chat = makeChat();
-    chat.callJson.mockResolvedValueOnce({
+    chat.callJsonWithTools.mockResolvedValueOnce({
       data: { items: [], alternates: [], narrative: '', totalMinutes: 0 },
       usage: { inputTokens: 1, outputTokens: 1, costUsd: 0 },
+      toolCalls: [],
     });
     const svc = new DraftPlanService(
       chat as any,
@@ -159,7 +168,7 @@ describe('DraftPlanService', () => {
       makeUsage() as any,
     );
     await svc.run({ memberId: 'u1', weekStart: WEEK_START, weekEnd: WEEK_END });
-    const prompt = (chat.callJson.mock.calls[0]![0] as any).messages[0].content as string;
+    const prompt = (chat.callJsonWithTools.mock.calls[0]![0] as any).messages[0].content as string;
     expect(prompt).toMatch(/\(sem retrô submetido\)/);
   });
 
@@ -187,7 +196,7 @@ describe('DraftPlanService', () => {
       },
     });
     const chat = makeChat();
-    chat.callJson.mockResolvedValueOnce({
+    chat.callJsonWithTools.mockResolvedValueOnce({
       data: {
         items: [{ libraryItemId: 'li-99', order: 0, rationale: 'carry-over' }],
         alternates: [],
@@ -195,6 +204,7 @@ describe('DraftPlanService', () => {
         totalMinutes: 60,
       },
       usage: { inputTokens: 1, outputTokens: 1, costUsd: 0 },
+      toolCalls: [],
     });
     const svc = new DraftPlanService(
       chat as any,
@@ -208,7 +218,7 @@ describe('DraftPlanService', () => {
       weekEnd: WEEK_END,
       carryOverItemIds: ['wpi-1'],
     });
-    const prompt = (chat.callJson.mock.calls[0]![0] as any).messages[0].content as string;
+    const prompt = (chat.callJsonWithTools.mock.calls[0]![0] as any).messages[0].content as string;
     expect(prompt).toMatch(/CARRY-OVER SELECIONADO PELO ADMIN:/);
     expect(prompt).toMatch(/id=li-99/);
     expect(prompt).toMatch(/"Graph Traversal"/);
@@ -217,9 +227,10 @@ describe('DraftPlanService', () => {
 
   it('includes BRIEF section when briefText is provided', async () => {
     const chat = makeChat();
-    chat.callJson.mockResolvedValueOnce({
+    chat.callJsonWithTools.mockResolvedValueOnce({
       data: { items: [], alternates: [], narrative: '', totalMinutes: 0 },
       usage: { inputTokens: 1, outputTokens: 1, costUsd: 0 },
+      toolCalls: [],
     });
     const svc = new DraftPlanService(
       chat as any,
@@ -233,14 +244,14 @@ describe('DraftPlanService', () => {
       weekEnd: WEEK_END,
       briefText: 'Foco em system design esta semana',
     });
-    const prompt = (chat.callJson.mock.calls[0]![0] as any).messages[0].content as string;
+    const prompt = (chat.callJsonWithTools.mock.calls[0]![0] as any).messages[0].content as string;
     expect(prompt).toMatch(/BRIEF DO ADMIN:/);
     expect(prompt).toMatch(/Foco em system design esta semana/);
   });
 
   it('defaults alternates to [] when missing from LLM response and logs usage', async () => {
     const chat = makeChat();
-    chat.callJson.mockResolvedValueOnce({
+    chat.callJsonWithTools.mockResolvedValueOnce({
       data: {
         items: [{ libraryItemId: 'li-1', order: 0, rationale: 'start easy' }],
         narrative: 'foco inicial',
@@ -248,6 +259,10 @@ describe('DraftPlanService', () => {
         // alternates intentionally omitted
       },
       usage: { inputTokens: 200, outputTokens: 80, costUsd: 0.002 },
+      toolCalls: [
+        { id: 'c1', name: 'search_library', args: { query: 'arrays' } },
+        { id: 'c2', name: 'search_library', args: { query: 'dp' } },
+      ],
     });
     const usage = makeUsage();
     const svc = new DraftPlanService(
@@ -270,7 +285,7 @@ describe('DraftPlanService', () => {
     );
     const logArg = (usage.log as jest.Mock).mock.calls[0][0];
     expect(logArg.metadata).toEqual(
-      expect.objectContaining({ carryOverCount: 0, hasBrief: false }),
+      expect.objectContaining({ carryOverCount: 0, hasBrief: false, toolCalls: 2 }),
     );
   });
 });

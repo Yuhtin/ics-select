@@ -3,6 +3,7 @@ import { OpenAiChatProvider, MODEL } from '../common/openai/openai-chat.provider
 import { LibraryService } from '../library/library.service.js';
 import { PrismaService } from '../common/prisma/prisma.service.js';
 import { UsageLoggerService } from './usage-logger.service.js';
+import { searchLibraryTool, makeLibraryToolExecutor } from './library-tool.js';
 
 type DraftInput = {
   memberId: string;
@@ -114,34 +115,7 @@ export class DraftPlanService {
       }
     }
 
-    // 6) Candidate items for the week
-    let candidates: any[] = await this.library.search({
-      tracks: track ? [track] : undefined,
-      limit: 30,
-    });
-    if (!candidates || candidates.length === 0) {
-      const fallback = await this.library.list();
-      candidates = (fallback as any[]).slice(0, 30);
-    }
-
-    // Pre-pend carry-over library items (dedup by id) so their IDs are always available.
-    const seen = new Set<string>();
-    const mergedCandidates: any[] = [];
-    for (const co of carryOverItems) {
-      const li = co.libraryItem;
-      if (li && !seen.has(li.id)) {
-        seen.add(li.id);
-        mergedCandidates.push(li);
-      }
-    }
-    for (const c of candidates) {
-      if (c && !seen.has(c.id)) {
-        seen.add(c.id);
-        mergedCandidates.push(c);
-      }
-    }
-
-    // 7) Build user prompt sections
+    // 6) Build user prompt sections
     const memberLine = `MEMBRO: ${memberName} — track: ${trackLabel}`;
 
     const outcomeLines: string[] = [];
@@ -180,24 +154,34 @@ export class DraftPlanService {
         : '(nenhum)';
     const carryOverBlock = `CARRY-OVER SELECIONADO PELO ADMIN:\n${carryOverLines}`;
 
+    const carryOverResolvedLines = carryOverItems
+      .map((co: any) => {
+        const li = co.libraryItem;
+        if (!li) return null;
+        const topicLabel = li.topic?.label ?? 'sem tópico';
+        return `- id=${li.id} "${li.title}" topic=${topicLabel} format=${li.format} difficulty=${li.difficulty} minutes=${li.estimatedMinutes}`;
+      })
+      .filter(Boolean);
+    const carryOverResolvedBlock =
+      carryOverResolvedLines.length > 0
+        ? `CARRY-OVER RESOLVIDO:\n${carryOverResolvedLines.join('\n')}`
+        : null;
+
     const briefBlock = `BRIEF DO ADMIN:\n${input.briefText && input.briefText.trim().length > 0 ? input.briefText.trim() : '(nenhum)'}`;
 
-    const candidatesLines = mergedCandidates.slice(0, 40).map((c: any) => {
-      const topicLabel = c.topic?.label ?? 'sem tópico';
-      return `- id=${c.id} "${c.title}" topic=${topicLabel} format=${c.format} difficulty=${c.difficulty} minutes=${c.estimatedMinutes}`;
-    });
-    const candidatesBlock = `CANDIDATOS DO ACERVO:\n${candidatesLines.join('\n')}`;
-
-    const system = `Você é o copiloto do Diretor Educacional do ICS Select. Sua tarefa é montar um plano semanal
-de 4 a 7 itens para um membro, baseado em:
+    const system = `Você é o copiloto do Diretor Educacional do ICS Select. Monte um plano semanal de 4-7 itens
+para o membro, considerando:
 - o track do membro
 - as últimas 4 semanas de resultados (outcomes + reflexões)
 - o retrô mais recente (se houver)
-- a cobertura de tópicos do ciclo (onde o membro está atrasado)
-- carry-overs que o admin já marcou pra trazer de volta
-- brief opcional do admin com direção extra
+- a cobertura de tópicos do ciclo
+- carry-overs que o admin já marcou
+- brief opcional do admin
 
-Responda APENAS com JSON válido:
+Use a ferramenta \`search_library\` pra encontrar candidatos no acervo — chame várias vezes
+com queries ou filtros diferentes pra diversificar tópicos/formatos. Depois de reunir 4-7
+bons candidatos, responda APENAS com JSON válido:
+
 {
   "items": [{"libraryItemId": "<id>", "order": <int>, "rationale": "1-2 frases em pt-BR"}],
   "alternates": [{"libraryItemId": "<id>", "rationale": "..."}],
@@ -206,26 +190,32 @@ Responda APENAS com JSON válido:
 }
 
 Regras:
-- Não invente IDs. Use apenas IDs da lista de candidatos.
-- Carry-overs DEVEM aparecer em "items" (não em "alternates") se o admin os marcou.
-- Ordem pedagógica: fundamentos antes de avançado. Difícil depois de médio.
-- "alternates" tem 3 itens: opções extras que o admin pode querer.
-- "rationale" de cada item deve ligar o item ao contexto.`;
+- Não invente IDs. Use apenas IDs retornados por search_library ou os do bloco
+  CARRY-OVER RESOLVIDO.
+- Carry-overs DEVEM aparecer em "items" se o admin os marcou.
+- Ordem pedagógica: fundamentos antes de avançado, médio antes de difícil.
+- "alternates" tem até 3 itens extras.
+- "rationale" liga o item ao contexto (ex: gap do ciclo, padrão da reflexão, nível).`;
 
-    const userPrompt = [
+    const promptSections = [
       memberLine,
       outcomesBlock,
       retroBlock,
       coverageBlock,
       carryOverBlock,
+      carryOverResolvedBlock,
       briefBlock,
-      candidatesBlock,
-    ].join('\n\n');
+    ].filter((s): s is string => Boolean(s));
+    const userPrompt = promptSections.join('\n\n');
 
-    const result = await this.chat.callJson<Draft>({
+    const executor = makeLibraryToolExecutor(this.library);
+    const result = await this.chat.callJsonWithTools<Draft>({
       system,
       messages: [{ role: 'user', content: userPrompt }],
-      maxTokens: 2000,
+      tools: [searchLibraryTool],
+      executeTool: executor,
+      maxIterations: 5,
+      maxTokens: 2500,
     });
 
     const draft: Draft = {
@@ -244,6 +234,7 @@ Regras:
         weekStart: input.weekStart.toISOString(),
         carryOverCount: carryOverIds.length,
         hasBrief: !!(input.briefText && input.briefText.trim().length > 0),
+        toolCalls: result.toolCalls.length,
       },
     });
 
