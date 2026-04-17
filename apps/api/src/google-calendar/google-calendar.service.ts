@@ -53,14 +53,16 @@ export class GoogleCalendarService {
       orderBy: 'startTime',
     });
     const events = res.data.items ?? [];
+    // Drop all-day events (no dateTime). Study sessions always have explicit start/end times;
+    // all-day entries would produce misleading minutesAway values downstream.
     return events
-      .filter((e) => e.id && (e.start?.dateTime || e.start?.date) && (e.end?.dateTime || e.end?.date))
+      .filter((e) => e.id && e.start?.dateTime && e.end?.dateTime)
       .map((e) => ({
         id: e.id!,
         summary: e.summary ?? '',
         description: e.description ?? '',
-        start: new Date(e.start!.dateTime ?? e.start!.date!),
-        end: new Date(e.end!.dateTime ?? e.end!.date!),
+        start: new Date(e.start!.dateTime!),
+        end: new Date(e.end!.dateTime!),
       }));
   }
 

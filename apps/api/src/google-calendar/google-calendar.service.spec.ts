@@ -171,13 +171,6 @@ describe('GoogleCalendarService', () => {
         start: new Date('2026-04-17T12:10:00Z'),
         end: new Date('2026-04-17T13:10:00Z'),
       },
-      {
-        id: 'evt-b',
-        summary: 'All-day',
-        description: '',
-        start: new Date('2026-04-17'),
-        end: new Date('2026-04-18'),
-      },
     ]);
   });
 });
