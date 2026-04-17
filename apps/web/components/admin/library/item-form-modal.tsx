@@ -1,8 +1,10 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   useCreateLibraryItem,
   useImportUrl,
+  useUpdateLibraryItem,
+  type AdminLibraryItem,
 } from '../../../lib/queries/admin-library';
 
 const FORMATS = ['VIDEO', 'ARTICLE', 'BOOK', 'PROBLEM', 'OTHER'] as const;
@@ -22,27 +24,48 @@ type Form = {
   estimatedMinutes: number;
 };
 
-const EMPTY_FORM: Form = {
-  title: '',
-  url: '',
-  description: '',
-  format: 'ARTICLE',
-  difficulty: 'MEDIUM',
-  estimatedMinutes: 30,
-};
+function makeForm(init: AdminLibraryItem | null | undefined): Form {
+  if (!init) {
+    return {
+      title: '',
+      url: '',
+      description: '',
+      format: 'ARTICLE',
+      difficulty: 'MEDIUM',
+      estimatedMinutes: 30,
+    };
+  }
+  return {
+    title: init.title,
+    url: init.url ?? '',
+    description: init.description ?? '',
+    format: init.format,
+    difficulty: init.difficulty,
+    estimatedMinutes: init.estimatedMinutes,
+  };
+}
 
-export function NewItemModal({
-  open,
-  onClose,
-}: {
+interface ItemFormModalProps {
   open: boolean;
+  initial?: AdminLibraryItem | null;
   onClose: () => void;
-}) {
+}
+
+export function ItemFormModal({ open, initial, onClose }: ItemFormModalProps) {
   const [tab, setTab] = useState<Tab>('manual');
-  const [form, setForm] = useState<Form>(EMPTY_FORM);
+  const [form, setForm] = useState<Form>(() => makeForm(initial));
   const [importUrl, setImportUrl] = useState('');
   const create = useCreateLibraryItem();
+  const update = useUpdateLibraryItem();
   const importer = useImportUrl();
+
+  const isEdit = Boolean(initial);
+
+  useEffect(() => {
+    setForm(makeForm(initial));
+    setTab('manual');
+    setImportUrl('');
+  }, [initial]);
 
   if (!open) return null;
 
@@ -61,50 +84,60 @@ export function NewItemModal({
   }
 
   async function handleSave() {
-    await create.mutateAsync({
+    const payload = {
       title: form.title,
       url: form.url || null,
       description: form.description || null,
       format: form.format,
       difficulty: form.difficulty,
       estimatedMinutes: form.estimatedMinutes,
-    });
+    };
+    if (isEdit && initial) {
+      await update.mutateAsync({ id: initial.id, data: payload });
+    } else {
+      await create.mutateAsync(payload);
+    }
     onClose();
-    setForm(EMPTY_FORM);
+    setForm(makeForm(null));
     setImportUrl('');
   }
 
   const handleCancel = () => {
     onClose();
-    setForm(EMPTY_FORM);
+    setForm(makeForm(initial));
     setImportUrl('');
     setTab('manual');
   };
+
+  const saveError = isEdit ? update.error : create.error;
+  const saving = isEdit ? update.isPending : create.isPending;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/60 p-4">
       <div className="w-full max-w-xl rounded-card bg-surface border border-rule p-6 shadow-modal max-h-[90vh] overflow-y-auto">
         <h3 className="font-serif-tool text-xl font-semibold text-ink">
-          New library item
+          {isEdit ? 'Edit library item' : 'New library item'}
         </h3>
-        <nav className="mt-4 border-b border-rule flex gap-6">
-          {(['manual', 'import'] as const).map((t) => (
-            <button
-              key={t}
-              type="button"
-              onClick={() => setTab(t)}
-              className={`pb-2 font-mono text-xs uppercase tracking-label ${
-                tab === t
-                  ? 'text-ink font-semibold border-b-2 border-ink -mb-[1px]'
-                  : 'text-ink-mute hover:text-ink'
-              }`}
-            >
-              {t === 'manual' ? 'Manual' : 'Import URL'}
-            </button>
-          ))}
-        </nav>
+        {!isEdit && (
+          <nav className="mt-4 border-b border-rule flex gap-6">
+            {(['manual', 'import'] as const).map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => setTab(t)}
+                className={`pb-2 font-mono text-xs uppercase tracking-label ${
+                  tab === t
+                    ? 'text-ink font-semibold border-b-2 border-ink -mb-[1px]'
+                    : 'text-ink-mute hover:text-ink'
+                }`}
+              >
+                {t === 'manual' ? 'Manual' : 'Import URL'}
+              </button>
+            ))}
+          </nav>
+        )}
 
-        {tab === 'import' && (
+        {!isEdit && tab === 'import' && (
           <div className="mt-4 space-y-3">
             <label className="block">
               <span className="font-mono text-[10px] uppercase tracking-label text-ink-mute">
@@ -138,7 +171,7 @@ export function NewItemModal({
           </div>
         )}
 
-        {tab === 'manual' && (
+        {(isEdit || tab === 'manual') && (
           <div className="mt-4 space-y-3">
             <Field label="Title">
               <input
@@ -217,9 +250,9 @@ export function NewItemModal({
                 />
               </Field>
             </div>
-            {create.error && (
+            {saveError && (
               <p className="font-mono text-[10px] text-outcome-stuck">
-                {(create.error as Error).message}
+                {(saveError as Error).message}
               </p>
             )}
           </div>
@@ -236,10 +269,10 @@ export function NewItemModal({
           <button
             type="button"
             onClick={handleSave}
-            disabled={form.title.trim().length === 0 || create.isPending}
+            disabled={form.title.trim().length === 0 || saving}
             className="font-mono text-xs uppercase tracking-label px-4 py-2 bg-ink text-paper rounded-pill disabled:opacity-40"
           >
-            {create.isPending ? 'Saving…' : 'Save'}
+            {saving ? 'Saving…' : 'Save'}
           </button>
         </div>
       </div>
