@@ -2,44 +2,124 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  /* Magazine Editorial palette */
-  --paper: 40 30% 97%;         /* #FAFAF7 */
-  --paper-warm: 40 17% 92%;    /* #EFEEE8 */
-  --surface: 0 0% 100%;        /* #FFFFFF */
-  --ink: 0 0% 10%;             /* #1A1A1A */
-  --ink-soft: 24 9% 25%;       /* #44403C */
-  --ink-mute: 24 5% 47%;       /* #78716C */
-  --ink-faint: 25 6% 63%;      /* #A8A29E */
-  --rule: 40 8% 89%;           /* #E5E4DF */
-  --accent: 15 56% 50%;        /* #C45D3A terracotta — reflective, carry-over, AI rationale */
-  --focus: 243 75% 59%;        /* #4F46E5 indigo — act-now, momentum, start CTA */
+/* ============================================================
+   ICS Design System v2 — "Focus room"
+   Cool neutral base (Linear/Notion), Inter-first, serif for moments,
+   functional accents with disciplined color. Dark mode first-class.
+   Legacy v1 tokens (paper/ink/accent/focus/rule) remain as aliases
+   so components written against v1 keep working.
+   ============================================================ */
 
-  /* Outcome tokens (dot 6-10px or border-left 3px only) */
-  --outcome-pending: 25 6% 63%;        /* #A8A29E */
-  --outcome-done-easy: 161 82% 17%;    /* #065F46 */
-  --outcome-done-hard: 27 88% 35%;     /* #B45309 */
-  --outcome-doubts: 271 78% 40%;       /* #6B21A8 */
-  --outcome-stuck: 0 74% 35%;          /* #991B1B */
+:root,
+[data-theme='light'] {
+  /* Surfaces — cool neutral */
+  --bg: 220 14% 98%;            /* #F7F8FA */
+  --bg-subtle: 220 14% 96%;     /* #F1F3F6 */
+  --surface: 0 0% 100%;         /* #FFFFFF */
+  --surface-hover: 220 14% 97%;
 
-  /* Platform colors (unchanged from prior palette) */
+  /* Ink scale */
+  --fg: 220 20% 10%;            /* #14181F */
+  --fg-soft: 220 10% 32%;       /* #4B525C */
+  --fg-mute: 220 8% 48%;        /* #707682 */
+  --fg-faint: 220 8% 64%;       /* #9AA0AB */
+  --fg-ghost: 220 8% 80%;
+
+  /* Borders */
+  --border: 220 14% 91%;        /* #E4E7EC */
+  --border-strong: 220 14% 82%;
+
+  /* Functional accents — same chroma, varied hue */
+  --primary: 243 75% 59%;       /* #4F46E5 indigo — act-now */
+  --primary-soft: 243 75% 96%;
+  --primary-fg: 0 0% 100%;
+
+  --success: 160 70% 38%;       /* #1E9B6B emerald — done */
+  --success-soft: 160 60% 94%;
+
+  --warn: 32 90% 48%;           /* #E9890C amber — late/hard */
+  --warn-soft: 32 90% 94%;
+
+  --danger: 0 72% 50%;          /* #DC2626 red — stuck */
+  --danger-soft: 0 72% 96%;
+
+  --reflect: 15 56% 50%;        /* #C45D3A terracotta — carry-over, reflection */
+  --reflect-soft: 15 56% 95%;
+
+  /* Outcome dots — mapped to functional family */
+  --outcome-pending: 220 8% 64%;
+  --outcome-done-easy: 160 70% 38%;
+  --outcome-done-hard: 32 90% 48%;
+  --outcome-doubts: 271 70% 55%;
+  --outcome-stuck: 0 72% 50%;
+
+  /* Platform colors */
   --platform-youtube: 0 100% 50%;
   --platform-leetcode: 36 100% 54%;
   --platform-medium: 0 0% 10%;
-  --platform-github: 263 70% 58%;
+  --platform-github: 258 90% 66%;
   --platform-article: 174 84% 29%;
   --platform-book: 33 90% 43%;
+
+  /* ==========  Legacy v1 aliases ==========
+     Existing components reference these. Do not remove. */
+  --paper: var(--bg);
+  --paper-warm: var(--bg-subtle);
+  --ink: var(--fg);
+  --ink-soft: var(--fg-soft);
+  --ink-mute: var(--fg-mute);
+  --ink-faint: var(--fg-faint);
+  --rule: var(--border);
+  --accent: var(--reflect);
+  --focus: var(--primary);
+}
+
+[data-theme='dark'] {
+  --bg: 222 18% 8%;
+  --bg-subtle: 222 16% 11%;
+  --surface: 222 14% 13%;
+  --surface-hover: 222 14% 16%;
+
+  --fg: 210 15% 96%;
+  --fg-soft: 215 12% 78%;
+  --fg-mute: 218 10% 60%;
+  --fg-faint: 220 8% 44%;
+  --fg-ghost: 220 8% 30%;
+
+  --border: 222 14% 20%;
+  --border-strong: 222 14% 28%;
+
+  --primary: 243 90% 70%;
+  --primary-soft: 243 60% 20%;
+  --primary-fg: 0 0% 100%;
+
+  --success: 160 70% 48%;
+  --success-soft: 160 60% 18%;
+
+  --warn: 32 95% 58%;
+  --warn-soft: 32 60% 20%;
+
+  --danger: 0 85% 62%;
+  --danger-soft: 0 60% 22%;
+
+  --reflect: 15 70% 60%;
+  --reflect-soft: 15 50% 22%;
+
+  --outcome-pending: 220 8% 50%;
+  --outcome-done-easy: 160 70% 48%;
+  --outcome-done-hard: 32 95% 58%;
+  --outcome-doubts: 271 75% 68%;
+  --outcome-stuck: 0 85% 62%;
 }
 
 html,
 body {
   height: 100%;
-  background: hsl(var(--paper));
-  color: hsl(var(--ink));
+  background: hsl(var(--bg));
+  color: hsl(var(--fg));
 }
 
 html {
-  /* Keep class="light" requirement for HeroUI portal-rendered components */
   font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -48,10 +128,16 @@ html {
 
 body {
   @apply antialiased;
-  font-feature-settings: 'kern', 'liga', 'calt';
+  font-feature-settings: 'kern', 'liga', 'calt', 'cv11';
+  transition: background-color 220ms cubic-bezier(0.16, 1, 0.3, 1), color 220ms;
 }
 
 /* Utility: tabular numerics for dense-data surfaces */
 .tabular-nums {
   font-variant-numeric: tabular-nums;
+}
+
+/* JetBrains Mono refinements */
+.font-mono {
+  font-feature-settings: 'zero', 'ss02';
 }
