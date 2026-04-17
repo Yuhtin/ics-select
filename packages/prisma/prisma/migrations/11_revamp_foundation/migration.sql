@@ -87,3 +87,26 @@ CREATE TABLE "DismissedAlert" (
 );
 CREATE INDEX "DismissedAlert_userId_expiresAt_idx"
   ON "DismissedAlert"("userId", "expiresAt");
+
+-- =====================================================
+-- New columns on existing tables
+-- =====================================================
+
+ALTER TABLE "User"
+  ADD COLUMN "whatsappPhone" TEXT;
+
+ALTER TABLE "Cycle"
+  ADD COLUMN "rankingVisibleToMembers" BOOLEAN NOT NULL DEFAULT FALSE;
+
+ALTER TABLE "CycleMembership"
+  ADD COLUMN "track" "Track";
+
+ALTER TABLE "LibraryItem"
+  ADD COLUMN "topicId" TEXT REFERENCES "Topic"("id"),
+  ADD COLUMN "tracks" "Track"[] NOT NULL DEFAULT ARRAY[]::"Track"[];
+
+CREATE INDEX "LibraryItem_topicId_idx" ON "LibraryItem"("topicId");
+
+ALTER TABLE "WeeklyPlanItem"
+  ADD COLUMN "outcome" "ItemOutcome" NOT NULL DEFAULT 'PENDING',
+  ADD COLUMN "carriedFromItemId" TEXT REFERENCES "WeeklyPlanItem"("id");
