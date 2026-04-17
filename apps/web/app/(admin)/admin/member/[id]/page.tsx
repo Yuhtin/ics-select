@@ -128,7 +128,9 @@ export default function AdminMemberPage({ params }: { params: Promise<{ id: stri
       </nav>
 
       <div>
-        {tab === 'timeline' && <TimelineTab plans={data.timeline} />}
+        {tab === 'timeline' && (
+          <TimelineTab memberId={memberId} plans={data.timeline} />
+        )}
         {tab === 'retros' && <RetrosTab retros={data.retros} />}
         {tab === 'diagnose' && <DiagnoseTab memberId={memberId} />}
         {tab === 'notes' && <NotesTab memberId={memberId} />}
