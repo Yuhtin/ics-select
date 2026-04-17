@@ -4,6 +4,7 @@ import { useAdminCycleOverview } from '../../../../../lib/queries/admin-cycle';
 import { RankingToggle } from '../../../../../components/admin/ranking-toggle';
 import { CycleMembersGrid } from '../../../../../components/admin/cycle-members-grid';
 import { CohortHeatmap } from '../../../../../components/admin/cohort-heatmap';
+import { ClassesSection } from '../../../../../components/admin/cycles/classes-section';
 import { Eyebrow } from '../../../../../components/ui/eyebrow';
 import { SectionLabel } from '../../../../../components/ui/section-label';
 
@@ -51,6 +52,15 @@ export default function AdminCyclePage({
         <SectionLabel>Cohort heatmap · last 6 weeks</SectionLabel>
         <CohortHeatmap weeks={data.heatmap.weeks} rows={data.heatmap.rows} />
       </section>
+
+      <ClassesSection
+        cycleId={data.cycle.id}
+        members={data.members.map((m) => ({
+          userId: m.userId,
+          name: m.name,
+          pictureUrl: m.pictureUrl,
+        }))}
+      />
     </div>
   );
 }
