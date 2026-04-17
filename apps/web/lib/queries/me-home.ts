@@ -19,6 +19,23 @@ export type HomeItem = {
   carriedFromItemId: string | null;
 };
 
+export type CarryOverReflection = {
+  itemId: string;
+  title: string;
+  reflection: string;
+  submittedAt: string;
+  weekLabel: string;
+};
+
+export type TopicCoverage = {
+  topicId: string;
+  slug: string;
+  label: string;
+  order: number;
+  itemsPlanned: number;
+  itemsDone: number;
+};
+
 export type HomeResponse = {
   hero:
     | { state: 'now'; item: HomeItem }
@@ -30,6 +47,8 @@ export type HomeResponse = {
   today: HomeItem[];
   days: { label: string; date: string; items: HomeItem[] }[];
   streak: { current: number; last7: boolean[] };
+  carryOverReflection: CarryOverReflection | null;
+  topicCoverage: TopicCoverage[];
 };
 
 export function useMeHome() {

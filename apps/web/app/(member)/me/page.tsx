@@ -1,8 +1,11 @@
 'use client';
 
 import { useMeHome } from '../../../lib/queries/me-home';
-import { HomeHero } from '../../../components/member/home-hero';
+import { HeroScene } from '../../../components/member/hero-scene';
 import { DayList } from '../../../components/member/day-list';
+import { DayRingCard } from '../../../components/member/day-ring-card';
+import { CarryOverReflectionCard } from '../../../components/member/carry-over-reflection-card';
+import { PhaseProgressCard } from '../../../components/member/phase-progress-card';
 import { StreakCard } from '../../../components/ui/streak-card';
 import { formatMinutes } from '../../../lib/format/time';
 
@@ -10,31 +13,68 @@ export default function MeHomePage() {
   const { data, isLoading, error } = useMeHome();
 
   if (isLoading) {
-    return <p className="font-mono text-xs uppercase tracking-label text-ink-mute">Loading…</p>;
+    return (
+      <p className="font-mono text-[10px] font-semibold uppercase tracking-eyebrow text-fg-mute">
+        Loading…
+      </p>
+    );
   }
   if (error || !data) {
-    return <p className="font-mono text-xs uppercase tracking-label text-ink-mute">Could not load your home.</p>;
+    return (
+      <p className="font-mono text-[10px] font-semibold uppercase tracking-eyebrow text-fg-mute">
+        Could not load your home.
+      </p>
+    );
   }
 
   const activeItemId = data.hero && 'item' in data.hero ? data.hero.item.id : null;
-
-  const todayMinutes = data.today.reduce((sum, i) => sum + (i.scheduledMinutes ?? i.estimatedMinutes), 0);
-  const todayHint = data.today.length > 0
-    ? `${data.today.length} items · ${formatMinutes(todayMinutes)}`
-    : undefined;
+  const todayMinutes = data.today.reduce(
+    (sum, i) => sum + (i.scheduledMinutes ?? i.estimatedMinutes),
+    0,
+  );
+  const doneCount = data.today.filter(
+    (i) => i.outcome === 'DONE_EASY' || i.outcome === 'DONE_HARD',
+  ).length;
+  const todayHint =
+    data.today.length > 0
+      ? `${doneCount}/${data.today.length} done · ${formatMinutes(todayMinutes)} total`
+      : undefined;
 
   return (
-    <div className="grid gap-10 md:grid-cols-[minmax(0,1fr)_260px]">
-      <div className="space-y-10 min-w-0">
-        <HomeHero hero={data.hero} />
-        <hr className="border-rule" />
-        <DayList label="Today" hint={todayHint} items={data.today} activeItemId={activeItemId} />
-        {data.days.map((day) => (
-          <DayList key={day.date} label={day.label} items={day.items} />
-        ))}
+    <div className="grid gap-5 lg:grid-cols-[minmax(0,1.8fr)_minmax(0,1fr)]">
+      <div className="flex min-w-0 flex-col gap-6">
+        <HeroScene hero={data.hero} />
+        <section>
+          <div className="mb-2 flex items-baseline justify-between px-1">
+            <h2 className="font-sans text-sm font-semibold tracking-tight text-fg">
+              Today
+            </h2>
+            {todayHint && (
+              <span className="font-mono text-[11px] tabular-nums text-fg-mute">
+                {todayHint}
+              </span>
+            )}
+          </div>
+          <DayList items={data.today} activeItemId={activeItemId} />
+        </section>
+        {data.days.length > 0 && (
+          <section className="space-y-4">
+            {data.days.map((day) => (
+              <DayList key={day.date} label={day.label} items={day.items} />
+            ))}
+          </section>
+        )}
+        {data.carryOverReflection && (
+          <CarryOverReflectionCard reflection={data.carryOverReflection} />
+        )}
       </div>
-      <aside className="space-y-6">
+
+      <aside className="flex flex-col gap-5">
+        <DayRingCard items={data.today} nowItemId={activeItemId} />
         <StreakCard current={data.streak.current} last7={data.streak.last7} />
+        {data.topicCoverage.length > 0 && (
+          <PhaseProgressCard topics={data.topicCoverage} />
+        )}
       </aside>
     </div>
   );
