@@ -242,12 +242,15 @@ model WeeklyPlanItem {
   reflection        String?
   completedAt       DateTime?
   carriedFromItemId String?
+  scheduledAt       DateTime?
+  scheduledMinutes  Int?
 
   weeklyPlan  WeeklyPlan       @relation(fields: [weeklyPlanId], references: [id], onDelete: Cascade)
   libraryItem LibraryItem      @relation(fields: [libraryItemId], references: [id])
   carriedFrom WeeklyPlanItem?  @relation("carry", fields: [carriedFromItemId], references: [id])
   carriedTo   WeeklyPlanItem[] @relation("carry")
   @@unique([weeklyPlanId, order])
+  @@index([scheduledAt])
 }
 
 model WeeklyRetro {
