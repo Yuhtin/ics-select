@@ -1,8 +1,5 @@
-import { ConflictException, ForbiddenException, Injectable, NotFoundException, Optional } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service.js';
-import { WhatsappService } from '../whatsapp/whatsapp.service.js';
-import { GoogleCalendarService } from '../google-calendar/google-calendar.service.js';
 import type { ItemOutcome } from '@ics-select/shared';
 
 type CreateInput = {
@@ -21,12 +18,7 @@ type UpdateInput = {
 
 @Injectable()
 export class WeeklyPlansService {
-  constructor(
-    private readonly prisma: PrismaService,
-    @Optional() private readonly whatsapp?: WhatsappService,
-    @Optional() private readonly config?: ConfigService,
-    @Optional() private readonly calendar?: GoogleCalendarService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async remove(id: string) {
     const plan = await this.prisma.weeklyPlan.findUnique({ where: { id } });

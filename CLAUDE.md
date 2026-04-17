@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-**ICS Select** is a private platform for the Inteli Consulting Society's selective program that prepares students for technical interviews at Big Techs. The admin (`Diretor Educacional`) builds personalized weekly study plans from a searchable library of materials; selected members (≤12 per cycle) follow the plans, auto-schedule study sessions against their Google Calendar, mark items as done with fácil/difícil ratings, and the admin sees cohort progress + AI-assisted insights.
+**ICS Select** is a private platform for the Inteli Consulting Society's selective program that prepares students for technical interviews at Big Techs. The admin (`Diretor Educacional`) builds personalized weekly study plans from a searchable library of materials; selected members (≤12 per cycle) follow the plans, auto-schedule study sessions against their Google Calendar, mark items with one of five outcomes (`Nailed it` / `Got it (hard)` / `Had doubts` / `Stuck` / `Not yet`), and the admin sees cohort progress + AI-assisted insights.
 
 Full product spec lives at `docs/superpowers/specs/2026-04-11-ics-select-design.md`. Per-phase implementation plans live in `docs/superpowers/plans/`.
 
@@ -102,7 +102,7 @@ The critical path is `apps/api/src/weekly-plans/` + `apps/api/src/scheduler/`. `
 1. Loads the plan's `items` (with library item metadata) and the member's `MemberAvailability`.
 2. Calls `SchedulerService.plan` — a greedy chunker that splits each item by `preferredSessionMinutes` and packs chunks day-by-day into the weekly budget (Phase 4 ignores real Calendar busy time and just uses declared daily minutes).
 3. If `overflow` is non-empty and `force=false`, throws `PlanOverflowError` (HTTP 409, plan stays DRAFT, no sessions/events created).
-4. Otherwise deletes pre-existing `StudySession` rows for the plan, creates new ones, and fires one `GoogleCalendarService.createEvent` per session. Calendar failures are swallowed per session (`googleEventId` left null, admin can re-publish).
+4. Creates one `GoogleCalendarService.createEvent` per scheduler-output chunk. Calendar failures are swallowed. No longer writes DB-side session rows — events on Google Calendar are the source of truth for time blocks. PR 3 will embed `ICS ID: <planId>/<itemId>` in the description so downstream reminders/cleanup can find them.
 5. Plan transitions to PUBLISHED.
 
 ### Google Calendar auth
@@ -122,11 +122,9 @@ Global `HttpExceptionFilter` in `apps/api/src/common/filters/` maps NestJS excep
 Two route groups for authenticated users:
 
 - `(app)` — Admin shell with sidebar nav. Used by all `/admin/*` routes and `/me/availability`. Layout: `AppShell` with `Sidebar` + `Topbar`.
-- `(member)` — Gamified member experience. Holds `/map`, `/calendar`, `/members`. Layout: transparent floating `TopbarMember` + `BottomTabBar` (mobile). No sidebar — the map takes full width with a sticky stats sidebar on the right.
+- `(member)` — Placeholder shell post-revamp PR 1. Single route `/home` with a minimal layout. PR 2 rebuilds the real Magazine Editorial shell (floating topbar: *Today · Cohort · Calendar · avatar*; bottom tab bar on mobile) along with `/me`, `/me/plan`, `/me/item/[id]`, `/me/cohort`, `/me/retro`, `/me/settings`.
 
-**Do not add `page.tsx` to any route group root** (`(app)/page.tsx` or `(member)/page.tsx`) — it collides with `app/page.tsx` (root redirect) and breaks Next.js 15's client-reference-manifest generation during static export. We learned this the hard way twice.
-
-Members without an active `CycleMembership` see a blocking `NoCycleScreen` instead of the member layout — they cannot access the map, calendar, or members pages.
+**Never add `page.tsx` at a route group root** (`(app)/page.tsx` or `(member)/page.tsx`) — it collides with `app/page.tsx` and breaks Next.js 15's client-reference-manifest generation during static export. Use a subpath like `(member)/home/page.tsx` (as PR 1 does).
 
 ### Deploy pipeline
 
@@ -197,7 +195,7 @@ Each material source has a signature color used in card borders and item accents
 | Article | `--platform-article` | Teal `#0D9488` |
 | Book | `--platform-book` | Amber `#D97706` |
 
-Platform detection uses URL pattern matching first (e.g. `youtube.com` → YouTube), then falls back to `ItemFormat` (e.g. `VIDEO` → YouTube). Logic lives in `apps/web/components/member/platform-colors.ts`.
+Platform detection uses URL pattern matching first (e.g. `youtube.com` → YouTube), then falls back to `ItemFormat` (e.g. `VIDEO` → YouTube). PR 2 will reintroduce the platform detection helper (previously at `components/member/platform-colors.ts`, deleted in PR 1 along with the rest of the old member experience).
 
 ### What was removed
 

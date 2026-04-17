@@ -30,7 +30,7 @@ function fakePrisma() {
           items:
             data.items?.create?.map((i: any) => {
               const itemId = `i-${++iid}`;
-              const item = { id: itemId, weeklyPlanId: id, ...i, status: 'PENDING', sessions: [] };
+              const item = { id: itemId, weeklyPlanId: id, ...i, outcome: 'PENDING' };
               items.set(itemId, item);
               return item;
             }) ?? [],
