@@ -1,4 +1,5 @@
 import { Body, Controller, Get, Patch } from '@nestjs/common';
+import { TRACKS } from '@ics-select/shared';
 import { z } from 'zod';
 import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
 import type { JwtStrategyPayload } from '../auth/strategies/jwt.strategy.js';
@@ -16,18 +17,33 @@ const AvailabilitySchema = z.object({
   timezone: z.string().default('America/Sao_Paulo'),
 });
 
-@Controller('me/availability')
+const UpdateProfileSchema = z.object({
+  whatsappPhone: z
+    .string()
+    .regex(/^\+\d{8,15}$/)
+    .nullable()
+    .optional(),
+  targetTrack: z.enum(TRACKS).nullable().optional(),
+});
+
+@Controller('me')
 export class AvailabilityController {
   constructor(private readonly availability: AvailabilityService) {}
 
-  @Get()
+  @Get('availability')
   get(@CurrentUser() user: JwtStrategyPayload) {
     return this.availability.get(user.sub);
   }
 
-  @Patch()
+  @Patch('availability')
   upsert(@CurrentUser() user: JwtStrategyPayload, @Body() body: unknown) {
     const parsed = AvailabilitySchema.parse(body);
     return this.availability.upsert(user.sub, parsed);
+  }
+
+  @Patch('profile')
+  updateProfile(@CurrentUser() user: JwtStrategyPayload, @Body() body: unknown) {
+    const input = UpdateProfileSchema.parse(body);
+    return this.availability.updateProfile(user.sub, input);
   }
 }
