@@ -1,8 +1,9 @@
-import { ConflictException, Injectable, NotFoundException, Optional } from '@nestjs/common';
+import { ConflictException, ForbiddenException, Injectable, NotFoundException, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../common/prisma/prisma.service.js';
 import { WhatsappService } from '../whatsapp/whatsapp.service.js';
 import { GoogleCalendarService } from '../google-calendar/google-calendar.service.js';
+import type { ItemOutcome } from '@ics-select/shared';
 
 type CreateInput = {
   userId: string;
@@ -217,67 +218,29 @@ export class WeeklyPlansService {
     });
   }
 
-  async markItemDone(
-    planId: string,
+  async setItemOutcome(
     itemId: string,
     userId: string,
-    input: {
-      rating?: 'EASY' | 'HARD';
-      reflection?: string;
-      completionStatus?: 'DONE' | 'STUCK' | 'DOUBTS';
-      feedback?: string;
-    },
+    input: { outcome: ItemOutcome; reflection?: string | null },
   ) {
-    const plan = await this.prisma.weeklyPlan.findUnique({ where: { id: planId } });
-    if (!plan) throw new NotFoundException('plan not found');
-    if (plan.userId !== userId) throw new NotFoundException('plan not found');
-    const cs = input.completionStatus ?? 'DONE';
+    const item = await this.prisma.weeklyPlanItem.findUnique({
+      where: { id: itemId },
+      include: { weeklyPlan: { select: { userId: true } } },
+    });
+    if (!item) throw new NotFoundException('Item not found');
+    if (item.weeklyPlan.userId !== userId) {
+      throw new ForbiddenException('Forbidden: cannot change someone else\'s item');
+    }
+
+    const completed = input.outcome !== 'PENDING';
+
     return this.prisma.weeklyPlanItem.update({
       where: { id: itemId },
       data: {
-        status: 'DONE',
-        completedAt: new Date(),
-        difficultyRating: input.rating ?? null,
-        reflection: input.reflection ?? null,
-        completionStatus: cs,
-        feedback: input.feedback ?? null,
-        stuck: cs === 'STUCK',
-        stuckAt: cs === 'STUCK' ? new Date() : null,
+        outcome: input.outcome,
+        reflection: input.reflection ?? undefined,
+        completedAt: completed ? new Date() : null,
       },
     });
-  }
-
-  async markItemStuck(planId: string, itemId: string, userId: string) {
-    const plan = await this.prisma.weeklyPlan.findUnique({ where: { id: planId } });
-    if (!plan) throw new NotFoundException('plan not found');
-    if (plan.userId !== userId) throw new NotFoundException('plan not found');
-    const updated = await this.prisma.weeklyPlanItem.update({
-      where: { id: itemId },
-      data: { stuck: true, stuckAt: new Date() },
-    });
-
-    if (this.whatsapp && this.config) {
-      const adminNumber = this.config.get<string>('ADMIN_WHATSAPP_NUMBER');
-      if (adminNumber) {
-        const planWithUser = await this.prisma.weeklyPlan.findUnique({
-          where: { id: planId },
-          include: { user: true },
-        });
-        const item = await this.prisma.weeklyPlanItem.findUnique({
-          where: { id: itemId },
-          include: { libraryItem: true },
-        });
-        if (planWithUser && item) {
-          await this.whatsapp.send({
-            userId: planWithUser.user.id,
-            kind: 'stuck_alert',
-            to: adminNumber,
-            text: `🚨 ${planWithUser.user.name} travou em "${item.libraryItem.title}"`,
-          });
-        }
-      }
-    }
-
-    return updated;
   }
 }

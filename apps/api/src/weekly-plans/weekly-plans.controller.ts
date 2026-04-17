@@ -4,7 +4,7 @@ import { Roles } from '../auth/decorators/roles.decorator.js';
 import type { JwtStrategyPayload } from '../auth/strategies/jwt.strategy.js';
 import { WeeklyPlansService } from './weekly-plans.service.js';
 import { PublicationService } from './publication.service.js';
-import { CreatePlanSchema, MarkItemDoneSchema, UpdatePlanSchema } from './dto.js';
+import { CreatePlanSchema, SetItemOutcomeDto, UpdatePlanSchema } from './dto.js';
 
 @Controller()
 export class WeeklyPlansController {
@@ -87,23 +87,16 @@ export class WeeklyPlansController {
     return this.plans.listForMember(user.sub);
   }
 
-  @Post('plans/:planId/items/:itemId/done')
-  markDone(
-    @Param('planId') planId: string,
-    @Param('itemId') itemId: string,
-    @Body() body: unknown,
-    @CurrentUser() user: JwtStrategyPayload,
-  ) {
-    const parsed = MarkItemDoneSchema.parse(body);
-    return this.plans.markItemDone(planId, itemId, user.sub, parsed);
-  }
-
-  @Post('plans/:planId/items/:itemId/stuck')
-  markStuck(
-    @Param('planId') planId: string,
+  @Patch('plans/:planId/items/:itemId/outcome')
+  setItemOutcome(
+    @Param('planId') _planId: string,
     @Param('itemId') itemId: string,
     @CurrentUser() user: JwtStrategyPayload,
+    @Body() body: SetItemOutcomeDto,
   ) {
-    return this.plans.markItemStuck(planId, itemId, user.sub);
+    return this.plans.setItemOutcome(itemId, user.sub, {
+      outcome: body.outcome,
+      reflection: body.reflection,
+    });
   }
 }
