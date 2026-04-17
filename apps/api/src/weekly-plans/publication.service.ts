@@ -94,6 +94,40 @@ export class PublicationService {
       }
     }
 
+    // Persist the scheduler's plan on each item so the /me/home endpoint
+    // can render "19:00 · 45 min" without round-tripping to Google Calendar.
+    // Items in `overflow` get null for both fields (they weren't placed).
+    const byItem = new Map<string, { startAt: Date; minutes: number }[]>();
+    for (const session of result.sessions) {
+      const list = byItem.get(session.itemId) ?? [];
+      list.push({ startAt: session.scheduledAt, minutes: session.durationMinutes });
+      byItem.set(session.itemId, list);
+    }
+
+    // Gather all item IDs known to this plan so we can null out overflow items
+    const allItemIds = new Set<string>(plan.items.map((i) => i.id));
+
+    for (const [itemId, chunks] of byItem) {
+      chunks.sort((a, b) => a.startAt.getTime() - b.startAt.getTime());
+      const earliest = chunks[0]!;
+      await this.prisma.weeklyPlanItem.update({
+        where: { id: itemId },
+        data: {
+          scheduledAt: earliest.startAt,
+          scheduledMinutes: chunks.reduce((s, c) => s + c.minutes, 0),
+        },
+      });
+      allItemIds.delete(itemId);
+    }
+
+    // Items that didn't get sessions (overflow or otherwise unplaced): null out.
+    for (const itemId of allItemIds) {
+      await this.prisma.weeklyPlanItem.update({
+        where: { id: itemId },
+        data: { scheduledAt: null, scheduledMinutes: null },
+      });
+    }
+
     return {
       sessionsCreated: result.sessions.length,
       overflow: result.overflow,

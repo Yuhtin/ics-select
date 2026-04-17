@@ -140,6 +140,8 @@ Two route groups for authenticated users:
 
 ## Visual identity and design system
 
+**Full reference: `docs/design-system.md`.** Read it before building member/admin UI. The summary below is a pointer.
+
 ### Dual-serif Magazine Editorial
 
 **Narrative surfaces** (home, item, cohort, retro, admin triage, member detail): **Newsreader** (Google Fonts, variable `opsz 6..72`). Voz de jornal digital.
@@ -162,8 +164,22 @@ Fonts load via `<link>` in `layout.tsx`. **Never** `@import url()` in CSS (block
 --ink-mute      #78716C   meta / eyebrow
 --ink-faint     #A8A29E   placeholder, disabled
 --rule          #E5E4DF   dividers, borders
---accent        #C45D3A   terracotta — AI rationale, editorial accent (sparingly)
+--accent        #C45D3A   terracotta — reflective / returning (carry-over, AI rationale)
+--focus         #4F46E5   indigo — act-now / momentum (now hero, 30d streak, start CTA)
 ```
+
+### Accent meaning (earned — never decorative)
+
+| Token | When to use |
+|---|---|
+| `--focus` | "This is your moment to act" — hero `now` state (border + eyebrow + CTA), 30-day streak milestone. |
+| `--accent` | "Returning / reflective" — carry-over sections, AI rationale block, 14-day streak. |
+| `--outcome-stuck` | "Urgent / right now" — running_late hero, stuck banner, urgent admin alerts. |
+| `--outcome-done-hard` | "Past-due warning" — late list row border + badge. |
+| `--outcome-done-easy` | "Completed / on track" — all-done hero dot, 7-day streak, done-dots. |
+
+**Rule:** one accent per visual unit (hero / card / section). Priority if multiple fit: `stuck > late > focus > accent > default`. Full examples + code patterns in `docs/design-system.md`.
+
 
 ### Outcome tokens (dot 6–10px or left border 3px, never full background)
 
@@ -195,7 +211,9 @@ Each material source has a signature color used in card borders and item accents
 | Article | `--platform-article` | Teal `#0D9488` |
 | Book | `--platform-book` | Amber `#D97706` |
 
-Platform detection uses URL pattern matching first (e.g. `youtube.com` → YouTube), then falls back to `ItemFormat` (e.g. `VIDEO` → YouTube). PR 2 will reintroduce the platform detection helper (previously at `components/member/platform-colors.ts`, deleted in PR 1 along with the rest of the old member experience).
+Platform detection lives at `apps/web/lib/format/platform.ts`: URL pattern first (`youtube.com` → YouTube, `leetcode.com` → LeetCode, etc.), then falls back to `ItemFormat` (`VIDEO` → YouTube). Helper exports `detectPlatform()` + `platformLabel()`.
+
+Platform colors appear as **3px vertical stripes** before item titles in list rows (see `ListRow.platform` prop). Creates natural visual variety without decoration. Never used as text color, never as backgrounds bigger than a pill.
 
 ### What was removed
 

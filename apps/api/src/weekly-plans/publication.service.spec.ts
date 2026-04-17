@@ -28,6 +28,9 @@ function fakePrisma() {
     memberAvailability: {
       findUnique: jest.fn(async () => availability),
     },
+    weeklyPlanItem: {
+      update: jest.fn(async () => ({})),
+    },
   };
 }
 
@@ -81,6 +84,15 @@ describe('PublicationService.autoSchedule', () => {
     const result = await svc.autoSchedule('p-1', false);
     expect(result.sessionsCreated).toBe(1);
     expect(calendar.createEvent).toHaveBeenCalledTimes(1);
+    expect(prisma.weeklyPlanItem.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'wpi-1' },
+        data: expect.objectContaining({
+          scheduledAt: expect.any(Date),
+          scheduledMinutes: expect.any(Number),
+        }),
+      }),
+    );
   });
 
   it('throws PlanOverflowError when there is overflow and force is false', async () => {
@@ -127,5 +139,49 @@ describe('PublicationService.autoSchedule', () => {
     const svc = new PublicationService(prisma as any, scheduler as any, calendar as any);
     const result = await svc.autoSchedule('p-1', false);
     expect(result.sessionsCreated).toBe(1);
+  });
+
+  it('nulls scheduledAt + scheduledMinutes for overflow items when force is true', async () => {
+    const prisma = fakePrisma();
+    prisma.plans.set('p-1', {
+      id: 'p-1',
+      userId: 'u-1',
+      cycleId: 'c-1',
+      weekStart: new Date('2026-04-13T00:00:00-03:00'),
+      weekEnd: new Date('2026-04-20T00:00:00-03:00'),
+      status: 'PUBLISHED',
+      items: [
+        { id: 'wpi-1', libraryItemId: 'li-1', order: 0, libraryItem: { title: 'A', estimatedMinutes: 60 } },
+        { id: 'wpi-2', libraryItemId: 'li-2', order: 1, libraryItem: { title: 'B', estimatedMinutes: 60 } },
+      ],
+    });
+    scheduler.plan.mockReturnValue({
+      sessions: [
+        { itemId: 'wpi-1', scheduledAt: new Date('2026-04-13T11:00:00Z'), durationMinutes: 60 },
+      ],
+      overflow: [{ itemId: 'wpi-2', minutesRequired: 60 }],
+    });
+    const svc = new PublicationService(prisma as any, scheduler as any, calendar as any);
+    await svc.autoSchedule('p-1', true);
+    // wpi-1 gets scheduledAt + scheduledMinutes
+    expect(prisma.weeklyPlanItem.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'wpi-1' },
+        data: expect.objectContaining({
+          scheduledAt: expect.any(Date),
+          scheduledMinutes: 60,
+        }),
+      }),
+    );
+    // wpi-2 (overflow) gets null for both fields
+    expect(prisma.weeklyPlanItem.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'wpi-2' },
+        data: expect.objectContaining({
+          scheduledAt: null,
+          scheduledMinutes: null,
+        }),
+      }),
+    );
   });
 });

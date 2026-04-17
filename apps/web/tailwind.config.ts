@@ -23,6 +23,7 @@ const config: Config = {
         },
         rule: 'hsl(var(--rule) / <alpha-value>)',
         accent: 'hsl(var(--accent) / <alpha-value>)',
+        focus: 'hsl(var(--focus) / <alpha-value>)',
 
         // Outcome family (dot or border-left only — never full background)
         'outcome-pending': 'hsl(var(--outcome-pending) / <alpha-value>)',
@@ -75,8 +76,9 @@ const config: Config = {
         label: '0.08em',
       },
       boxShadow: {
-        // Used sparingly — only modal / focus
+        // Used sparingly — only modal / focus / active-row lift
         modal: '0 1px 3px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.08)',
+        lift: '0 1px 2px rgba(0,0,0,0.04), 0 2px 6px rgba(0,0,0,0.06)',
       },
       transitionTimingFunction: {
         magazine: 'cubic-bezier(0.16, 1, 0.3, 1)',
