@@ -45,16 +45,17 @@ describe('PlanDraftsService', () => {
     expect(prisma.weeklyPlan.create).not.toHaveBeenCalled();
   });
 
-  it('throws ConflictException PLAN_ALREADY_PUBLISHED when an existing plan is PUBLISHED', async () => {
+  it('returns an existing PUBLISHED plan so the editor can open it', async () => {
     const prisma = makePrisma();
     prisma.cycleMembership.findFirst.mockResolvedValue({
       cycle: { id: 'c1', startsAt: new Date('2026-04-01'), endsAt: new Date('2026-07-31') },
     });
-    prisma.weeklyPlan.findFirst.mockResolvedValue({ id: 'p1', status: 'PUBLISHED' });
+    const existing = { id: 'p1', status: 'PUBLISHED', items: [] };
+    prisma.weeklyPlan.findFirst.mockResolvedValue(existing);
     const svc = new PlanDraftsService(prisma as any);
-    await expect(svc.getOrCreateDraft({ memberId: 'm1', weekStart: WEEK_START })).rejects.toMatchObject({
-      response: { error: { code: 'PLAN_ALREADY_PUBLISHED' } },
-    });
+    const result = await svc.getOrCreateDraft({ memberId: 'm1', weekStart: WEEK_START });
+    expect(result).toBe(existing);
+    expect(prisma.weeklyPlan.create).not.toHaveBeenCalled();
   });
 
   it('creates a new DRAFT when none exists for the week', async () => {

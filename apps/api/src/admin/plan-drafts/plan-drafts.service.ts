@@ -21,14 +21,9 @@ export class PlanDraftsService {
       where: { userId: input.memberId, weekStart: input.weekStart },
       include: { items: { include: { libraryItem: true }, orderBy: { order: 'asc' } } },
     });
-    if (existing) {
-      if (existing.status === 'PUBLISHED') {
-        throw new ConflictException({
-          error: { code: 'PLAN_ALREADY_PUBLISHED', message: 'Essa semana já tem plano publicado' },
-        });
-      }
-      return existing;
-    }
+    // Return whichever plan exists for this (member, week) — DRAFT or PUBLISHED.
+    // The plan editor can open either state; the admin can then re-publish.
+    if (existing) return existing;
 
     return this.prisma.weeklyPlan.create({
       data: {
