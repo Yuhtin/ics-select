@@ -94,6 +94,7 @@ model User {
   adminNotesAuthored  AdminNote[]        @relation("author")
   adminNotesAbout     AdminNote[]        @relation("about")
   dismissedAlerts     DismissedAlert[]
+  retroRemindersSent  RetroReminderSent[]
 }
 
 model RefreshToken {
@@ -291,6 +292,18 @@ model DismissedAlert {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   @@index([userId, expiresAt])
+}
+
+model RetroReminderSent {
+  id        String   @id @default(cuid())
+  userId    String
+  weekStart DateTime
+  sentAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, weekStart])
+  @@index([weekStart])
 }
 
 model AiGeneration {

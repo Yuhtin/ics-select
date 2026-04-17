@@ -12,7 +12,7 @@ import {
   FiltersBar,
   type FiltersState,
 } from '../../../../components/admin/library/filters-bar';
-import { NewItemModal } from '../../../../components/admin/library/new-item-modal';
+import { ItemFormModal } from '../../../../components/admin/library/item-form-modal';
 import { TopicsModal } from '../../../../components/admin/library/topics-modal';
 import {
   detectPlatform,
@@ -45,7 +45,8 @@ export default function AdminLibraryPage() {
     tracks: [],
     topicId: null,
   });
-  const [newItemOpen, setNewItemOpen] = useState(false);
+  const [formOpen, setFormOpen] = useState(false);
+  const [editing, setEditing] = useState<AdminLibraryItem | null>(null);
   const [topicsOpen, setTopicsOpen] = useState(false);
   const remove = useDeleteLibraryItem();
 
@@ -70,8 +71,19 @@ export default function AdminLibraryPage() {
     remove.mutate(item.id);
   };
 
-  const handleEdit = () => {
-    alert('Edit coming soon — use delete + recreate for now');
+  const openCreate = () => {
+    setEditing(null);
+    setFormOpen(true);
+  };
+
+  const openEdit = (item: AdminLibraryItem) => {
+    setEditing(item);
+    setFormOpen(true);
+  };
+
+  const closeForm = () => {
+    setFormOpen(false);
+    setEditing(null);
   };
 
   return (
@@ -96,7 +108,7 @@ export default function AdminLibraryPage() {
           </button>
           <button
             type="button"
-            onClick={() => setNewItemOpen(true)}
+            onClick={openCreate}
             className="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-label px-4 py-2 bg-ink text-paper rounded-pill hover:opacity-90"
           >
             <Plus className="h-3.5 w-3.5" strokeWidth={1.5} /> New item
@@ -187,7 +199,7 @@ export default function AdminLibraryPage() {
                   )}
                   <button
                     type="button"
-                    onClick={handleEdit}
+                    onClick={() => openEdit(item)}
                     className="text-ink-soft hover:text-ink inline-flex items-center gap-1"
                   >
                     <Pencil className="h-3 w-3" strokeWidth={1.5} /> edit
@@ -206,9 +218,10 @@ export default function AdminLibraryPage() {
         </ul>
       )}
 
-      <NewItemModal
-        open={newItemOpen}
-        onClose={() => setNewItemOpen(false)}
+      <ItemFormModal
+        open={formOpen}
+        initial={editing}
+        onClose={closeForm}
       />
       <TopicsModal open={topicsOpen} onClose={() => setTopicsOpen(false)} />
     </div>
