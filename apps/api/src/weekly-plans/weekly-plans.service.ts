@@ -1,5 +1,6 @@
 import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service.js';
+import { resolveActiveMembership } from '../common/cycle/active-cycle.js';
 import type { ItemOutcome } from '@ics-select/shared';
 
 type CreateInput = {
@@ -109,29 +110,7 @@ export class WeeklyPlansService {
   }
 
   async cohortProgress(userId: string) {
-    const now = new Date();
-    // Prefer the cycle whose dates contain today; if none, the next upcoming cycle the member is in.
-    let membership = await this.prisma.cycleMembership.findFirst({
-      where: {
-        userId,
-        cycle: {
-          status: 'ACTIVE',
-          startsAt: { lte: now },
-          endsAt: { gte: now },
-        },
-      },
-      select: { cycleId: true },
-    });
-    if (!membership) {
-      membership = await this.prisma.cycleMembership.findFirst({
-        where: {
-          userId,
-          cycle: { status: 'ACTIVE', startsAt: { gt: now } },
-        },
-        orderBy: { cycle: { startsAt: 'asc' } },
-        select: { cycleId: true },
-      });
-    }
+    const membership = await resolveActiveMembership(this.prisma, userId);
     if (!membership) return [];
 
     const memberships = await this.prisma.cycleMembership.findMany({

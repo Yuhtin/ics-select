@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import type { Track } from '@ics-select/shared';
 import { PrismaService } from '../common/prisma/prisma.service.js';
+import { resolveActiveMembership } from '../common/cycle/active-cycle.js';
 
 export type AvailabilityInput = {
   mondayMinutes: number;
@@ -47,9 +48,7 @@ export class AvailabilityService {
 
     let membership = null;
     if (input.targetTrack !== undefined) {
-      const existing = await this.prisma.cycleMembership.findFirst({
-        where: { userId, cycle: { status: 'ACTIVE' } },
-      });
+      const existing = await resolveActiveMembership(this.prisma, userId);
       if (existing) {
         membership = await this.prisma.cycleMembership.update({
           where: { id: existing.id },

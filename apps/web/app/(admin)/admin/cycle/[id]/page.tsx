@@ -30,11 +30,24 @@ export default function AdminCyclePage({
         <div className="flex-1 min-w-0">
           <Eyebrow>Cycle · {data.cycle.status}</Eyebrow>
           <h1 className="mt-3 font-serif-tool text-4xl font-semibold tracking-tight leading-tight">
-            {data.cycle.name} · week {data.cycle.weekNumber} of{' '}
-            {data.cycle.weeksTotal}
+            {data.cycle.name}
+            {data.cycle.weekNumber > 0 ? (
+              <> · week {data.cycle.weekNumber} of {data.cycle.weeksTotal}</>
+            ) : (
+              <> · upcoming · {data.cycle.weeksTotal} weeks</>
+            )}
           </h1>
           <p className="mt-2 font-mono text-xs text-ink-mute">
             {data.members.length} members
+            {data.cycle.weekNumber === 0 && (
+              <>
+                {' · starts '}
+                {new Date(data.cycle.startsAt).toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                })}
+              </>
+            )}
           </p>
         </div>
         <RankingToggle

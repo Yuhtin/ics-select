@@ -40,9 +40,11 @@ export type CohortStripEntry = {
 export type CycleInfo = {
   cycleId: string;
   cycleName: string;
-  weekNumber: number;
+  weekNumber: number; // 0 when the cycle hasn't started yet
   weeksTotal: number;
   daysUntilWeekEnds: number;
+  hasStarted: boolean;
+  daysUntilStart: number; // 0 once the cycle is running
 };
 
 export type TriageResponse = {

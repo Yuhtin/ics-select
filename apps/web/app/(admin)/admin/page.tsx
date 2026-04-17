@@ -76,8 +76,20 @@ export default function AdminTriagePage() {
       {data.cycleInfo && (
         <footer className="border-t border-rule pt-4">
           <p className="font-mono text-xs text-ink-mute">
-            {data.cycleInfo.cycleName} · week {data.cycleInfo.weekNumber} of {data.cycleInfo.weeksTotal} ·{' '}
-            {data.cycleInfo.daysUntilWeekEnds} day{data.cycleInfo.daysUntilWeekEnds === 1 ? '' : 's'} until week ends
+            {data.cycleInfo.hasStarted ? (
+              <>
+                {data.cycleInfo.cycleName} · week {data.cycleInfo.weekNumber} of {data.cycleInfo.weeksTotal} ·{' '}
+                {data.cycleInfo.daysUntilWeekEnds} day
+                {data.cycleInfo.daysUntilWeekEnds === 1 ? '' : 's'} until week ends
+              </>
+            ) : (
+              <>
+                {data.cycleInfo.cycleName} · upcoming · starts in{' '}
+                {data.cycleInfo.daysUntilStart} day
+                {data.cycleInfo.daysUntilStart === 1 ? '' : 's'} ·{' '}
+                {data.cycleInfo.weeksTotal} weeks total
+              </>
+            )}
           </p>
         </footer>
       )}

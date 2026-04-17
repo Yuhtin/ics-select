@@ -1,7 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service.js';
+import {
+  computeWeekPosition,
+  resolveActiveMembership,
+} from '../../common/cycle/active-cycle.js';
 
-const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 const POSITIVE = new Set(['DONE_EASY', 'DONE_HARD']);
 
 type Outcome = 'PENDING' | 'DONE_EASY' | 'DONE_HARD' | 'DOUBTS' | 'STUCK';
@@ -147,10 +150,11 @@ export class MemberDetailService {
     })) as MemberRow | null;
     if (!member) throw new NotFoundException('member not found');
 
-    const membership = (await this.prisma.cycleMembership.findFirst({
-      where: { userId: memberId, cycle: { status: 'ACTIVE' } },
-      include: { cycle: true },
-    })) as MembershipRow | null;
+    const membership = (await resolveActiveMembership(
+      this.prisma,
+      memberId,
+      now,
+    )) as MembershipRow | null;
 
     const cycleId = membership?.cycleId ?? null;
 
@@ -243,20 +247,12 @@ export class MemberDetailService {
     cycle: MembershipRow['cycle'],
     now: Date,
   ): MemberDetailResponse['cycle'] {
-    const weeksTotal = Math.max(
-      1,
-      Math.ceil((cycle.endsAt.getTime() - cycle.startsAt.getTime()) / WEEK_MS),
-    );
-    const elapsed = Math.max(0, now.getTime() - cycle.startsAt.getTime());
-    const weekNumber = Math.min(
-      weeksTotal,
-      Math.max(1, Math.ceil((elapsed + 1) / WEEK_MS)),
-    );
+    const pos = computeWeekPosition(cycle, now);
     return {
       id: cycle.id,
       name: cycle.name,
-      weekNumber,
-      weeksTotal,
+      weekNumber: pos.weekNumber,
+      weeksTotal: pos.weeksTotal,
       startsAt: cycle.startsAt.toISOString(),
       endsAt: cycle.endsAt.toISOString(),
     };

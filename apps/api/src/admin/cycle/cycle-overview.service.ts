@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service.js';
+import { computeWeekPosition } from '../../common/cycle/active-cycle.js';
 
 const POSITIVE = new Set(['DONE_EASY', 'DONE_HARD']);
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
@@ -173,15 +174,7 @@ export class CycleOverviewService {
       };
     });
 
-    const weeksTotal = Math.max(
-      1,
-      Math.ceil((cycle.endsAt.getTime() - cycle.startsAt.getTime()) / WEEK_MS),
-    );
-    const elapsed = Math.max(0, now.getTime() - cycle.startsAt.getTime());
-    const weekNumber = Math.min(
-      weeksTotal,
-      Math.max(1, Math.ceil((elapsed + 1) / WEEK_MS)),
-    );
+    const pos = computeWeekPosition(cycle, now);
 
     return {
       cycle: {
@@ -191,8 +184,8 @@ export class CycleOverviewService {
         endsAt: cycle.endsAt.toISOString(),
         status: cycle.status as 'ACTIVE' | 'ARCHIVED',
         rankingVisibleToMembers: cycle.rankingVisibleToMembers,
-        weekNumber,
-        weeksTotal,
+        weekNumber: pos.weekNumber,
+        weeksTotal: pos.weeksTotal,
       },
       members,
       heatmap: {

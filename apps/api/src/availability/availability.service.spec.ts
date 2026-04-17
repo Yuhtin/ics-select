@@ -16,7 +16,7 @@ type A = {
 
 type UserRow = { id: string; whatsappPhone: string | null };
 type MembershipRow = { id: string; userId: string; cycleId: string; track: string | null };
-type CycleRow = { id: string; status: string };
+type CycleRow = { id: string; status: string; startsAt?: Date; endsAt?: Date };
 
 function fakePrisma() {
   const rows = new Map<string, A>();
@@ -58,7 +58,14 @@ function fakePrisma() {
         for (const m of memberships.values()) {
           if (m.userId !== where.userId) continue;
           const cycle = cycles.get(m.cycleId);
-          if (cycle && cycle.status === where.cycle?.status) return m;
+          if (!cycle) continue;
+          const cycleFilter = where.cycle ?? {};
+          if (cycleFilter.status && cycle.status !== cycleFilter.status) continue;
+          // Honor the date-range filters our helper uses.
+          if (cycleFilter.startsAt?.lte && cycle.startsAt && cycle.startsAt > cycleFilter.startsAt.lte) continue;
+          if (cycleFilter.startsAt?.gt && cycle.startsAt && cycle.startsAt <= cycleFilter.startsAt.gt) continue;
+          if (cycleFilter.endsAt?.gte && cycle.endsAt && cycle.endsAt < cycleFilter.endsAt.gte) continue;
+          return m;
         }
         return null;
       }),
@@ -104,7 +111,15 @@ describe('AvailabilityService.updateProfile', () => {
   function makeFullPrisma() {
     const prisma = fakePrisma();
     prisma.users.set('user-1', { id: 'user-1', whatsappPhone: null });
-    prisma.cycles.set('cycle-1', { id: 'cycle-1', status: 'ACTIVE' });
+    // Seed a cycle whose date range contains "now" so resolveActiveMembership
+    // picks it in either contains-now or nearest-future branch.
+    const nowMs = Date.now();
+    prisma.cycles.set('cycle-1', {
+      id: 'cycle-1',
+      status: 'ACTIVE',
+      startsAt: new Date(nowMs - 30 * 24 * 60 * 60 * 1000),
+      endsAt: new Date(nowMs + 30 * 24 * 60 * 60 * 1000),
+    });
     prisma.memberships.set('mem-1', {
       id: 'mem-1',
       userId: 'user-1',
@@ -130,9 +145,6 @@ describe('AvailabilityService.updateProfile', () => {
     const prisma = makeFullPrisma();
     const svc = new AvailabilityService(prisma as any);
     const result = await svc.updateProfile('user-1', { targetTrack: 'BIG_TECH' });
-    expect(prisma.cycleMembership.findFirst).toHaveBeenCalledWith({
-      where: { userId: 'user-1', cycle: { status: 'ACTIVE' } },
-    });
     expect(prisma.cycleMembership.update).toHaveBeenCalledWith({
       where: { id: 'mem-1' },
       data: { track: 'BIG_TECH' },

@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { resolveActiveMembership } from '../../common/cycle/active-cycle';
 
 type CohortEvent = {
   id: string;
@@ -35,22 +36,38 @@ export class CohortService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getCohort(userId: string, now: Date = new Date()): Promise<CohortResponse> {
-    const membership = await this.prisma.cycleMembership.findFirst({
-      where: { userId, cycle: { status: 'ACTIVE' } },
-      include: {
-        cycle: {
-          include: {
-            memberships: { include: { user: { select: { id: true, name: true, pictureUrl: true } } } },
-          },
-        },
-      },
-    });
+    const membership = (await resolveActiveMembership(this.prisma, userId, now, {
+      cycle: true,
+    } as any)) as
+      | {
+          id: string;
+          cycle: {
+            id: string;
+            name: string;
+            rankingVisibleToMembers: boolean;
+            startsAt: Date;
+            endsAt: Date;
+          };
+        }
+      | null;
 
     if (!membership) {
       return { cycleName: '', memberCount: 0, weekEndsAt: null, feed: [] };
     }
 
-    const cycle = membership.cycle;
+    // Load the full cycle (with memberships) separately — the helper only
+    // returns the minimal include we asked for.
+    const cycle = await this.prisma.cycle.findUnique({
+      where: { id: membership.cycle.id },
+      include: {
+        memberships: {
+          include: { user: { select: { id: true, name: true, pictureUrl: true } } },
+        },
+      },
+    });
+    if (!cycle) {
+      return { cycleName: '', memberCount: 0, weekEndsAt: null, feed: [] };
+    }
     const userIds = cycle.memberships.map((m: any) => m.userId);
 
     // Active week bounds (Mon 00:00 UTC → Sun 23:59 UTC) anchored to now.
