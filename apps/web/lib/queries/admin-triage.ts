@@ -17,7 +17,12 @@ export type TriageAlert = {
   id: string;
   type: AlertType;
   severity: AlertSeverity;
-  member: { id: string; name: string; pictureUrl: string | null };
+  member: {
+    id: string;
+    name: string;
+    pictureUrl: string | null;
+    whatsappPhone: string | null;
+  };
   targetId: string | null;
   summary: string;
   occurredAt: string;

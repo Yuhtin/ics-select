@@ -6,7 +6,12 @@ export type TriageAlert = {
   id: string;
   type: AlertType;
   severity: 'urgent' | 'attention' | 'scheduled';
-  member: { id: string; name: string; pictureUrl: string | null };
+  member: {
+    id: string;
+    name: string;
+    pictureUrl: string | null;
+    whatsappPhone: string | null;
+  };
   targetId: string | null;
   summary: string;
   occurredAt: string;
@@ -40,7 +45,12 @@ const POSITIVE = new Set(['DONE_EASY', 'DONE_HARD']);
 
 type Member = {
   userId: string;
-  user: { id: string; name: string; pictureUrl: string | null };
+  user: {
+    id: string;
+    name: string;
+    pictureUrl: string | null;
+    whatsappPhone: string | null;
+  };
 };
 
 type PlanWithItems = {
@@ -67,7 +77,12 @@ type RecentItem = {
     userId: string;
     weekStart: Date;
     weekEnd: Date;
-    user: { id: string; name: string; pictureUrl: string | null };
+    user: {
+      id: string;
+      name: string;
+      pictureUrl: string | null;
+      whatsappPhone: string | null;
+    };
   };
 };
 
@@ -116,7 +131,7 @@ export class TriageService {
     // Load memberships for the active cycle.
     const memberships = (await this.prisma.cycleMembership.findMany({
       where: { cycleId: cycle.id },
-      include: { user: { select: { id: true, name: true, pictureUrl: true } } },
+      include: { user: { select: { id: true, name: true, pictureUrl: true, whatsappPhone: true } } },
     })) as Member[];
 
     if (memberships.length === 0) {
@@ -167,7 +182,7 @@ export class TriageService {
               userId: true,
               weekStart: true,
               weekEnd: true,
-              user: { select: { id: true, name: true, pictureUrl: true } },
+              user: { select: { id: true, name: true, pictureUrl: true, whatsappPhone: true } },
             },
           },
         },
@@ -429,7 +444,7 @@ export class TriageService {
   private makeAlert(input: {
     type: AlertType;
     severity: TriageAlert['severity'];
-    member: { id: string; name: string; pictureUrl: string | null };
+    member: TriageAlert['member'];
     targetId: string | null;
     summary: string;
     occurredAt: Date;
