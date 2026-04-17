@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Calendar, Compass, User, Users } from 'lucide-react';
 import { clsx } from 'clsx';
+import { useMeRetroCurrent } from '../../lib/queries/me-retro';
 
 const NAV = [
   { href: '/me', label: 'Today', icon: Compass },
@@ -13,6 +14,8 @@ const NAV = [
 
 export function TopbarMember() {
   const pathname = usePathname();
+  const { data: retro } = useMeRetroCurrent();
+  const retroOpen = retro?.open === true && !retro.retro;
   return (
     <header className="sticky top-0 z-40 hidden border-b border-rule/60 bg-paper/80 backdrop-blur md:block">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6">
@@ -37,6 +40,14 @@ export function TopbarMember() {
             );
           })}
         </nav>
+        {retroOpen && (
+          <Link
+            href="/me/retro"
+            className="inline-flex items-center rounded-pill bg-accent px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-eyebrow font-bold text-paper hover:opacity-90"
+          >
+            Retro open
+          </Link>
+        )}
         <Link
           href="/settings"
           className="flex h-9 w-9 items-center justify-center rounded-full border border-rule text-ink hover:bg-paper-warm"
