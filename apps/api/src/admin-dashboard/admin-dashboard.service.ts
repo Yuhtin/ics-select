@@ -25,10 +25,10 @@ export class AdminDashboardService {
       const [plansCount, doneItems, stuckItems] = await Promise.all([
         this.prisma.weeklyPlan.count({ where: { userId: u.id } }),
         this.prisma.weeklyPlanItem.count({
-          where: { weeklyPlan: { userId: u.id }, status: 'DONE' },
+          where: { weeklyPlan: { userId: u.id }, outcome: { in: ['DONE_EASY', 'DONE_HARD'] } },
         }),
         this.prisma.weeklyPlanItem.count({
-          where: { weeklyPlan: { userId: u.id }, stuck: true },
+          where: { weeklyPlan: { userId: u.id }, outcome: 'STUCK' },
         }),
       ]);
       cards.push({
@@ -62,7 +62,7 @@ export class AdminDashboardService {
         for (const tag of item.libraryItem.tags) {
           const cur = topicCoverage.get(tag) ?? { done: 0, total: 0 };
           cur.total += 1;
-          if (item.status === 'DONE') cur.done += 1;
+          if (item.outcome === 'DONE_EASY' || item.outcome === 'DONE_HARD') cur.done += 1;
           topicCoverage.set(tag, cur);
         }
       }
@@ -79,7 +79,7 @@ export class AdminDashboardService {
         weekStart: p.weekStart,
         weekEnd: p.weekEnd,
         status: p.status,
-        doneCount: p.items.filter((i) => i.status === 'DONE').length,
+        doneCount: p.items.filter((i) => i.outcome === 'DONE_EASY' || i.outcome === 'DONE_HARD').length,
         totalCount: p.items.length,
       })),
       topicCoverage: Array.from(topicCoverage.entries()).map(([tag, stats]) => ({

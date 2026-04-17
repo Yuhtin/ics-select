@@ -12,21 +12,17 @@
   "dependencies": {
     "@heroui/react": "^2.4.0",
     "@ics-select/shared": "workspace:*",
-    "@react-three/fiber": "^9.6.0",
     "@tanstack/react-query": "^5.97.0",
     "framer-motion": "^11.18.2",
     "lucide-react": "^0.454.0",
     "next": "^15.0.0",
     "react": "^19.2.5",
-    "react-dom": "^19.2.5",
-    "three": "^0.160.0",
-    "zustand": "^4.5.0"
+    "react-dom": "^19.2.5"
   },
   "devDependencies": {
     "@types/node": "^20.16.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "@types/three": "^0.160.0",
     "autoprefixer": "^10.4.20",
     "eslint": "^9.12.0",
     "eslint-config-next": "^15.0.0",

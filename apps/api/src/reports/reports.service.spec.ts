@@ -28,8 +28,8 @@ function fakePrisma() {
           userId: 'u-1',
           status: 'PUBLISHED',
           items: [
-            { id: 'i-1', status: 'DONE', libraryItem: { title: 'X' } },
-            { id: 'i-2', status: 'PENDING', libraryItem: { title: 'Y' } },
+            { id: 'i-1', outcome: 'DONE_EASY', libraryItem: { title: 'X' } },
+            { id: 'i-2', outcome: 'PENDING', libraryItem: { title: 'Y' } },
           ],
         },
       ]),

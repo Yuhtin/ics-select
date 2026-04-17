@@ -20,9 +20,7 @@ export class ChatService {
         const items = (p.items ?? [])
           .map(
             (i: any) =>
-              `${i.libraryItem?.title ?? i.libraryItemId} (${i.status}${
-                i.difficultyRating ? ` ${i.difficultyRating}` : ''
-              })`,
+              `${i.libraryItem?.title ?? i.libraryItemId} [${i.outcome}]`,
           )
           .join('; ');
         return `Semana ${new Date(p.weekStart).toLocaleDateString('pt-BR')}: ${items}`;

@@ -77,16 +77,11 @@ export class PublicationService {
       throw new PlanOverflowError(result.overflow);
     }
 
-    await this.prisma.studySession.deleteMany({
-      where: { weeklyPlanItem: { weeklyPlanId: planId } },
-    });
-
     for (const session of result.sessions) {
       const item = plan.items.find((i) => i.id === session.itemId)!;
       const eventEnd = new Date(session.scheduledAt.getTime() + session.durationMinutes * 60 * 1000);
-      let googleEventId: string | null = null;
       try {
-        googleEventId = await this.calendar.createEvent(plan.userId, {
+        await this.calendar.createEvent(plan.userId, {
           summary: `ICS Select — ${item.libraryItem.title}`,
           description: item.libraryItem.url
             ? `Link: ${item.libraryItem.url}`
@@ -95,17 +90,8 @@ export class PublicationService {
           end: eventEnd,
         });
       } catch {
-        googleEventId = null;
+        // Calendar failure is non-fatal; PR 3 will embed ICS ID in description
       }
-      await this.prisma.studySession.create({
-        data: {
-          weeklyPlanItemId: session.itemId,
-          scheduledAt: session.scheduledAt,
-          durationMinutes: session.durationMinutes,
-          googleEventId,
-          status: 'SCHEDULED',
-        },
-      });
     }
 
     return {

@@ -37,9 +37,7 @@ export class DiagnoseService {
         const items = (p.items ?? [])
           .map(
             (i: any) =>
-              `  - "${i.libraryItem?.title ?? i.libraryItemId}" (${i.status}${
-                i.difficultyRating ? ` ${i.difficultyRating}` : ''
-              }${i.stuck ? ' TRAVOU' : ''})${
+              `  - [${i.outcome}] "${i.libraryItem?.title ?? i.libraryItemId}"${
                 i.reflection ? `\n    reflexão: ${i.reflection}` : ''
               }`,
           )

@@ -7,7 +7,7 @@ const plans = {
       id: 'p-1',
       weekStart: new Date('2026-04-06'),
       items: [
-        { id: 'i-1', status: 'DONE', difficultyRating: 'HARD', reflection: 'recursion hard', libraryItem: { title: 'Recursion', tags: ['recursion'] } },
+        { id: 'i-1', outcome: 'DONE_HARD', reflection: 'recursion hard', libraryItem: { title: 'Recursion', tags: ['recursion'] } },
       ],
     },
   ]),

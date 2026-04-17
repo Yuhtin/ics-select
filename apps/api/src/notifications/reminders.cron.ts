@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Cron, CronExpression } from '@nestjs/schedule';
+// Cron and CronExpression will be re-enabled in PR 3 when reminders are reimplemented
 import { PrismaService } from '../common/prisma/prisma.service.js';
 import { WhatsappService } from '../whatsapp/whatsapp.service.js';
 
@@ -14,31 +14,11 @@ export class RemindersCron {
     private readonly config: ConfigService,
   ) {}
 
-  @Cron(CronExpression.EVERY_MINUTE)
-  async tick() {
-    const now = Date.now();
-    const lo = new Date(now + 9 * 60 * 1000);
-    const hi = new Date(now + 11 * 60 * 1000);
-    const sessions = await this.prisma.studySession.findMany({
-      where: {
-        status: 'SCHEDULED',
-        scheduledAt: { gte: lo, lte: hi },
-      },
-      include: {
-        weeklyPlanItem: {
-          include: { libraryItem: true, weeklyPlan: { include: { user: true } } },
-        },
-      },
-    });
-    for (const s of sessions) {
-      const user = s.weeklyPlanItem.weeklyPlan.user;
-      if (!user.email) continue;
-      // The member's WhatsApp number is not stored yet — Phase 7 uses email-as-phone
-      // fallback (to be replaced when the availability flow collects WhatsApp).
-      const to = user.email;
-      const text = `⏰ Sessão ICS Select começa em 10min: ${s.weeklyPlanItem.libraryItem.title} (${s.durationMinutes}min).`;
-      await this.whatsapp.send({ userId: user.id, kind: 'session_reminder', to, text });
-    }
-    if (sessions.length > 0) this.logger.log(`Sent ${sessions.length} session reminders`);
+  // PR 1: disabled — PR 3 will reimplement by reading Google Calendar events
+  // with "ICS ID:" markers in the description. No StudySession table anymore.
+  // @Cron(CronExpression.EVERY_MINUTE)
+  async sendReminders(): Promise<void> {
+    // intentionally no-op until PR 3
+    return;
   }
 }

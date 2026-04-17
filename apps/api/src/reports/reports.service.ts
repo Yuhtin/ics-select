@@ -32,7 +32,7 @@ export class ReportsService {
     lines.push('');
     lines.push('## Cobertura geral');
     const totalItems = plans.flatMap((p) => p.items).length;
-    const doneItems = plans.flatMap((p) => p.items).filter((i) => i.status === 'DONE').length;
+    const doneItems = plans.flatMap((p) => p.items).filter((i) => i.outcome === 'DONE_EASY' || i.outcome === 'DONE_HARD').length;
     lines.push(`- Planos publicados: ${plans.filter((p) => p.status !== 'DRAFT').length}`);
     lines.push(`- Itens totais: ${totalItems}`);
     lines.push(
@@ -49,7 +49,7 @@ export class ReportsService {
     lines.push('## Membros');
     for (const m of cycle.memberships) {
       const memberPlans = plans.filter((p) => p.userId === m.user.id);
-      const mDone = memberPlans.flatMap((p) => p.items).filter((i) => i.status === 'DONE').length;
+      const mDone = memberPlans.flatMap((p) => p.items).filter((i) => i.outcome === 'DONE_EASY' || i.outcome === 'DONE_HARD').length;
       const mTotal = memberPlans.flatMap((p) => p.items).length;
       lines.push(`- **${m.user.name}** (${m.user.email}): ${mDone}/${mTotal} itens`);
     }

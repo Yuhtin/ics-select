@@ -1,8 +1,6 @@
-import { ConflictException, Injectable, NotFoundException, Optional } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service.js';
-import { WhatsappService } from '../whatsapp/whatsapp.service.js';
-import { GoogleCalendarService } from '../google-calendar/google-calendar.service.js';
+import type { ItemOutcome } from '@ics-select/shared';
 
 type CreateInput = {
   userId: string;
@@ -20,33 +18,11 @@ type UpdateInput = {
 
 @Injectable()
 export class WeeklyPlansService {
-  constructor(
-    private readonly prisma: PrismaService,
-    @Optional() private readonly whatsapp?: WhatsappService,
-    @Optional() private readonly config?: ConfigService,
-    @Optional() private readonly calendar?: GoogleCalendarService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async remove(id: string) {
-    const plan = await this.prisma.weeklyPlan.findUnique({
-      where: { id },
-      include: { items: { include: { sessions: true } } },
-    });
+    const plan = await this.prisma.weeklyPlan.findUnique({ where: { id } });
     if (!plan) throw new NotFoundException('plan not found');
-
-    if (this.calendar) {
-      for (const item of plan.items) {
-        for (const session of item.sessions) {
-          if (!session.googleEventId) continue;
-          try {
-            await this.calendar.deleteEvent(plan.userId, session.googleEventId);
-          } catch {
-            // best-effort — member may have revoked or deleted the event manually
-          }
-        }
-      }
-    }
-
     await this.prisma.weeklyPlan.delete({ where: { id } });
   }
 
@@ -82,7 +58,7 @@ export class WeeklyPlansService {
           })),
         },
       },
-      include: { items: { include: { libraryItem: true, sessions: true } } },
+      include: { items: { include: { libraryItem: true } } },
     });
   }
 
@@ -110,7 +86,7 @@ export class WeeklyPlansService {
             }
           : {}),
       },
-      include: { items: { include: { libraryItem: true, sessions: true } } },
+      include: { items: { include: { libraryItem: true } } },
     });
   }
 
@@ -119,7 +95,7 @@ export class WeeklyPlansService {
       where: { id },
       include: {
         items: {
-          include: { libraryItem: true, sessions: true },
+          include: { libraryItem: true },
           orderBy: { order: 'asc' },
         },
       },
@@ -168,14 +144,14 @@ export class WeeklyPlansService {
     const plans = await this.prisma.weeklyPlan.findMany({
       where: { cycleId: membership.cycleId, status: 'PUBLISHED' },
       orderBy: { weekStart: 'desc' },
-      include: { items: { select: { id: true, status: true } } },
+      include: { items: { select: { id: true, outcome: true } } },
     });
 
     return memberships
       .map((m) => {
         const userPlans = plans.filter((p) => p.userId === m.userId);
         const currentPlan = userPlans[0];
-        const done = currentPlan?.items.filter((i) => i.status === 'DONE').length ?? 0;
+        const done = currentPlan?.items.filter((i) => i.outcome === 'DONE_EASY' || i.outcome === 'DONE_HARD').length ?? 0;
         const total = currentPlan?.items.length ?? 0;
         return {
           userId: m.user.id,
@@ -201,7 +177,7 @@ export class WeeklyPlansService {
         cycleId: true,
         cycle: { select: { name: true } },
         items: {
-          select: { id: true, status: true },
+          select: { id: true, outcome: true },
         },
       },
     });
@@ -212,72 +188,34 @@ export class WeeklyPlansService {
       where: { userId },
       orderBy: { weekStart: 'desc' },
       include: {
-        items: { include: { libraryItem: true, sessions: true }, orderBy: { order: 'asc' } },
+        items: { include: { libraryItem: true }, orderBy: { order: 'asc' } },
       },
     });
   }
 
-  async markItemDone(
-    planId: string,
+  async setItemOutcome(
     itemId: string,
     userId: string,
-    input: {
-      rating?: 'EASY' | 'HARD';
-      reflection?: string;
-      completionStatus?: 'DONE' | 'STUCK' | 'DOUBTS';
-      feedback?: string;
-    },
+    input: { outcome: ItemOutcome; reflection?: string | null },
   ) {
-    const plan = await this.prisma.weeklyPlan.findUnique({ where: { id: planId } });
-    if (!plan) throw new NotFoundException('plan not found');
-    if (plan.userId !== userId) throw new NotFoundException('plan not found');
-    const cs = input.completionStatus ?? 'DONE';
+    const item = await this.prisma.weeklyPlanItem.findUnique({
+      where: { id: itemId },
+      include: { weeklyPlan: { select: { userId: true } } },
+    });
+    if (!item) throw new NotFoundException('Item not found');
+    if (item.weeklyPlan.userId !== userId) {
+      throw new ForbiddenException('Forbidden: cannot change someone else\'s item');
+    }
+
+    const completed = input.outcome !== 'PENDING';
+
     return this.prisma.weeklyPlanItem.update({
       where: { id: itemId },
       data: {
-        status: 'DONE',
-        completedAt: new Date(),
-        difficultyRating: input.rating ?? null,
-        reflection: input.reflection ?? null,
-        completionStatus: cs,
-        feedback: input.feedback ?? null,
-        stuck: cs === 'STUCK',
-        stuckAt: cs === 'STUCK' ? new Date() : null,
+        outcome: input.outcome,
+        reflection: input.reflection ?? undefined,
+        completedAt: completed ? new Date() : null,
       },
     });
-  }
-
-  async markItemStuck(planId: string, itemId: string, userId: string) {
-    const plan = await this.prisma.weeklyPlan.findUnique({ where: { id: planId } });
-    if (!plan) throw new NotFoundException('plan not found');
-    if (plan.userId !== userId) throw new NotFoundException('plan not found');
-    const updated = await this.prisma.weeklyPlanItem.update({
-      where: { id: itemId },
-      data: { stuck: true, stuckAt: new Date() },
-    });
-
-    if (this.whatsapp && this.config) {
-      const adminNumber = this.config.get<string>('ADMIN_WHATSAPP_NUMBER');
-      if (adminNumber) {
-        const planWithUser = await this.prisma.weeklyPlan.findUnique({
-          where: { id: planId },
-          include: { user: true },
-        });
-        const item = await this.prisma.weeklyPlanItem.findUnique({
-          where: { id: itemId },
-          include: { libraryItem: true },
-        });
-        if (planWithUser && item) {
-          await this.whatsapp.send({
-            userId: planWithUser.user.id,
-            kind: 'stuck_alert',
-            to: adminNumber,
-            text: `🚨 ${planWithUser.user.name} travou em "${item.libraryItem.title}"`,
-          });
-        }
-      }
-    }
-
-    return updated;
   }
 }

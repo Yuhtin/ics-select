@@ -23,11 +23,11 @@ export class DraftPlanService {
     const history = await this.plans.listForMember(input.memberId);
     const lastPlan = history[0];
 
-    // Gather candidate items. Strategy: if the last plan had HARD ratings on specific
-    // tags, search for more items on those tags. Otherwise pull a general pool.
+    // Gather candidate items. Strategy: if the last plan had DONE_HARD or STUCK outcomes on
+    // specific tags, search for more items on those tags. Otherwise pull a general pool.
     const targetTags = new Set<string>();
     for (const item of lastPlan?.items ?? []) {
-      if (item.difficultyRating === 'HARD') {
+      if ((item as any).outcome === 'DONE_HARD' || (item as any).outcome === 'STUCK') {
         for (const tag of (item as any).libraryItem?.tags ?? []) targetTags.add(tag);
       }
     }
@@ -38,9 +38,9 @@ export class DraftPlanService {
     const historyText = (lastPlan?.items ?? [])
       .map(
         (i: any) =>
-          `- ${i.libraryItem?.title ?? i.libraryItemId} (${i.status}${
-            i.difficultyRating ? `, ${i.difficultyRating}` : ''
-          })${i.reflection ? ` — reflexão: "${i.reflection}"` : ''}`,
+          `- [${i.outcome}] ${i.libraryItem?.title ?? i.libraryItemId}${
+            i.reflection ? ` — "${i.reflection}"` : ''
+          }`,
       )
       .join('\n');
 

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ITEM_OUTCOMES } from '@ics-select/shared';
 
 export const CreatePlanSchema = z.object({
   cycleId: z.string().min(1),
@@ -27,9 +28,8 @@ export const UpdatePlanSchema = z.object({
     .optional(),
 });
 
-export const MarkItemDoneSchema = z.object({
-  rating: z.enum(['EASY', 'HARD']).optional(),
-  reflection: z.string().optional(),
-  completionStatus: z.enum(['DONE', 'STUCK', 'DOUBTS']).optional(),
-  feedback: z.string().max(2000).optional(),
+export const SetItemOutcomeSchema = z.object({
+  outcome: z.enum(ITEM_OUTCOMES),
+  reflection: z.string().max(2000).optional(),
 });
+export type SetItemOutcomeInput = z.infer<typeof SetItemOutcomeSchema>;

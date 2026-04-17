@@ -88,6 +88,5 @@ export class GoogleCalendarService {
 }
 
 function defaultClientFactory(auth: unknown): calendar_v3.Calendar {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return google.calendar({ version: 'v3', auth: auth as any });
 }

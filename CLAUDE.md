@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-**ICS Select** is a private platform for the Inteli Consulting Society's selective program that prepares students for technical interviews at Big Techs. The admin (`Diretor Educacional`) builds personalized weekly study plans from a searchable library of materials; selected members (≤12 per cycle) follow the plans, auto-schedule study sessions against their Google Calendar, mark items as done with fácil/difícil ratings, and the admin sees cohort progress + AI-assisted insights.
+**ICS Select** is a private platform for the Inteli Consulting Society's selective program that prepares students for technical interviews at Big Techs. The admin (`Diretor Educacional`) builds personalized weekly study plans from a searchable library of materials; selected members (≤12 per cycle) follow the plans, auto-schedule study sessions against their Google Calendar, mark items with one of five outcomes (`Nailed it` / `Got it (hard)` / `Had doubts` / `Stuck` / `Not yet`), and the admin sees cohort progress + AI-assisted insights.
 
 Full product spec lives at `docs/superpowers/specs/2026-04-11-ics-select-design.md`. Per-phase implementation plans live in `docs/superpowers/plans/`.
 
@@ -102,7 +102,7 @@ The critical path is `apps/api/src/weekly-plans/` + `apps/api/src/scheduler/`. `
 1. Loads the plan's `items` (with library item metadata) and the member's `MemberAvailability`.
 2. Calls `SchedulerService.plan` — a greedy chunker that splits each item by `preferredSessionMinutes` and packs chunks day-by-day into the weekly budget (Phase 4 ignores real Calendar busy time and just uses declared daily minutes).
 3. If `overflow` is non-empty and `force=false`, throws `PlanOverflowError` (HTTP 409, plan stays DRAFT, no sessions/events created).
-4. Otherwise deletes pre-existing `StudySession` rows for the plan, creates new ones, and fires one `GoogleCalendarService.createEvent` per session. Calendar failures are swallowed per session (`googleEventId` left null, admin can re-publish).
+4. Creates one `GoogleCalendarService.createEvent` per scheduler-output chunk. Calendar failures are swallowed. No longer writes DB-side session rows — events on Google Calendar are the source of truth for time blocks. PR 3 will embed `ICS ID: <planId>/<itemId>` in the description so downstream reminders/cleanup can find them.
 5. Plan transitions to PUBLISHED.
 
 ### Google Calendar auth
@@ -122,11 +122,9 @@ Global `HttpExceptionFilter` in `apps/api/src/common/filters/` maps NestJS excep
 Two route groups for authenticated users:
 
 - `(app)` — Admin shell with sidebar nav. Used by all `/admin/*` routes and `/me/availability`. Layout: `AppShell` with `Sidebar` + `Topbar`.
-- `(member)` — Gamified member experience. Holds `/map`, `/calendar`, `/members`. Layout: transparent floating `TopbarMember` + `BottomTabBar` (mobile). No sidebar — the map takes full width with a sticky stats sidebar on the right.
+- `(member)` — Placeholder shell post-revamp PR 1. Single route `/home` with a minimal layout. PR 2 rebuilds the real Magazine Editorial shell (floating topbar: *Today · Cohort · Calendar · avatar*; bottom tab bar on mobile) along with `/me`, `/me/plan`, `/me/item/[id]`, `/me/cohort`, `/me/retro`, `/me/settings`.
 
-**Do not add `page.tsx` to any route group root** (`(app)/page.tsx` or `(member)/page.tsx`) — it collides with `app/page.tsx` (root redirect) and breaks Next.js 15's client-reference-manifest generation during static export. We learned this the hard way twice.
-
-Members without an active `CycleMembership` see a blocking `NoCycleScreen` instead of the member layout — they cannot access the map, calendar, or members pages.
+**Never add `page.tsx` at a route group root** (`(app)/page.tsx` or `(member)/page.tsx`) — it collides with `app/page.tsx` and breaks Next.js 15's client-reference-manifest generation during static export. Use a subpath like `(member)/home/page.tsx` (as PR 1 does).
 
 ### Deploy pipeline
 
@@ -142,33 +140,51 @@ Members without an active `CycleMembership` see a blocking `NoCycleScreen` inste
 
 ## Visual identity and design system
 
-### Design system — Indigo + Coral on Creme
+### Dual-serif Magazine Editorial
 
-**Font:** Satoshi (via Fontshare CDN `<link>` in layout.tsx). Geometric, tech, premium. Do NOT use `@import url()` in CSS — it blocks Next.js dev server compilation. Always use `<link>` in the `<head>`.
+**Narrative surfaces** (home, item, cohort, retro, admin triage, member detail): **Newsreader** (Google Fonts, variable `opsz 6..72`). Voz de jornal digital.
 
-**Primary (brand):** Indigo `#4F46E5` — buttons, links, active states, logo mark. Token: `--brand`.
+**Dense-data surfaces** (plan editor, cycle page, library, ai-usage): **Source Serif 4** (Google Fonts, variable `opsz 8..60`). Voz Bloomberg/terminal. Numbers use `font-variant-numeric: tabular-nums`.
 
-**Accent:** Coral `#F97316` — FOMO elements, CTAs de urgencia, badges exclusivos. Token: `--accent`. NOT the primary color.
+**UI chrome** (buttons, labels, nav, eyebrows, meta): **Inter** (400–700).
+**Numeric badges / hours / IDs**: **IBM Plex Mono** (400/600).
 
-**Backgrounds:** Creme `#FAFAF7` — warm, acolhedor, diferente do padrao tech frio.
+Fonts load via `<link>` in `layout.tsx`. **Never** `@import url()` in CSS (blocks Next.js dev server).
 
-| Token | Hex | Usage |
-|---|---|---|
-| `--brand` | `#4F46E5` | Primary (indigo) — buttons, active states, links |
-| `--accent` | `#F97316` | Coral — FOMO, CTAs, badges exclusivos |
-| `--background` | `#FAFAF7` | Page background (creme) |
-| `--foreground` | `#1A1A1A` | Primary text |
-| `--surface` | `#FFFFFF` | Cards, modals |
+### Palette (disciplined)
 
-**Border radius:** Botoes/badges = pill (9999px). Cards = lg (16px) / xl (20px). Inputs = sm (8px).
+```
+--paper         #FAFAF7   page bg (creme warm)
+--paper-warm    #EFEEE8   section bg
+--surface       #FFFFFF   card, input bg
+--ink           #1A1A1A   primary text + primary button
+--ink-soft      #44403C   secondary text
+--ink-mute      #78716C   meta / eyebrow
+--ink-faint     #A8A29E   placeholder, disabled
+--rule          #E5E4DF   dividers, borders
+--accent        #C45D3A   terracotta — AI rationale, editorial accent (sparingly)
+```
 
-**Shadows:** Includes `shadow-glow-primary` (indigo glow) and `shadow-glow-accent` (coral glow) for highlighted elements.
+### Outcome tokens (dot 6–10px or left border 3px, never full background)
 
-**Utility classes:** `.btn-accent-glow` (coral CTA), `.badge-exclusive` (gradient FOMO badge), `.ring-glow-primary` (indigo highlight ring).
+```
+--done-easy   #065F46
+--done-hard   #B45309
+--doubts      #6B21A8
+--stuck       #991B1B
+--pending     #A8A29E
+```
 
-### Platform colors (for study material nodes)
+### Geometry
 
-Each material source has a signature color used in card borders and node accents on the learning map:
+- Spacing: multiples of 4 (4, 8, 12, 16, 24, 32, 48, 64).
+- Radius: cards 12, inputs 8, pills 999, images 8.
+- **No box-shadow** on main design. Plane separation via `paper → paper-warm → surface` + `1px rule` border.
+- Motion via Framer Motion: 150ms hover, 200ms modal, 300ms page transitions. Easing `[0.16, 1, 0.3, 1]`.
+
+### Platform colors (study material borders)
+
+Each material source has a signature color used in card borders and item accents:
 
 | Platform | CSS var | Color |
 |---|---|---|
@@ -179,38 +195,17 @@ Each material source has a signature color used in card borders and node accents
 | Article | `--platform-article` | Teal `#0D9488` |
 | Book | `--platform-book` | Amber `#D97706` |
 
-Platform detection uses URL pattern matching first (e.g. `youtube.com` → YouTube), then falls back to `ItemFormat` (e.g. `VIDEO` → YouTube). Logic lives in `apps/web/components/member/platform-colors.ts`.
+Platform detection uses URL pattern matching first (e.g. `youtube.com` → YouTube), then falls back to `ItemFormat` (e.g. `VIDEO` → YouTube). PR 2 will reintroduce the platform detection helper (previously at `components/member/platform-colors.ts`, deleted in PR 1 along with the rest of the old member experience).
 
-### Status colors
+### What was removed
 
-| Status | Color | Usage |
-|---|---|---|
-| Consegui (DONE) | Green `#10B981` | Completed successfully |
-| Travei (STUCK) | Red `#EF4444` | Got stuck |
-| Tive duvidas (DOUBTS) | Yellow `#F59E0B` | Had questions |
-| Pendente | Warm gray `#A8A29E` | Not started |
-
-### Member experience — gamified learning map
-
-The member-facing UI (`(member)` route group) is a **gamified progression map**, not a dashboard:
-
-- **Node map** (`/map`): S-curve SVG path with positioned circular nodes representing weekly plan items. Nodes have status-based styling (done/stuck/doubts/active/pending). Hover shows a floating card with platform-colored border; click expands to full card with material link + feedback form (Consegui/Travei/Tive duvidas + textarea).
-- **World select**: Each weekly plan is a "world". Past worlds are revisitable, the active one glows, future ones show a lock. Accessed via "Ver todos os mundos" from the map.
-- **Decorative elements**: Stars, flags, clouds (inline SVGs) placed between nodes for game-like feel.
-- **Stats sidebar** (desktop right, ~300px): Progress ring, modules count, days remaining, streak.
-- **Mobile**: Bottom tab bar replaces topbar; stats collapse to horizontal banner; expanded cards open as fixed modals.
-
-### Design principles
-
-- **Warm over corporate**: Creme backgrounds, coral accents, warm browns. Never cold blues/grays for UI chrome.
-- **Ludico/illustrated**: The map should feel like a game path (Super Mario / Candy Crush / Duolingo), not a flowchart.
-- **DOM-based map**: Nodes are React components with CSS absolute positioning, paths are SVG beziers. Framer Motion for hover/expand animations. No canvas.
-- **Platform identity**: Material sources are color-coded throughout (map nodes, calendar cards, hover cards).
-- **Admin stays dashboard**: Only the member experience is gamified. Admin retains the sidebar + data-table layout.
+- 3D map (`components/member/map-3d/`) and 2D map (`components/member/map-2d/`) — learning-path metaphor replaced by daily list + cohort feed.
+- `StudySession` entity — progress tracked on `WeeklyPlanItem.outcome`; Google Calendar events are source-of-truth for time blocks via `ICS ID:` markers in the description.
+- Legacy `status + stuck + difficultyRating` fields on `WeeklyPlanItem` — unified as `ItemOutcome` enum (`PENDING | DONE_EASY | DONE_HARD | DOUBTS | STUCK`).
 
 ## Conventions worth preserving
 
-- pt-BR everywhere in UI copy, with accents (except auto-generated code comments). No emojis anywhere — use `lucide-react` icons.
+- UI chrome in English (`Today`, `Up next`, `Cohort`, `Streak`, etc.) and user-generated content in pt-BR (reflections, retros, admin notes, feedback). Never use emojis — use `lucide-react` icons (stroke 1.5).
 - All admin endpoints use `@Roles('ADMIN')`; ownership checks for member-owned resources are inline in controllers (look for `if (user.role !== 'ADMIN' && plan.userId !== user.sub)`).
 - Commit messages follow `type(scope): subject` (see `git log`). Merges to `main` use `--no-ff` and the release tags follow `vX.Y.Z`.
 - The three PDFs at the repo root (`Apresentação.pdf`, `Plano Educacional.pdf`, `Proposta.pdf`) are program reference material only; they are gitignored and never committed (the Apresentação exceeds GitHub's 100MB hard limit).

@@ -30,7 +30,7 @@ function fakePrisma() {
           items:
             data.items?.create?.map((i: any) => {
               const itemId = `i-${++iid}`;
-              const item = { id: itemId, weeklyPlanId: id, ...i, status: 'PENDING', sessions: [] };
+              const item = { id: itemId, weeklyPlanId: id, ...i, outcome: 'PENDING' };
               items.set(itemId, item);
               return item;
             }) ?? [],
@@ -49,6 +49,12 @@ function fakePrisma() {
     },
     weeklyPlanItem: {
       deleteMany: jest.fn(async () => ({ count: 0 })),
+      findUnique: jest.fn(async ({ where }: any) => {
+        const item = items.get(where.id);
+        if (!item) return null;
+        const plan = plans.get(item.weeklyPlanId);
+        return { ...item, weeklyPlan: plan ? { userId: plan.userId } : null };
+      }),
       update: jest.fn(async ({ where, data }: any) => {
         const cur = items.get(where.id);
         const next = { ...cur, ...data };
@@ -77,23 +83,77 @@ describe('WeeklyPlansService', () => {
     expect(plan.items).toHaveLength(2);
   });
 
-  it('markItemDone updates status and stores rating + reflection', async () => {
-    const prisma = fakePrisma();
-    const svc = new WeeklyPlansService(prisma as any);
-    const plan = await svc.createDraft({
-      userId: 'u-1',
-      cycleId: 'c-1',
-      weekStart: new Date('2026-04-13'),
-      weekEnd: new Date('2026-04-19'),
-      items: [{ libraryItemId: 'li-1', order: 0 }],
+  describe('setItemOutcome', () => {
+    it('sets outcome DONE_EASY and reflection, stamps completedAt', async () => {
+      const prisma = fakePrisma();
+      const svc = new WeeklyPlansService(prisma as any);
+      const plan = await svc.createDraft({
+        userId: 'u-1',
+        cycleId: 'c-1',
+        weekStart: new Date('2026-04-13'),
+        weekEnd: new Date('2026-04-19'),
+        items: [{ libraryItemId: 'li-1', order: 0 }],
+      });
+      const itemId = plan.items[0]!.id;
+
+      const result = await svc.setItemOutcome(itemId, 'u-1', {
+        outcome: 'DONE_EASY',
+        reflection: 'foi tranquilo',
+      });
+
+      expect(prisma.weeklyPlanItem.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: itemId },
+          data: expect.objectContaining({
+            outcome: 'DONE_EASY',
+            reflection: 'foi tranquilo',
+            completedAt: expect.any(Date),
+          }),
+        }),
+      );
+      expect(result.outcome).toBe('DONE_EASY');
     });
-    const itemId = plan.items[0]!.id;
-    const updated = await svc.markItemDone(plan.id, itemId, 'u-1', {
-      rating: 'HARD',
-      reflection: 'Travei no passo 3',
+
+    it('leaves completedAt null when outcome is PENDING', async () => {
+      const prisma = fakePrisma();
+      const svc = new WeeklyPlansService(prisma as any);
+      const plan = await svc.createDraft({
+        userId: 'u-1',
+        cycleId: 'c-1',
+        weekStart: new Date('2026-04-13'),
+        weekEnd: new Date('2026-04-19'),
+        items: [{ libraryItemId: 'li-2', order: 0 }],
+      });
+      const itemId = plan.items[0]!.id;
+
+      await svc.setItemOutcome(itemId, 'u-1', { outcome: 'PENDING' });
+
+      expect(prisma.weeklyPlanItem.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            outcome: 'PENDING',
+            completedAt: null,
+          }),
+        }),
+      );
     });
-    expect(updated.status).toBe('DONE');
-    expect(updated.difficultyRating).toBe('HARD');
-    expect(updated.reflection).toBe('Travei no passo 3');
+
+    it('throws ForbiddenException when the caller does not own the item', async () => {
+      const prisma = fakePrisma();
+      const svc = new WeeklyPlansService(prisma as any);
+      // Create plan owned by 'u-1'
+      const plan = await svc.createDraft({
+        userId: 'u-1',
+        cycleId: 'c-1',
+        weekStart: new Date('2026-04-13'),
+        weekEnd: new Date('2026-04-19'),
+        items: [{ libraryItemId: 'li-3', order: 0 }],
+      });
+      const itemId = plan.items[0]!.id;
+
+      await expect(
+        svc.setItemOutcome(itemId, 'someone-else', { outcome: 'DONE_EASY' }),
+      ).rejects.toThrow(/forbidden/i);
+    });
   });
 });
