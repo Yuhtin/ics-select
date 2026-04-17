@@ -2,7 +2,6 @@ import { PublicationService, PlanOverflowError } from './publication.service';
 
 function fakePrisma() {
   const plans = new Map<string, any>();
-  const sessions = new Map<string, any>();
   const availability = {
     mondayMinutes: 60,
     tuesdayMinutes: 60,
@@ -16,7 +15,6 @@ function fakePrisma() {
   };
   return {
     plans,
-    sessions,
     availability,
     weeklyPlan: {
       findUnique: jest.fn(async ({ where }: any) => plans.get(where.id) ?? null),
@@ -29,15 +27,6 @@ function fakePrisma() {
     },
     memberAvailability: {
       findUnique: jest.fn(async () => availability),
-    },
-    studySession: {
-      create: jest.fn(async ({ data }: any) => {
-        const id = `s-${sessions.size + 1}`;
-        const rec = { id, ...data };
-        sessions.set(id, rec);
-        return rec;
-      }),
-      deleteMany: jest.fn(async () => ({ count: 0 })),
     },
   };
 }
@@ -69,7 +58,7 @@ describe('PublicationService.autoSchedule', () => {
     scheduler.plan.mockReset();
   });
 
-  it('creates StudySessions and calendar events when scheduler returns no overflow', async () => {
+  it('creates calendar events when scheduler returns no overflow', async () => {
     const prisma = fakePrisma();
     prisma.plans.set('p-1', {
       id: 'p-1',
