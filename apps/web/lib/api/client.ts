@@ -2,6 +2,16 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
 export type ApiError = { code: string; message: string; details?: unknown };
 
+export class ApiErrorResponse extends Error {
+  readonly status: number;
+  readonly apiError: ApiError | null;
+  constructor(status: number, apiError: ApiError | null) {
+    super(apiError?.message ?? `Request failed: ${status}`);
+    this.status = status;
+    this.apiError = apiError;
+  }
+}
+
 let accessToken: string | null = null;
 
 export function setAccessToken(token: string | null): void {
@@ -53,7 +63,7 @@ export async function apiFetch<T>(
 async function handleResponse<T>(res: Response): Promise<T> {
   if (!res.ok) {
     const body = (await res.json().catch(() => null)) as { error?: ApiError } | null;
-    throw new Error(body?.error?.message ?? `Request failed: ${res.status}`);
+    throw new ApiErrorResponse(res.status, body?.error ?? null);
   }
   if (res.status === 204) return undefined as T;
   return (await res.json()) as T;
