@@ -110,3 +110,22 @@ CREATE INDEX "LibraryItem_topicId_idx" ON "LibraryItem"("topicId");
 ALTER TABLE "WeeklyPlanItem"
   ADD COLUMN "outcome" "ItemOutcome" NOT NULL DEFAULT 'PENDING',
   ADD COLUMN "carriedFromItemId" TEXT REFERENCES "WeeklyPlanItem"("id");
+
+-- =====================================================
+-- Destructive drops (no production users)
+-- =====================================================
+
+-- WeeklyPlanItem legacy fields (replaced by ItemOutcome)
+ALTER TABLE "WeeklyPlanItem"
+  DROP COLUMN IF EXISTS "status",
+  DROP COLUMN IF EXISTS "stuck",
+  DROP COLUMN IF EXISTS "stuckAt",
+  DROP COLUMN IF EXISTS "difficultyRating";
+
+-- StudySession: replaced by Google Calendar events with "ICS ID:" markers
+DROP TABLE IF EXISTS "StudySession" CASCADE;
+
+-- Legacy enums that only existed to support the dropped columns
+DROP TYPE IF EXISTS "ItemStatus";
+DROP TYPE IF EXISTS "DifficultyRating";
+DROP TYPE IF EXISTS "StudySessionStatus";
