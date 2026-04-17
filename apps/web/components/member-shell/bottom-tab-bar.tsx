@@ -21,7 +21,7 @@ export function BottomTabBar() {
     >
       <ul className="mx-auto flex max-w-xl">
         {TABS.map(({ href, label, icon: Icon }) => {
-          const active = pathname === href || pathname.startsWith(href + '/');
+          const active = pathname === href || pathname?.startsWith(href + '/') === true;
           return (
             <li key={href} className="flex-1">
               <Link

@@ -21,7 +21,7 @@ export function TopbarMember() {
         </Link>
         <nav className="flex items-center gap-1 font-sans text-sm">
           {NAV.map(({ href, label, icon: Icon }) => {
-            const active = pathname === href || pathname.startsWith(href + '/');
+            const active = pathname === href || pathname?.startsWith(href + '/') === true;
             return (
               <Link
                 key={href}
