@@ -86,6 +86,12 @@ describe('PublicationService.autoSchedule', () => {
     const result = await svc.autoSchedule('p-1', false);
     expect(result.sessionsCreated).toBe(1);
     expect(calendar.createEvent).toHaveBeenCalledTimes(1);
+    expect(calendar.createEvent).toHaveBeenCalledWith(
+      'u-1',
+      expect.objectContaining({
+        icsId: { planId: 'p-1', itemId: 'wpi-1' },
+      }),
+    );
     expect(prisma.weeklyPlanItem.update).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { id: 'wpi-1' },

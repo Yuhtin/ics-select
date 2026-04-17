@@ -108,9 +108,10 @@ export class PublicationService {
             : 'ICS Select study session',
           start: session.scheduledAt,
           end: eventEnd,
+          icsId: { planId: plan.id, itemId: item.id },
         });
       } catch {
-        // Calendar failure is non-fatal; PR 3 will embed ICS ID in description
+        // Calendar failure is non-fatal
       }
     }
 

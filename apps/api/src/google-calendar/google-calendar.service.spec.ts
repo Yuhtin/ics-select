@@ -81,6 +81,30 @@ describe('GoogleCalendarService', () => {
     expect(client.events.insert).toHaveBeenCalled();
   });
 
+  it('createEvent embeds the ICS ID marker in the description when icsId is present', async () => {
+    const row = {
+      accessTokenEnc: 'enc(plain-access)',
+      refreshTokenEnc: 'enc(plain-refresh)',
+      expiresAt: new Date(Date.now() + 30 * 60 * 1000),
+      scope: 'calendar.events',
+    };
+    const prisma = fakePrisma(row);
+    const client = mockClient();
+    const svc = new GoogleCalendarService(prisma as any, aes as any, () => client as any);
+    await svc.createEvent('user-1', {
+      summary: 'Test',
+      description: 'Link: https://example.com',
+      start: new Date('2026-04-14T10:00:00Z'),
+      end: new Date('2026-04-14T11:00:00Z'),
+      icsId: { planId: 'plan-x', itemId: 'item-y' },
+    });
+    expect(client.events.insert).toHaveBeenCalledTimes(1);
+    const call = client.events.insert.mock.calls[0]![0] as {
+      requestBody: { description: string };
+    };
+    expect(call.requestBody.description).toContain('ICS ID: plan-x/item-y');
+  });
+
   it('throws if the user has no GoogleAccount row', async () => {
     const prisma = fakePrisma(null);
     const client = mockClient();
