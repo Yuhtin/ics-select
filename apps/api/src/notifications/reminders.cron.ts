@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Cron, CronExpression } from '@nestjs/schedule';
+// Cron and CronExpression will be re-enabled in PR 3 when reminders are reimplemented
 import { PrismaService } from '../common/prisma/prisma.service.js';
 import { WhatsappService } from '../whatsapp/whatsapp.service.js';
 
