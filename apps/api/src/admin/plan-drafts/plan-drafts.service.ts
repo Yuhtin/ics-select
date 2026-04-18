@@ -20,12 +20,15 @@ export class PlanDraftsService {
   /**
    * Return-or-create a plan for the given member + week.
    *
-   * If `weekStart` is omitted, picks the next plannable week automatically:
-   *   • starts from the Monday of max(today, cycle.startsAt)
-   *   • walks forward one week at a time until it finds a week without any
-   *     existing plan for that member
-   *   • if that would overflow past `cycle.endsAt`, returns the latest
-   *     existing plan instead of creating a new one
+   * If `weekStart` is omitted, the auto-pick is idempotent on the upcoming week:
+   *   • Monday of max(today, cycle.startsAt)
+   *   • if a plan already exists for that week (DRAFT or PUBLISHED), return it
+   *   • else create a new DRAFT
+   *   • if that Monday overflows past `cycle.endsAt`, fall back to the latest
+   *     existing plan in the cycle (or throw PLAN_OUTSIDE_CYCLE if none)
+   *
+   * Picking a different week is the job of the /admin/plans overview — this
+   * method never walks forward.
    *
    * When `weekStart` is provided but falls outside the cycle, we throw
    * PLAN_OUTSIDE_CYCLE as before.
@@ -43,46 +46,36 @@ export class PlanDraftsService {
       return this.returnOrCreate(input.memberId, cycle, input.weekStart, { strict: true });
     }
 
-    // Auto-pick: next Monday >= max(today, cycle.startsAt). If that week
-    // already has a plan, walk forward until we find a free week.
+    // Auto-pick: the very next Monday >= max(now, cycle.startsAt).
+    // If a plan already exists for that week (DRAFT or PUBLISHED), return it.
+    // Else create a new DRAFT. No walking forward — that's what /admin/plans is for.
     const cursor = mondayUTC(now < cycle.startsAt ? cycle.startsAt : now);
-    // If the cursor is already past `now`'s week, that's fine — we want the
-    // next free future-ish week anyway.
-    let weekStart = new Date(cursor);
-    for (let i = 0; i < 52; i += 1) {
-      const weekEnd = new Date(weekStart.getTime() + WEEK_MS - 1);
-      if (weekEnd > cycle.endsAt) {
-        // Out of cycle — fall back to the most recent existing plan so the
-        // admin at least lands on something editable.
-        const latest = await this.prisma.weeklyPlan.findFirst({
-          where: { userId: input.memberId, cycleId: cycle.id },
-          orderBy: { weekStart: 'desc' },
-          include: { items: { include: { libraryItem: true }, orderBy: { order: 'asc' } } },
-        });
-        if (latest) return latest;
-        throw new ConflictException({
-          error: {
-            code: 'PLAN_OUTSIDE_CYCLE',
-            message: 'Não há semanas restantes no ciclo pra planejar.',
-          },
-        });
-      }
-      const existing = await this.prisma.weeklyPlan.findFirst({
-        where: { userId: input.memberId, weekStart },
+    const weekStart = new Date(cursor);
+    const weekEnd = new Date(weekStart.getTime() + WEEK_MS - 1);
+
+    if (weekEnd > cycle.endsAt) {
+      // No more weeks in this cycle — fall back to the latest existing plan
+      // so the admin lands on something editable.
+      const latest = await this.prisma.weeklyPlan.findFirst({
+        where: { userId: input.memberId, cycleId: cycle.id },
+        orderBy: { weekStart: 'desc' },
         include: { items: { include: { libraryItem: true }, orderBy: { order: 'asc' } } },
       });
-      if (!existing) {
-        return this.createDraft(input.memberId, cycle.id, weekStart, weekEnd);
-      }
-      // Occupied → try the next week.
-      weekStart = new Date(weekStart.getTime() + WEEK_MS);
+      if (latest) return latest;
+      throw new ConflictException({
+        error: {
+          code: 'PLAN_OUTSIDE_CYCLE',
+          message: 'Não há semanas restantes no ciclo pra planejar.',
+        },
+      });
     }
-    throw new ConflictException({
-      error: {
-        code: 'PLAN_OUTSIDE_CYCLE',
-        message: 'Não consegui encontrar uma semana livre pra planejar.',
-      },
+
+    const existing = await this.prisma.weeklyPlan.findFirst({
+      where: { userId: input.memberId, weekStart },
+      include: { items: { include: { libraryItem: true }, orderBy: { order: 'asc' } } },
     });
+    if (existing) return existing;
+    return this.createDraft(input.memberId, cycle.id, weekStart, weekEnd);
   }
 
   private async returnOrCreate(

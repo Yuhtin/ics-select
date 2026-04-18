@@ -80,7 +80,7 @@ describe('PlanDraftsService', () => {
   });
 
   describe('auto-pick (no weekStart)', () => {
-    // Cycle: Apr 23 – Jun 26 (a Thursday through a Friday for easy Monday math)
+    // Cycle: Apr 23 – Jun 26 (Thu through Fri for easy Monday math)
     const cycle = {
       id: 'c-hot',
       startsAt: new Date('2026-04-23T00:00:00Z'),
@@ -99,26 +99,65 @@ describe('PlanDraftsService', () => {
         new Date('2026-04-17T12:00:00Z'),
       );
       const created = prisma.weeklyPlan.create.mock.calls[0][0].data;
-      // Monday-of-cycle-startsAt = Apr 20 (Mon).
       expect(created.weekStart.toISOString()).toBe('2026-04-20T00:00:00.000Z');
     });
 
-    it('skips weeks that already have a plan and picks the next free one', async () => {
+    it('returns the existing DRAFT for the upcoming week instead of creating a duplicate', async () => {
       const prisma = makePrisma();
       prisma.cycleMembership.findFirst.mockResolvedValue({ cycle });
-      // First week occupied, second week free.
-      prisma.weeklyPlan.findFirst
-        .mockResolvedValueOnce({ id: 'existing', status: 'PUBLISHED' })
-        .mockResolvedValueOnce(null);
-      prisma.weeklyPlan.create.mockResolvedValue({ id: 'new-auto', status: 'DRAFT', items: [] });
+      const existing = { id: 'existing-draft', status: 'DRAFT', items: [] };
+      prisma.weeklyPlan.findFirst.mockResolvedValue(existing);
       const svc = new PlanDraftsService(prisma as any);
-      await svc.getOrCreateDraft(
+      const result = await svc.getOrCreateDraft(
         { memberId: 'm1' },
         new Date('2026-04-17T12:00:00Z'),
       );
-      const created = prisma.weeklyPlan.create.mock.calls[0][0].data;
-      // First free week after Apr 20 is Apr 27.
-      expect(created.weekStart.toISOString()).toBe('2026-04-27T00:00:00.000Z');
+      expect(result).toBe(existing);
+      expect(prisma.weeklyPlan.create).not.toHaveBeenCalled();
+    });
+
+    it('returns the existing PUBLISHED plan for the upcoming week instead of walking forward', async () => {
+      const prisma = makePrisma();
+      prisma.cycleMembership.findFirst.mockResolvedValue({ cycle });
+      const existing = { id: 'existing-pub', status: 'PUBLISHED', items: [] };
+      prisma.weeklyPlan.findFirst.mockResolvedValue(existing);
+      const svc = new PlanDraftsService(prisma as any);
+      const result = await svc.getOrCreateDraft(
+        { memberId: 'm1' },
+        new Date('2026-04-17T12:00:00Z'),
+      );
+      expect(result).toBe(existing);
+      expect(prisma.weeklyPlan.create).not.toHaveBeenCalled();
+      // findFirst is called exactly once (no walk).
+      expect(prisma.weeklyPlan.findFirst).toHaveBeenCalledTimes(1);
+    });
+
+    it('falls back to the latest existing plan when the upcoming week is past cycle.endsAt', async () => {
+      const prisma = makePrisma();
+      // Today is after cycle.endsAt — next Monday is past the cycle.
+      prisma.cycleMembership.findFirst.mockResolvedValue({ cycle });
+      const latest = { id: 'latest', status: 'PUBLISHED', items: [] };
+      // First findFirst is the fallback "latest plan in cycle" lookup.
+      prisma.weeklyPlan.findFirst.mockResolvedValue(latest);
+      const svc = new PlanDraftsService(prisma as any);
+      const result = await svc.getOrCreateDraft(
+        { memberId: 'm1' },
+        new Date('2026-07-15T12:00:00Z'),
+      );
+      expect(result).toBe(latest);
+      expect(prisma.weeklyPlan.create).not.toHaveBeenCalled();
+    });
+
+    it('throws PLAN_OUTSIDE_CYCLE when upcoming week is past cycle end and no plan exists', async () => {
+      const prisma = makePrisma();
+      prisma.cycleMembership.findFirst.mockResolvedValue({ cycle });
+      prisma.weeklyPlan.findFirst.mockResolvedValue(null);
+      const svc = new PlanDraftsService(prisma as any);
+      await expect(
+        svc.getOrCreateDraft({ memberId: 'm1' }, new Date('2026-07-15T12:00:00Z')),
+      ).rejects.toMatchObject({
+        response: { error: { code: 'PLAN_OUTSIDE_CYCLE' } },
+      });
     });
   });
 });
