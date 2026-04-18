@@ -90,50 +90,69 @@ export class LibraryService {
     const limit = input.limit ?? 20;
     const hasQuery = !!input.query && input.query.trim().length > 0;
 
-    if (!hasQuery) {
-      // Fallback to filtered list
+    const filteredListing = async (): Promise<Array<Record<string, unknown>>> => {
+      // Fetch generously, then apply the "tracks = []" wildcard rule in memory.
       const items = await this.prisma.libraryItem.findMany({
         where: {
           ...(input.format ? { format: { in: input.format } } : {}),
           ...(input.difficulty ? { difficulty: { in: input.difficulty } } : {}),
           ...(input.maxMinutes ? { estimatedMinutes: { lte: input.maxMinutes } } : {}),
           ...(input.tags && input.tags.length > 0 ? { tags: { hasSome: input.tags } } : {}),
-          ...(input.tracks && input.tracks.length > 0
-            ? { tracks: { hasSome: input.tracks } }
-            : {}),
           ...(input.topicId ? { topicId: input.topicId } : {}),
+          // tracks filter handled in-memory below so `tracks = []` items pass through.
         },
         orderBy: { createdAt: 'desc' },
-        take: limit,
+        take: limit * 2,
       });
-      return items.map((i) => ({ ...i, score: null }));
+      const mapped = items.map((i) => ({ ...i, score: null })) as Array<
+        Record<string, unknown>
+      >;
+      if (input.tracks && input.tracks.length > 0) {
+        const wanted = input.tracks;
+        return mapped
+          .filter((i) => {
+            const tracks = i.tracks;
+            if (!Array.isArray(tracks) || tracks.length === 0) return true;
+            return tracks.some((t: unknown) => wanted.includes(t as Track));
+          })
+          .slice(0, limit);
+      }
+      return mapped.slice(0, limit);
+    };
+
+    if (!hasQuery) {
+      return filteredListing();
     }
 
-    // Full-text search with ILIKE fallback for partial matches.
-    // Note: tracks + topicId are applied as an in-memory filter after the tsquery
-    // to keep the SQL manageable. The SELECT includes those columns so the filter works.
+    // Full-text search. Uses the 'simple' tsvector config (no stemming) so
+    // English + Portuguese content both match. ILIKE across title, description
+    // and URL is layered on top for partial / domain-style matches.
     const sql = `
       SELECT
         "id", "title", "url", "description", "format", "difficulty",
         "estimatedMinutes", "source", "tags", "tracks", "topicId",
         "createdAt", "updatedAt",
         CASE
-          WHEN search_vector @@ plainto_tsquery('portuguese', $1)
-            THEN ts_rank(search_vector, plainto_tsquery('portuguese', $1))
+          WHEN search_vector @@ plainto_tsquery('simple', lower($1))
+            THEN ts_rank(search_vector, plainto_tsquery('simple', lower($1))) * 4
+          WHEN "title" ILIKE '%' || $1 || '%' THEN 2
+          WHEN "description" ILIKE '%' || $1 || '%' THEN 1
+          WHEN "url" ILIKE '%' || $1 || '%' THEN 0.5
           ELSE 0.01
         END AS score
       FROM "LibraryItem"
       WHERE
         (
-          search_vector @@ plainto_tsquery('portuguese', $1)
+          search_vector @@ plainto_tsquery('simple', lower($1))
           OR "title" ILIKE '%' || $1 || '%'
           OR "description" ILIKE '%' || $1 || '%'
+          OR "url" ILIKE '%' || $1 || '%'
         )
         AND ($2::"ItemFormat"[] IS NULL OR "format" = ANY($2::"ItemFormat"[]))
         AND ($3::"ItemDifficulty"[] IS NULL OR "difficulty" = ANY($3::"ItemDifficulty"[]))
         AND ($4::int IS NULL OR "estimatedMinutes" <= $4)
         AND ($5::text[] IS NULL OR "tags" && $5::text[])
-      ORDER BY score DESC
+      ORDER BY score DESC, "createdAt" DESC
       LIMIT $6
     `;
 
@@ -152,15 +171,29 @@ export class LibraryService {
       const wanted = input.tracks;
       filtered = filtered.filter((i) => {
         const tracks = i.tracks;
-        return (
-          Array.isArray(tracks) && tracks.some((t: unknown) => wanted.includes(t as Track))
-        );
+        // Treat `tracks = []` as "applies to all tracks" per the schema intent.
+        if (!Array.isArray(tracks) || tracks.length === 0) return true;
+        return tracks.some((t: unknown) => wanted.includes(t as Track));
       });
     }
     if (input.topicId) {
       const wantedTopic = input.topicId;
       filtered = filtered.filter((i) => i.topicId === wantedTopic);
     }
+
+    // Supplement with the filtered listing when the query returned too few hits.
+    // This keeps a half-decent answer when the query doesn't match anything —
+    // useful for the LLM tool caller and for sparse libraries.
+    if (filtered.length < Math.min(5, limit)) {
+      const fallback = await filteredListing();
+      const seen = new Set(filtered.map((i) => i.id as string));
+      for (const item of fallback) {
+        if (seen.has(item.id as string)) continue;
+        filtered.push(item);
+        if (filtered.length >= limit) break;
+      }
+    }
+
     return filtered;
   }
 

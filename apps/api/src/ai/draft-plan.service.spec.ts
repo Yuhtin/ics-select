@@ -2,20 +2,34 @@ import { DraftPlanService } from './draft-plan.service';
 import { searchLibraryTool } from './library-tool';
 
 function makePrisma(overrides: Partial<Record<string, any>> = {}) {
-  return {
+  const base = {
     cycleMembership: {
       findFirst: jest.fn(async () => ({
         track: 'BIG_TECH',
+        cycleId: 'c1',
         cycle: { id: 'c1', status: 'ACTIVE' },
         user: { id: 'u1', name: 'Davi' },
       })),
     },
     user: { findUnique: jest.fn(async () => ({ id: 'u1', name: 'Davi' })) },
-    weeklyPlan: { findMany: jest.fn(async () => []) },
-    weeklyPlanItem: { findMany: jest.fn(async () => []) },
+    weeklyPlan: {
+      findMany: jest.fn(async () => []),
+      findFirst: jest.fn(async () => null),
+      count: jest.fn(async () => 0),
+    },
+    weeklyPlanItem: {
+      findMany: jest.fn(async () => []),
+      groupBy: jest.fn(async () => []),
+    },
     weeklyRetro: { findFirst: jest.fn(async () => null) },
-    ...overrides,
   };
+  // Deep-merge per-model so a test can override a single method without
+  // losing the other mocks on the same model.
+  const out: any = { ...base };
+  for (const [key, value] of Object.entries(overrides)) {
+    out[key] = { ...(base as any)[key], ...(value as any) };
+  }
+  return out;
 }
 
 function makeLibrary() {
