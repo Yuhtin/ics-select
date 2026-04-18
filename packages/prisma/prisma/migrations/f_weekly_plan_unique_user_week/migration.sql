@@ -15,5 +15,5 @@ WHERE id IN (SELECT id FROM ranked WHERE rn > 1);
 
 -- Step 2: replace the non-unique index with a unique one.
 DROP INDEX IF EXISTS "WeeklyPlan_userId_weekStart_idx";
-CREATE UNIQUE INDEX "WeeklyPlan_userId_weekStart_key"
+CREATE UNIQUE INDEX IF NOT EXISTS "WeeklyPlan_userId_weekStart_key"
   ON "WeeklyPlan"("userId", "weekStart");
