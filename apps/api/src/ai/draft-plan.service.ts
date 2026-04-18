@@ -106,9 +106,23 @@ export class DraftPlanService {
           })
         : [];
 
-    // 5) Topic coverage (last 4 weeks): planned + done counts per topic label.
+    // 5) Topic coverage: planned + done counts per topic label, across the
+    //    entire active cycle so the gap-analysis is honest (not just last 4).
+    const coverageSource: any[] = membership?.cycleId
+      ? await this.prisma.weeklyPlan.findMany({
+          where: { userId: input.memberId, cycleId: membership.cycleId },
+          include: {
+            items: {
+              select: {
+                outcome: true,
+                libraryItem: { select: { topic: { select: { label: true } } } },
+              },
+            },
+          },
+        })
+      : recentPlans;
     const topicCoverage = new Map<string, { planned: number; done: number }>();
-    for (const plan of recentPlans) {
+    for (const plan of coverageSource) {
       for (const item of plan.items ?? []) {
         const label = item.libraryItem?.topic?.label ?? 'sem tópico';
         const cur = topicCoverage.get(label) ?? { planned: 0, done: 0 };
@@ -117,6 +131,53 @@ export class DraftPlanService {
         topicCoverage.set(label, cur);
       }
     }
+
+    // 6) Items already sitting in the draft for this exact week — so the
+    //    LLM doesn't re-suggest them and can see what the admin has in mind.
+    const currentPlan: any = await this.prisma.weeklyPlan.findFirst({
+      where: { userId: input.memberId, weekStart: input.weekStart },
+      include: {
+        items: {
+          orderBy: { order: 'asc' },
+          include: {
+            libraryItem: {
+              select: {
+                id: true,
+                title: true,
+                estimatedMinutes: true,
+                format: true,
+                topic: { select: { label: true } },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    // 7) Member stats summary — total plans, items, completion %, last 4 weeks.
+    const [totalPlansCount, allItemsAgg] = await Promise.all([
+      this.prisma.weeklyPlan.count({
+        where: { userId: input.memberId, status: 'PUBLISHED' },
+      }),
+      this.prisma.weeklyPlanItem.groupBy({
+        by: ['outcome'],
+        where: {
+          weeklyPlan: { userId: input.memberId, status: 'PUBLISHED' },
+        },
+        _count: { _all: true },
+      }),
+    ]);
+    const outcomeCounts = allItemsAgg.reduce<Record<string, number>>(
+      (acc, row: any) => {
+        acc[row.outcome] = row._count._all;
+        return acc;
+      },
+      {},
+    );
+    const totalItems = Object.values(outcomeCounts).reduce((s, n) => s + n, 0);
+    const totalDone =
+      (outcomeCounts.DONE_EASY ?? 0) + (outcomeCounts.DONE_HARD ?? 0);
+    const completionPct = totalItems === 0 ? 0 : Math.round((totalDone / totalItems) * 100);
 
     // 6) Build user prompt sections
     const memberLine = `MEMBRO: ${memberName} — track: ${trackLabel}`;
@@ -139,11 +200,35 @@ export class DraftPlanService {
 
     const coverageLines: string[] = [];
     for (const [label, counts] of topicCoverage.entries()) {
-      coverageLines.push(`- ${label}: ${counts.planned} planejados, ${counts.done} concluídos`);
+      const pct =
+        counts.planned === 0 ? 0 : Math.round((counts.done / counts.planned) * 100);
+      coverageLines.push(
+        `- ${label}: ${counts.done}/${counts.planned} concluídos (${pct}%)`,
+      );
     }
     const coverageBlock =
-      `COBERTURA DE TÓPICOS:\n` +
+      `COBERTURA DE TÓPICOS (ciclo atual):\n` +
       (coverageLines.length > 0 ? coverageLines.join('\n') : '(sem dados)');
+
+    const statsLine =
+      `ESTATÍSTICAS GERAIS:\n` +
+      `- Planos publicados: ${totalPlansCount}\n` +
+      `- Itens totais: ${totalItems} (concluídos ${totalDone}, ${completionPct}% completos)\n` +
+      `- Outcomes: ${['DONE_EASY', 'DONE_HARD', 'DOUBTS', 'STUCK', 'PENDING']
+        .map((o) => `${o}=${outcomeCounts[o] ?? 0}`)
+        .join(' · ')}`;
+
+    const currentPlanLines =
+      currentPlan?.items && currentPlan.items.length > 0
+        ? currentPlan.items.map((it: any) => {
+            const li = it.libraryItem;
+            const topicLabel = li?.topic?.label ?? 'sem tópico';
+            return `- id=${li?.id ?? it.libraryItemId} "${li?.title ?? ''}" topic=${topicLabel} minutes=${li?.estimatedMinutes ?? '?'} format=${li?.format ?? '?'} order=${it.order}`;
+          })
+        : null;
+    const currentPlanBlock = currentPlanLines
+      ? `ITENS JÁ NO PLANO ATUAL (não sugira duplicados; complemente):\n${currentPlanLines.join('\n')}`
+      : `ITENS JÁ NO PLANO ATUAL:\n(vazio — monte o plano do zero)`;
 
     const carryOverLines =
       carryOverItems.length > 0
@@ -198,13 +283,19 @@ Regras:
 - Carry-overs DEVEM aparecer em "items" se o admin os marcou.
 - Ordem pedagógica: fundamentos antes de avançado, médio antes de difícil.
 - "alternates" tem até 3 itens extras.
-- "rationale" liga o item ao contexto (ex: gap do ciclo, padrão da reflexão, nível).`;
+- "rationale" liga o item ao contexto (ex: gap do ciclo, padrão da reflexão, nível).
+- Se search_library trouxer poucos resultados pra uma query, amplia (remove filtros
+  ou deixa query em branco) — NÃO desista e NÃO invente IDs.
+- Se o bloco "ITENS JÁ NO PLANO ATUAL" tiver itens, inclua-os em "items" antes
+  de sugerir complementos; não duplique.`;
 
     const promptSections = [
       memberLine,
+      statsLine,
       outcomesBlock,
       retroBlock,
       coverageBlock,
+      currentPlanBlock,
       carryOverBlock,
       carryOverResolvedBlock,
       briefBlock,

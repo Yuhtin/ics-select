@@ -38,29 +38,35 @@ export function AddItemTypeahead({
         onBlur={() => setTimeout(() => setFocus(false), 150)}
         className="w-full rounded-input border border-rule bg-paper px-3 py-2 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-focus/40"
       />
-      {focus && debounced.length >= 2 && results.length > 0 && (
+      {focus && debounced.length >= 2 && (
         <ul className="absolute left-0 right-0 top-full mt-1 max-h-80 overflow-auto rounded-card border border-rule bg-surface z-10 shadow-lift">
-          {results.map((item) => (
-            <li key={item.id}>
-              <button
-                type="button"
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => {
-                  onAdd(item.id);
-                  setQuery('');
-                  setDebounced('');
-                }}
-                className="w-full text-left px-3 py-2 hover:bg-paper-warm border-b border-rule last:border-0"
-              >
-                <p className="font-serif-tool text-sm font-semibold text-ink truncate">
-                  {item.title}
-                </p>
-                <p className="font-mono text-[10px] uppercase tracking-label text-ink-mute">
-                  {item.format} · {item.estimatedMinutes}m
-                </p>
-              </button>
+          {results.length > 0 ? (
+            results.map((item) => (
+              <li key={item.id}>
+                <button
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => {
+                    onAdd(item.id);
+                    setQuery('');
+                    setDebounced('');
+                  }}
+                  className="w-full text-left px-3 py-2 hover:bg-paper-warm border-b border-rule last:border-0"
+                >
+                  <p className="font-serif-tool text-sm font-semibold text-ink truncate">
+                    {item.title}
+                  </p>
+                  <p className="font-mono text-[10px] uppercase tracking-label text-ink-mute">
+                    {item.format} · {item.estimatedMinutes}m
+                  </p>
+                </button>
+              </li>
+            ))
+          ) : (
+            <li className="px-3 py-3 font-mono text-[11px] text-ink-mute">
+              No matches — try a shorter query or add items to the library.
             </li>
-          ))}
+          )}
         </ul>
       )}
     </div>

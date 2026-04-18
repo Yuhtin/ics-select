@@ -4,7 +4,12 @@ import type { LibraryService } from '../library/library.service.js';
 export const searchLibraryTool: ToolDefinition = {
   name: 'search_library',
   description:
-    "Search the ICS Select library by query and optional filters. Returns up to 20 candidate items the admin can add to a weekly plan. Use this to find items matching the member's needs (e.g. a DP topic, a specific format, a track). Call multiple times with different queries to diversify candidates.",
+    "Search the ICS Select library by optional query + optional filters. Returns up to 20 candidate items the admin can add to a weekly plan. " +
+    "Usage tips: " +
+    "1) Omit `query` (or pass an empty string) to list everything matching the filters — this is the right call when you want to scan the whole library or just narrow by track/topic. " +
+    "2) Pass a broad query like the topic slug ('dp', 'graphs') or a platform word ('leetcode', 'youtube'); search matches title, description, tags, AND URL. " +
+    "3) Call multiple times with different filters/queries to diversify candidates. " +
+    "4) If a call returns very few items, broaden (drop filters, omit query) before giving up — never invent IDs.",
   parameters: {
     type: 'object',
     properties: {
