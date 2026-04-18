@@ -40,6 +40,6 @@ export function useAdminPlansOverview(
       apiFetch<PlansOverviewResponse>(
         `/admin/cycles/${cycleId}/plans?status=${status}`,
       ),
-    enabled: cycleId !== null,
+    enabled: Boolean(cycleId),
   });
 }
