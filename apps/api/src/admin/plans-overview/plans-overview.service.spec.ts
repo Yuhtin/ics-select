@@ -81,19 +81,19 @@ describe('PlansOverviewService', () => {
 
     expect(result.weeks).toHaveLength(2);
     // Newest week first.
-    expect(result.weeks[0].weekStart).toBe(week1.toISOString());
-    expect(result.weeks[1].weekStart).toBe(week2.toISOString());
+    expect(result.weeks[0]!.weekStart).toBe(week1.toISOString());
+    expect(result.weeks[1]!.weekStart).toBe(week2.toISOString());
     // Within week1, Maria comes before Pedro alphabetically.
-    expect(result.weeks[0].plans.map((p) => p.user.name)).toEqual(['Maria', 'Pedro']);
+    expect(result.weeks[0]!.plans.map((p) => p.user.name)).toEqual(['Maria', 'Pedro']);
     // Done counts are computed correctly.
-    expect(result.weeks[0].plans[1]).toMatchObject({
+    expect(result.weeks[0]!.plans[1]).toMatchObject({
       id: 'p-pedro-w1',
       status: 'PUBLISHED',
       items: { total: 3, done: 2 },
       lastActivityAt: '2026-04-20T10:00:00.000Z',
     });
     // For draft, lastActivityAt falls back to createdAt.
-    expect(result.weeks[0].plans[0].lastActivityAt).toBe('2026-04-15T08:00:00.000Z');
+    expect(result.weeks[0]!.plans[0]!.lastActivityAt).toBe('2026-04-15T08:00:00.000Z');
   });
 
   it('filters by status=draft', async () => {
