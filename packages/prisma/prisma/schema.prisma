@@ -231,7 +231,7 @@ model WeeklyPlan {
   user  User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   cycle Cycle            @relation(fields: [cycleId], references: [id])
   items WeeklyPlanItem[]
-  @@index([userId, weekStart])
+  @@unique([userId, weekStart])
 }
 
 model WeeklyPlanItem {
