@@ -36,3 +36,18 @@ export function formatRelative(minutes: number): string {
   const h = Math.round(abs / 60);
   return future ? `in ${h} h` : `${h} h ago`;
 }
+
+/** "5h ago" / "3d ago" / "2w ago" / "just now". */
+export function formatRelativeFromIso(iso: string, now: Date = new Date()): string {
+  const then = new Date(iso).getTime();
+  const diffMs = now.getTime() - then;
+  if (diffMs < 60 * 1000) return 'just now';
+  const diffMin = Math.floor(diffMs / (60 * 1000));
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffH = Math.floor(diffMin / 60);
+  if (diffH < 24) return `${diffH}h ago`;
+  const diffD = Math.floor(diffH / 24);
+  if (diffD < 14) return `${diffD}d ago`;
+  const diffW = Math.floor(diffD / 7);
+  return `${diffW}w ago`;
+}
