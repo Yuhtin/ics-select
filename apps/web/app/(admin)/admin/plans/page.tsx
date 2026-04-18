@@ -56,7 +56,7 @@ function PlansPageInner() {
       else url.set('status', next.status);
     }
     const qs = url.toString();
-    router.replace(qs ? `/admin/plans?${qs}` : '/admin/plans');
+    router.replace(qs ? `/admin/plans?${qs}` : '/admin/plans', { scroll: false });
   }
 
   return (
@@ -70,10 +70,11 @@ function PlansPageInner() {
       </header>
 
       <div className="flex flex-wrap items-center gap-3">
-        <label className="font-mono text-[10px] uppercase tracking-label text-ink-mute">
+        <label htmlFor="cycle-filter" className="font-mono text-[10px] uppercase tracking-label text-ink-mute">
           Cycle
         </label>
         <select
+          id="cycle-filter"
           value={cycleId ?? ''}
           onChange={(e) => update({ cycleId: e.target.value || null })}
           disabled={cyclesLoading}
@@ -87,10 +88,11 @@ function PlansPageInner() {
           ))}
         </select>
 
-        <label className="ml-4 font-mono text-[10px] uppercase tracking-label text-ink-mute">
+        <label htmlFor="status-filter" className="ml-4 font-mono text-[10px] uppercase tracking-label text-ink-mute">
           Status
         </label>
         <select
+          id="status-filter"
           value={status}
           onChange={(e) => update({ status: e.target.value as PlansOverviewStatus })}
           className="rounded-input border border-rule bg-paper px-3 py-2 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-focus/40"
