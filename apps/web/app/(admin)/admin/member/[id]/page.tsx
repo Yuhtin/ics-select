@@ -1,7 +1,7 @@
 'use client';
 import { use, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, MessageCircle, Plus } from 'lucide-react';
+import { ArrowLeft, MessageCircle } from 'lucide-react';
 import { useAdminMember } from '../../../../../lib/queries/admin-member';
 import { TopicCoverageMini } from '../../../../../components/admin/plan-editor/topic-coverage-mini';
 import { TimelineTab } from '../../../../../components/admin/member-detail/timeline-tab';
@@ -78,8 +78,7 @@ export default function AdminMemberPage({ params }: { params: Promise<{ id: stri
             href={`/admin/member/${memberId}/plan/new`}
             className="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-label px-4 py-2 bg-ink text-paper rounded-pill hover:opacity-90"
           >
-            <Plus className="h-3.5 w-3.5" strokeWidth={1.5} />
-            Create plan for next week
+            Plan next week →
           </Link>
           {waLink ? (
             <a
