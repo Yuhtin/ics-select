@@ -408,11 +408,13 @@ const ITEMS: ItemSeed[] = [
     title: '10 Key Data Structures We Use Every Day',
     url: 'https://blog.bytebytego.com/p/ep58-10-key-data-structures-we-use',
     description:
-      'ByteByteGo Blog — as 10 ED mais usadas no dia-a-dia (incluindo array, hashmap, linked list, stack, queue, tree, graph). Bom pra mapear o campo.',
+      'ByteByteGo Blog — as 10 ED mais usadas no dia-a-dia (array, hashmap, linked list, stack, queue, tree, graph, etc.). Bom pra mapear o campo.',
     format: 'ARTICLE',
     difficulty: 'MEDIUM',
     estimatedMinutes: 10,
-    topicSlugs: ['array'],
+    // First cross-topic item: primary = array (indexed/keyed family), cover = lists.
+    // Once `tree` and `graph` are populated, add them as covers too.
+    topicSlugs: ['array', 'lists'],
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'Blog — ByteByteGo',
     tags: ['concept', 'data-structures', 'overview', 'hashmap'],
@@ -429,6 +431,117 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'Book — Grokking Data Structures',
     tags: ['concept', 'book', 'grokking', 'array', 'static-vs-dynamic'],
+  },
+
+  // ---------------------------------------------------------------------------
+  // lists (8 items) — 2026-04-19
+  // Linked lists + stacks + queues. mycodeschool is the anchor channel —
+  // whiteboard-pure, canonical for these DS. Augusto Galego adds PT-BR
+  // practice-oriented material tied to classic LC problems.
+  // ---------------------------------------------------------------------------
+  {
+    title: 'Introduction to Linked List',
+    url: 'https://www.youtube.com/watch?v=NobHlGUjV3g',
+    description:
+      'mycodeschool — introdução canônica a linked list: motivação vs array, nós + ponteiros, memory layout. Whiteboard puro.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 18,
+    topicSlugs: ['lists'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — mycodeschool',
+    tags: ['concept', 'linked-list', 'pointers', 'memory-layout'],
+  },
+  {
+    title: 'Introduction to Doubly Linked List',
+    url: 'https://www.youtube.com/watch?v=JdQeNxWCguQ',
+    description:
+      'mycodeschool — extensão da linked list com ponteiros forward+back. Trade-offs de memória e facilidade de remoção/inserção bidirecional.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 8,
+    topicSlugs: ['lists'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — mycodeschool',
+    tags: ['concept', 'doubly-linked-list', 'pointers'],
+  },
+  {
+    title: 'Linked List in C/C++ — Inserting a node at beginning',
+    url: 'https://www.youtube.com/watch?v=cAZ8CyDY56s',
+    description:
+      'mycodeschool — como inserir no começo de uma linked list: acerto de head + novo nó. Mostra o algoritmo com diagrama + pseudocódigo em C.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 13,
+    topicSlugs: ['lists'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — mycodeschool',
+    tags: ['concept', 'linked-list', 'insertion', 'pointers'],
+  },
+  {
+    title: 'Introduction to Stack',
+    url: 'https://www.youtube.com/watch?v=F1F2imiOJfk',
+    description:
+      'mycodeschool — stack como ED LIFO: operações push/pop/peek, overflow/underflow. Aplicações clássicas (function calls, undo, parsing).',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 9,
+    topicSlugs: ['lists'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — mycodeschool',
+    tags: ['concept', 'stack', 'lifo', 'push-pop'],
+  },
+  {
+    title: 'Como Rodar uma Linked List?',
+    url: 'https://www.youtube.com/watch?v=-BU34jnMasc',
+    description:
+      'Augusto Galego — traversal de linked list em Python. Pattern do ponteiro `current` + `current.next` até chegar em null.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 8,
+    topicSlugs: ['lists'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — Augusto Galego',
+    tags: ['practice', 'linked-list', 'traversal', 'python'],
+  },
+  {
+    title: 'Como inverter uma Linked List (LeetCode 206)',
+    url: 'https://www.youtube.com/watch?v=8kmAY2O4SBg',
+    description:
+      'Augusto Galego — explicação do clássico LC 206 (reverse linked list). Três ponteiros: prev, curr, next. Solução iterativa com diagrama.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 5,
+    topicSlugs: ['lists'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — Augusto Galego',
+    tags: ['concept', 'linked-list', 'reverse', 'leetcode-206', 'iterative'],
+  },
+  {
+    title: 'Linked List implementation of Queue',
+    url: 'https://www.youtube.com/watch?v=A5_XdiK4J8A',
+    description:
+      'mycodeschool — usa linked list pra implementar queue (FIFO) com enqueue/dequeue O(1). Composição elegante: ED simples construindo ED mais complexa.',
+    format: 'VIDEO',
+    difficulty: 'HARD',
+    estimatedMinutes: 15,
+    topicSlugs: ['lists'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — mycodeschool',
+    tags: ['concept', 'queue', 'linked-list', 'fifo', 'composition'],
+  },
+  {
+    title: 'Grokking Data Structures — Linked Lists (chapter)',
+    url: 'https://github.com/mlarocca/grokking_data_structures',
+    description:
+      'Capítulo de linked lists do livro Grokking Data Structures (Marcello La Rocca, Manning). Cobre single vs doubly linked, pointer manipulation, operações fundamentais. ATENÇÃO: livro pago — ver biblioteca da Inteli ou comprar via Manning. O repo do GitHub tem só código de acompanhamento, não o PDF.',
+    format: 'BOOK',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 25,
+    topicSlugs: ['lists'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'Book — Grokking Data Structures',
+    tags: ['concept', 'book', 'grokking', 'linked-list'],
   },
 ];
 
