@@ -130,7 +130,7 @@ describe('PlanContextService', () => {
           libraryItem: {
             id: 'li-1',
             title: 'Fibonacci memo',
-            topicId: 'topic-1',
+            topics: [{ topicId: 'topic-1', isPrimary: true }],
             estimatedMinutes: 45,
           },
         },
@@ -142,7 +142,7 @@ describe('PlanContextService', () => {
           libraryItem: {
             id: 'li-2',
             title: 'Coin change',
-            topicId: 'topic-1',
+            topics: [{ topicId: 'topic-1', isPrimary: true }],
             estimatedMinutes: 60,
           },
         },
@@ -154,7 +154,7 @@ describe('PlanContextService', () => {
           libraryItem: {
             id: 'li-3',
             title: 'Longest subseq',
-            topicId: null,
+            topics: [],
             estimatedMinutes: 30,
           },
         },
@@ -166,7 +166,7 @@ describe('PlanContextService', () => {
           libraryItem: {
             id: 'li-4',
             title: 'Climb stairs',
-            topicId: 'topic-1',
+            topics: [{ topicId: 'topic-1', isPrimary: true }],
             estimatedMinutes: 20,
           },
         },
@@ -178,7 +178,7 @@ describe('PlanContextService', () => {
           libraryItem: {
             id: 'li-5',
             title: 'Edit distance',
-            topicId: 'topic-1',
+            topics: [{ topicId: 'topic-1', isPrimary: true }],
             estimatedMinutes: 90,
           },
         },
@@ -283,17 +283,17 @@ describe('PlanContextService', () => {
       {
         id: 'plan-1',
         items: [
-          { outcome: 'DONE_EASY', libraryItem: { topicId: 'topic-a' } },
-          { outcome: 'PENDING', libraryItem: { topicId: 'topic-a' } },
-          { outcome: 'STUCK', libraryItem: { topicId: 'topic-b' } },
+          { outcome: 'DONE_EASY', libraryItem: { topics: [{ topicId: 'topic-a' }] } },
+          { outcome: 'PENDING', libraryItem: { topics: [{ topicId: 'topic-a' }] } },
+          { outcome: 'STUCK', libraryItem: { topics: [{ topicId: 'topic-b' }] } },
         ],
       },
       {
         id: 'plan-2',
         items: [
-          { outcome: 'DONE_HARD', libraryItem: { topicId: 'topic-b' } },
-          // item with null topicId shouldn't count toward any topic.
-          { outcome: 'DONE_EASY', libraryItem: { topicId: null } },
+          { outcome: 'DONE_HARD', libraryItem: { topics: [{ topicId: 'topic-b' }] } },
+          // item with no topics shouldn't count toward any topic.
+          { outcome: 'DONE_EASY', libraryItem: { topics: [] } },
         ],
       },
     ];

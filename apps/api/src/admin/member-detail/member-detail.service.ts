@@ -99,7 +99,7 @@ type TimelinePlanItem = {
   completedAt: Date | null;
   libraryItem: {
     title: string;
-    topic: { label: string } | null;
+    topics: Array<{ isPrimary: boolean; topic: { label: string } }>;
   };
 };
 
@@ -124,7 +124,7 @@ type TopicRow = { id: string; slug: string; label: string; order: number };
 
 type CyclePlanItem = {
   outcome: Outcome;
-  libraryItem: { topicId: string | null };
+  libraryItem: { topics: Array<{ topicId: string }> };
 };
 
 type CyclePlan = {
@@ -169,7 +169,12 @@ export class MemberDetailService {
               libraryItem: {
                 select: {
                   title: true,
-                  topic: { select: { label: true } },
+                  topics: {
+                    select: {
+                      isPrimary: true,
+                      topic: { select: { label: true } },
+                    },
+                  },
                 },
               },
             },
@@ -189,7 +194,11 @@ export class MemberDetailService {
             include: {
               items: {
                 include: {
-                  libraryItem: { select: { topicId: true } },
+                  libraryItem: {
+                    select: {
+                      topics: { select: { topicId: true } },
+                    },
+                  },
                 },
               },
             },
@@ -229,7 +238,9 @@ export class MemberDetailService {
           outcome: item.outcome,
           reflection: item.reflection,
           completedAt: item.completedAt ? item.completedAt.toISOString() : null,
-          topicLabel: item.libraryItem.topic?.label ?? null,
+          topicLabel:
+            item.libraryItem.topics.find((t) => t.isPrimary)?.topic.label ??
+            null,
         })),
       })),
       retros: retros.map((r) => ({
@@ -267,7 +278,13 @@ export class MemberDetailService {
       let itemsDone = 0;
       for (const plan of plans) {
         for (const item of plan.items) {
-          if (item.libraryItem.topicId !== topic.id) continue;
+          // Item counts for this topic if the topic is in its primary OR
+          // secondary covers (cross-topic items contribute to every topic
+          // they cover, matching the home-screen topic coverage logic).
+          const touchesTopic = item.libraryItem.topics.some(
+            (t) => t.topicId === topic.id,
+          );
+          if (!touchesTopic) continue;
           itemsPlanned += 1;
           if (POSITIVE.has(item.outcome)) itemsDone += 1;
         }

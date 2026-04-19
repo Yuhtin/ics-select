@@ -23,7 +23,10 @@ type ItemSeed = {
   format: 'VIDEO' | 'ARTICLE' | 'BOOK' | 'PROBLEM' | 'OTHER';
   difficulty: 'EASY' | 'MEDIUM' | 'HARD';
   estimatedMinutes: number;
-  topicSlug: string;
+  // First slug is the PRIMARY topic (the item's "home" — where the admin
+  // navigates to find it). Additional slugs are secondary covers: every
+  // topic in the array contributes to that topic's coverage %.
+  topicSlugs: string[];
   tracks: Track[];
   source: string | null;
   tags: string[];
@@ -103,7 +106,7 @@ const ITEMS: ItemSeed[] = [
     format: 'VIDEO',
     difficulty: 'EASY',
     estimatedMinutes: 3,
-    topicSlug: 'caching',
+    topicSlugs: ['caching'],
     tracks: [],
     source: 'YouTube — Fireship',
     tags: ['concept', 'redis', 'intro', 'fireship'],
@@ -116,7 +119,7 @@ const ITEMS: ItemSeed[] = [
     format: 'VIDEO',
     difficulty: 'MEDIUM',
     estimatedMinutes: 9,
-    topicSlug: 'caching',
+    topicSlugs: ['caching'],
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — ByteByteGo',
     tags: ['tradeoffs', 'cache-aside', 'read-through', 'write-through', 'write-back'],
@@ -129,7 +132,7 @@ const ITEMS: ItemSeed[] = [
     format: 'VIDEO',
     difficulty: 'MEDIUM',
     estimatedMinutes: 6,
-    topicSlug: 'caching',
+    topicSlugs: ['caching'],
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — ByteByteGo',
     tags: ['concept', 'cdn', 'layers', 'browser-cache'],
@@ -142,7 +145,7 @@ const ITEMS: ItemSeed[] = [
     format: 'VIDEO',
     difficulty: 'HARD',
     estimatedMinutes: 7,
-    topicSlug: 'caching',
+    topicSlugs: ['caching'],
     tracks: ['BIG_TECH', 'CONSULTING_TECH'],
     source: 'YouTube — ByteByteGo',
     tags: ['concept', 'pitfalls', 'thundering-herd', 'stampede'],
@@ -155,7 +158,7 @@ const ITEMS: ItemSeed[] = [
     format: 'VIDEO',
     difficulty: 'HARD',
     estimatedMinutes: 2,
-    topicSlug: 'caching',
+    topicSlugs: ['caching'],
     tracks: ['BIG_TECH', 'CONSULTING_TECH'],
     source: 'YouTube — ByteByteGo',
     tags: ['concept', 'cache-invalidation', 'consistency'],
@@ -168,7 +171,7 @@ const ITEMS: ItemSeed[] = [
     format: 'ARTICLE',
     difficulty: 'MEDIUM',
     estimatedMinutes: 15,
-    topicSlug: 'caching',
+    topicSlugs: ['caching'],
     tracks: [],
     source: 'Blog — ByteByteGo',
     tags: ['tradeoffs', 'write-through', 'cache-aside', 'write-back'],
@@ -184,7 +187,7 @@ const ITEMS: ItemSeed[] = [
     format: 'VIDEO',
     difficulty: 'EASY',
     estimatedMinutes: 3,
-    topicSlug: 'databases',
+    topicSlugs: ['databases'],
     tracks: [],
     source: 'YouTube — Fireship',
     tags: ['concept', 'postgresql', 'intro', 'fireship'],
@@ -197,7 +200,7 @@ const ITEMS: ItemSeed[] = [
     format: 'VIDEO',
     difficulty: 'EASY',
     estimatedMinutes: 3,
-    topicSlug: 'databases',
+    topicSlugs: ['databases'],
     tracks: [],
     source: 'YouTube — Fireship',
     tags: ['concept', 'sql', 'intro', 'fireship'],
@@ -210,7 +213,7 @@ const ITEMS: ItemSeed[] = [
     format: 'VIDEO',
     difficulty: 'MEDIUM',
     estimatedMinutes: 10,
-    topicSlug: 'databases',
+    topicSlugs: ['databases'],
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Fireship',
     tags: ['tradeoffs', 'paradigms', 'sql', 'nosql', 'graph-db', 'key-value'],
@@ -223,7 +226,7 @@ const ITEMS: ItemSeed[] = [
     format: 'VIDEO',
     difficulty: 'MEDIUM',
     estimatedMinutes: 5,
-    topicSlug: 'databases',
+    topicSlugs: ['databases'],
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — ByteByteGo',
     tags: ['concept', 'index', 'b-tree', 'hash-index'],
@@ -236,7 +239,7 @@ const ITEMS: ItemSeed[] = [
     format: 'VIDEO',
     difficulty: 'HARD',
     estimatedMinutes: 13,
-    topicSlug: 'databases',
+    topicSlugs: ['databases'],
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — The Coding Gopher',
     tags: ['concept', 'postgresql', 'mvcc', 'internals'],
@@ -249,7 +252,7 @@ const ITEMS: ItemSeed[] = [
     format: 'VIDEO',
     difficulty: 'HARD',
     estimatedMinutes: 33,
-    topicSlug: 'databases',
+    topicSlugs: ['databases'],
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Hussein Nasser',
     tags: ['concept', 'postgresql', 'architecture', 'mvcc', 'wal', 'internals'],
@@ -262,7 +265,7 @@ const ITEMS: ItemSeed[] = [
     format: 'VIDEO',
     difficulty: 'HARD',
     estimatedMinutes: 40,
-    topicSlug: 'databases',
+    topicSlugs: ['databases'],
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Hussein Nasser',
     tags: ['concept', 'postgresql', 'query-performance', 'internals'],
@@ -275,7 +278,7 @@ const ITEMS: ItemSeed[] = [
     format: 'ARTICLE',
     difficulty: 'MEDIUM',
     estimatedMinutes: 15,
-    topicSlug: 'databases',
+    topicSlugs: ['databases'],
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'Blog — ByteByteGo',
     tags: ['concept', 'index', 'clustered', 'covering-index'],
@@ -288,7 +291,7 @@ const ITEMS: ItemSeed[] = [
     format: 'ARTICLE',
     difficulty: 'MEDIUM',
     estimatedMinutes: 12,
-    topicSlug: 'databases',
+    topicSlugs: ['databases'],
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'Guide — ByteByteGo',
     tags: ['concept', 'data-structures', 'b-tree', 'lsm-tree', 'bloom-filter'],
@@ -301,7 +304,7 @@ const ITEMS: ItemSeed[] = [
     format: 'ARTICLE',
     difficulty: 'HARD',
     estimatedMinutes: 10,
-    topicSlug: 'databases',
+    topicSlugs: ['databases'],
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'Medium — Hussein Nasser',
     tags: ['concept', 'pages', 'storage', 'rows', 'internals'],
@@ -318,7 +321,7 @@ const ITEMS: ItemSeed[] = [
     format: 'VIDEO',
     difficulty: 'EASY',
     estimatedMinutes: 2,
-    topicSlug: 'array',
+    topicSlugs: ['array'],
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'YouTube — Fireship',
     tags: ['concept', 'big-o', 'complexity', 'fireship'],
@@ -331,7 +334,7 @@ const ITEMS: ItemSeed[] = [
     format: 'VIDEO',
     difficulty: 'EASY',
     estimatedMinutes: 2,
-    topicSlug: 'array',
+    topicSlugs: ['array'],
     tracks: [],
     source: 'YouTube — Fireship',
     tags: ['practice', 'javascript', 'map', 'fireship'],
@@ -344,7 +347,7 @@ const ITEMS: ItemSeed[] = [
     format: 'VIDEO',
     difficulty: 'MEDIUM',
     estimatedMinutes: 11,
-    topicSlug: 'array',
+    topicSlugs: ['array'],
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'YouTube — mycodeschool',
     tags: ['concept', 'memory', 'indexing', 'static-vs-dynamic'],
@@ -357,7 +360,7 @@ const ITEMS: ItemSeed[] = [
     format: 'VIDEO',
     difficulty: 'MEDIUM',
     estimatedMinutes: 13,
-    topicSlug: 'array',
+    topicSlugs: ['array'],
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'YouTube — mycodeschool',
     tags: ['tradeoffs', 'linked-list', 'operations', 'complexity'],
@@ -370,7 +373,7 @@ const ITEMS: ItemSeed[] = [
     format: 'VIDEO',
     difficulty: 'MEDIUM',
     estimatedMinutes: 13,
-    topicSlug: 'array',
+    topicSlugs: ['array'],
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'YouTube — Augusto Galego',
     tags: ['concept', 'hashmap', 'hash-function', 'collisions', 'python'],
@@ -383,7 +386,7 @@ const ITEMS: ItemSeed[] = [
     format: 'VIDEO',
     difficulty: 'HARD',
     estimatedMinutes: 23,
-    topicSlug: 'array',
+    topicSlugs: ['array'],
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'YouTube — Back To Back SWE',
     tags: ['concept', 'big-o', 'big-omega', 'theta', 'asymptotic'],
@@ -396,7 +399,7 @@ const ITEMS: ItemSeed[] = [
     format: 'VIDEO',
     difficulty: 'HARD',
     estimatedMinutes: 114,
-    topicSlug: 'array',
+    topicSlugs: ['array'],
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'YouTube — NeetCode',
     tags: ['concept', 'hashing', 'masterclass', 'blind75', 'interview'],
@@ -409,7 +412,7 @@ const ITEMS: ItemSeed[] = [
     format: 'ARTICLE',
     difficulty: 'MEDIUM',
     estimatedMinutes: 10,
-    topicSlug: 'array',
+    topicSlugs: ['array'],
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'Blog — ByteByteGo',
     tags: ['concept', 'data-structures', 'overview', 'hashmap'],
@@ -422,7 +425,7 @@ const ITEMS: ItemSeed[] = [
     format: 'BOOK',
     difficulty: 'MEDIUM',
     estimatedMinutes: 25,
-    topicSlug: 'array',
+    topicSlugs: ['array'],
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'Book — Grokking Data Structures',
     tags: ['concept', 'book', 'grokking', 'array', 'static-vs-dynamic'],
@@ -487,13 +490,22 @@ async function main() {
   }
   console.log(`  ✓ ${topicIdBySlug.size} topics ready`);
 
-  // 2) Items: upsert by (title, url) — find-then-update/create
+  // 2) Items: upsert by (title, url) — find-then-update/create.
+  // For topics, we resolve slugs → ids and then rewrite the LibraryItemTopic
+  // join rows in a single transaction per item (idempotent: primary =
+  // first slug, secondary covers = the rest).
   console.log(`Upserting ${ITEMS.length} library items...`);
   let created = 0;
   let updated = 0;
   for (const item of ITEMS) {
-    const topicId = topicIdBySlug.get(item.topicSlug);
-    if (!topicId) throw new Error(`Unknown topicSlug: ${item.topicSlug}`);
+    if (!item.topicSlugs || item.topicSlugs.length === 0) {
+      throw new Error(`Item "${item.title}" has empty topicSlugs`);
+    }
+    const topicIds = item.topicSlugs.map((slug) => {
+      const id = topicIdBySlug.get(slug);
+      if (!id) throw new Error(`Unknown topicSlug: ${slug}`);
+      return { slug, id };
+    });
 
     const existing = await prisma.libraryItem.findFirst({
       where: { title: item.title, url: item.url ?? undefined },
@@ -507,7 +519,6 @@ async function main() {
       format: item.format,
       difficulty: item.difficulty,
       estimatedMinutes: item.estimatedMinutes,
-      topicId,
       tracks: item.tracks,
       source: item.source,
       tags: item.tags,
@@ -517,6 +528,19 @@ async function main() {
     const saved = existing
       ? await prisma.libraryItem.update({ where: { id: existing.id }, data })
       : await prisma.libraryItem.create({ data });
+
+    await prisma.$transaction([
+      prisma.libraryItemTopic.deleteMany({ where: { itemId: saved.id } }),
+      ...topicIds.map((t, idx) =>
+        prisma.libraryItemTopic.create({
+          data: {
+            itemId: saved.id,
+            topicId: t.id,
+            isPrimary: idx === 0,
+          },
+        }),
+      ),
+    ]);
 
     existing ? updated++ : created++;
 

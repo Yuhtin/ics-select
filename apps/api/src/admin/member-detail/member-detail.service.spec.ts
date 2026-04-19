@@ -119,7 +119,7 @@ describe('MemberDetailService', () => {
             completedAt: new Date('2026-04-14T10:00:00Z'),
             libraryItem: {
               title: 'Arrays basics',
-              topic: { label: 'Arrays' },
+              topics: [{ isPrimary: true, topic: { label: 'Arrays' } }],
             },
           },
           {
@@ -130,7 +130,7 @@ describe('MemberDetailService', () => {
             completedAt: null,
             libraryItem: {
               title: 'Two sum',
-              topic: null,
+              topics: [],
             },
           },
         ],
@@ -149,7 +149,7 @@ describe('MemberDetailService', () => {
             completedAt: new Date('2026-04-08T09:00:00Z'),
             libraryItem: {
               title: 'Strings intro',
-              topic: { label: 'Strings' },
+              topics: [{ isPrimary: true, topic: { label: 'Strings' } }],
             },
           },
         ],
@@ -238,9 +238,9 @@ describe('MemberDetailService', () => {
       {
         id: 'plan-1',
         items: [
-          { outcome: 'DONE_EASY', libraryItem: { topicId: 'topic-a' } },
-          { outcome: 'STUCK', libraryItem: { topicId: 'topic-a' } },
-          { outcome: 'PENDING', libraryItem: { topicId: null } },
+          { outcome: 'DONE_EASY', libraryItem: { topics: [{ topicId: 'topic-a' }] } },
+          { outcome: 'STUCK', libraryItem: { topics: [{ topicId: 'topic-a' }] } },
+          { outcome: 'PENDING', libraryItem: { topics: [] } },
         ],
       },
     ];

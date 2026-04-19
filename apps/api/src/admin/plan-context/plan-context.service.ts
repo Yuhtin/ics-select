@@ -101,8 +101,8 @@ type LastWeekItem = {
   libraryItem: {
     id: string;
     title: string;
-    topicId: string | null;
     estimatedMinutes: number;
+    topics: Array<{ topicId: string; isPrimary: boolean }>;
   };
 };
 
@@ -114,7 +114,7 @@ type LastWeekPlan = {
 
 type CyclePlanItem = {
   outcome: Outcome;
-  libraryItem: { topicId: string | null };
+  libraryItem: { topics: Array<{ topicId: string }> };
 };
 
 type CyclePlan = {
@@ -178,8 +178,10 @@ export class PlanContextService {
                 select: {
                   id: true,
                   title: true,
-                  topicId: true,
                   estimatedMinutes: true,
+                  topics: {
+                    select: { topicId: true, isPrimary: true },
+                  },
                 },
               },
             },
@@ -193,7 +195,11 @@ export class PlanContextService {
           items: {
             select: {
               outcome: true,
-              libraryItem: { select: { topicId: true } },
+              libraryItem: {
+                select: {
+                  topics: { select: { topicId: true } },
+                },
+              },
             },
           },
         },
@@ -305,8 +311,10 @@ export class PlanContextService {
     return plan.items
       .filter((item) => CARRY_OUTCOMES.has(item.outcome))
       .map((item) => {
-        const topic = item.libraryItem.topicId
-          ? topicById.get(item.libraryItem.topicId) ?? null
+        const primaryTopicId =
+          item.libraryItem.topics.find((t) => t.isPrimary)?.topicId ?? null;
+        const topic = primaryTopicId
+          ? topicById.get(primaryTopicId) ?? null
           : null;
         return {
           id: item.id,
@@ -314,7 +322,7 @@ export class PlanContextService {
           title: item.libraryItem.title,
           outcome: item.outcome as CarryOutcome,
           reflection: item.reflection,
-          topicId: item.libraryItem.topicId ?? null,
+          topicId: primaryTopicId,
           topicLabel: topic?.label ?? null,
           estimatedMinutes: item.libraryItem.estimatedMinutes,
         };
@@ -330,7 +338,10 @@ export class PlanContextService {
       let itemsDone = 0;
       for (const plan of plans) {
         for (const item of plan.items) {
-          if (item.libraryItem.topicId !== topic.id) continue;
+          const touchesTopic = item.libraryItem.topics.some(
+            (t) => t.topicId === topic.id,
+          );
+          if (!touchesTopic) continue;
           itemsPlanned += 1;
           if (POSITIVE.has(item.outcome)) itemsDone += 1;
         }

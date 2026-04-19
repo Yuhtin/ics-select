@@ -14,6 +14,8 @@ export const CreateLibraryItemSchema = z.object({
   estimatedMinutes: z.number().int().positive(),
   source: z.string().nullable().optional().default(null),
   tags: z.array(z.string()).default([]),
+  // first slug is the primary topic; additional slugs mark secondary covers.
+  topicSlugs: z.array(z.string()).optional(),
 });
 
 export const UpdateLibraryItemSchema = CreateLibraryItemSchema.partial();

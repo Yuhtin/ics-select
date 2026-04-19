@@ -74,6 +74,9 @@ function toIsoDate(d: Date): string {
 }
 
 function toHomeItem(row: any): HomeItem {
+  const primaryTopic = (row.libraryItem.topics ?? []).find(
+    (t: any) => t.isPrimary,
+  );
   return {
     id: row.id,
     planId: row.weeklyPlanId,
@@ -82,8 +85,8 @@ function toHomeItem(row: any): HomeItem {
     format: row.libraryItem.format,
     estimatedMinutes: row.libraryItem.estimatedMinutes,
     url: row.libraryItem.url ?? null,
-    topic: row.libraryItem.topic
-      ? { slug: row.libraryItem.topic.slug, label: row.libraryItem.topic.label }
+    topic: primaryTopic
+      ? { slug: primaryTopic.topic.slug, label: primaryTopic.topic.label }
       : null,
     outcome: row.outcome,
     scheduledAt: row.scheduledAt ? row.scheduledAt.toISOString() : null,
@@ -123,7 +126,13 @@ export class HomeService {
       where: { weeklyPlanId: plan.id },
       include: {
         libraryItem: {
-          include: { topic: true },
+          include: {
+            topics: {
+              include: {
+                topic: { select: { id: true, slug: true, label: true } },
+              },
+            },
+          },
         },
       },
       orderBy: [{ scheduledAt: 'asc' }, { order: 'asc' }],
@@ -210,21 +219,27 @@ export class HomeService {
         where: { weeklyPlan: { userId, cycleId } },
         select: {
           outcome: true,
-          libraryItem: { select: { topicId: true } },
+          libraryItem: {
+            select: {
+              topics: { select: { topicId: true } },
+            },
+          },
         },
       }),
     ]);
 
     const byTopic = new Map<string, { planned: number; done: number }>();
     for (const t of topics) byTopic.set(t.id, { planned: 0, done: 0 });
+    // An item with N topics (primary + covers) contributes to all N topics'
+    // coverage. Cross-topic videos "complete" every topic they touch.
     for (const it of items) {
-      const topicId = it.libraryItem?.topicId;
-      if (!topicId) continue;
-      const stat = byTopic.get(topicId);
-      if (!stat) continue;
-      stat.planned += 1;
-      if (it.outcome === 'DONE_EASY' || it.outcome === 'DONE_HARD') {
-        stat.done += 1;
+      const topicIds = it.libraryItem?.topics?.map((t) => t.topicId) ?? [];
+      const done = it.outcome === 'DONE_EASY' || it.outcome === 'DONE_HARD';
+      for (const topicId of topicIds) {
+        const stat = byTopic.get(topicId);
+        if (!stat) continue;
+        stat.planned += 1;
+        if (done) stat.done += 1;
       }
     }
 

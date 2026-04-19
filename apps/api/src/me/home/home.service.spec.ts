@@ -3,13 +3,14 @@ import { HomeService } from './home.service.js';
 import { PrismaService } from '../../common/prisma/prisma.service.js';
 
 // Prisma mock that dispatches weeklyPlanItem.findMany calls by args.select.
-// The home service makes two calls: (1) today's items, with include.libraryItem.include.topic;
-// (2) topic-coverage items, with select.libraryItem.select.topicId.
+// The home service makes two calls: (1) today's items, with
+// include.libraryItem.include.topics; (2) topic-coverage items, with
+// select.libraryItem.select.topics (after the M2M refactor).
 const makePrismaMock = () => {
   let todayItems: any[] = [];
   let coverageItems: any[] = [];
   const findMany = jest.fn(async (args: any) => {
-    if (args?.select?.libraryItem?.select?.topicId) return coverageItems;
+    if (args?.select?.libraryItem?.select?.topics) return coverageItems;
     return todayItems;
   });
   return {
@@ -84,7 +85,7 @@ describe('HomeService', () => {
         id: 'i1', weeklyPlanId: 'plan-1', order: 1, outcome: 'PENDING',
         reflection: null, completedAt: null, carriedFromItemId: null,
         scheduledAt: new Date('2026-04-17T21:00:00Z'), scheduledMinutes: 45,
-        libraryItem: { title: 'X', format: 'PROBLEM', estimatedMinutes: 45, url: null, topic: null },
+        libraryItem: { title: 'X', format: 'PROBLEM', estimatedMinutes: 45, url: null, topics: [] },
       },
     ]);
     const result = await service.getHome('user-1', new Date('2026-04-17T19:00:00Z'));
@@ -99,7 +100,7 @@ describe('HomeService', () => {
         id: 'i1', weeklyPlanId: 'plan-1', order: 1, outcome: 'PENDING',
         reflection: null, completedAt: null, carriedFromItemId: null,
         scheduledAt: new Date('2026-04-17T19:00:00Z'), scheduledMinutes: 45,
-        libraryItem: { title: 'X', format: 'PROBLEM', estimatedMinutes: 45, url: null, topic: null },
+        libraryItem: { title: 'X', format: 'PROBLEM', estimatedMinutes: 45, url: null, topics: [] },
       },
     ]);
     const result = await service.getHome('user-1', new Date('2026-04-17T20:00:00Z'));
@@ -113,19 +114,19 @@ describe('HomeService', () => {
         id: 'done', weeklyPlanId: 'plan-1', order: 1, outcome: 'DONE_EASY',
         reflection: null, completedAt: new Date(), carriedFromItemId: null,
         scheduledAt: new Date('2026-04-17T13:00:00Z'), scheduledMinutes: 30,
-        libraryItem: { title: 'Morning study', format: 'VIDEO', estimatedMinutes: 30, url: null, topic: null },
+        libraryItem: { title: 'Morning study', format: 'VIDEO', estimatedMinutes: 30, url: null, topics: [] },
       },
       {
         id: 'pending-today', weeklyPlanId: 'plan-1', order: 2, outcome: 'PENDING',
         reflection: null, completedAt: null, carriedFromItemId: null,
         scheduledAt: new Date('2026-04-17T20:00:00Z'), scheduledMinutes: 45,
-        libraryItem: { title: 'Evening study', format: 'PROBLEM', estimatedMinutes: 45, url: null, topic: null },
+        libraryItem: { title: 'Evening study', format: 'PROBLEM', estimatedMinutes: 45, url: null, topics: [] },
       },
       {
         id: 'tomorrow', weeklyPlanId: 'plan-1', order: 3, outcome: 'PENDING',
         reflection: null, completedAt: null, carriedFromItemId: null,
         scheduledAt: new Date('2026-04-18T09:00:00Z'), scheduledMinutes: 45,
-        libraryItem: { title: 'Next-day', format: 'ARTICLE', estimatedMinutes: 45, url: null, topic: null },
+        libraryItem: { title: 'Next-day', format: 'ARTICLE', estimatedMinutes: 45, url: null, topics: [] },
       },
     ];
     prisma.weeklyPlan.findFirst.mockResolvedValue(PLAN);
@@ -161,10 +162,10 @@ describe('HomeService', () => {
       { id: 't-graphs', slug: 'graphs', label: 'Graphs', order: 1 },
     ]);
     prisma.__setCoverageItems([
-      { outcome: 'DONE_EASY', libraryItem: { topicId: 't-dp' } },
-      { outcome: 'DONE_HARD', libraryItem: { topicId: 't-dp' } },
-      { outcome: 'STUCK', libraryItem: { topicId: 't-dp' } },
-      { outcome: 'PENDING', libraryItem: { topicId: 't-graphs' } },
+      { outcome: 'DONE_EASY', libraryItem: { topics: [{ topicId: 't-dp' }] } },
+      { outcome: 'DONE_HARD', libraryItem: { topics: [{ topicId: 't-dp' }] } },
+      { outcome: 'STUCK', libraryItem: { topics: [{ topicId: 't-dp' }] } },
+      { outcome: 'PENDING', libraryItem: { topics: [{ topicId: 't-graphs' }] } },
     ]);
 
     const result = await service.getHome('user-1', new Date('2026-04-17T19:00:00Z'));
