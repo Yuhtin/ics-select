@@ -91,6 +91,16 @@ The `<html>` element must also have `className="light"` and `data-theme="light"`
 
 Prisma can't describe `vector(1536)` or `tsvector` natively, so migrations `0_init` (extension), `3_library_search_columns` (embedding column + tsvector + trigger + ivfflat index) and all semantic-search queries go through `$queryRawUnsafe` / `$executeRawUnsafe` in `apps/api/src/library/library.service.ts`. Re-embedding happens on create/update via `OpenAiService.embed`. The `tsvector` is maintained by a Postgres trigger, not from app code.
 
+### Library (acervo) curation & topic M2M
+
+The library is populated via **`apps/api/scripts/seed-library.ts`** (entry `pnpm --filter @ics-select/api seed:library`). The seed is idempotent — topics upsert by `slug`, items upsert by `(title, url)`, and each item's `LibraryItemTopic` join rows are rewritten atomically per run. Embeddings are generated when `OPENAI_API_KEY` is set.
+
+**Item ↔ Topic is many-to-many.** `LibraryItem` has no `topicId` FK; instead, `LibraryItemTopic (itemId, topicId, isPrimary)` joins them (migration `g_library_item_topics_m2m`). Exactly one row per item has `isPrimary = true` (the "home" topic for admin navigation); additional rows mark secondary covers. `LibraryService.shapeItem` derives `{ topicId, topic, topics }` on reads so the admin UI keeps consuming a single primary topic.
+
+**Cross-topic items count toward every topic they cover.** `HomeService.computeTopicCoverage`, `MemberDetailService.computeTopicCoverage`, `PlanContextService.computeTopicCoverage`, and the AI's `DraftPlanService` prompt all iterate every `item.topics` — a Fireship "5 wild data structures" video with `topicSlugs: ['tree', 'array', 'databases']` increments all three topics' `planned/done` counts. Topic completion % drives the frontend phase-progress UI and the AI's next-week recommendations, so wrong tagging directly distorts both.
+
+**Curation workflow.** The project-local skill `.claude/skills/ics-library-curate/SKILL.md` encodes the layered EASY/MEDIUM/HARD ladder, approved-channels whitelist, kind-tag vocabulary (`concept`/`tradeoffs`/`practice`/`case-study`), exact-YouTube-duration rule (scrape `lengthSeconds` via `curl`), and book whitelist (Grokking Data Structures / Algorithms / Deep Learning only). When adding a new item manually, set `topicSlugs: [primary, ...covers]` in the seed — the first slug is the primary, the rest are covers.
+
 ### Global guards
 
 `AppModule` registers `JwtAuthGuard` and `RolesGuard` as `APP_GUARD` providers, so every controller is authenticated by default. Use `@Public()` to opt out (currently only `/health` and the `/auth/google*` routes) and `@Roles('ADMIN')` to restrict admin-only endpoints. `@CurrentUser()` pulls the JWT payload off the request.
