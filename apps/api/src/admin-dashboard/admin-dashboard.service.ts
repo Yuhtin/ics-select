@@ -23,7 +23,7 @@ export class AdminDashboardService {
     const cards: MemberCard[] = [];
     for (const u of users) {
       const [plansCount, doneItems, stuckItems] = await Promise.all([
-        this.prisma.weeklyPlan.count({ where: { userId: u.id } }),
+        this.prisma.weeklyPlan.count({ where: { userId: u.id, status: 'PUBLISHED' } }),
         this.prisma.weeklyPlanItem.count({
           where: { weeklyPlan: { userId: u.id }, outcome: { in: ['DONE_EASY', 'DONE_HARD'] } },
         }),

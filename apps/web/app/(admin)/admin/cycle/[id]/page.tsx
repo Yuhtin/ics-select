@@ -1,5 +1,6 @@
 'use client';
 import { use } from 'react';
+import Link from 'next/link';
 import { useAdminCycleOverview } from '../../../../../lib/queries/admin-cycle';
 import { RankingToggle } from '../../../../../components/admin/ranking-toggle';
 import { CycleMembersGrid } from '../../../../../components/admin/cycle-members-grid';
@@ -50,10 +51,18 @@ export default function AdminCyclePage({
             )}
           </p>
         </div>
-        <RankingToggle
-          cycleId={data.cycle.id}
-          checked={data.cycle.rankingVisibleToMembers}
-        />
+        <div className="flex items-center gap-4">
+          <Link
+            href={`/admin/plans?cycleId=${data.cycle.id}`}
+            className="inline-flex items-center gap-1.5 font-mono text-xs uppercase tracking-label text-ink-soft hover:text-ink"
+          >
+            All plans →
+          </Link>
+          <RankingToggle
+            cycleId={data.cycle.id}
+            checked={data.cycle.rankingVisibleToMembers}
+          />
+        </div>
       </header>
 
       <section>

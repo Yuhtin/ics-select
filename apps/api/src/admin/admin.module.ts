@@ -6,6 +6,7 @@ import { PlanContextModule } from './plan-context/plan-context.module.js';
 import { PlanDraftsModule } from './plan-drafts/plan-drafts.module.js';
 import { NotesModule } from './notes/notes.module.js';
 import { MemberDetailModule } from './member-detail/member-detail.module.js';
+import { PlansOverviewModule } from './plans-overview/plans-overview.module.js';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { MemberDetailModule } from './member-detail/member-detail.module.js';
     PlanDraftsModule,
     NotesModule,
     MemberDetailModule,
+    PlansOverviewModule,
   ],
 })
 export class AdminModule {}

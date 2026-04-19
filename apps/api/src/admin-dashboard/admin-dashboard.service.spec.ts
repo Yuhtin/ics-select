@@ -15,6 +15,12 @@ function fakePrisma() {
         { id: 'i-2', outcome: 'PENDING', libraryItem: { tags: ['dp'] } },
       ],
     },
+    {
+      id: 'p-1-draft',
+      userId: 'u-1',
+      status: 'DRAFT',
+      items: [],
+    },
   ];
   return {
     user: {
@@ -26,7 +32,11 @@ function fakePrisma() {
         if (where.userId) return plans.filter((p) => p.userId === where.userId);
         return plans;
       }),
-      count: jest.fn(async ({ where }: any) => plans.filter((p) => p.userId === where.userId).length),
+      count: jest.fn(async ({ where }: any) => {
+        return plans.filter(
+          (p) => p.userId === where.userId && (where.status === undefined || p.status === where.status),
+        ).length;
+      }),
     },
     weeklyPlanItem: {
       count: jest.fn(async ({ where }: any) => {
@@ -48,6 +58,7 @@ describe('AdminDashboardService', () => {
     expect(cohort).toHaveLength(2);
     const first = cohort.find((c) => c.id === 'u-1');
     expect(first?.stats.plansCount).toBe(1);
+    // The DRAFT for u-1 should NOT be counted.
     expect(first?.stats.doneItems).toBe(1);
     expect(first?.stats.stuckItems).toBe(0);
   });

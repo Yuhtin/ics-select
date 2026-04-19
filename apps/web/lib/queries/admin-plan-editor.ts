@@ -51,12 +51,16 @@ export function usePlan(planId: string | null | undefined) {
 }
 
 export function useGetOrCreateDraft() {
+  const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: { memberId: string; weekStart?: string }) =>
       apiFetch<WeeklyPlan>(`/admin/member/${input.memberId}/plan-drafts`, {
         method: 'POST',
         body: JSON.stringify(input.weekStart ? { weekStart: input.weekStart } : {}),
       }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin', 'plans-overview'] });
+    },
   });
 }
 
@@ -74,6 +78,7 @@ export function useUpdatePlan() {
       }),
     onSuccess: (plan) => {
       qc.setQueryData(['plan', plan.id], plan);
+      qc.invalidateQueries({ queryKey: ['admin', 'plans-overview'] });
     },
   });
 }
@@ -101,6 +106,7 @@ export function usePublishPlan() {
       apiFetch<{ plan: WeeklyPlan }>(`/plans/${input.planId}/publish`, { method: 'POST' }),
     onSuccess: (res, variables) => {
       qc.invalidateQueries({ queryKey: ['plan', variables.planId] });
+      qc.invalidateQueries({ queryKey: ['admin', 'plans-overview'] });
     },
   });
 }
