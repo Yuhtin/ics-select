@@ -30,52 +30,64 @@ type ItemSeed = {
 };
 
 // -----------------------------------------------------------------------------
-// Topics taxonomy (31 topics across 5 buckets)
+// Topics taxonomy (37 topics across 5 buckets)
+//
+// Naming principle: atomic concepts, single-noun slugs where possible.
+// Drop `eng-` and `sd-` prefixes (universals & SD building blocks use bare
+// slugs). Case studies keep `case-` prefix for grouping.
+//
+// Flavor (tradeoffs/practice/case-study) is expressed via the `tags` array
+// on LibraryItem, not via separate topics. See `.claude/skills/ics-library-
+// curate/SKILL.md` "Tag vocabulary" section.
 // -----------------------------------------------------------------------------
 
 const TOPICS: TopicSeed[] = [
-  // Algoritmos & Estruturas de Dados (order 0–9)
-  { slug: 'arrays-hashing', label: 'Arrays & Hashing', order: 0 },
-  { slug: 'linked-stack-queue', label: 'Linked Lists, Stacks & Queues', order: 1 },
-  { slug: 'trees-tries-heaps', label: 'Trees, Tries & Heaps', order: 2 },
-  { slug: 'graphs', label: 'Graphs', order: 3 },
-  { slug: 'sorting-searching', label: 'Sorting & Searching', order: 4 },
-  { slug: 'dp-recursion', label: 'Recursion, Backtracking & DP', order: 5 },
-  { slug: 'greedy-math-bits', label: 'Greedy, Math & Bitwise', order: 6 },
+  // Algorithms & Data Structures (order 0–12)
+  { slug: 'array', label: 'Array', order: 0 },
+  { slug: 'lists', label: 'Lists', order: 1 },
+  { slug: 'tree', label: 'Tree', order: 2 },
+  { slug: 'trie', label: 'Trie', order: 3 },
+  { slug: 'heap', label: 'Heap', order: 4 },
+  { slug: 'graph', label: 'Graph', order: 5 },
+  { slug: 'sorting', label: 'Sorting', order: 6 },
+  { slug: 'searching', label: 'Searching', order: 7 },
+  { slug: 'recursion', label: 'Recursion & Backtracking', order: 8 },
+  { slug: 'dp', label: 'Dynamic Programming', order: 9 },
+  { slug: 'greedy', label: 'Greedy', order: 10 },
+  { slug: 'bit-manipulation', label: 'Bit Manipulation', order: 11 },
+  { slug: 'math', label: 'Math', order: 12 },
 
-  // Engenharia (internals) (order 10–19)
-  { slug: 'eng-databases-internals', label: 'Databases — Internals', order: 10 },
-  { slug: 'eng-http-networking', label: 'HTTP, TCP/IP & Networking', order: 11 },
-  { slug: 'eng-containers-orchestration', label: 'Containers & Kubernetes', order: 12 },
-  { slug: 'eng-cloud-basics', label: 'Cloud Fundamentals', order: 13 },
-  { slug: 'eng-auth-security', label: 'Auth & Security', order: 14 },
+  // Fundamentos de Engenharia (order 20–27) — universais, tracks múltiplas
+  { slug: 'databases', label: 'Databases', order: 20 },
+  { slug: 'networking', label: 'Networking', order: 21 },
+  { slug: 'containers', label: 'Containers', order: 22 },
+  { slug: 'cloud', label: 'Cloud', order: 23 },
+  { slug: 'security', label: 'Security', order: 24 },
+  { slug: 'cicd', label: 'CI/CD', order: 25 },
+  { slug: 'deploy', label: 'Deploy', order: 26 },
+  { slug: 'observability', label: 'Observability', order: 27 },
 
-  // System Design — Building Blocks (order 20–29)
-  { slug: 'sd-load-balancers', label: 'SD — Load Balancers', order: 20 },
-  { slug: 'sd-caching', label: 'SD — Caching', order: 21 },
-  { slug: 'sd-sharding-replication', label: 'SD — Sharding & Replication', order: 22 },
-  { slug: 'sd-queues-pubsub', label: 'SD — Queues & Pub/Sub', order: 23 },
-  { slug: 'sd-cdn-dns', label: 'SD — CDN & DNS', order: 24 },
-  { slug: 'sd-rate-limiting', label: 'SD — Rate Limiting', order: 25 },
-  { slug: 'sd-databases-choice', label: 'SD — Databases & Storage Choice', order: 26 },
+  // System Design — Building Blocks (order 30–36)
+  { slug: 'load-balancers', label: 'Load Balancers', order: 30 },
+  { slug: 'caching', label: 'Caching', order: 31 },
+  { slug: 'sharding', label: 'Sharding', order: 32 },
+  { slug: 'replication', label: 'Replication', order: 33 },
+  { slug: 'message-queues', label: 'Message Queues', order: 34 },
+  { slug: 'pubsub', label: 'Pub/Sub', order: 35 },
+  { slug: 'rate-limiting', label: 'Rate Limiting', order: 36 },
 
-  // System Design — Concepts & Trade-offs (order 30–34)
-  { slug: 'sd-scalability', label: 'SD — Scalability & Estimation', order: 30 },
-  { slug: 'sd-cap-consistency', label: 'SD — CAP & Consistency', order: 31 },
-  { slug: 'sd-idempotency-reliability', label: 'SD — Idempotency & Reliability', order: 32 },
-  { slug: 'sd-consistent-hashing', label: 'SD — Consistent Hashing', order: 33 },
+  // System Design — Concepts (order 40–43)
+  { slug: 'scalability', label: 'Scalability', order: 40 },
+  { slug: 'cap-consistency', label: 'CAP & Consistency', order: 41 },
+  { slug: 'idempotency', label: 'Idempotency', order: 42 },
+  { slug: 'reliability', label: 'Reliability', order: 43 },
 
-  // System Design — Infra/Ops (order 40–42)
-  { slug: 'sd-serverless-cloud-native', label: 'SD — Serverless & Cloud-Native', order: 40 },
-  { slug: 'sd-observability', label: 'SD — Observability', order: 41 },
-  { slug: 'sd-deploy-cicd', label: 'SD — Deploy & CI/CD', order: 42 },
-
-  // System Design — Case Studies (order 50–59)
-  { slug: 'sd-case-url-shortener', label: 'SD Case — URL Shortener', order: 50 },
-  { slug: 'sd-case-feeds', label: 'SD Case — Social Feeds', order: 51 },
-  { slug: 'sd-case-chat', label: 'SD Case — Chat & Messaging', order: 52 },
-  { slug: 'sd-case-streaming', label: 'SD Case — Video Streaming', order: 53 },
-  { slug: 'sd-case-maps-rideshare', label: 'SD Case — Maps & Ride-sharing', order: 54 },
+  // System Design — Case Studies (order 50–54) — case- prefix groups them
+  { slug: 'case-url-shortener', label: 'Case — URL Shortener', order: 50 },
+  { slug: 'case-feeds', label: 'Case — Social Feeds', order: 51 },
+  { slug: 'case-chat', label: 'Case — Chat & Messaging', order: 52 },
+  { slug: 'case-streaming', label: 'Case — Video Streaming', order: 53 },
+  { slug: 'case-maps-rideshare', label: 'Case — Maps & Ride-sharing', order: 54 },
 ];
 
 // -----------------------------------------------------------------------------
@@ -91,10 +103,10 @@ const ITEMS: ItemSeed[] = [
     format: 'VIDEO',
     difficulty: 'EASY',
     estimatedMinutes: 2,
-    topicSlug: 'sd-caching',
+    topicSlug: 'caching',
     tracks: [],
     source: 'YouTube — Fireship',
-    tags: ['redis', 'caching', 'intro', 'fireship'],
+    tags: ['concept', 'redis', 'intro', 'fireship'],
   },
   {
     title: 'Top 5 Caching Strategies',
@@ -104,10 +116,10 @@ const ITEMS: ItemSeed[] = [
     format: 'VIDEO',
     difficulty: 'MEDIUM',
     estimatedMinutes: 8,
-    topicSlug: 'sd-caching',
+    topicSlug: 'caching',
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — ByteByteGo',
-    tags: ['caching', 'cache-aside', 'write-through', 'system-design'],
+    tags: ['tradeoffs', 'cache-aside', 'read-through', 'write-through', 'write-back'],
   },
   {
     title: 'Cache Systems Every Developer Should Know',
@@ -117,10 +129,10 @@ const ITEMS: ItemSeed[] = [
     format: 'VIDEO',
     difficulty: 'MEDIUM',
     estimatedMinutes: 7,
-    topicSlug: 'sd-caching',
+    topicSlug: 'caching',
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — ByteByteGo',
-    tags: ['caching', 'cdn', 'layers', 'system-design'],
+    tags: ['concept', 'cdn', 'layers', 'browser-cache'],
   },
   {
     title: 'Caching Pitfalls Every Developer Should Know',
@@ -130,10 +142,10 @@ const ITEMS: ItemSeed[] = [
     format: 'VIDEO',
     difficulty: 'HARD',
     estimatedMinutes: 8,
-    topicSlug: 'sd-caching',
+    topicSlug: 'caching',
     tracks: ['BIG_TECH', 'CONSULTING_TECH'],
     source: 'YouTube — ByteByteGo',
-    tags: ['caching', 'pitfalls', 'thundering-herd', 'system-design'],
+    tags: ['concept', 'pitfalls', 'thundering-herd', 'stampede'],
   },
   {
     title: 'Cache Invalidation Explained',
@@ -143,10 +155,10 @@ const ITEMS: ItemSeed[] = [
     format: 'VIDEO',
     difficulty: 'HARD',
     estimatedMinutes: 8,
-    topicSlug: 'sd-caching',
+    topicSlug: 'caching',
     tracks: ['BIG_TECH', 'CONSULTING_TECH'],
     source: 'YouTube — ByteByteGo',
-    tags: ['caching', 'cache-invalidation', 'consistency', 'system-design'],
+    tags: ['concept', 'cache-invalidation', 'consistency'],
   },
   {
     title: 'Top Caching Strategies — ByteByteGo Blog',
@@ -156,10 +168,10 @@ const ITEMS: ItemSeed[] = [
     format: 'ARTICLE',
     difficulty: 'MEDIUM',
     estimatedMinutes: 15,
-    topicSlug: 'sd-caching',
+    topicSlug: 'caching',
     tracks: [],
     source: 'Blog — ByteByteGo',
-    tags: ['caching', 'write-through', 'cache-aside', 'system-design'],
+    tags: ['tradeoffs', 'write-through', 'cache-aside', 'write-back'],
   },
   {
     title: 'Grokking System Design — Caching (chapter)',
@@ -169,10 +181,10 @@ const ITEMS: ItemSeed[] = [
     format: 'BOOK',
     difficulty: 'MEDIUM',
     estimatedMinutes: 20,
-    topicSlug: 'sd-caching',
+    topicSlug: 'caching',
     tracks: ['BIG_TECH', 'CONSULTING_TECH'],
     source: 'Book — Grokking System Design Interview',
-    tags: ['caching', 'book', 'grokking', 'eviction', 'system-design'],
+    tags: ['concept', 'book', 'grokking', 'eviction'],
   },
 ];
 
