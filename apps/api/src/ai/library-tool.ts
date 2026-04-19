@@ -57,14 +57,29 @@ export function makeLibraryToolExecutor(library: LibraryService): ToolExecutor {
     }
     const input = (args ?? {}) as SearchArgs;
     const results = await library.search({ ...input, limit: 20 } as any);
-    return (results as any[]).map((r) => ({
-      id: r.id,
-      title: r.title,
-      format: r.format,
-      difficulty: r.difficulty,
-      estimatedMinutes: r.estimatedMinutes,
-      topicId: r.topicId ?? null,
-      tracks: r.tracks ?? [],
-    }));
+    return (results as any[]).map((r) => {
+      // Expose every topic the item touches so the LLM can reason about
+      // cross-topic items (e.g. a "5 wild data structures" video that
+      // covers tree + array + databases) when diversifying a plan or
+      // filling topic gaps. `topicId` (primary) is kept for
+      // compatibility with prompts/specs that still reference it.
+      const topics = Array.isArray(r.topics)
+        ? r.topics.map((t: any) => ({
+            id: t.id,
+            slug: t.slug,
+            isPrimary: !!t.isPrimary,
+          }))
+        : [];
+      return {
+        id: r.id,
+        title: r.title,
+        format: r.format,
+        difficulty: r.difficulty,
+        estimatedMinutes: r.estimatedMinutes,
+        topicId: r.topicId ?? null,
+        topics,
+        tracks: r.tracks ?? [],
+      };
+    });
   };
 }
