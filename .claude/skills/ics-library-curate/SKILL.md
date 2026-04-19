@@ -81,6 +81,9 @@ Batch-curate `LibraryItem` rows for the ICS Select acervo, following the layered
 | The Coding Gopher | Engineering deep-dives | — |
 | Hussein Nasser | Networking + database internals | HTTP/TCP/DB protocols, MVCC, WAL, pages, storage engines |
 | Lucas Montano (BR) | Architecture videos | Architecture content only |
+| mycodeschool | Algorithms & DS fundamentals | Whiteboard-style, zero IDE. Canonical for basic DS. |
+| Back To Back SWE | Interview prep / algorithms | Animated slides + whiteboard, zero VSCode |
+| NeetCode | Arrays/hashing/algos animated explainers | **Only animated explanation videos, NOT LC solve-alongs** in VSCode. If title is "Leetcode X - Python" with code walkthrough, skip. |
 | Filipe Deschamps (BR) | Architecture-only | Filter out VSCode screencasts video-by-video. Heuristic: titles with "criando X", "codando Y", "montando Z" with a specific framework name are usually screencasts — skip. Architectural titles ("como funciona", "por que X", "entendendo Y") are usually OK. When in doubt, open the video page and check the thumbnail/description for IDE shots. |
 | Arthur Takeda (BR) | BR tech content | — |
 | Augusto Galego (BR) | Senior interview prep | Whole channel OK; senior eng playlist = BIG_TECH only |
