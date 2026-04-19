@@ -15,7 +15,7 @@ Batch-curate `LibraryItem` rows for the ICS Select acervo, following the layered
 
 1. **Read curation memory first** — `cat ~/.claude/projects/-Users-daviduarte-development-personal-ics-select/memory/feedback_library_curation.md`. This file is the source of truth for approved channels, rejected channels, the layered strategy, the track-mapping rules, and the book-section pattern. **If this file doesn't exist, STOP and ask the user.** Do not proceed from guesses.
 
-2. **Query the DB for gaps** — use the `DATABASE_URL` from `apps/api/.env`. Concrete command (use `psql` via Bash — do NOT write a one-off Node script):
+2. **Query the DB for gaps** — use the `DATABASE_URL` from `apps/api/.env`. Concrete command (use `psql` via Bash — do NOT write a one-off Node script). Since the refactor to M2M, items ↔ topics go through the `LibraryItemTopic` join table; count every topic an item touches (primary + covers) so cross-topic items show up in every topic they belong to:
    ```bash
    source apps/api/.env && psql "$DATABASE_URL" -c "
    SELECT t.slug, t.label, t.\"order\",
@@ -24,7 +24,8 @@ Batch-curate `LibraryItem` rows for the ICS Select acervo, following the layered
           COUNT(i.id) FILTER (WHERE i.difficulty = 'MEDIUM') AS medium,
           COUNT(i.id) FILTER (WHERE i.difficulty = 'HARD')   AS hard
    FROM \"Topic\" t
-   LEFT JOIN \"LibraryItem\" i ON i.\"topicId\" = t.id
+   LEFT JOIN \"LibraryItemTopic\" lit ON lit.\"topicId\" = t.id
+   LEFT JOIN \"LibraryItem\" i ON i.id = lit.\"itemId\"
    GROUP BY t.id
    ORDER BY total ASC, t.\"order\" ASC;
    "
@@ -123,16 +124,28 @@ All three topics' completion % will include this item. The admin finds it under 
 
 After the kind tag, add free-form tags: technologies (`redis`, `postgres`, `kafka`), sources (`fireship`, `bytebytego`), concept names (`cache-aside`, `mvcc`, `mvcc`).
 
-**Example**:
+**Example (single-topic item)**:
 ```ts
 {
   title: 'SQL vs NoSQL — When to Use What',
-  topicSlug: 'databases',
+  topicSlugs: ['databases'],
   tags: ['tradeoffs', 'sql', 'nosql', 'postgres', 'mongo'],
   tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
   // ...
 }
 ```
+
+**Example (cross-topic item — uses multiple slugs, first is primary)**:
+```ts
+{
+  title: '5 wild data structures every developer should know',
+  topicSlugs: ['tree', 'array', 'databases'], // primary=tree; covers=array+databases
+  tags: ['concept', 'b-tree', 'radix-tree', 'rope', 'bloom-filter', 'cuckoo-hashing', 'fireship'],
+  tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+  // ...
+}
+```
+All three topics' completion % count this item. Admin finds it under `tree` (primary).
 
 **Never skip the kind tag.** Admin filters by `tags: ['tradeoffs']` to see trade-off content across all topics — items without a kind tag are invisible to that filter.
 
@@ -242,7 +255,7 @@ OPENAI_API_KEY=... pnpm --filter @ics-select/api seed:library
 pnpm --filter @ics-select/api seed:library
 ```
 
-Expected output: `N created, M updated`. If it says `0 created, 0 updated` for items you just added, check your topicSlug matches one in the `TOPICS` array.
+Expected output: `N created, M updated`. If it says `0 created, 0 updated` for items you just added, check every slug in each item's `topicSlugs` matches one in the `TOPICS` array. Missing slugs raise `Unknown topicSlug: X` at runtime.
 
 ## When NOT to use this skill
 
