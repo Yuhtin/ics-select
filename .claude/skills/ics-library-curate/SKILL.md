@@ -1,0 +1,181 @@
+---
+name: ics-library-curate
+description: Use when filling the ICS Select library acervo with study materials, when the user says "preencher acervo", "curar library", "find study materials", "library gaps", "fill topic X", or when topics in the Topic table have zero or too few LibraryItems.
+---
+
+# ICS Library Curate
+
+Batch-curate `LibraryItem` rows for the ICS Select acervo, following the layered EASY→MEDIUM→HARD model, the approved-channels list, and the seed-script review flow. **Never insert items without user approval.**
+
+## Iron Rule
+
+**Every proposed item must be approved by the user before entering the seed script.** No autonomous writes to the DB. No bypassing the seed script.
+
+## Workflow (follow in order)
+
+1. **Read curation memory first** — `cat ~/.claude/projects/-Users-daviduarte-development-personal-ics-select/memory/feedback_library_curation.md`. This file is the source of truth for approved channels, rejected channels, the layered strategy, the track-mapping rules, and the book-section pattern. **If this file doesn't exist, STOP and ask the user.** Do not proceed from guesses.
+
+2. **Query the DB for gaps** — use the `DATABASE_URL` from `apps/api/.env`. Concrete command (use `psql` via Bash — do NOT write a one-off Node script):
+   ```bash
+   source apps/api/.env && psql "$DATABASE_URL" -c "
+   SELECT t.slug, t.label, t.\"order\",
+          COUNT(i.id) AS total,
+          COUNT(i.id) FILTER (WHERE i.difficulty = 'EASY')   AS easy,
+          COUNT(i.id) FILTER (WHERE i.difficulty = 'MEDIUM') AS medium,
+          COUNT(i.id) FILTER (WHERE i.difficulty = 'HARD')   AS hard
+   FROM \"Topic\" t
+   LEFT JOIN \"LibraryItem\" i ON i.\"topicId\" = t.id
+   GROUP BY t.id
+   ORDER BY total ASC, t.\"order\" ASC;
+   "
+   ```
+   Treat as a gap: `total < 4`, or any of `easy/medium/hard = 0`. If `psql` isn't installed, ask user for a workaround — **do not** bypass by writing custom Node scripts that hit the DB directly; that breaks the "only the seed touches the DB" rule.
+
+3. **Pick ONE topic to work on**. If the user named a topic, use it. Otherwise surface the top 3 gaps and ask which to fill. **Never curate multiple topics in one batch** — it's too much for the user to review at once.
+
+4. **Plan the layered ladder** for that topic before searching:
+   - 1× EASY entry-point (Fireship "X in 100 seconds" style when available).
+   - 2–3× MEDIUM practical/architectural.
+   - 1–2× HARD deep-dive / internals / pitfalls.
+   - 1× ARTICLE (Medium post, engineering blog).
+   - 1× BOOK section (Grokking chapter) when the topic has one.
+
+5. **Search for real URLs** — use `WebSearch` (not guessing from memory). **Never fabricate a YouTube video ID.** For each candidate:
+   - Verify title + channel with a real search result. **Even if you "remember" the URL from training data, still search** — video IDs get removed, channels rename, URLs rot. No exceptions.
+   - Note the duration from the search snippet (or search the video page). `estimatedMinutes` must reflect reality. Never default to round numbers (60, 30, 15) without verification.
+   - If no good match from an approved channel exists, **leave the slot empty and flag it to the user — do not fill with a rejected channel**. Propose fewer items rather than lower-quality items.
+   - Verify each `topicSlug` you plan to use appears in the `TOPICS` array of `apps/api/scripts/seed-library.ts`. Typos → `Unknown topicSlug` at runtime.
+
+6. **Propose in a markdown table** for user approval:
+   ```
+   | # | Format | Diff | Title | URL | ~min | Tracks | Source |
+   |---|--------|------|-------|-----|------|--------|--------|
+   ```
+   Ask explicitly: "Aprova os N itens? Corta algum? Ajusta tracks?"
+
+7. **After approval**, append **only the approved** items to `apps/api/scripts/seed-library.ts` (into the `ITEMS` array — do NOT replace existing entries, append). If the user approves 4 of 6 proposed items, append 4. Also: before appending, scan the existing `ITEMS` array for duplicates by `title+url` and skip those — the seed is idempotent at the DB level but duplicate array entries create noisy diffs.
+
+8. **Run the seed**: `pnpm --filter @ics-select/api seed:library`. Report the created/updated counts back to the user.
+
+9. **Commit** on a feature branch with message `feat(library): seed items for <topic-slug>`. Do not commit to `main` directly.
+
+## Approved channels (source of truth)
+
+**Always re-read `feedback_library_curation.md` — this list may be updated.** Shown here for quick reference:
+
+| Channel | Use for | Filter |
+|---|---|---|
+| Fireship | EASY entry-point ("X in 100 seconds" ONLY) | No long screencasts |
+| 3Blue1Brown | Math/CS mental models | — |
+| Reducible | Algorithm visualization | — |
+| William Fiset | Graphs | ONLY the Graph Theory playlist |
+| ByteByteGo | System Design (all tiers) | — |
+| The Coding Gopher | Engineering deep-dives | — |
+| Hussein Nasser | Networking topics | HTTP/TCP/DB protocols only |
+| Lucas Montano (BR) | Architecture videos | Architecture content only |
+| Filipe Deschamps (BR) | Architecture-only | Filter out VSCode screencasts video-by-video. Heuristic: titles with "criando X", "codando Y", "montando Z" with a specific framework name are usually screencasts — skip. Architectural titles ("como funciona", "por que X", "entendendo Y") are usually OK. When in doubt, open the video page and check the thumbnail/description for IDE shots. |
+| Arthur Takeda (BR) | BR tech content | — |
+| Augusto Galego (BR) | Senior interview prep | Whole channel OK; senior eng playlist = BIG_TECH only |
+
+**Rejected channels — NEVER propose**: Michael Sambol, Gaurav Sen, Jordan has no life, Fabio Akita, IBM Technology.
+
+## Track tagging cheat sheet
+
+Every item's `tracks: Track[]` is a routing primitive — admin filters items by the member's track.
+
+| Item type | Tracks |
+|---|---|
+| Interview prep (senior eng hiring signals) | `['BIG_TECH']` |
+| Engineering internals (how DBs/caches work) | `['BIG_TECH', 'CONSULTING_TECH', 'STARTUP']` |
+| Algorithms & DS | `['BIG_TECH', 'COMPETITIVE_PROGRAMMING']` |
+| System design fundamentals | `['BIG_TECH', 'CONSULTING_TECH']` |
+| Pure competitive programming | `['COMPETITIVE_PROGRAMMING']` |
+| Startup / product / scrappy infra | `['STARTUP']` |
+| Universal concept (intro "what is X") | `[]` (empty = applies to all; library service handles this) |
+
+**Never over-tag.** If unsure whether an item is useful for STARTUP, don't add it — noise breaks the routing.
+
+## Book items (Grokking, etc.)
+
+Books are cadastrados as **one item per chapter/section**, not one item per book.
+
+- `title` format: `"Book Name — Chapter Topic (chapter)"` e.g. `"Grokking System Design — Caching (chapter)"`.
+- `url`: PDF link from a public GitHub repo. Use one of:
+  - https://github.com/mukul96/System-Design-AlexXu
+  - https://github.com/vishalmusale/Grokking-Modern-System-Design-Interview
+  - https://github.com/Jeevan-kumar-Raj/Grokking-System-Design
+- `source`: `"Book — <full book title>"`.
+- `description`: what the chapter covers + note like "Read only the Caching chapter, not the whole book."
+- `estimatedMinutes`: reading time for the chapter only (usually 15–30 min).
+- `format`: `'BOOK'`.
+
+## Layered-ladder example (template)
+
+For topic `sd-caching` (already done — use as reference):
+
+| # | Format | Diff | Role |
+|---|--------|------|------|
+| 1 | VIDEO | EASY | Fireship — "Redis in 100 Seconds" (entry) |
+| 2 | VIDEO | MEDIUM | ByteByteGo — "5 Caching Strategies" (practical) |
+| 3 | VIDEO | MEDIUM | ByteByteGo — "Cache Systems Every Dev Should Know" (practical) |
+| 4 | VIDEO | HARD | ByteByteGo — "Caching Pitfalls" (deep) |
+| 5 | VIDEO | HARD | ByteByteGo — "Cache Invalidation Explained" (deep) |
+| 6 | ARTICLE | MEDIUM | ByteByteGo Blog — "Top Caching Strategies" |
+| 7 | BOOK | MEDIUM | Grokking SD — Caching chapter |
+
+New topics should match this shape (quantity and tier distribution), swapping channels per topic speciality.
+
+## Red flags — STOP and fix before proceeding
+
+- ❌ About to propose a channel not in the approved list → STOP. Only use approved channels.
+- ❌ URL from memory without a WebSearch hit → STOP. Search first.
+- ❌ All proposed items are the same difficulty → STOP. Re-plan the ladder.
+- ❌ `estimatedMinutes` is a round 60/30/15 and you didn't check the actual video → STOP. Check duration.
+- ❌ About to write directly to the DB via Prisma client or REST API → STOP. Only the seed script inserts items.
+- ❌ About to cadastrar a whole book as one item → STOP. Break into chapters.
+- ❌ About to insert before user approves → STOP. Present the table, wait for "aprovo".
+- ❌ Filipe Deschamps video is mostly him typing in VSCode → STOP. Only architecture-heavy videos from him.
+- ❌ Memory file `feedback_library_curation.md` not found → STOP. Ask the user.
+
+## Seed-script append pattern
+
+Do NOT rewrite `apps/api/scripts/seed-library.ts`. Append to the `ITEMS` array:
+
+```ts
+// apps/api/scripts/seed-library.ts  (append at end of ITEMS array)
+const ITEMS: ItemSeed[] = [
+  // ... existing items ...
+  {
+    title: 'Load Balancer Explained',
+    url: 'https://www.youtube.com/watch?v=XXXX',
+    description: 'ByteByteGo — L4 vs L7, round robin, least connections.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 8,
+    topicSlug: 'sd-load-balancers',
+    tracks: ['BIG_TECH', 'CONSULTING_TECH'],
+    source: 'YouTube — ByteByteGo',
+    tags: ['load-balancer', 'l4', 'l7', 'system-design'],
+  },
+];
+```
+
+The seed is idempotent (upsert by title+url), so re-running doesn't duplicate.
+
+## Running the seed
+
+```bash
+# with embeddings:
+OPENAI_API_KEY=... pnpm --filter @ics-select/api seed:library
+
+# without embeddings (items get no embedding; admin can re-save via UI to trigger embedding later):
+pnpm --filter @ics-select/api seed:library
+```
+
+Expected output: `N created, M updated`. If it says `0 created, 0 updated` for items you just added, check your topicSlug matches one in the `TOPICS` array.
+
+## When NOT to use this skill
+
+- User wants to add ONE specific item they found themselves → just append to seed and run, skip the full workflow.
+- User is designing a new Topic (taxonomy change) → this skill only fills existing topics.
+- User wants to delete/reorganize items → use admin UI or direct Prisma edits; this skill only adds.
