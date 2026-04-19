@@ -656,6 +656,107 @@ const ITEMS: ItemSeed[] = [
     source: 'Book — Grokking Data Structures',
     tags: ['concept', 'book', 'grokking', 'tree', 'bst'],
   },
+
+  // ---------------------------------------------------------------------------
+  // sorting (7 items) — 2026-04-19
+  // Diversified beyond the default mycodeschool anchor: Lucas Montano (BR) sets
+  // up Big-O as prerequisite (cross-topic sorting+array, complements the
+  // Fireship 100s Big-O in array), Augusto Galego (BR) carries the Python
+  // implementation angle for merge+quick, mycodeschool covers the canonical
+  // whiteboard intro/selection/quicksort-analysis, and Grokking Algorithms
+  // (Bhargava) provides the illustrated book chapter.
+  // ---------------------------------------------------------------------------
+  {
+    title: 'Big O Notation: O Pesadelo do Programador Iniciante',
+    url: 'https://www.youtube.com/watch?v=GLKDo13920k',
+    description:
+      'Lucas Montano — Big-O conceitual em 14min. Pré-requisito pra comparar algoritmos de ordenação: o(n²) vs o(n log n) só faz sentido quando o aluno tem Big-O internalizado. Cross-topic: primary=sorting (é aqui que Big-O ganha peso), cover=array (também fundamenta análise de array ops).',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 14,
+    topicSlugs: ['sorting', 'array'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — Lucas Montano',
+    tags: ['concept', 'big-o', 'complexity', 'prerequisite', 'pt-br'],
+  },
+  {
+    title: 'Introduction to sorting algorithms',
+    url: 'https://www.youtube.com/watch?v=pkkFqlG0Hds',
+    description:
+      'mycodeschool — intro canônica ao problema de ordenação: por que ordenar, comparison-based vs non-comparison, primeiro contato com bubble sort. Whiteboard puro.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 9,
+    topicSlugs: ['sorting'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — mycodeschool',
+    tags: ['concept', 'sorting', 'bubble-sort', 'fundamentals'],
+  },
+  {
+    title: 'Selection sort algorithm',
+    url: 'https://www.youtube.com/watch?v=GUDLRan2DWM',
+    description:
+      'mycodeschool — selection sort com diagrama: escolher mínimo e trocar. Análise O(n²) com número exato de comparações/trocas. Base pra entender por que divide-and-conquer compensa.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 11,
+    topicSlugs: ['sorting'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — mycodeschool',
+    tags: ['concept', 'selection-sort', 'complexity'],
+  },
+  {
+    title: 'Algoritmo MergeSort Explicado',
+    url: 'https://www.youtube.com/watch?v=a5LfKZp34d8',
+    description:
+      'Augusto Galego — merge sort com implementação em Python. Divide-and-conquer explicado com foco prático: recursão que divide ao meio + merge de dois arrays ordenados. Pair natural com o vídeo de quick sort dele.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 15,
+    topicSlugs: ['sorting'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — Augusto Galego',
+    tags: ['practice', 'merge-sort', 'divide-and-conquer', 'python', 'pt-br'],
+  },
+  {
+    title: 'Quicksort: Implementação e Explicação',
+    url: 'https://www.youtube.com/watch?v=nV_WE8SEuGE',
+    description:
+      'Augusto Galego — quicksort com implementação em Python. Escolha de pivô, partição, recursão. Complementa o MergeSort do mesmo canal e serve de ponte pro video de analysis do mycodeschool.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 12,
+    topicSlugs: ['sorting'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — Augusto Galego',
+    tags: ['practice', 'quicksort', 'partition', 'python', 'pt-br'],
+  },
+  {
+    title: 'Analysis of quicksort',
+    url: 'https://www.youtube.com/watch?v=3Bbm3Prd5Fo',
+    description:
+      'mycodeschool — análise formal de quicksort: caso médio O(n log n) vs pior caso O(n²), sensibilidade ao pivô, por que random quicksort vira estocástico. Leitura matemática densa — pra quem já implementou e quer entender por que funciona.',
+    format: 'VIDEO',
+    difficulty: 'HARD',
+    estimatedMinutes: 21,
+    topicSlugs: ['sorting'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — mycodeschool',
+    tags: ['concept', 'quicksort', 'analysis', 'complexity', 'average-case'],
+  },
+  {
+    title: 'Grokking Algorithms — Quicksort (chapter 4)',
+    url: 'https://github.com/egonSchiele/grokking_algorithms',
+    description:
+      'Capítulo 4 (Quicksort) do livro Grokking Algorithms / Entendendo Algoritmos (Aditya Y. Bhargava, Manning). Divide-and-conquer + quicksort ilustrado no estilo cartoon característico. ATENÇÃO: livro pago — ver biblioteca da Inteli ou comprar via Manning. O repo do GitHub (do próprio autor) tem só código de acompanhamento, não o PDF.',
+    format: 'BOOK',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 25,
+    topicSlugs: ['sorting'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'Book — Grokking Algorithms',
+    tags: ['concept', 'book', 'grokking', 'quicksort', 'divide-and-conquer'],
+  },
 ];
 
 // -----------------------------------------------------------------------------
