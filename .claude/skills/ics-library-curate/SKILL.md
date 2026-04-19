@@ -42,7 +42,15 @@ Batch-curate `LibraryItem` rows for the ICS Select acervo, following the layered
 
 5. **Search for real URLs** — use `WebSearch` (not guessing from memory). **Never fabricate a YouTube video ID.** For each candidate:
    - Verify title + channel with a real search result. **Even if you "remember" the URL from training data, still search** — video IDs get removed, channels rename, URLs rot. No exceptions.
-   - Note the duration from the search snippet (or search the video page). `estimatedMinutes` must reflect reality. Never default to round numbers (60, 30, 15) without verification.
+   - **MANDATORY for YouTube videos**: fetch exact duration via `curl` scrape:
+     ```bash
+     curl -s -A "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36" \
+       "https://www.youtube.com/watch?v=VIDEO_ID" \
+       | grep -oE '"lengthSeconds":"[0-9]+"' | head -1 | grep -oE '[0-9]+'
+     ```
+     Returns seconds; do `ceil(secs/60)` for `estimatedMinutes`. Never estimate — Davi caught a video cadastrado as `8 min` that was actually 87s (2 min). Guessing distorts weekly plan budgets.
+   - For ARTICLE items: use Medium's "X min read" badge if available, else estimate reasonably.
+   - For BOOK items: reading time for the chapter only (15–30 min typical).
    - If no good match from an approved channel exists, **leave the slot empty and flag it to the user — do not fill with a rejected channel**. Propose fewer items rather than lower-quality items.
    - Verify each `topicSlug` you plan to use appears in the `TOPICS` array of `apps/api/scripts/seed-library.ts`. Typos → `Unknown topicSlug` at runtime.
 
@@ -71,7 +79,7 @@ Batch-curate `LibraryItem` rows for the ICS Select acervo, following the layered
 | William Fiset | Graphs | ONLY the Graph Theory playlist |
 | ByteByteGo | System Design (all tiers) | — |
 | The Coding Gopher | Engineering deep-dives | — |
-| Hussein Nasser | Networking topics | HTTP/TCP/DB protocols only |
+| Hussein Nasser | Networking + database internals | HTTP/TCP/DB protocols, MVCC, WAL, pages, storage engines |
 | Lucas Montano (BR) | Architecture videos | Architecture content only |
 | Filipe Deschamps (BR) | Architecture-only | Filter out VSCode screencasts video-by-video. Heuristic: titles with "criando X", "codando Y", "montando Z" with a specific framework name are usually screencasts — skip. Architectural titles ("como funciona", "por que X", "entendendo Y") are usually OK. When in doubt, open the video page and check the thumbnail/description for IDE shots. |
 | Arthur Takeda (BR) | BR tech content | — |
@@ -129,19 +137,29 @@ Every item's `tracks: Track[]` is a routing primitive — admin filters items by
 
 **Never over-tag.** If unsure whether an item is useful for STARTUP, don't add it — noise breaks the routing.
 
-## Book items (Grokking, etc.)
+## Book items (whitelisted)
 
 Books are cadastrados as **one item per chapter/section**, not one item per book.
 
-- `title` format: `"Book Name — Chapter Topic (chapter)"` e.g. `"Grokking System Design — Caching (chapter)"`.
-- `url`: PDF link from a public GitHub repo. Use one of:
-  - https://github.com/mukul96/System-Design-AlexXu
-  - https://github.com/vishalmusale/Grokking-Modern-System-Design-Interview
-  - https://github.com/Jeevan-kumar-Raj/Grokking-System-Design
+**Whitelisted books** (only these — no others):
+
+| Book | Use for | Notes |
+|---|---|---|
+| **Grokking Data Structures** (La Rocca, Manning) | `array`, `lists`, `tree`, `trie`, `heap`, `graph` | Visual-heavy, perfect fit |
+| **Grokking Algorithms / Entendendo Algoritmos** (Bhargava) | `recursion`, `dp`, `sorting`, `searching`, `greedy`, `graph` | Cartoon-style visual |
+| **Grokking Deep Learning** (Trask) | ML topics | **On-hold** — don't seed items yet |
+
+**Explicitly NOT approved**: Grokking System Design Interview, Designing Data-Intensive Applications, any other. Don't propose.
+
+Item format:
+- `title` format: `"Book Name — Chapter Topic (chapter)"` e.g. `"Grokking Algorithms — Breadth-First Search (chapter)"`.
+- `url`: PDF link from a public GitHub repo (search for the title).
 - `source`: `"Book — <full book title>"`.
-- `description`: what the chapter covers + note like "Read only the Caching chapter, not the whole book."
+- `description`: what the chapter covers + note like "Read only the BFS chapter, not the whole book."
 - `estimatedMinutes`: reading time for the chapter only (usually 15–30 min).
 - `format`: `'BOOK'`.
+
+**Topics without a whitelisted book fit**: leave them without a BOOK item. Don't stretch to fit a non-approved book. `databases` currently has no whitelisted book (DDIA would fit but isn't approved).
 
 ## Layered-ladder example (template)
 
@@ -164,7 +182,8 @@ New topics should match this shape (quantity and tier distribution), swapping ch
 - ❌ About to propose a channel not in the approved list → STOP. Only use approved channels.
 - ❌ URL from memory without a WebSearch hit → STOP. Search first.
 - ❌ All proposed items are the same difficulty → STOP. Re-plan the ladder.
-- ❌ `estimatedMinutes` is a round 60/30/15 and you didn't check the actual video → STOP. Check duration.
+- ❌ `estimatedMinutes` for a YouTube video wasn't fetched via curl scrape (mandatory) → STOP. Fetch exact.
+- ❌ About to propose a BOOK item that isn't on the whitelist (Grokking Data Structures / Algorithms / Deep Learning) → STOP. Leave the topic without a BOOK rather than forcing a non-approved book.
 - ❌ About to write directly to the DB via Prisma client or REST API → STOP. Only the seed script inserts items.
 - ❌ About to cadastrar a whole book as one item → STOP. Break into chapters.
 - ❌ About to insert before user approves → STOP. Present the table, wait for "aprovo".
