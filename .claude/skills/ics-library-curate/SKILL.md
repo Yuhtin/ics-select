@@ -79,6 +79,40 @@ Batch-curate `LibraryItem` rows for the ICS Select acervo, following the layered
 
 **Rejected channels — NEVER propose**: Michael Sambol, Gaurav Sen, Jordan has no life, Fabio Akita, IBM Technology.
 
+## Tag vocabulary (MANDATORY)
+
+Three orthogonal axes classify each item. Use each for its purpose:
+
+| Axis | Cardinality | Purpose |
+|---|---|---|
+| `topicId` | 1 per item | Main subject (`databases`, `caching`) |
+| `tags` | N per item | Flavor + descriptors |
+| `tracks` | N per item | Career routing |
+
+**Kind tag (pick exactly one per item)**:
+
+| Kind | When to use |
+|---|---|
+| `concept` | Default — teaching what/how something works |
+| `tradeoffs` | Comparison content (A vs B, "when to pick") |
+| `practice` | Hands-on with a specific tool/service |
+| `case-study` | Full system design walkthrough |
+
+After the kind tag, add free-form tags: technologies (`redis`, `postgres`, `kafka`), sources (`fireship`, `bytebytego`), concept names (`cache-aside`, `mvcc`, `mvcc`).
+
+**Example**:
+```ts
+{
+  title: 'SQL vs NoSQL — When to Use What',
+  topicSlug: 'databases',
+  tags: ['tradeoffs', 'sql', 'nosql', 'postgres', 'mongo'],
+  tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+  // ...
+}
+```
+
+**Never skip the kind tag.** Admin filters by `tags: ['tradeoffs']` to see trade-off content across all topics — items without a kind tag are invisible to that filter.
+
 ## Track tagging cheat sheet
 
 Every item's `tracks: Track[]` is a routing primitive — admin filters items by the member's track.
@@ -111,17 +145,17 @@ Books are cadastrados as **one item per chapter/section**, not one item per book
 
 ## Layered-ladder example (template)
 
-For topic `sd-caching` (already done — use as reference):
+For topic `caching` (already done — use as reference):
 
-| # | Format | Diff | Role |
-|---|--------|------|------|
-| 1 | VIDEO | EASY | Fireship — "Redis in 100 Seconds" (entry) |
-| 2 | VIDEO | MEDIUM | ByteByteGo — "5 Caching Strategies" (practical) |
-| 3 | VIDEO | MEDIUM | ByteByteGo — "Cache Systems Every Dev Should Know" (practical) |
-| 4 | VIDEO | HARD | ByteByteGo — "Caching Pitfalls" (deep) |
-| 5 | VIDEO | HARD | ByteByteGo — "Cache Invalidation Explained" (deep) |
-| 6 | ARTICLE | MEDIUM | ByteByteGo Blog — "Top Caching Strategies" |
-| 7 | BOOK | MEDIUM | Grokking SD — Caching chapter |
+| # | Format | Diff | Kind | Role |
+|---|--------|------|------|------|
+| 1 | VIDEO | EASY | `concept` | Fireship — "Redis in 100 Seconds" (entry) |
+| 2 | VIDEO | MEDIUM | `tradeoffs` | ByteByteGo — "5 Caching Strategies" (pick one) |
+| 3 | VIDEO | MEDIUM | `concept` | ByteByteGo — "Cache Systems Every Dev Should Know" |
+| 4 | VIDEO | HARD | `concept` | ByteByteGo — "Caching Pitfalls" (what goes wrong) |
+| 5 | VIDEO | HARD | `concept` | ByteByteGo — "Cache Invalidation Explained" |
+| 6 | ARTICLE | MEDIUM | `tradeoffs` | ByteByteGo Blog — "Top Caching Strategies" |
+| 7 | BOOK | MEDIUM | `concept` | Grokking SD — Caching chapter |
 
 New topics should match this shape (quantity and tier distribution), swapping channels per topic speciality.
 
@@ -134,6 +168,8 @@ New topics should match this shape (quantity and tier distribution), swapping ch
 - ❌ About to write directly to the DB via Prisma client or REST API → STOP. Only the seed script inserts items.
 - ❌ About to cadastrar a whole book as one item → STOP. Break into chapters.
 - ❌ About to insert before user approves → STOP. Present the table, wait for "aprovo".
+- ❌ Item has no kind tag (one of `concept`/`tradeoffs`/`practice`/`case-study`) → STOP. Add one.
+- ❌ About to create a `<topic>-tradeoffs` or `<topic>-practice` topic → STOP. Use a tag, not a new topic. See "Tag vocabulary" section.
 - ❌ Filipe Deschamps video is mostly him typing in VSCode → STOP. Only architecture-heavy videos from him.
 - ❌ Memory file `feedback_library_curation.md` not found → STOP. Ask the user.
 
@@ -152,10 +188,10 @@ const ITEMS: ItemSeed[] = [
     format: 'VIDEO',
     difficulty: 'MEDIUM',
     estimatedMinutes: 8,
-    topicSlug: 'sd-load-balancers',
+    topicSlug: 'load-balancers',
     tracks: ['BIG_TECH', 'CONSULTING_TECH'],
     source: 'YouTube — ByteByteGo',
-    tags: ['load-balancer', 'l4', 'l7', 'system-design'],
+    tags: ['concept', 'load-balancer', 'l4', 'l7'],
   },
 ];
 ```
