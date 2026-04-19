@@ -543,6 +543,119 @@ const ITEMS: ItemSeed[] = [
     source: 'Book — Grokking Data Structures',
     tags: ['concept', 'book', 'grokking', 'linked-list'],
   },
+
+  // ---------------------------------------------------------------------------
+  // tree (8 items) — 2026-04-19
+  // Third básicos-de-algos topic after array + lists. mycodeschool anchors the
+  // fundamentals (intro → binary tree → BST), Back To Back SWE layers
+  // traversals + AVL rotations. Fireship "5 wild data structures" is the
+  // cross-topic entry (covers tree/array/databases). B-Tree vs LSM-Tree bridges
+  // to databases for the storage-engine angle.
+  // ---------------------------------------------------------------------------
+  {
+    title: '5 wild data structures every developer should know',
+    url: 'https://www.youtube.com/watch?v=6fnmXX8RK0s',
+    description:
+      'Fireship — tour por 5 ED não-óbvias: B-tree, radix tree, rope, bloom filter, cuckoo hashing. Entry point pro mundo de árvores e DS que sustentam DBs. Primeiro item cross-topic: primary=tree, covers=array+databases.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 5,
+    topicSlugs: ['tree', 'array', 'databases'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — Fireship',
+    tags: ['concept', 'b-tree', 'radix-tree', 'rope', 'bloom-filter', 'cuckoo-hashing', 'fireship'],
+  },
+  {
+    title: 'Data structures: Introduction to Trees',
+    url: 'https://www.youtube.com/watch?v=qH6yxkw0u78',
+    description:
+      'mycodeschool — intro canônica a árvores: terminologia (root, leaf, parent, child, depth, height), representação na memória, por que usar tree vs array/list. Whiteboard puro.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 16,
+    topicSlugs: ['tree'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — mycodeschool',
+    tags: ['concept', 'tree', 'terminology', 'fundamentals'],
+  },
+  {
+    title: 'Data structures: Binary Tree',
+    url: 'https://www.youtube.com/watch?v=H5JubkIy_p8',
+    description:
+      'mycodeschool — árvore binária especificamente: max nodes por nível, strictly/complete/perfect/balanced, altura mínima/máxima. Base para BST e heaps.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 17,
+    topicSlugs: ['tree'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — mycodeschool',
+    tags: ['concept', 'binary-tree', 'complete-tree', 'perfect-tree'],
+  },
+  {
+    title: 'Data structures: Binary Search Tree',
+    url: 'https://www.youtube.com/watch?v=pYT9F8_LFTM',
+    description:
+      'mycodeschool — BST: invariante de ordenação left < root < right, busca/inserção/remoção em O(log n) no caso balanceado, piora pra O(n) quando degenera. Base pra entender AVL/Red-Black depois.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 20,
+    topicSlugs: ['tree'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — mycodeschool',
+    tags: ['concept', 'bst', 'binary-search-tree', 'operations'],
+  },
+  {
+    title: 'Binary Tree Bootcamp: Full, Complete, & Perfect Trees + Traversals',
+    url: 'https://www.youtube.com/watch?v=BHB0B1jFKQc',
+    description:
+      'Back To Back SWE — classificação formal (full/complete/perfect) + os 3 DFS traversals (preorder/inorder/postorder) com animação. Essencial pra interview prep — quase todo LC de árvore usa um desses.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 20,
+    topicSlugs: ['tree'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — Back To Back SWE',
+    tags: ['concept', 'traversal', 'preorder', 'inorder', 'postorder', 'dfs'],
+  },
+  {
+    title: 'AVL Trees & Rotations (Self-Balancing Binary Search Trees)',
+    url: 'https://www.youtube.com/watch?v=vRwi_UcZGjU',
+    description:
+      'Back To Back SWE — por que BSTs "desbalanceiam", o que é fator de balanceamento, e os 4 tipos de rotação (LL/RR/LR/RL) pra restaurar O(log n). Deep-dive clássico — aparece em entrevistas sêniores.',
+    format: 'VIDEO',
+    difficulty: 'HARD',
+    estimatedMinutes: 21,
+    topicSlugs: ['tree'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — Back To Back SWE',
+    tags: ['concept', 'avl-tree', 'self-balancing', 'rotations', 'bst'],
+  },
+  {
+    title: 'B-Tree vs. LSM-Tree',
+    url: 'https://bytebytego.com/guides/b-tree-vs/',
+    description:
+      'ByteByteGo Guide — comparação detalhada entre as duas estruturas que dominam storage engines modernos: B-Tree (Postgres, MySQL) vs LSM-Tree (Cassandra, RocksDB). Trade-offs de leitura vs escrita, write amplification, compaction. Cross-topic: primary=tree, cover=databases.',
+    format: 'ARTICLE',
+    difficulty: 'HARD',
+    estimatedMinutes: 12,
+    topicSlugs: ['tree', 'databases'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH'],
+    source: 'Guide — ByteByteGo',
+    tags: ['tradeoffs', 'b-tree', 'lsm-tree', 'storage-engine', 'write-amplification'],
+  },
+  {
+    title: 'Grokking Data Structures — Trees (chapter)',
+    url: 'https://github.com/mlarocca/grokking_data_structures',
+    description:
+      'Capítulo de trees do livro Grokking Data Structures (Marcello La Rocca, Manning). Cobre binary trees, BSTs, traversals, balanced trees com visual-heavy approach. ATENÇÃO: livro pago — ver biblioteca da Inteli ou comprar via Manning. O repo do GitHub tem só código de acompanhamento, não o PDF.',
+    format: 'BOOK',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 25,
+    topicSlugs: ['tree'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'Book — Grokking Data Structures',
+    tags: ['concept', 'book', 'grokking', 'tree', 'bst'],
+  },
 ];
 
 // -----------------------------------------------------------------------------
