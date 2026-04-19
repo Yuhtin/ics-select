@@ -184,12 +184,12 @@ model ClassAttendance {
 }
 
 model Topic {
-  id        String        @id @default(cuid())
-  slug      String        @unique
+  id        String             @id @default(cuid())
+  slug      String             @unique
   label     String
-  order     Int           @default(0)
-  createdAt DateTime      @default(now())
-  items     LibraryItem[]
+  order     Int                @default(0)
+  createdAt DateTime           @default(now())
+  items     LibraryItemTopic[]
 }
 
 model LibraryItem {
@@ -200,7 +200,6 @@ model LibraryItem {
   format           ItemFormat
   difficulty       ItemDifficulty
   estimatedMinutes Int
-  topicId          String?
   tracks           Track[]                      @default([])
   source           String?
   tags             String[]
@@ -210,11 +209,29 @@ model LibraryItem {
   createdAt        DateTime                     @default(now())
   updatedAt        DateTime                     @updatedAt
 
-  topic     Topic?           @relation(fields: [topicId], references: [id])
+  topics    LibraryItemTopic[]
   planItems WeeklyPlanItem[]
   @@index([format])
   @@index([difficulty])
+}
+
+// Join table: a library item covers 1+ topics. Exactly one row per item
+// carries `isPrimary = true` — the canonical "home" topic that the admin
+// catalogs the item under. Secondary rows (isPrimary = false) express
+// cross-topic coverage: e.g. a video about B-Trees lives under `tree`
+// primary but also counts toward `databases` and `array` completion.
+model LibraryItemTopic {
+  itemId    String
+  topicId   String
+  isPrimary Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  item  LibraryItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  topic Topic       @relation(fields: [topicId], references: [id], onDelete: Cascade)
+
+  @@id([itemId, topicId])
   @@index([topicId])
+  @@index([itemId, isPrimary])
 }
 
 model WeeklyPlan {

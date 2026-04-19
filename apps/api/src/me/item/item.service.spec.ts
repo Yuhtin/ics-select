@@ -28,7 +28,7 @@ describe('ItemService', () => {
     prisma.weeklyPlanItem.findUnique.mockResolvedValue({
       id: 'i1',
       weeklyPlan: { userId: 'someone-else' },
-      libraryItem: { topic: null },
+      libraryItem: { topics: [] },
       carriedFrom: null,
     });
     await expect(service.getItem('i1', 'user-1')).rejects.toThrow(ForbiddenException);
@@ -52,7 +52,12 @@ describe('ItemService', () => {
         url: 'https://x',
         format: 'PROBLEM',
         estimatedMinutes: 45,
-        topic: { slug: 'dp', label: 'Dynamic Programming' },
+        topics: [
+          {
+            isPrimary: true,
+            topic: { id: 't-dp', slug: 'dp', label: 'Dynamic Programming' },
+          },
+        ],
       },
       carriedFrom: {
         outcome: 'STUCK',
@@ -87,7 +92,7 @@ describe('ItemService', () => {
         url: null,
         format: 'ARTICLE',
         estimatedMinutes: 20,
-        topic: null,
+        topics: [],
       },
       carriedFrom: null,
     });

@@ -10,7 +10,15 @@ export class ItemService {
       where: { id: itemId },
       include: {
         weeklyPlan: { select: { userId: true } },
-        libraryItem: { include: { topic: true } },
+        libraryItem: {
+          include: {
+            topics: {
+              include: {
+                topic: { select: { id: true, slug: true, label: true } },
+              },
+            },
+          },
+        },
         carriedFrom: {
           include: {
             weeklyPlan: { select: { weekStart: true } },
@@ -40,9 +48,12 @@ export class ItemService {
         url: row.libraryItem.url ?? null,
         format: row.libraryItem.format,
         estimatedMinutes: row.libraryItem.estimatedMinutes,
-        topic: row.libraryItem.topic
-          ? { slug: row.libraryItem.topic.slug, label: row.libraryItem.topic.label }
-          : null,
+        topic: (() => {
+          const primary = row.libraryItem.topics.find((t) => t.isPrimary);
+          return primary
+            ? { slug: primary.topic.slug, label: primary.topic.label }
+            : null;
+        })(),
       },
       carriedFrom: row.carriedFrom
         ? {

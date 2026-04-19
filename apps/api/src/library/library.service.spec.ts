@@ -39,14 +39,28 @@ function fakePrisma() {
         items.set(where.id, next);
         return next;
       }),
-      findUnique: jest.fn(async ({ where }: { where: { id: string } }) => items.get(where.id) ?? null),
-      findMany: jest.fn(async () => Array.from(items.values())),
+      findUnique: jest.fn(async ({ where }: { where: { id: string } }) => {
+        const it = items.get(where.id);
+        return it ? { ...it, topics: [] } : null;
+      }),
+      findMany: jest.fn(async () =>
+        Array.from(items.values()).map((it) => ({ ...it, topics: [] })),
+      ),
       delete: jest.fn(async ({ where }: { where: { id: string } }) => {
         const rec = items.get(where.id);
         items.delete(where.id);
         return rec;
       }),
     },
+    libraryItemTopic: {
+      findMany: jest.fn(async () => []),
+      deleteMany: jest.fn(async () => ({ count: 0 })),
+      create: jest.fn(async ({ data }: any) => data),
+    },
+    topic: {
+      findMany: jest.fn(async () => []),
+    },
+    $transaction: jest.fn(async (ops: any[]) => Promise.all(ops)),
     $executeRawUnsafe: jest.fn(async (_sql: string, ...values: unknown[]) => {
       const [id, vectorLiteral] = values as [string, string];
       const nums = vectorLiteral.replace(/[[\]]/g, '').split(',').map(Number);

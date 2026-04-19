@@ -67,8 +67,12 @@ export class DraftPlanService {
               select: {
                 id: true,
                 title: true,
-                topicId: true,
-                topic: { select: { label: true } },
+                topics: {
+                  select: {
+                    isPrimary: true,
+                    topic: { select: { id: true, label: true } },
+                  },
+                },
               },
             },
           },
@@ -93,8 +97,12 @@ export class DraftPlanService {
                 select: {
                   id: true,
                   title: true,
-                  topicId: true,
-                  topic: { select: { label: true } },
+                  topics: {
+                    select: {
+                      isPrimary: true,
+                      topic: { select: { id: true, label: true } },
+                    },
+                  },
                   estimatedMinutes: true,
                   format: true,
                   difficulty: true,
@@ -115,7 +123,13 @@ export class DraftPlanService {
             items: {
               select: {
                 outcome: true,
-                libraryItem: { select: { topic: { select: { label: true } } } },
+                libraryItem: {
+                  select: {
+                    topics: {
+                      select: { topic: { select: { label: true } } },
+                    },
+                  },
+                },
               },
             },
           },
@@ -124,11 +138,23 @@ export class DraftPlanService {
     const topicCoverage = new Map<string, { planned: number; done: number }>();
     for (const plan of coverageSource) {
       for (const item of plan.items ?? []) {
-        const label = item.libraryItem?.topic?.label ?? 'sem tópico';
-        const cur = topicCoverage.get(label) ?? { planned: 0, done: 0 };
-        cur.planned += 1;
-        if (item.outcome === 'DONE_EASY' || item.outcome === 'DONE_HARD') cur.done += 1;
-        topicCoverage.set(label, cur);
+        // An item touches every topic in its M2M set (primary + secondary
+        // covers). Increment each topic's counts so cross-topic items
+        // contribute to all they cover — matches the home/member-detail
+        // topic coverage semantics.
+        const topicLabels: string[] =
+          (item.libraryItem?.topics ?? [])
+            .map((t: any) => t.topic?.label)
+            .filter((l: unknown): l is string => typeof l === 'string');
+        const labels = topicLabels.length > 0 ? topicLabels : ['sem tópico'];
+        const done =
+          item.outcome === 'DONE_EASY' || item.outcome === 'DONE_HARD';
+        for (const label of labels) {
+          const cur = topicCoverage.get(label) ?? { planned: 0, done: 0 };
+          cur.planned += 1;
+          if (done) cur.done += 1;
+          topicCoverage.set(label, cur);
+        }
       }
     }
 
@@ -146,7 +172,12 @@ export class DraftPlanService {
                 title: true,
                 estimatedMinutes: true,
                 format: true,
-                topic: { select: { label: true } },
+                topics: {
+                  select: {
+                    isPrimary: true,
+                    topic: { select: { id: true, label: true } },
+                  },
+                },
               },
             },
           },
@@ -222,7 +253,8 @@ export class DraftPlanService {
       currentPlan?.items && currentPlan.items.length > 0
         ? currentPlan.items.map((it: any) => {
             const li = it.libraryItem;
-            const topicLabel = li?.topic?.label ?? 'sem tópico';
+            const primary = (li?.topics ?? []).find((t: any) => t.isPrimary);
+            const topicLabel = primary?.topic?.label ?? 'sem tópico';
             return `- id=${li?.id ?? it.libraryItemId} "${li?.title ?? ''}" topic=${topicLabel} minutes=${li?.estimatedMinutes ?? '?'} format=${li?.format ?? '?'} order=${it.order}`;
           })
         : null;
@@ -246,7 +278,8 @@ export class DraftPlanService {
       .map((co: any) => {
         const li = co.libraryItem;
         if (!li) return null;
-        const topicLabel = li.topic?.label ?? 'sem tópico';
+        const primary = (li.topics ?? []).find((t: any) => t.isPrimary);
+        const topicLabel = primary?.topic?.label ?? 'sem tópico';
         return `- id=${li.id} "${li.title}" topic=${topicLabel} format=${li.format} difficulty=${li.difficulty} minutes=${li.estimatedMinutes}`;
       })
       .filter(Boolean);

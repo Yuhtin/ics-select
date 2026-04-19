@@ -45,14 +45,16 @@ Batch-curate `LibraryItem` rows for the ICS Select acervo, following the layered
    - **MANDATORY for YouTube videos**: fetch exact duration via `curl` scrape:
      ```bash
      curl -s -A "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36" \
+       -H "Cookie: CONSENT=YES+cb" \
        "https://www.youtube.com/watch?v=VIDEO_ID" \
        | grep -oE '"lengthSeconds":"[0-9]+"' | head -1 | grep -oE '[0-9]+'
      ```
      Returns seconds; do `ceil(secs/60)` for `estimatedMinutes`. Never estimate — Davi caught a video cadastrado as `8 min` that was actually 87s (2 min). Guessing distorts weekly plan budgets.
+     **Note on the CONSENT cookie**: older YouTube videos (pre-2015 mycodeschool etc.) serve a consent-wall HTML without the JSON when fetched without `Cookie: CONSENT=YES+cb`. Always include the cookie. If it still returns empty, try oembed as fallback: `curl -s "https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=ID&format=json"` (returns title/author but not duration).
    - For ARTICLE items: use Medium's "X min read" badge if available, else estimate reasonably.
    - For BOOK items: reading time for the chapter only (15–30 min typical).
    - If no good match from an approved channel exists, **leave the slot empty and flag it to the user — do not fill with a rejected channel**. Propose fewer items rather than lower-quality items.
-   - Verify each `topicSlug` you plan to use appears in the `TOPICS` array of `apps/api/scripts/seed-library.ts`. Typos → `Unknown topicSlug` at runtime.
+   - Verify each slug in `topicSlugs` appears in the `TOPICS` array of `apps/api/scripts/seed-library.ts`. Typos → `Unknown topicSlug` at runtime. **First slug is primary** (the item's "home"); any remaining slugs are secondary covers that count toward those topics' completion %.
 
 6. **Propose in a markdown table** for user approval:
    ```
@@ -96,9 +98,19 @@ Three orthogonal axes classify each item. Use each for its purpose:
 
 | Axis | Cardinality | Purpose |
 |---|---|---|
-| `topicId` | 1 per item | Main subject (`databases`, `caching`) |
+| `topicSlugs[]` | N per item (first = primary) | Main subjects. Item is "home" at primary; secondary slugs mark cross-topic coverage |
 | `tags` | N per item | Flavor + descriptors |
 | `tracks` | N per item | Career routing |
+
+**Cross-topic items (e.g. Fireship "5 wild data structures" — B-tree + Radix + Rope + Bloom filter + Cuckoo hashing) use `topicSlugs` to count toward every topic they cover:**
+```ts
+{
+  title: '5 wild data structures every developer should know',
+  topicSlugs: ['tree', 'array', 'databases'], // primary=tree, covers=array+databases
+  // ...
+}
+```
+All three topics' completion % will include this item. The admin finds it under `tree` (primary) but it also shows in filtered searches for `array` and `databases`.
 
 **Kind tag (pick exactly one per item)**:
 
@@ -210,7 +222,7 @@ const ITEMS: ItemSeed[] = [
     format: 'VIDEO',
     difficulty: 'MEDIUM',
     estimatedMinutes: 8,
-    topicSlug: 'load-balancers',
+    topicSlugs: ['load-balancers'],
     tracks: ['BIG_TECH', 'CONSULTING_TECH'],
     source: 'YouTube — ByteByteGo',
     tags: ['concept', 'load-balancer', 'l4', 'l7'],
