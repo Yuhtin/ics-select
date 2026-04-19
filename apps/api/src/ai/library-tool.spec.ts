@@ -29,6 +29,10 @@ describe('makeLibraryToolExecutor', () => {
           tags: ['dp'],
           tracks: ['BIG_TECH'],
           topicId: 't-dp',
+          topics: [
+            { id: 't-dp', slug: 'dp', label: 'Dynamic Programming', isPrimary: true },
+            { id: 't-arr', slug: 'array', label: 'Array', isPrimary: false },
+          ],
         },
       ]),
     };
@@ -55,6 +59,10 @@ describe('makeLibraryToolExecutor', () => {
       difficulty: 'EASY',
       estimatedMinutes: 30,
       topicId: 't-dp',
+      topics: [
+        { id: 't-dp', slug: 'dp', isPrimary: true },
+        { id: 't-arr', slug: 'array', isPrimary: false },
+      ],
       tracks: ['BIG_TECH'],
     });
     expect(result[0]).not.toHaveProperty('description');
