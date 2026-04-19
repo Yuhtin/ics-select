@@ -306,6 +306,127 @@ const ITEMS: ItemSeed[] = [
     source: 'Medium — Hussein Nasser',
     tags: ['concept', 'pages', 'storage', 'rows', 'internals'],
   },
+
+  // ---------------------------------------------------------------------------
+  // array (9 items) — 2026-04-19
+  // ---------------------------------------------------------------------------
+  {
+    title: 'Big-O Notation in 100 Seconds',
+    url: 'https://www.youtube.com/watch?v=g2o22C3CRfU',
+    description:
+      'Fireship — notação Big-O em 100s. Entry point pra raciocinar sobre complexidade de algoritmos em arrays/hashmaps.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 2,
+    topicSlug: 'array',
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — Fireship',
+    tags: ['concept', 'big-o', 'complexity', 'fireship'],
+  },
+  {
+    title: 'Array Map in 100 Seconds',
+    url: 'https://www.youtube.com/watch?v=DC471a9qrU4',
+    description:
+      'Fireship — método .map() do JavaScript em 100s. Prático pra qualquer JS dev.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 2,
+    topicSlug: 'array',
+    tracks: [],
+    source: 'YouTube — Fireship',
+    tags: ['practice', 'javascript', 'map', 'fireship'],
+  },
+  {
+    title: 'Arrays in Programming — Fundamentals',
+    url: 'https://www.youtube.com/watch?v=5tPLyHCZdU0',
+    description:
+      'mycodeschool — fundamentos de array: como fica armazenado na memória, indexing, static vs dynamic. Whiteboard puro, canônico.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 11,
+    topicSlug: 'array',
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — mycodeschool',
+    tags: ['concept', 'memory', 'indexing', 'static-vs-dynamic'],
+  },
+  {
+    title: 'Data Structures: Arrays vs Linked Lists',
+    url: 'https://www.youtube.com/watch?v=lC-yYCOnN8Q',
+    description:
+      'mycodeschool — comparação de array vs linked list em várias operações (acesso, inserção, busca) com custos explícitos. Trade-off clássico.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 13,
+    topicSlug: 'array',
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — mycodeschool',
+    tags: ['tradeoffs', 'linked-list', 'operations', 'complexity'],
+  },
+  {
+    title: 'Implementando um hashmap do ZERO em Python',
+    url: 'https://www.youtube.com/watch?v=J4ELMYEGVS0',
+    description:
+      'Augusto Galego — implementa uma hashmap do zero em Python, explicando hash function, colisões, resolução por chaining. Entende como a estrutura funciona por dentro.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 13,
+    topicSlug: 'array',
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — Augusto Galego',
+    tags: ['concept', 'hashmap', 'hash-function', 'collisions', 'python'],
+  },
+  {
+    title: 'Asymptotic Notations 101: Big O, Big Omega, & Theta',
+    url: 'https://www.youtube.com/watch?v=0oDAlMwTrLo',
+    description:
+      'Back To Back SWE — aprofundamento em análise assintótica: Big O, Big Omega, Theta. Vai além do "O(n)" superficial e ensina rigor.',
+    format: 'VIDEO',
+    difficulty: 'HARD',
+    estimatedMinutes: 23,
+    topicSlug: 'array',
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — Back To Back SWE',
+    tags: ['concept', 'big-o', 'big-omega', 'theta', 'asymptotic'],
+  },
+  {
+    title: 'NeetCode 150 Ep.1: Arrays & Hashing Explained',
+    url: 'https://www.youtube.com/watch?v=IiDuXLqV6e4',
+    description:
+      'NeetCode — masterclass animada de 1h54min sobre arrays e hashing pra interview prep. Commitment alto — pode ser distribuído em múltiplas sessões na semana.',
+    format: 'VIDEO',
+    difficulty: 'HARD',
+    estimatedMinutes: 114,
+    topicSlug: 'array',
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — NeetCode',
+    tags: ['concept', 'hashing', 'masterclass', 'blind75', 'interview'],
+  },
+  {
+    title: '10 Key Data Structures We Use Every Day',
+    url: 'https://blog.bytebytego.com/p/ep58-10-key-data-structures-we-use',
+    description:
+      'ByteByteGo Blog — as 10 ED mais usadas no dia-a-dia (incluindo array, hashmap, linked list, stack, queue, tree, graph). Bom pra mapear o campo.',
+    format: 'ARTICLE',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 10,
+    topicSlug: 'array',
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'Blog — ByteByteGo',
+    tags: ['concept', 'data-structures', 'overview', 'hashmap'],
+  },
+  {
+    title: 'Grokking Data Structures — Arrays (chapter)',
+    url: 'https://github.com/mlarocca/grokking_data_structures',
+    description:
+      'Capítulo de arrays do livro Grokking Data Structures (Marcello La Rocca, Manning). Cobre static vs dynamic arrays, memory layout, resize amortizado. ATENÇÃO: livro pago — ver biblioteca da Inteli ou comprar via Manning. O repo do GitHub tem só código de acompanhamento, não o PDF.',
+    format: 'BOOK',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 25,
+    topicSlug: 'array',
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'Book — Grokking Data Structures',
+    tags: ['concept', 'book', 'grokking', 'array', 'static-vs-dynamic'],
+  },
 ];
 
 // -----------------------------------------------------------------------------
