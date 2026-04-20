@@ -1,4 +1,5 @@
-import { Controller, Delete, Get } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Patch } from '@nestjs/common';
+import { UpdateThemePreferenceSchema } from '@ics-select/shared';
 import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
 import type { JwtStrategyPayload } from '../auth/strategies/jwt.strategy.js';
 import { MeService } from './me.service.js';
@@ -15,5 +16,15 @@ export class MeController {
   @Delete()
   delete(@CurrentUser() user: JwtStrategyPayload) {
     return this.me.deleteUser(user.sub);
+  }
+
+  @Patch('theme')
+  @HttpCode(204)
+  async updateTheme(
+    @CurrentUser() user: JwtStrategyPayload,
+    @Body() body: unknown,
+  ) {
+    const parsed = UpdateThemePreferenceSchema.parse(body);
+    await this.me.updateThemePreference(user.sub, parsed.themePreference);
   }
 }

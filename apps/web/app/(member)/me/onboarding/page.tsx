@@ -13,45 +13,19 @@ import {
 import { useAuth } from '../../../../lib/auth/auth-context';
 import { ApiErrorResponse } from '../../../../lib/api/client';
 import { PhoneInput } from '../../../../components/member/phone-input';
-
-const TRACK_LABELS: Record<string, string> = {
-  BIG_TECH: 'Big Tech',
-  CONSULTING_TECH: 'Consulting Tech',
-  COMPETITIVE_PROGRAMMING: 'Competitive Programming',
-  STARTUP: 'Startup',
-  OTHER: 'Other',
-};
-
-const TRACK_DESCRIPTIONS: Record<string, string> = {
-  BIG_TECH: 'Google, Meta, Amazon, Microsoft. Algorithms and system design.',
-  CONSULTING_TECH: 'McKinsey Tech, BCG GAMMA. Case-style technical interviews.',
-  COMPETITIVE_PROGRAMMING: 'ACM ICPC, IOI. Competitive patterns, tight problem sets.',
-  STARTUP: 'High-agency engineering. Ship fast, reason from first principles.',
-  OTHER: "I'll sort the specifics with the director.",
-};
+import { TrackPicker } from '../../../../components/member/track-picker';
+import {
+  AvailabilityPresets,
+  type AvailabilityMinutes,
+} from '../../../../components/member/availability-presets';
+import { SessionLengthPresets } from '../../../../components/member/session-length-presets';
+import { ThemePicker } from '../../../../components/member/theme-picker';
+import { useThemeWithSync } from '../../../../lib/theme/use-theme-sync';
+import { useUpdateTheme } from '../../../../lib/queries/me-theme';
 
 const PHONE_REGEX = /^\+\d{8,15}$/;
 
-const DAYS: Array<{ key: DayKey; label: string; short: string }> = [
-  { key: 'mondayMinutes', label: 'Monday', short: 'Mon' },
-  { key: 'tuesdayMinutes', label: 'Tuesday', short: 'Tue' },
-  { key: 'wednesdayMinutes', label: 'Wednesday', short: 'Wed' },
-  { key: 'thursdayMinutes', label: 'Thursday', short: 'Thu' },
-  { key: 'fridayMinutes', label: 'Friday', short: 'Fri' },
-  { key: 'saturdayMinutes', label: 'Saturday', short: 'Sat' },
-  { key: 'sundayMinutes', label: 'Sunday', short: 'Sun' },
-];
-
-type DayKey =
-  | 'mondayMinutes'
-  | 'tuesdayMinutes'
-  | 'wednesdayMinutes'
-  | 'thursdayMinutes'
-  | 'fridayMinutes'
-  | 'saturdayMinutes'
-  | 'sundayMinutes';
-
-type Availability = Record<DayKey, number>;
+type Availability = AvailabilityMinutes;
 
 const DEFAULT_AVAILABILITY: Availability = {
   mondayMinutes: 60,
@@ -63,10 +37,7 @@ const DEFAULT_AVAILABILITY: Availability = {
   sundayMinutes: 0,
 };
 
-const MINUTE_PRESETS = [0, 30, 60, 90, 120, 180];
-const SESSION_PRESETS = [15, 30, 45, 60, 90];
-
-type StepId = 0 | 1 | 2;
+type StepId = 0 | 1 | 2 | 3;
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
@@ -75,6 +46,8 @@ export default function MemberOnboardingPage() {
   const { user, refetch } = useAuth();
   const updateProfile = useUpdateProfile();
   const updateAvailability = useUpdateAvailability();
+  const { resolvedTheme, setTheme, mounted } = useThemeWithSync();
+  const updateTheme = useUpdateTheme();
 
   const [step, setStep] = useState<StepId>(0);
   const [direction, setDirection] = useState<1 | -1>(1);
@@ -87,12 +60,17 @@ export default function MemberOnboardingPage() {
   const phoneOk = PHONE_REGEX.test(phone);
   const trackOk = TRACKS.includes(track as (typeof TRACKS)[number]);
   const availabilityOk = useMemo(
-    () => DAYS.reduce((sum, d) => sum + availability[d.key], 0) > 0,
+    () => Object.values(availability).reduce((sum, v) => sum + v, 0) > 0,
     [availability],
   );
 
-  const canAdvance = step === 0 ? phoneOk : step === 1 ? trackOk : availabilityOk;
-  const submitting = updateProfile.isPending || updateAvailability.isPending;
+  const canAdvance =
+    step === 0 ? phoneOk :
+    step === 1 ? trackOk :
+    step === 2 ? availabilityOk :
+    true; // step 3 (theme) always has a default
+  const submitting =
+    updateProfile.isPending || updateAvailability.isPending || updateTheme.isPending;
 
   function goTo(next: StepId) {
     setDirection(next > step ? 1 : -1);
@@ -116,6 +94,16 @@ export default function MemberOnboardingPage() {
         timezone:
           Intl.DateTimeFormat().resolvedOptions().timeZone ?? 'America/Sao_Paulo',
       });
+      // Theme was already persisted per-click via useThemeWithSync. This is a
+      // belt-and-suspenders final write in case the user picked theme while
+      // unauthenticated (we don't believe that's possible in this flow, but the
+      // call is idempotent so we do it anyway). Failure does not block finish.
+      try {
+        const pref = (resolvedTheme === 'dark' ? 'DARK' : 'LIGHT') as 'LIGHT' | 'DARK';
+        await updateTheme.mutateAsync({ themePreference: pref });
+      } catch {
+        // swallow — localStorage already has the choice
+      }
       await refetch();
       router.replace('/me');
     } catch (err) {
@@ -138,7 +126,7 @@ export default function MemberOnboardingPage() {
           Welcome{user?.name ? `, ${firstName}` : ''}
         </p>
         <h1 className="font-serif text-[44px] font-medium leading-[1.05] tracking-tight text-fg md:text-[52px]">
-          Three small things.
+          Four small things.
         </h1>
         <p className="max-w-prose font-sans text-[15px] leading-relaxed text-fg-soft">
           Then we drop you into your week. Nothing here is permanent — tweak it
@@ -161,7 +149,7 @@ export default function MemberOnboardingPage() {
           >
             {step === 0 && (
               <StepCard
-                eyebrow="Step 1 / 3 · WhatsApp"
+                eyebrow="Step 1 / 4 · WhatsApp"
                 title="Where should we reach you?"
                 subtitle="Reminders land ten minutes before each study block. Retros open every Friday. WhatsApp only, no email spam."
               >
@@ -181,91 +169,21 @@ export default function MemberOnboardingPage() {
 
             {step === 1 && (
               <StepCard
-                eyebrow="Step 2 / 3 · Track"
+                eyebrow="Step 2 / 4 · Track"
                 title="Which one are you shooting for?"
                 subtitle="Shapes the kind of practice the director picks each week. You can switch between cycles."
               >
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {TRACKS.map((t) => {
-                    const active = track === t;
-                    return (
-                      <button
-                        key={t}
-                        type="button"
-                        onClick={() => setTrack(t)}
-                        className={clsx(
-                          'group relative flex h-full flex-col items-start gap-1.5 rounded-tile border px-4 py-3.5 text-left transition-all',
-                          active
-                            ? 'border-primary bg-primary-soft ring-2 ring-primary/30'
-                            : 'border-border-token bg-surface hover:-translate-y-[1px] hover:border-border-strong',
-                        )}
-                      >
-                        <span
-                          className={clsx(
-                            'font-sans text-sm font-semibold',
-                            active ? 'text-primary' : 'text-fg',
-                          )}
-                        >
-                          {TRACK_LABELS[t] ?? t}
-                        </span>
-                        <span className="font-sans text-[13px] leading-relaxed text-fg-soft">
-                          {TRACK_DESCRIPTIONS[t]}
-                        </span>
-                        {active && (
-                          <span
-                            className="absolute right-3 top-3 grid h-5 w-5 place-items-center rounded-full bg-primary text-primary-fg"
-                            aria-hidden
-                          >
-                            <Check className="h-3 w-3" strokeWidth={2.5} />
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
+                <TrackPicker value={track} onChange={setTrack} />
               </StepCard>
             )}
 
             {step === 2 && (
               <StepCard
-                eyebrow="Step 3 / 3 · Availability"
+                eyebrow="Step 3 / 4 · Availability"
                 title="How much time per day?"
                 subtitle="Rough minutes you can protect for study. The scheduler packs blocks into this budget; you can resize it anytime."
               >
-                <div className="space-y-2.5">
-                  {DAYS.map((d) => (
-                    <div
-                      key={d.key}
-                      className="flex items-center gap-3 rounded-input border border-border-token bg-surface px-3 py-2"
-                    >
-                      <span className="w-14 font-mono text-[11px] font-semibold uppercase tracking-eyebrow text-fg-mute">
-                        {d.short}
-                      </span>
-                      <div className="flex flex-1 flex-wrap gap-1.5">
-                        {MINUTE_PRESETS.map((mins) => {
-                          const active = availability[d.key] === mins;
-                          return (
-                            <button
-                              key={mins}
-                              type="button"
-                              onClick={() =>
-                                setAvailability((prev) => ({ ...prev, [d.key]: mins }))
-                              }
-                              className={clsx(
-                                'rounded-pill border px-2.5 py-1 font-mono text-[11px] font-semibold transition-colors',
-                                active
-                                  ? 'border-primary bg-primary text-primary-fg'
-                                  : 'border-border-token bg-surface text-fg-soft hover:border-border-strong hover:text-fg',
-                              )}
-                            >
-                              {mins === 0 ? 'off' : `${mins}m`}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <AvailabilityPresets value={availability} onChange={setAvailability} />
 
                 <div className="mt-6">
                   <p className="font-mono text-[10px] font-semibold uppercase tracking-eyebrow text-fg-mute">
@@ -274,27 +192,24 @@ export default function MemberOnboardingPage() {
                   <p className="mt-1 font-sans text-[13px] text-fg-soft">
                     The chunk size we split longer items into.
                   </p>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {SESSION_PRESETS.map((mins) => {
-                      const active = sessionMin === mins;
-                      return (
-                        <button
-                          key={mins}
-                          type="button"
-                          onClick={() => setSessionMin(mins)}
-                          className={clsx(
-                            'rounded-pill border px-3 py-1.5 font-mono text-[12px] font-semibold transition-colors',
-                            active
-                              ? 'border-primary bg-primary text-primary-fg'
-                              : 'border-border-token bg-surface text-fg-soft hover:border-border-strong hover:text-fg',
-                          )}
-                        >
-                          {mins} min
-                        </button>
-                      );
-                    })}
+                  <div className="mt-3">
+                    <SessionLengthPresets value={sessionMin} onChange={setSessionMin} />
                   </div>
                 </div>
+              </StepCard>
+            )}
+
+            {step === 3 && (
+              <StepCard
+                eyebrow="Step 4 / 4 · Appearance"
+                title="Dark or light?"
+                subtitle="Preview below, the site switches as you pick. You can swap anytime in Settings."
+              >
+                <ThemePicker
+                  value={mounted ? (resolvedTheme === 'dark' ? 'dark' : 'light') : undefined}
+                  onChange={(next) => setTheme(next)}
+                  size="onboarding"
+                />
               </StepCard>
             )}
           </motion.div>
@@ -321,7 +236,7 @@ export default function MemberOnboardingPage() {
           Back
         </button>
 
-        {step < 2 ? (
+        {step < 3 ? (
           <button
             type="button"
             onClick={() => canAdvance && goTo((step + 1) as StepId)}
@@ -369,7 +284,7 @@ const stepVariants = {
 function Progress({ step }: { step: StepId }) {
   return (
     <ol className="flex items-center gap-3">
-      {[0, 1, 2].map((i) => {
+      {[0, 1, 2, 3].map((i) => {
         const state = i < step ? 'done' : i === step ? 'current' : 'pending';
         return (
           <li key={i} className="flex items-center gap-3">
@@ -395,7 +310,7 @@ function Progress({ step }: { step: StepId }) {
             >
               {state === 'done' ? <Check className="h-3.5 w-3.5" strokeWidth={2.5} /> : i + 1}
             </motion.span>
-            {i < 2 && (
+            {i < 3 && (
               <motion.span
                 initial={false}
                 animate={{

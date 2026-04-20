@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import type { ThemePreference } from '@ics-select/shared';
 import { PrismaService } from '../common/prisma/prisma.service.js';
 
 @Injectable()
@@ -48,5 +49,16 @@ export class MeService {
     // best-effort cleaned up in a future hook; for now we just delete the user.
     await this.prisma.user.delete({ where: { id: userId } });
     return { deleted: true };
+  }
+
+  async updateThemePreference(userId: string, preference: ThemePreference) {
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        themePreference: preference,
+        themePreferenceAt: new Date(),
+      },
+    });
+    return { ok: true };
   }
 }
