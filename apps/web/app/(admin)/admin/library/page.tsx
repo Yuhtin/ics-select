@@ -1,13 +1,14 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Plus, Layers, Pencil, Trash2, Search, X } from 'lucide-react';
+import { Plus, Layers, Search, X } from 'lucide-react';
 import {
   useAdminLibrary,
   useDeleteLibraryItem,
   type AdminLibraryItem,
 } from '../../../../lib/queries/admin-library';
 import { useTopics } from '../../../../lib/queries/admin-topics';
+import { useAuth } from '../../../../lib/auth/auth-context';
 import { Eyebrow } from '../../../../components/ui/eyebrow';
 import { ItemFormModal } from '../../../../components/admin/library/item-form-modal';
 import { TopicsModal } from '../../../../components/admin/library/topics-modal';
@@ -16,15 +17,11 @@ import {
   MultiFilterCombobox,
   type MultiFilterOption,
 } from '../../../../components/admin/library/multi-filter-combobox';
-import { Pagination } from '../../../../components/admin/library/pagination';
+import { LibraryShelf } from '../../../../components/library/library-shelf';
+import { LibraryGrid } from '../../../../components/library/library-grid';
+import type { Capability } from '../../../../components/library/library-card';
 import { fuseFilter } from '../../../../lib/library/fuse-index';
-import { topicCategory } from '../../../../lib/format/topic-category';
-import {
-  detectPlatform,
-  platformLabel,
-} from '../../../../lib/format/platform';
-
-const PAGE_SIZE = 25;
+import { PHASES, topicPhase, type PhaseKey } from '../../../../lib/topics/phase';
 
 const FORMAT_OPTIONS: MultiFilterOption[] = [
   { value: 'VIDEO', label: 'Video' },
@@ -48,58 +45,61 @@ const TRACK_OPTIONS: MultiFilterOption[] = [
   { value: 'OTHER', label: 'Other' },
 ];
 
-const PLATFORM_BORDER: Record<string, string> = {
-  youtube: 'border-l-platform-youtube',
-  leetcode: 'border-l-platform-leetcode',
-  medium: 'border-l-platform-medium',
-  github: 'border-l-platform-github',
-  article: 'border-l-platform-article',
-  book: 'border-l-platform-book',
-};
-
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-  });
-}
-
 function parseCsv(v: string | null): string[] {
   if (!v) return [];
   return v.split(',').map((s) => s.trim()).filter(Boolean);
 }
 
+function groupByPhase(items: AdminLibraryItem[], order: Record<string, number>) {
+  const byPhase = new Map<PhaseKey, AdminLibraryItem[]>();
+  for (const item of items) {
+    const primary = item.topics.find((t) => t.isPrimary) ?? item.topics[0];
+    if (!primary) continue;
+    const itemOrder = order[primary.slug];
+    if (itemOrder === undefined) continue;
+    const phase = topicPhase(itemOrder);
+    const bucket = byPhase.get(phase);
+    if (bucket) bucket.push(item);
+    else byPhase.set(phase, [item]);
+  }
+  return PHASES.map((p) => ({
+    ...p,
+    items: byPhase.get(p.key) ?? [],
+  })).filter((p) => p.items.length > 0);
+}
+
 export default function AdminLibraryPage() {
   const router = useRouter();
   const params = useSearchParams();
+  const { user } = useAuth();
+  const capability: Capability = user?.role === 'ADMIN' ? 'edit' : 'view';
 
   const { data: topics } = useTopics();
   const { data: items, isLoading } = useAdminLibrary();
 
-  // URL-driven state (read once per render).
   const query = params.get('q') ?? '';
   const topicId = params.get('topic');
   const formats = parseCsv(params.get('format'));
   const difficulties = parseCsv(params.get('difficulty'));
   const tracks = parseCsv(params.get('track'));
-  const page = Math.max(1, parseInt(params.get('page') ?? '1', 10) || 1);
 
-  // Local-only state: search input is debounced before it syncs to URL.
   const [searchInput, setSearchInput] = useState(query);
   useEffect(() => setSearchInput(query), [query]);
   useEffect(() => {
     const t = setTimeout(() => {
-      if (searchInput !== query) writeUrl({ q: searchInput, page: 1 });
+      if (searchInput !== query) writeUrl({ q: searchInput });
     }, 150);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchInput]);
 
-  // `/` shortcut focuses the search input.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === '/' && document.activeElement?.tagName !== 'INPUT' &&
-          document.activeElement?.tagName !== 'TEXTAREA') {
+      if (
+        e.key === '/' &&
+        document.activeElement?.tagName !== 'INPUT' &&
+        document.activeElement?.tagName !== 'TEXTAREA'
+      ) {
         const el = document.getElementById('library-search-input');
         if (el) {
           e.preventDefault();
@@ -117,7 +117,6 @@ export default function AdminLibraryPage() {
     format?: string[];
     difficulty?: string[];
     track?: string[];
-    page?: number;
   }) {
     const sp = new URLSearchParams(params.toString());
     const setOrDelete = (k: string, v: string | null | undefined) => {
@@ -129,14 +128,11 @@ export default function AdminLibraryPage() {
     if ('format' in next) setOrDelete('format', next.format!.join(','));
     if ('difficulty' in next) setOrDelete('difficulty', next.difficulty!.join(','));
     if ('track' in next) setOrDelete('track', next.track!.join(','));
-    if ('page' in next) {
-      if (!next.page || next.page === 1) sp.delete('page');
-      else sp.set('page', String(next.page));
-    }
+    // Dropping page param on any filter change.
+    sp.delete('page');
     router.replace(`?${sp.toString()}`);
   }
 
-  // ----- Filter pipeline -----
   const allItems = items ?? [];
 
   const filtered = useMemo(() => {
@@ -150,7 +146,6 @@ export default function AdminLibraryPage() {
     }
     if (tracks.length > 0) {
       list = list.filter((i) => {
-        // Empty tracks[] = wildcard (applies everywhere).
         if (!i.tracks || i.tracks.length === 0) return true;
         return i.tracks.some((t) => tracks.includes(t));
       });
@@ -158,247 +153,207 @@ export default function AdminLibraryPage() {
     if (query.trim().length >= 2) list = fuseFilter(list, query);
     return list;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [allItems, topicId, formats.join(','), difficulties.join(','), tracks.join(','), query]);
+  }, [
+    allItems,
+    topicId,
+    formats.join(','),
+    difficulties.join(','),
+    tracks.join(','),
+    query,
+  ]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const safePage = Math.min(page, totalPages);
-  const pageItems = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
-
-  // Topic counts (unconditional — reflect total per topic).
   const topicCounts = useMemo(() => {
     const m = new Map<string, number>();
-    for (const it of allItems) for (const t of it.topics) {
-      m.set(t.id, (m.get(t.id) ?? 0) + 1);
-    }
+    for (const it of allItems)
+      for (const t of it.topics) {
+        m.set(t.id, (m.get(t.id) ?? 0) + 1);
+      }
     return m;
   }, [allItems]);
 
-  // Breadcrumb context.
-  const activeTopic = topicId ? (topics ?? []).find((t) => t.id === topicId) : null;
-  const activeCategory = activeTopic ? topicCategory(activeTopic.order) : null;
+  const topicOrder = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const t of topics ?? []) map[t.slug] = t.order;
+    return map;
+  }, [topics]);
 
-  // Handlers
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<AdminLibraryItem | null>(null);
   const [topicsOpen, setTopicsOpen] = useState(false);
   const remove = useDeleteLibraryItem();
 
-  const openCreate = () => { setEditing(null); setFormOpen(true); };
-  const openEdit = (item: AdminLibraryItem) => { setEditing(item); setFormOpen(true); };
-  const closeForm = () => { setFormOpen(false); setEditing(null); };
+  const openCreate = () => {
+    setEditing(null);
+    setFormOpen(true);
+  };
+  const openEdit = (item: AdminLibraryItem) => {
+    setEditing(item);
+    setFormOpen(true);
+  };
+  const closeForm = () => {
+    setFormOpen(false);
+    setEditing(null);
+  };
   const removeItem = (item: AdminLibraryItem) => {
     if (!confirm(`Delete "${item.title}"?`)) return;
     remove.mutate(item.id);
   };
 
   const anyFilterActive =
-    query.length > 0 || topicId || formats.length > 0 ||
-    difficulties.length > 0 || tracks.length > 0;
+    query.length > 0 ||
+    !!topicId ||
+    formats.length > 0 ||
+    difficulties.length > 0 ||
+    tracks.length > 0;
 
   const clearAll = () => {
     setSearchInput('');
     router.replace('?');
   };
 
+  const showShelves = !anyFilterActive;
+  const phaseGroups = useMemo(
+    () => (showShelves ? groupByPhase(filtered, topicOrder) : []),
+    [showShelves, filtered, topicOrder],
+  );
+
   return (
-    <div className="max-w-6xl space-y-6">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4 flex-wrap">
+    <div className="mx-auto max-w-[1280px] space-y-8">
+      <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <Eyebrow>Library</Eyebrow>
-          <h1 className="mt-2 font-serif-tool text-3xl font-semibold tracking-tight">
-            {activeTopic ? (
-              <span>
-                Library
-                <span className="text-ink-mute"> · {activeCategory} / </span>
-                {activeTopic.label}
-              </span>
-            ) : (
-              'Library'
-            )}
+          <h1 className="mt-2 font-serif text-3xl font-semibold tracking-tight">
+            Acervo
           </h1>
-          <p className="mt-1 font-mono text-xs text-ink-mute">
+          <p className="mt-1 font-mono text-xs text-fg-mute">
             {anyFilterActive
-              ? `${filtered.length} of ${allItems.length} · showing ${pageItems.length === 0 ? 0 : (safePage - 1) * PAGE_SIZE + 1}–${(safePage - 1) * PAGE_SIZE + pageItems.length}`
-              : `${allItems.length} item${allItems.length === 1 ? '' : 's'}`}
+              ? `${filtered.length} of ${allItems.length} matching`
+              : `${allItems.length} item${allItems.length === 1 ? '' : 's'} · ${phaseGroups.length} phases`}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setTopicsOpen(true)}
-            className="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-label px-4 py-2 bg-paper-warm text-ink-soft rounded-pill hover:bg-rule"
-          >
-            <Layers className="h-3.5 w-3.5" strokeWidth={1.5} /> Manage topics
-          </button>
-          <button
-            type="button"
-            onClick={openCreate}
-            className="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-label px-4 py-2 bg-ink text-paper rounded-pill hover:opacity-90"
-          >
-            <Plus className="h-3.5 w-3.5" strokeWidth={1.5} /> New item
-          </button>
+        {capability === 'edit' && (
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setTopicsOpen(true)}
+              className="inline-flex items-center gap-2 rounded-pill bg-bg-subtle px-4 py-2 font-mono text-xs uppercase tracking-label text-fg-soft hover:bg-border-token"
+            >
+              <Layers className="h-3.5 w-3.5" strokeWidth={1.5} /> Manage topics
+            </button>
+            <button
+              type="button"
+              onClick={openCreate}
+              className="inline-flex items-center gap-2 rounded-pill bg-fg px-4 py-2 font-mono text-xs uppercase tracking-label text-bg hover:opacity-90"
+            >
+              <Plus className="h-3.5 w-3.5" strokeWidth={1.5} /> New item
+            </button>
+          </div>
+        )}
+      </header>
+
+      <div className="space-y-3">
+        <div className="relative">
+          <Search
+            className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-fg-mute"
+            strokeWidth={1.5}
+          />
+          <input
+            id="library-search-input"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            placeholder="Search title, url, topic, format… (press / to focus)"
+            className="w-full rounded-input border border-border-token bg-surface px-9 py-2.5 font-sans text-sm text-fg placeholder:text-fg-faint focus:outline-none focus:ring-2 focus:ring-primary/30"
+          />
+          {searchInput && (
+            <button
+              type="button"
+              onClick={() => setSearchInput('')}
+              aria-label="Clear search"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-fg-mute hover:text-fg"
+            >
+              <X className="h-4 w-4" strokeWidth={1.5} />
+            </button>
+          )}
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <TopicCombobox
+            topics={topics ?? []}
+            counts={topicCounts}
+            totalCount={allItems.length}
+            value={topicId}
+            onChange={(id) => writeUrl({ topic: id })}
+          />
+          <MultiFilterCombobox
+            label="Format"
+            options={FORMAT_OPTIONS}
+            value={formats}
+            onChange={(v) => writeUrl({ format: v })}
+          />
+          <MultiFilterCombobox
+            label="Difficulty"
+            options={DIFFICULTY_OPTIONS}
+            value={difficulties}
+            onChange={(v) => writeUrl({ difficulty: v })}
+          />
+          <MultiFilterCombobox
+            label="Track"
+            options={TRACK_OPTIONS}
+            value={tracks}
+            onChange={(v) => writeUrl({ track: v })}
+          />
+          {anyFilterActive && (
+            <button
+              type="button"
+              onClick={clearAll}
+              className="inline-flex items-center gap-1 font-mono text-[10px] uppercase tracking-label text-fg-mute hover:text-fg"
+            >
+              <X className="h-3 w-3" strokeWidth={1.5} /> clear all
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Search */}
-      <div className="relative">
-        <Search
-          className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-ink-mute"
-          strokeWidth={1.5}
-        />
-        <input
-          id="library-search-input"
-          value={searchInput}
-          onChange={(e) => setSearchInput(e.target.value)}
-          placeholder="Search title, url, topic, format…"
-          className="w-full rounded-input border border-rule bg-paper pl-9 pr-4 py-2 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-focus/40"
-        />
-      </div>
-
-      {/* Filters row */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <TopicCombobox
-          topics={topics ?? []}
-          counts={topicCounts}
-          totalCount={allItems.length}
-          value={topicId}
-          onChange={(id) => writeUrl({ topic: id, page: 1 })}
-        />
-        <MultiFilterCombobox
-          label="Format"
-          options={FORMAT_OPTIONS}
-          value={formats}
-          onChange={(v) => writeUrl({ format: v, page: 1 })}
-        />
-        <MultiFilterCombobox
-          label="Difficulty"
-          options={DIFFICULTY_OPTIONS}
-          value={difficulties}
-          onChange={(v) => writeUrl({ difficulty: v, page: 1 })}
-        />
-        <MultiFilterCombobox
-          label="Track"
-          options={TRACK_OPTIONS}
-          value={tracks}
-          onChange={(v) => writeUrl({ track: v, page: 1 })}
-        />
-        {anyFilterActive && (
-          <button
-            type="button"
-            onClick={clearAll}
-            className="inline-flex items-center gap-1 font-mono text-[10px] uppercase tracking-label text-ink-mute hover:text-ink"
-          >
-            <X className="h-3 w-3" strokeWidth={1.5} /> clear all
-          </button>
-        )}
-      </div>
-
-      {/* List */}
       {isLoading ? (
-        <p className="font-mono text-xs uppercase tracking-label text-ink-mute">
+        <p className="font-mono text-xs uppercase tracking-label text-fg-mute">
           Loading…
         </p>
-      ) : pageItems.length === 0 ? (
-        <div className="font-mono text-xs text-ink-mute py-12 text-center border border-dashed border-rule rounded-card space-y-3">
+      ) : filtered.length === 0 ? (
+        <div className="space-y-3 rounded-card border border-dashed border-border-token py-16 text-center font-mono text-xs text-fg-mute">
           <p>No items match.</p>
           {anyFilterActive && (
             <button
               type="button"
               onClick={clearAll}
-              className="font-mono text-[11px] uppercase tracking-label text-focus hover:underline"
+              className="font-mono text-[11px] uppercase tracking-label text-primary hover:underline"
             >
               Clear filters
             </button>
           )}
         </div>
+      ) : showShelves ? (
+        <div className="space-y-10">
+          {phaseGroups.map((phase) => (
+            <LibraryShelf
+              key={phase.key}
+              label={phase.label}
+              items={phase.items}
+              capability={capability}
+              onEdit={capability === 'edit' ? openEdit : undefined}
+              onDelete={capability === 'edit' ? removeItem : undefined}
+            />
+          ))}
+        </div>
       ) : (
-        <ul className="space-y-2">
-          {pageItems.map((item) => {
-            const platform = detectPlatform(item.url ?? null, item.format);
-            const primaryTopic = item.topics.find((t) => t.isPrimary) ?? null;
-            const borderClass = PLATFORM_BORDER[platform] ?? 'border-l-rule';
-            return (
-              <li
-                key={item.id}
-                className={`group flex items-start gap-3 border border-rule border-l-[3px] ${borderClass} rounded-card bg-surface px-4 py-3 hover:bg-paper-warm/60 transition-colors`}
-              >
-                <div className="flex-1 min-w-0">
-                  <p className="font-serif-tool text-base font-semibold text-ink">
-                    {item.title}
-                  </p>
-                  <div className="mt-1 flex items-center gap-2 flex-wrap font-mono text-[10px] uppercase tracking-label text-ink-mute">
-                    <span>{platformLabel(platform)}</span>
-                    {primaryTopic && (
-                      <>
-                        <span>·</span>
-                        <span>{primaryTopic.label}</span>
-                      </>
-                    )}
-                    <span>·</span>
-                    <span>{item.format}</span>
-                    <span>·</span>
-                    <span>{item.difficulty.toLowerCase()}</span>
-                    <span>·</span>
-                    <span>{item.estimatedMinutes}m</span>
-                    {item.tracks.length > 0 && (
-                      <>
-                        <span>·</span>
-                        <span>
-                          {item.tracks
-                            .map((t) => t.replace(/_/g, ' ').toLowerCase())
-                            .join(', ')}
-                        </span>
-                      </>
-                    )}
-                    <span>·</span>
-                    <span>{formatDate(item.createdAt)}</span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 opacity-0 group-hover:opacity-100 font-mono text-[11px]">
-                  {item.url && (
-                    <a
-                      href={item.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-focus hover:underline"
-                    >
-                      open ↗
-                    </a>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => openEdit(item)}
-                    className="text-ink-soft hover:text-ink inline-flex items-center gap-1"
-                  >
-                    <Pencil className="h-3 w-3" strokeWidth={1.5} /> edit
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => removeItem(item)}
-                    className="text-ink-soft hover:text-outcome-stuck inline-flex items-center gap-1"
-                  >
-                    <Trash2 className="h-3 w-3" strokeWidth={1.5} /> delete
-                  </button>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
+        <LibraryGrid
+          items={filtered}
+          capability={capability}
+          onEdit={capability === 'edit' ? openEdit : undefined}
+          onDelete={capability === 'edit' ? removeItem : undefined}
+        />
       )}
 
-      {/* Pagination */}
-      <Pagination
-        page={safePage}
-        totalPages={totalPages}
-        onChange={(p) => writeUrl({ page: p })}
-      />
-
-      <ItemFormModal
-        open={formOpen}
-        initial={editing}
-        onClose={closeForm}
-      />
+      <ItemFormModal open={formOpen} initial={editing} onClose={closeForm} />
       <TopicsModal open={topicsOpen} onClose={() => setTopicsOpen(false)} />
     </div>
   );
