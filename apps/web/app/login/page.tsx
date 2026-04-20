@@ -2,13 +2,12 @@
 
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
 import { Info, ShieldCheck, AlertCircle } from 'lucide-react';
 
 export default function LoginPage() {
   const apiBase = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
   const loginUrl = `${apiBase}/auth/google`;
-  const searchParams = useSearchParams();
-  const error = searchParams.get('error');
 
   return (
     <main
@@ -62,30 +61,9 @@ export default function LoginPage() {
           </div>
 
           {/* Reject banner — shown when email wasn't in the allowlist */}
-          {error === 'not_invited' && (
-            <div
-              role="alert"
-              className="mb-5 flex items-start gap-3 rounded-[10px] border px-4 py-3"
-              style={{
-                borderColor: 'hsl(var(--danger) / 0.35)',
-                background: 'hsl(var(--danger) / 0.08)',
-              }}
-            >
-              <AlertCircle
-                className="mt-[1px] h-4 w-4 shrink-0 text-danger"
-                strokeWidth={1.8}
-              />
-              <div className="min-w-0">
-                <p className="font-sans text-[13px] font-semibold text-fg">
-                  Email não autorizado
-                </p>
-                <p className="mt-0.5 font-sans text-[12px] leading-relaxed text-fg-soft">
-                  Sua conta ainda não foi convidada para o ICS Select. Peça ao
-                  diretor educacional para adicionar seu email.
-                </p>
-              </div>
-            </div>
-          )}
+          <Suspense fallback={null}>
+            <LoginErrorBanner />
+          </Suspense>
 
           {/* Card */}
           <div className="rounded-[14px] border border-border-token bg-surface/85 p-8 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.20)] backdrop-blur-md sm:p-10">
@@ -161,6 +139,33 @@ export default function LoginPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+function LoginErrorBanner() {
+  const searchParams = useSearchParams();
+  const error = searchParams.get('error');
+  if (error !== 'not_invited') return null;
+  return (
+    <div
+      role="alert"
+      className="mb-5 flex items-start gap-3 rounded-[10px] border px-4 py-3"
+      style={{
+        borderColor: 'hsl(var(--danger) / 0.35)',
+        background: 'hsl(var(--danger) / 0.08)',
+      }}
+    >
+      <AlertCircle className="mt-[1px] h-4 w-4 shrink-0 text-danger" strokeWidth={1.8} />
+      <div className="min-w-0">
+        <p className="font-sans text-[13px] font-semibold text-fg">
+          Email não autorizado
+        </p>
+        <p className="mt-0.5 font-sans text-[12px] leading-relaxed text-fg-soft">
+          Sua conta ainda não foi convidada para o ICS Select. Peça ao diretor
+          educacional para adicionar seu email.
+        </p>
+      </div>
+    </div>
   );
 }
 
