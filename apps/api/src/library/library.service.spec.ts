@@ -247,4 +247,25 @@ describe('LibraryService', () => {
     const results = await svc.search({ query: 'zzzunmatchable' });
     expect(results).toEqual([]);
   });
+
+  it('search matches items by topic label even when tsvector has no hit', async () => {
+    const prisma = fakePrisma();
+    const svc = new LibraryService(prisma as any, openai as any);
+    // Seed a Databases topic (push, not reassign — mock closes over the array).
+    prisma.topic.rows.push({ id: 't-db', slug: 'databases', label: 'Databases' });
+    // Item whose title / desc / tags do NOT contain "databases".
+    const item = await svc.create({
+      title: 'Understanding indexes',
+      description: 'How B-trees keep reads fast.',
+      url: null, format: 'ARTICLE', difficulty: 'MEDIUM',
+      estimatedMinutes: 15, source: null, tags: [],
+      createdById: 'u-1',
+    });
+    // Link it to the Databases topic.
+    prisma.libraryItemTopic.rows.push({
+      itemId: item.id, topicId: 't-db', isPrimary: true,
+    });
+    const results = await svc.search({ query: 'databases' });
+    expect(results.map((r: any) => r.id)).toContain(item.id);
+  });
 });

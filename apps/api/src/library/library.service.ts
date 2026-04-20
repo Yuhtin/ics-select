@@ -248,6 +248,40 @@ export class LibraryService {
       });
     }
 
+    // Topic-label match: any Topic whose label or slug contains the query
+    // contributes its items as additional hits, ranked below tsvector hits.
+    // This lets the LLM (and the admin UI) find "Databases" items by the
+    // category name even when the word is absent from title/description.
+    const labelTopics = await this.prisma.topic.findMany({
+      where: {
+        OR: [
+          { label: { contains: input.query!, mode: 'insensitive' } },
+          { slug: { contains: input.query!, mode: 'insensitive' } },
+        ],
+      },
+      select: { id: true },
+    });
+    if (labelTopics.length > 0) {
+      const topicIds = labelTopics.map((t) => t.id);
+      const joins = await this.prisma.libraryItemTopic.findMany({
+        where: { topicId: { in: topicIds } },
+        select: { itemId: true },
+      });
+      const wantedItemIds = Array.from(new Set(joins.map((j) => j.itemId)));
+      const existingIds = new Set(filtered.map((i) => i.id as string));
+      const missingIds = wantedItemIds.filter((id) => !existingIds.has(id));
+      if (missingIds.length > 0) {
+        const extras = await this.prisma.libraryItem.findMany({
+          where: { id: { in: missingIds } },
+          include: TOPIC_INCLUDE,
+        });
+        for (const extra of extras) {
+          if (filtered.length >= limit) break;
+          filtered.push({ ...shapeItem(extra), score: 0.25 });
+        }
+      }
+    }
+
     // Attach topics via one follow-up query so the admin UI / AI receive the
     // full shape (`topics[]`, derived `topicId`, `topic`).
     await this.attachTopics(filtered);
