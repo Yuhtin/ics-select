@@ -18,9 +18,9 @@ export function LibraryGrid({
 }: Props) {
   return (
     <div
-      className="grid gap-3"
+      className="grid gap-4 py-2"
       style={{
-        gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
       }}
     >
       {items.map((item) => (

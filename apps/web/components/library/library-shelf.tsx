@@ -78,7 +78,7 @@ export function LibraryShelf({
       <div className="relative">
         <div
           ref={scrollRef}
-          className="flex gap-3 overflow-x-auto scroll-smooth pb-2 pl-1 pr-1 [scrollbar-width:thin]"
+          className="flex gap-4 overflow-x-auto scroll-smooth py-6 pl-1 pr-1 [scrollbar-width:thin]"
           style={{ scrollSnapType: 'x proximity' }}
         >
           {items.map((item) => (
