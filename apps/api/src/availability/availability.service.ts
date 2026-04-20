@@ -1,7 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import type { Track } from '@ics-select/shared';
 import { PrismaService } from '../common/prisma/prisma.service.js';
-import { resolveActiveMembership } from '../common/cycle/active-cycle.js';
+import {
+  resolveActiveCycle,
+  resolveActiveMembership,
+} from '../common/cycle/active-cycle.js';
 
 export type AvailabilityInput = {
   mondayMinutes: number;
@@ -54,6 +57,24 @@ export class AvailabilityService {
           where: { id: existing.id },
           data: { track: input.targetTrack },
         });
+      } else {
+        // No membership yet — e.g. member just finished first login and the
+        // admin hasn't enrolled them manually. Auto-enroll in THE active
+        // cycle (resolveActiveCycle is the canonical picker) so the
+        // onboarding form can actually persist the chosen track. If there's
+        // no active cycle at all we leave track unset; the onboarding gate
+        // will keep the member stuck, which is the correct signal (they
+        // shouldn't be in the app until there's a cycle to belong to).
+        const active = await resolveActiveCycle(this.prisma);
+        if (active) {
+          membership = await this.prisma.cycleMembership.create({
+            data: {
+              userId,
+              cycleId: active.id,
+              track: input.targetTrack,
+            },
+          });
+        }
       }
     }
 

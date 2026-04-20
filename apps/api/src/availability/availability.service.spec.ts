@@ -53,6 +53,22 @@ function fakePrisma() {
         return next;
       }),
     },
+    cycle: {
+      findFirst: jest.fn(async ({ where, orderBy }: any) => {
+        const list: CycleRow[] = [];
+        for (const c of cycles.values()) {
+          if (where?.status && c.status !== where.status) continue;
+          if (where?.startsAt?.lte && c.startsAt && c.startsAt > where.startsAt.lte) continue;
+          if (where?.startsAt?.gt && c.startsAt && c.startsAt <= where.startsAt.gt) continue;
+          if (where?.endsAt?.gte && c.endsAt && c.endsAt < where.endsAt.gte) continue;
+          list.push(c);
+        }
+        if (orderBy?.startsAt === 'asc') {
+          list.sort((a, b) => (a.startsAt?.getTime() ?? 0) - (b.startsAt?.getTime() ?? 0));
+        }
+        return list[0] ?? null;
+      }),
+    },
     cycleMembership: {
       findFirst: jest.fn(async ({ where }: any) => {
         for (const m of memberships.values()) {
@@ -74,6 +90,12 @@ function fakePrisma() {
         if (!existing) return null;
         const next = { ...existing, ...data };
         memberships.set(where.id, next);
+        return next;
+      }),
+      create: jest.fn(async ({ data }: any) => {
+        const id = `mem-${memberships.size + 1}`;
+        const next: MembershipRow = { id, ...data };
+        memberships.set(id, next);
         return next;
       }),
     },
@@ -195,9 +217,23 @@ describe('AvailabilityService.updateProfile', () => {
   it('skips membership update when no active cycle exists', async () => {
     const prisma = makeFullPrisma();
     prisma.cycles.set('cycle-1', { id: 'cycle-1', status: 'CLOSED' });
+    prisma.memberships.delete('mem-1');
     const svc = new AvailabilityService(prisma as any);
     const result = await svc.updateProfile('user-1', { targetTrack: 'OTHER' });
     expect(prisma.cycleMembership.update).not.toHaveBeenCalled();
+    expect(prisma.cycleMembership.create).not.toHaveBeenCalled();
     expect(result.membership).toBeNull();
+  });
+
+  it('auto-creates membership in active cycle when user has none (onboarding path)', async () => {
+    const prisma = makeFullPrisma();
+    // User has no membership yet — simulates fresh post-login member.
+    prisma.memberships.delete('mem-1');
+    const svc = new AvailabilityService(prisma as any);
+    const result = await svc.updateProfile('user-1', { targetTrack: 'BIG_TECH' });
+    expect(prisma.cycleMembership.create).toHaveBeenCalledWith({
+      data: { userId: 'user-1', cycleId: 'cycle-1', track: 'BIG_TECH' },
+    });
+    expect(result.membership?.track).toBe('BIG_TECH');
   });
 });
