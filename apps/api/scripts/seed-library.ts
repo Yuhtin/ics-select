@@ -45,6 +45,11 @@ type ItemSeed = {
 // -----------------------------------------------------------------------------
 
 const TOPICS: TopicSeed[] = [
+  // Foundations — negative order so it always shows up first.
+  // Davi: "MUITO IMPORTANTE, esse video é uma ótima forma de começar os estudos".
+  // Entry point for any member before starting their track-specific ladder.
+  { slug: 'foundations', label: 'Foundations', order: -1 },
+
   // Algorithms & Data Structures (order 0–12)
   { slug: 'array', label: 'Array', order: 0 },
   { slug: 'lists', label: 'Lists', order: 1 },
@@ -69,6 +74,7 @@ const TOPICS: TopicSeed[] = [
   { slug: 'cicd', label: 'CI/CD', order: 25 },
   { slug: 'deploy', label: 'Deploy', order: 26 },
   { slug: 'observability', label: 'Observability', order: 27 },
+  { slug: 'design-patterns', label: 'Design Patterns', order: 28 },
 
   // System Design — Building Blocks (order 30–36)
   { slug: 'load-balancers', label: 'Load Balancers', order: 30 },
@@ -756,6 +762,158 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'Book — Grokking Algorithms',
     tags: ['concept', 'book', 'grokking', 'quicksort', 'divide-and-conquer'],
+  },
+
+  // ---------------------------------------------------------------------------
+  // Arthur Takeda (@arthur.takeda) — 9 items across SD + fundamentos — 2026-04-19
+  // Davi: "liste todos os videos dele, quero colocar o maximo de videos dele
+  // possiveis ja". Channel is BR conceitual (8-12min sweet spot). This batch
+  // seeds SD #1-5 canonical series + fundamentals (Docker, auth, AWS, VPN).
+  // Tracks: BIG_TECH + CONSULTING_TECH for SD, plus STARTUP for fundamentos
+  // (universais: containers/cloud/security/networking).
+  // ---------------------------------------------------------------------------
+  {
+    title: 'O Dilema da Computação — System Design #1',
+    url: 'https://www.youtube.com/watch?v=g9DfXmDfE_Q',
+    description:
+      'Arthur Takeda — abertura da série de System Design: por que todo sistema faz trade-off entre consistência, disponibilidade e tolerância a partição. Intro canônica ao teorema CAP em 8min.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 8,
+    topicSlugs: ['cap-consistency'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH'],
+    source: 'YouTube — Arthur Takeda',
+    tags: ['concept', 'cap-theorem', 'consistency', 'availability', 'partition-tolerance', 'pt-br'],
+  },
+  {
+    title: 'A Arte de Não Quebrar Seu App — System Design #2',
+    url: 'https://www.youtube.com/watch?v=Xiod8w7QtQ4',
+    description:
+      'Arthur Takeda — reliability em 12min: failure modes, redundância, graceful degradation, por que "o app caiu" quase sempre é falha arquitetural e não bug de código.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 12,
+    topicSlugs: ['reliability'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH'],
+    source: 'YouTube — Arthur Takeda',
+    tags: ['concept', 'reliability', 'uptime', 'failure-modes', 'redundancy', 'pt-br'],
+  },
+  {
+    title: 'Cache — System Design #3',
+    url: 'https://www.youtube.com/watch?v=i3Y2NmCGfuA',
+    description:
+      'Arthur Takeda — cache em 8min: por que, onde e como cachear. Complementa ByteByteGo (EN, já no acervo) com a voz BR do Takeda.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 8,
+    topicSlugs: ['caching'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Arthur Takeda',
+    tags: ['concept', 'cache', 'system-design', 'pt-br'],
+  },
+  {
+    title: 'Relacional vs Não-Relacional — System Design #4',
+    url: 'https://www.youtube.com/watch?v=ILt31254Up4',
+    description:
+      'Arthur Takeda — trade-offs entre SQL e NoSQL em 8min: quando usar cada um, schema rígido vs flexível, JOIN vs denormalização. Complementa o Fireship "7 Database Paradigms" no acervo.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 8,
+    topicSlugs: ['databases'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Arthur Takeda',
+    tags: ['tradeoffs', 'sql', 'nosql', 'relational', 'document', 'pt-br'],
+  },
+  {
+    title: 'Como Escalar Banco de Dados? — System Design #5',
+    url: 'https://www.youtube.com/watch?v=czMY_ATOej0',
+    description:
+      'Arthur Takeda — sharding + replicação em 8min: vertical vs horizontal scaling, leader-follower, particionamento. Cross-topic: primary=sharding, cobre replication e databases também.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 8,
+    topicSlugs: ['sharding', 'replication', 'databases'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH'],
+    source: 'YouTube — Arthur Takeda',
+    tags: ['concept', 'sharding', 'replication', 'scaling', 'horizontal-scale', 'pt-br'],
+  },
+  {
+    title: 'Docker Explicado em 8 Minutos',
+    url: 'https://www.youtube.com/watch?v=jftIzkXbKKY',
+    description:
+      'Arthur Takeda — Docker do zero: imagens vs containers, layers, networking básico, por que "funciona na minha máquina" deixou de ser desculpa. Entry-point pro tópico de containers.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 9,
+    topicSlugs: ['containers'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Arthur Takeda',
+    tags: ['concept', 'docker', 'containers', 'intro', 'pt-br'],
+  },
+  {
+    title: 'Autenticação Moderna em 20 Minutos',
+    url: 'https://www.youtube.com/watch?v=uLY1CuLi9ac',
+    description:
+      'Arthur Takeda — autenticação em 20min: sessões vs tokens, OAuth 2.0, JWT, refresh tokens, MFA, por que "hash simples de senha" é ruim. Deep-dive conceitual sem screencast.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 20,
+    topicSlugs: ['security'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Arthur Takeda',
+    tags: ['concept', 'authentication', 'oauth', 'jwt', 'mfa', 'pt-br'],
+  },
+  {
+    title: 'AWS do Zero: Os Únicos Serviços que Você Precisa Conhecer',
+    url: 'https://www.youtube.com/watch?v=8chgJEuDzYM',
+    description:
+      'Arthur Takeda — panorama do AWS em 18min: EC2, S3, RDS, Lambda, CloudFront, IAM. Foca nos serviços core que aparecem em 95% dos projetos. Entry-point pra qualquer coisa de cloud.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 18,
+    topicSlugs: ['cloud'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Arthur Takeda',
+    tags: ['practice', 'aws', 'cloud', 'ec2', 's3', 'lambda', 'pt-br'],
+  },
+  {
+    title: 'A Mentira do "100% Anônimo" das VPNs',
+    url: 'https://www.youtube.com/watch?v=idD_vk3bTCQ',
+    description:
+      'Arthur Takeda — como VPN realmente funciona em 8min: túnel IP, DNS leaks, provedor como novo middleman. Atravessa networking (como o tráfego flui) e security (o que a VPN protege vs não protege). Cross-topic: primary=networking, cover=security.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 8,
+    topicSlugs: ['networking', 'security'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Arthur Takeda',
+    tags: ['tradeoffs', 'vpn', 'privacy', 'dns', 'networking', 'pt-br'],
+  },
+  {
+    title: '10 Conceitos-Base de Computação Que Você Precisa Saber',
+    url: 'https://www.youtube.com/watch?v=zLV586SXHsU',
+    description:
+      'Arthur Takeda — 10 fundamentos que qualquer dev precisa ter internalizado: binário, memória, CPU, sistema de arquivos, processos, threads, concorrência, e como tudo se conecta. Davi: "é uma ótima forma de começar os estudos — primeiro item que qualquer membro novo deve consumir antes de atacar sua trilha específica".',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 11,
+    topicSlugs: ['foundations'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — Arthur Takeda',
+    tags: ['concept', 'fundamentals', 'computer-science', 'onboarding', 'first-study', 'pt-br'],
+  },
+  {
+    title: 'Saber Isso Te Faz Um Dev MUITO Melhor (Design Patterns)',
+    url: 'https://www.youtube.com/watch?v=G-O90vR7SCU',
+    description:
+      'Arthur Takeda — panorama de Design Patterns em 11min: por que padrões importam, GoF (Gang of Four), exemplos clássicos (Observer, Factory, Strategy, Singleton). Entry-point conceitual para Design Patterns.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 11,
+    topicSlugs: ['design-patterns'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Arthur Takeda',
+    tags: ['concept', 'design-patterns', 'gof', 'oop', 'pt-br'],
   },
 ];
 
