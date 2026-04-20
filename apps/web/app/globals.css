@@ -378,14 +378,18 @@ html:has(.landing-stage) {
 
 .ics-calendar-grid {
   --fc-border-color: hsl(var(--border));
-  --fc-page-bg-color: hsl(var(--surface));
+  --fc-page-bg-color: hsl(var(--bg));
   --fc-neutral-bg-color: hsl(var(--bg-subtle));
-  --fc-today-bg-color: hsl(var(--primary) / 0.04);
+  --fc-today-bg-color: hsl(var(--primary) / 0.08);
   --fc-now-indicator-color: hsl(var(--primary));
   --fc-event-border-color: transparent;
   --fc-event-bg-color: transparent;
   --fc-event-text-color: hsl(var(--fg));
   font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+}
+
+[data-theme='dark'] .ics-calendar-grid {
+  --fc-today-bg-color: hsl(var(--primary) / 0.12);
 }
 
 .ics-calendar-grid .fc-col-header-cell-cushion,
@@ -397,6 +401,10 @@ html:has(.landing-stage) {
   color: hsl(var(--fg-mute));
   text-transform: uppercase;
   letter-spacing: 0.05em;
+}
+
+.ics-calendar-grid .fc-col-header-cell {
+  border-bottom: 1px solid hsl(var(--border-strong));
 }
 
 .ics-calendar-grid .fc-event {
@@ -413,4 +421,20 @@ html:has(.landing-stage) {
 .ics-calendar-grid .fc-scrollgrid td,
 .ics-calendar-grid .fc-scrollgrid th {
   border-color: hsl(var(--border));
+}
+
+.ics-calendar-grid .fc-timegrid-now-indicator-line {
+  border-top-width: 2px;
+  position: relative;
+}
+
+.ics-calendar-grid .fc-timegrid-now-indicator-line::before {
+  content: '';
+  position: absolute;
+  left: -4px;
+  top: -4px;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: hsl(var(--primary));
 }
