@@ -161,6 +161,8 @@ describe('GoogleCalendarService', () => {
         orderBy: 'startTime',
         timeMin: '2026-04-17T12:00:00.000Z',
         timeMax: '2026-04-17T13:00:00.000Z',
+        maxResults: 100,
+        fields: 'items(id,summary,description,start,end,location,htmlLink,conferenceData/entryPoints)',
       }),
     );
     expect(result).toEqual([
@@ -311,6 +313,74 @@ describe('GoogleCalendarService', () => {
           end: { dateTime: '2026-04-20T15:00:00.000Z' },
         },
       });
+    });
+  });
+
+  describe('auth client cache', () => {
+    const row = {
+      accessTokenEnc: 'enc(plain-access)',
+      refreshTokenEnc: 'enc(plain-refresh)',
+      expiresAt: new Date(Date.now() + 30 * 60 * 1000),
+      scope: 'calendar.events',
+    };
+
+    it('reuses the cached client for a second call within the TTL', async () => {
+      const prisma = fakePrisma({ ...row });
+      const client = mockClient();
+      const factory = jest.fn(() => client as any);
+      const svc = new GoogleCalendarService(prisma as any, aes as any, factory);
+
+      await svc.getFreeBusy('user-1', new Date(), new Date());
+      await svc.getFreeBusy('user-1', new Date(), new Date());
+
+      expect(prisma.googleAccount.findUnique).toHaveBeenCalledTimes(1);
+      expect(factory).toHaveBeenCalledTimes(1);
+    });
+
+    it('rebuilds the client when the cached entry is past its TTL', async () => {
+      const prisma = fakePrisma({ ...row, expiresAt: new Date(Date.now() + 30_000) });
+      const client = mockClient();
+      const factory = jest.fn(() => client as any);
+      const svc = new GoogleCalendarService(prisma as any, aes as any, factory);
+
+      await svc.getFreeBusy('user-1', new Date(), new Date());
+      await svc.getFreeBusy('user-1', new Date(), new Date());
+
+      expect(prisma.googleAccount.findUnique).toHaveBeenCalledTimes(2);
+      expect(factory).toHaveBeenCalledTimes(2);
+    });
+
+    it('invalidateAuth drops the cache entry so the next call rebuilds', async () => {
+      const prisma = fakePrisma({ ...row });
+      const client = mockClient();
+      const factory = jest.fn(() => client as any);
+      const svc = new GoogleCalendarService(prisma as any, aes as any, factory);
+
+      await svc.getFreeBusy('user-1', new Date(), new Date());
+      svc.invalidateAuth('user-1');
+      await svc.getFreeBusy('user-1', new Date(), new Date());
+
+      expect(prisma.googleAccount.findUnique).toHaveBeenCalledTimes(2);
+      expect(factory).toHaveBeenCalledTimes(2);
+    });
+
+    it('scopes the cache per userId', async () => {
+      const prisma = {
+        googleAccount: {
+          findUnique: jest.fn(async (args: any) => ({
+            ...row,
+            accessTokenEnc: `enc(access-${args.where.userId})`,
+          })),
+        },
+      };
+      const client = mockClient();
+      const factory = jest.fn(() => client as any);
+      const svc = new GoogleCalendarService(prisma as any, aes as any, factory);
+
+      await svc.getFreeBusy('user-a', new Date(), new Date());
+      await svc.getFreeBusy('user-b', new Date(), new Date());
+
+      expect(factory).toHaveBeenCalledTimes(2);
     });
   });
 });

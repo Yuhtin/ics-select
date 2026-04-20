@@ -15,14 +15,22 @@ export type CreateEventInput = {
 export type FreeBusyBlock = { start: Date; end: Date };
 
 type ClientFactory = (auth: unknown) => calendar_v3.Calendar;
+type CachedAuth = { client: calendar_v3.Calendar; expiresAt: number };
+const AUTH_TTL_SAFETY_MS = 60_000; // rebuild 60s before Google thinks the token expires
 
 @Injectable()
 export class GoogleCalendarService {
+  private readonly authCache = new Map<string, CachedAuth>();
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly aes: AesGcmService,
     @Optional() private readonly clientFactory: ClientFactory = defaultClientFactory,
   ) {}
+
+  invalidateAuth(userId: string): void {
+    this.authCache.delete(userId);
+  }
 
   async getFreeBusy(userId: string, timeMin: Date, timeMax: Date): Promise<FreeBusyBlock[]> {
     const client = await this.clientFor(userId);
@@ -62,6 +70,8 @@ export class GoogleCalendarService {
       timeMax: timeMax.toISOString(),
       singleEvents: true,
       orderBy: 'startTime',
+      maxResults: 100,
+      fields: 'items(id,summary,description,start,end,location,htmlLink,conferenceData/entryPoints)',
     });
     const events = res.data.items ?? [];
     const includeAllDay = opts.includeAllDay === true;
@@ -155,6 +165,11 @@ export class GoogleCalendarService {
   }
 
   private async clientFor(userId: string): Promise<calendar_v3.Calendar> {
+    const cached = this.authCache.get(userId);
+    if (cached && cached.expiresAt > Date.now() + AUTH_TTL_SAFETY_MS) {
+      return cached.client;
+    }
+
     const row = await this.prisma.googleAccount.findUnique({ where: { userId } });
     if (!row) throw new NotFoundException('GoogleAccount for user not found');
     const accessToken = this.aes.decrypt(row.accessTokenEnc);
@@ -165,7 +180,9 @@ export class GoogleCalendarService {
       refresh_token: refreshToken ?? undefined,
       expiry_date: row.expiresAt.getTime(),
     });
-    return this.clientFactory(oauth2);
+    const client = this.clientFactory(oauth2);
+    this.authCache.set(userId, { client, expiresAt: row.expiresAt.getTime() });
+    return client;
   }
 }
 

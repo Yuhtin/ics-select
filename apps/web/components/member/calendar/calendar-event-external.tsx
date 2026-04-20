@@ -10,7 +10,7 @@ interface CalendarEventExternalProps {
 
 export function CalendarEventExternal({ event, timeLabel }: CalendarEventExternalProps) {
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-input bg-bg-subtle px-2 py-1">
+    <div className="flex h-full flex-col overflow-hidden rounded-input border border-dashed border-border-token px-2 py-1">
       <span className="truncate font-sans text-[11px] font-medium text-fg-soft">
         {event.title}
       </span>

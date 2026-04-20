@@ -4,6 +4,7 @@ import { JwtTokenService } from './tokens/jwt-token.service.js';
 import { RefreshTokenService } from './tokens/refresh-token.service.js';
 import type { GoogleProfilePayload } from './strategies/google.strategy.js';
 import { AesGcmService } from '../common/crypto/aes-gcm.service.js';
+import { GoogleCalendarService } from '../google-calendar/google-calendar.service.js';
 
 export const BOOTSTRAP_ADMIN_EMAILS_TOKEN = 'BOOTSTRAP_ADMIN_EMAILS_TOKEN';
 
@@ -35,6 +36,7 @@ export class AuthService {
     @Inject(BOOTSTRAP_ADMIN_EMAILS_TOKEN)
     private readonly bootstrapAdmins: string[],
     private readonly aes: AesGcmService,
+    private readonly gcal: GoogleCalendarService,
   ) {}
 
   async loginWithGoogle(profile: GoogleProfilePayload): Promise<LoginResult> {
@@ -96,6 +98,7 @@ export class AuthService {
         expiresAt,
       },
     });
+    this.gcal.invalidateAuth(user.id);
 
     const accessToken = this.jwt.sign({ sub: user.id, email: user.email, role: user.role });
     const refreshToken = await this.refresh.issue(user.id);
