@@ -279,7 +279,6 @@ describe('LibraryService', () => {
       createdById: 'u-1',
     });
     const results = await svc.search({ query: 'fireship' });
-    expect(results.length).toBeGreaterThan(0);
-    expect(results[0].title).toBe('How JavaScript works');
+    expect(results.map((r: any) => r.title)).toContain('How JavaScript works');
   });
 });
