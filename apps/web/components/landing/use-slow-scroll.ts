@@ -1,9 +1,14 @@
 'use client';
 
-// Drive a slow cinematic scroll to a selector, typically ~7.5s, so the user
-// rides past every section on the way. Bypasses CSS scroll-behavior: smooth
-// by issuing per-frame instant scrollTo calls.
-export function slowScrollTo(target: string, durationMs = 7500): void {
+// Drive a smooth programmatic scroll to a selector with a known, tuned
+// duration. Bypasses CSS scroll-behavior: smooth so we control the curve and
+// can cancel mid-flight on any user input.
+//
+// History: the first cut used a 7500ms easeInOutCubic "cinematic" ride so the
+// user glided past every section. In practice the ease-in half felt frozen
+// (~25% progress in the first 3 seconds) and then the page snapped. We now
+// default to a short ease-out so motion is visible on frame 1.
+export function slowScrollTo(target: string, durationMs = 1500): void {
   if (typeof window === 'undefined') return;
   const el = document.querySelector(target);
   if (!el) return;
@@ -22,8 +27,8 @@ export function slowScrollTo(target: string, durationMs = 7500): void {
   }
 
   const startTime = performance.now();
-  const ease = (t: number) =>
-    t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  // easeOutCubic — starts moving immediately, decelerates toward the target.
+  const ease = (t: number) => 1 - Math.pow(1 - t, 3);
 
   let cancelled = false;
   const cancel = () => {
