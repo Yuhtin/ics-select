@@ -1,13 +1,22 @@
 'use client';
 
 import { useCallback, useMemo, useState } from 'react';
+import dynamic from 'next/dynamic';
 import { useMeCalendarWeek, useRescheduleEvent } from '../../../../lib/queries/me-calendar';
 import { CalendarHeader } from '../../../../components/member/calendar/calendar-header';
 import { CalendarSidebar } from '../../../../components/member/calendar/calendar-sidebar';
 import { CalendarLegend } from '../../../../components/member/calendar/calendar-legend';
 import { CalendarSkeleton } from '../../../../components/member/calendar/calendar-skeleton';
 import { CalendarConnectBanner } from '../../../../components/member/calendar/calendar-connect-banner';
-import { CalendarGrid } from '../../../../components/member/calendar/calendar-grid';
+import { CalendarGridSkeleton } from '../../../../components/member/calendar/calendar-grid-skeleton';
+
+const CalendarGrid = dynamic(
+  () =>
+    import('../../../../components/member/calendar/calendar-grid').then(
+      (m) => m.CalendarGrid,
+    ),
+  { ssr: false, loading: () => <CalendarGridSkeleton /> },
+);
 
 function startOfSundayWeek(d: Date): Date {
   const copy = new Date(d);
