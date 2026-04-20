@@ -14,29 +14,14 @@ import { useAuth } from '../../../../lib/auth/auth-context';
 import { ApiErrorResponse } from '../../../../lib/api/client';
 import { PhoneInput } from '../../../../components/member/phone-input';
 import { TrackPicker } from '../../../../components/member/track-picker';
+import {
+  AvailabilityPresets,
+  type AvailabilityMinutes,
+} from '../../../../components/member/availability-presets';
 
 const PHONE_REGEX = /^\+\d{8,15}$/;
 
-const DAYS: Array<{ key: DayKey; label: string; short: string }> = [
-  { key: 'mondayMinutes', label: 'Monday', short: 'Mon' },
-  { key: 'tuesdayMinutes', label: 'Tuesday', short: 'Tue' },
-  { key: 'wednesdayMinutes', label: 'Wednesday', short: 'Wed' },
-  { key: 'thursdayMinutes', label: 'Thursday', short: 'Thu' },
-  { key: 'fridayMinutes', label: 'Friday', short: 'Fri' },
-  { key: 'saturdayMinutes', label: 'Saturday', short: 'Sat' },
-  { key: 'sundayMinutes', label: 'Sunday', short: 'Sun' },
-];
-
-type DayKey =
-  | 'mondayMinutes'
-  | 'tuesdayMinutes'
-  | 'wednesdayMinutes'
-  | 'thursdayMinutes'
-  | 'fridayMinutes'
-  | 'saturdayMinutes'
-  | 'sundayMinutes';
-
-type Availability = Record<DayKey, number>;
+type Availability = AvailabilityMinutes;
 
 const DEFAULT_AVAILABILITY: Availability = {
   mondayMinutes: 60,
@@ -48,7 +33,6 @@ const DEFAULT_AVAILABILITY: Availability = {
   sundayMinutes: 0,
 };
 
-const MINUTE_PRESETS = [0, 30, 60, 90, 120, 180];
 const SESSION_PRESETS = [15, 30, 45, 60, 90];
 
 type StepId = 0 | 1 | 2;
@@ -72,7 +56,7 @@ export default function MemberOnboardingPage() {
   const phoneOk = PHONE_REGEX.test(phone);
   const trackOk = TRACKS.includes(track as (typeof TRACKS)[number]);
   const availabilityOk = useMemo(
-    () => DAYS.reduce((sum, d) => sum + availability[d.key], 0) > 0,
+    () => Object.values(availability).reduce((sum, v) => sum + v, 0) > 0,
     [availability],
   );
 
@@ -180,40 +164,7 @@ export default function MemberOnboardingPage() {
                 title="How much time per day?"
                 subtitle="Rough minutes you can protect for study. The scheduler packs blocks into this budget; you can resize it anytime."
               >
-                <div className="space-y-2.5">
-                  {DAYS.map((d) => (
-                    <div
-                      key={d.key}
-                      className="flex items-center gap-3 rounded-input border border-border-token bg-surface px-3 py-2"
-                    >
-                      <span className="w-14 font-mono text-[11px] font-semibold uppercase tracking-eyebrow text-fg-mute">
-                        {d.short}
-                      </span>
-                      <div className="flex flex-1 flex-wrap gap-1.5">
-                        {MINUTE_PRESETS.map((mins) => {
-                          const active = availability[d.key] === mins;
-                          return (
-                            <button
-                              key={mins}
-                              type="button"
-                              onClick={() =>
-                                setAvailability((prev) => ({ ...prev, [d.key]: mins }))
-                              }
-                              className={clsx(
-                                'rounded-pill border px-2.5 py-1 font-mono text-[11px] font-semibold transition-colors',
-                                active
-                                  ? 'border-primary bg-primary text-primary-fg'
-                                  : 'border-border-token bg-surface text-fg-soft hover:border-border-strong hover:text-fg',
-                              )}
-                            >
-                              {mins === 0 ? 'off' : `${mins}m`}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <AvailabilityPresets value={availability} onChange={setAvailability} />
 
                 <div className="mt-6">
                   <p className="font-mono text-[10px] font-semibold uppercase tracking-eyebrow text-fg-mute">
