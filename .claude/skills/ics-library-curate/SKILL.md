@@ -221,6 +221,38 @@ For topic `caching` (already done — use as reference):
 
 New topics should match this shape (quantity and tier distribution), swapping channels per topic speciality.
 
+## Writing item descriptions (MANDATORY — added 2026-04-19)
+
+**Run every `description` string through the `humanizer` skill before pasting it into the seed.** Davi: "as descrições dos conteúdos devem ser escritas usando a skill humanizer SEMPRE". Descriptions are shown to members in the library UI — they should sound like a study buddy pointing at the video, not like an AI promoting it.
+
+**Workflow:** draft the description → invoke `Skill: humanizer` on it → paste the cleaned version. Do this even when the draft "feels short and clean" — the patterns below are easy to miss.
+
+### What to cut
+
+- **"Entry point" / "Entry-point"** anything. The EASY tag already says this.
+- **"canônica" / "canônico" / "masterclass" / "essencial" / "elegante"**. AI vocabulary. Replace with a concrete observation about the content.
+- **Promotional framing**: "ideal para X", "perfeito pra Y", "trade-off clássico", "deep-dive clássico". Just describe what the video covers.
+- **Curation meta-notes**: "Complementa o vídeo X", "Pair natural com Y", "Cross-topic: primary=A, cover=B", "Primeiro canal no estilo que Davi ama". These belong in the commit message, the `topicSlugs` array, or this skill — never in the student-facing description.
+- **Difficulty-redundant gating**: "Para quem já entendeu o básico", "pra quem já implementou e quer entender por quê". The HARD marker does that work.
+- **Forward-looking filler**: "Base pra entender X depois". Say what THIS item teaches; the next item exists in its own row.
+
+### What to keep
+
+- The **channel-name + em-dash** attribution (`Arthur Takeda —`). House style, not AI slop. Do not "humanize" this away.
+- **Specific durations** (`40min em`, `8min na`). Real signal for session planning.
+- **Concrete content lists** (`MVCC, TOAST, page layout, WAL`). Tells the student what they'll actually learn.
+- **Davi's direct quotes** when relevant (`Davi: "primeiro item que qualquer membro novo deve consumir"`). These are voice, not promotion.
+
+### Shape
+
+One sentence: `Channel — what's in it`. Optionally a second short sentence with a constraint, a quote, or a duration warning. Nothing more.
+
+| Bad | Good |
+|---|---|
+| `ByteByteGo — armadilhas comuns (thundering herd, cache stampede, stale data). Para quem já entendeu o básico.` | `ByteByteGo — o que dá errado em cache: thundering herd, cache stampede, stale data.` |
+| `Fireship — tour por 5 ED não-óbvias. Entry point pro mundo de árvores. Primeiro item cross-topic: primary=tree, covers=array+databases.` | `Fireship — 5 ED que você não vê na graduação: B-tree, radix tree, rope, bloom filter, cuckoo hashing.` |
+| `mycodeschool — intro canônica a árvores. Whiteboard puro. Base pra BST e heaps.` | `mycodeschool — árvores do zero: terminologia (root, leaf, parent, child, depth, height), representação em memória, quando tree ganha de array/list.` |
+
 ## Red flags — STOP and fix before proceeding
 
 - ❌ About to propose a channel not in the approved list → STOP. Only use approved channels.
@@ -234,6 +266,7 @@ New topics should match this shape (quantity and tier distribution), swapping ch
 - ❌ Item has no kind tag (one of `concept`/`tradeoffs`/`practice`/`case-study`) → STOP. Add one.
 - ❌ About to create a `<topic>-tradeoffs` or `<topic>-practice` topic → STOP. Use a tag, not a new topic. See "Tag vocabulary" section.
 - ❌ Filipe Deschamps video is mostly him typing in VSCode → STOP. Only architecture-heavy videos from him.
+- ❌ Description contains "entry point", "canônica", "essencial", "masterclass", "complementa o vídeo X", "pair natural com Y", "cross-topic: primary=...", or any other curation meta / promotional phrase → STOP. Run it through the `humanizer` skill first. See "Writing item descriptions" above.
 - ❌ Memory file `feedback_library_curation.md` not found → STOP. Ask the user.
 
 ## Seed-script append pattern
