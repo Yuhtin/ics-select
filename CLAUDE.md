@@ -103,6 +103,8 @@ The library is populated via **`apps/api/scripts/seed-library.ts`** (entry `pnpm
 
 **Curation workflow.** The project-local skill `.claude/skills/ics-library-curate/SKILL.md` encodes the layered EASY/MEDIUM/HARD ladder, approved-channels whitelist, kind-tag vocabulary (`concept`/`tradeoffs`/`practice`/`case-study`), exact-YouTube-duration rule (scrape `lengthSeconds` via `curl`), and book whitelist (Grokking Data Structures / Algorithms / Deep Learning only). When adding a new item manually, set `topicSlugs: [primary, ...covers]` in the seed — the first slug is the primary, the rest are covers.
 
+**Browse order.** `GET /library` returns rows `ORDER BY createdAt DESC` (admin CRUD convenience), so any surface that presents items to learners must re-sort client-side. `/admin/library` (and the future member view it clones) sort each shelf/grid via `sortLibraryItems` in `apps/web/app/(admin)/admin/library/page.tsx`: primary `Topic.order` → difficulty ladder (`EASY → MEDIUM → HARD`, mirroring the SKILL's entry-point → practical → deep-dive ladder) → title A-Z as a neutral tiebreaker. Fuse search results keep their relevance ranking and bypass this sort. If you add a new library-browse surface, use the same helper — don't invent another order.
+
 ### Global guards
 
 `AppModule` registers `JwtAuthGuard` and `RolesGuard` as `APP_GUARD` providers, so every controller is authenticated by default. Use `@Public()` to opt out (currently only `/health` and the `/auth/google*` routes) and `@Roles('ADMIN')` to restrict admin-only endpoints. `@CurrentUser()` pulls the JWT payload off the request.

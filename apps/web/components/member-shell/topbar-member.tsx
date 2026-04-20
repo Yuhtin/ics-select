@@ -16,7 +16,7 @@ type NavItem = {
 
 const NAV: readonly NavItem[] = [
   { href: '/me', label: 'Today', icon: Compass, exact: true },
-  { href: '/me/plan', label: 'Week', icon: CalendarDays },
+  { href: '/me/calendar', label: 'Calendar', icon: CalendarDays },
   { href: '/me/cohort', label: 'Cohort', icon: Users },
 ];
 

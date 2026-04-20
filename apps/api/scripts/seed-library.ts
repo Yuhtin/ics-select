@@ -108,7 +108,7 @@ const ITEMS: ItemSeed[] = [
     title: 'Redis in 100 Seconds',
     url: 'https://www.youtube.com/watch?v=G1rOthIU-uo',
     description:
-      'Fireship — intro rápida do que é Redis em 100 segundos. Entry point para o tópico.',
+      'Fireship — o que é Redis e quando usar, em 100s.',
     format: 'VIDEO',
     difficulty: 'EASY',
     estimatedMinutes: 3,
@@ -121,7 +121,7 @@ const ITEMS: ItemSeed[] = [
     title: 'Top 5 Caching Strategies',
     url: 'https://www.youtube.com/watch?v=2zIFUqTx_TU',
     description:
-      'ByteByteGo — as 5 estratégias fundamentais de cache (cache-aside, read-through, write-around, write-back, write-through) com diagramas.',
+      'ByteByteGo — as 5 estratégias de cache (cache-aside, read-through, write-around, write-back, write-through) com diagrama de cada uma.',
     format: 'VIDEO',
     difficulty: 'MEDIUM',
     estimatedMinutes: 9,
@@ -134,7 +134,7 @@ const ITEMS: ItemSeed[] = [
     title: 'Cache Systems Every Developer Should Know',
     url: 'https://www.youtube.com/watch?v=dGAgxozNWFE',
     description:
-      'ByteByteGo — panorama dos sistemas de cache em uma aplicação moderna (browser, CDN, app-level, database).',
+      'ByteByteGo — onde tem cache numa stack web: browser, CDN, app, database.',
     format: 'VIDEO',
     difficulty: 'MEDIUM',
     estimatedMinutes: 6,
@@ -147,7 +147,7 @@ const ITEMS: ItemSeed[] = [
     title: 'Caching Pitfalls Every Developer Should Know',
     url: 'https://www.youtube.com/watch?v=wh98s0XhMmQ',
     description:
-      'ByteByteGo — armadilhas comuns (thundering herd, cache stampede, stale data). Para quem já entendeu o básico.',
+      'ByteByteGo — o que dá errado em cache: thundering herd, cache stampede, stale data.',
     format: 'VIDEO',
     difficulty: 'HARD',
     estimatedMinutes: 7,
@@ -160,7 +160,7 @@ const ITEMS: ItemSeed[] = [
     title: 'Cache Invalidation Explained',
     url: 'https://www.youtube.com/watch?v=VxeppdirKgE',
     description:
-      'ByteByteGo — "There are only two hard things in Computer Science: cache invalidation and naming things." Short but dense (~90s) mental model.',
+      'ByteByteGo — 90s em cima da frase "only two hard things in CS: cache invalidation and naming things". Por que é difícil e o que fazer.',
     format: 'VIDEO',
     difficulty: 'HARD',
     estimatedMinutes: 2,
@@ -173,7 +173,7 @@ const ITEMS: ItemSeed[] = [
     title: 'Top Caching Strategies — ByteByteGo Blog',
     url: 'https://blog.bytebytego.com/p/top-caching-strategies',
     description:
-      'Post escrito do Alex Xu cobrindo as estratégias de escrita (write-around, write-back, write-through) e leitura (cache-aside, read-through) com trade-offs.',
+      'Alex Xu — versão escrita das estratégias de write (write-around, write-back, write-through) e read (cache-aside, read-through), com quando escolher cada uma.',
     format: 'ARTICLE',
     difficulty: 'MEDIUM',
     estimatedMinutes: 15,
@@ -189,7 +189,7 @@ const ITEMS: ItemSeed[] = [
     title: 'PostgreSQL in 100 Seconds',
     url: 'https://www.youtube.com/watch?v=n2Fluyr3lbc',
     description:
-      'Fireship — intro rápida do PostgreSQL. Entry point pro tópico de databases.',
+      'Fireship — o que é Postgres e por que todo mundo usa, em 100s.',
     format: 'VIDEO',
     difficulty: 'EASY',
     estimatedMinutes: 3,
@@ -202,7 +202,7 @@ const ITEMS: ItemSeed[] = [
     title: 'SQL Explained in 100 Seconds',
     url: 'https://www.youtube.com/watch?v=zsjvFFKOm3c',
     description:
-      'Fireship — o que é SQL e relacional em 100 segundos. Complementar ao vídeo de PostgreSQL.',
+      'Fireship — SQL e o modelo relacional em 100s.',
     format: 'VIDEO',
     difficulty: 'EASY',
     estimatedMinutes: 3,
@@ -215,7 +215,7 @@ const ITEMS: ItemSeed[] = [
     title: '7 Database Paradigms',
     url: 'https://www.youtube.com/watch?v=W2Z7fbCLSTw',
     description:
-      'Fireship — compara 7 paradigmas (relational, document, graph, key-value, wide-column, search, multi-model). Ideal para "qual banco usar quando?".',
+      'Fireship — os 7 paradigmas (relational, document, graph, key-value, wide-column, search, multi-model) com exemplo de quando cada um faz sentido.',
     format: 'VIDEO',
     difficulty: 'MEDIUM',
     estimatedMinutes: 10,
@@ -228,7 +228,7 @@ const ITEMS: ItemSeed[] = [
     title: 'Database Index Fundamentals',
     url: 'https://www.youtube.com/watch?v=xAQga907NVU',
     description:
-      'ByteByteGo — fundamentos de indexação (B-Tree, hash index, índice composto) com diagramas.',
+      'ByteByteGo — como funcionam B-Tree, hash index e índice composto, com diagrama.',
     format: 'VIDEO',
     difficulty: 'MEDIUM',
     estimatedMinutes: 5,
@@ -241,7 +241,7 @@ const ITEMS: ItemSeed[] = [
     title: "99% of Developers Don't Get PostgreSQL",
     url: 'https://www.youtube.com/watch?v=P8rrhZTPEAQ',
     description:
-      'The Coding Gopher — deep dive em internals do PostgreSQL: MVCC, toasted tuples, tabelas visible-only, page layout. Primeiro canal no estilo que Davi ama.',
+      'The Coding Gopher — internals do Postgres: MVCC, TOAST tuples, visibility maps, page layout.',
     format: 'VIDEO',
     difficulty: 'HARD',
     estimatedMinutes: 13,
@@ -254,7 +254,7 @@ const ITEMS: ItemSeed[] = [
     title: 'PostgreSQL Internal Architecture Explained',
     url: 'https://www.youtube.com/watch?v=Q56kljmIN14',
     description:
-      'Hussein Nasser — 33min desmontando a arquitetura de processos do Postgres: postmaster, backend workers, shared buffers, autovacuum, WAL. Canônico.',
+      'Hussein Nasser — 33min na arquitetura de processos do Postgres: postmaster, backend workers, shared buffers, autovacuum, WAL.',
     format: 'VIDEO',
     difficulty: 'HARD',
     estimatedMinutes: 33,
@@ -267,7 +267,7 @@ const ITEMS: ItemSeed[] = [
     title: 'A Deep Dive in How Slow SELECT * is',
     url: 'https://www.youtube.com/watch?v=wybjsKtA9hI',
     description:
-      'Hussein Nasser — 40min mostrando por que SELECT * é caro: IO, projection, índice coverage, network. Para quem já conhece o básico de Postgres.',
+      'Hussein Nasser — 40min em por que SELECT * é caro: IO, projection, coverage de índice, tráfego de rede.',
     format: 'VIDEO',
     difficulty: 'HARD',
     estimatedMinutes: 40,
@@ -280,7 +280,7 @@ const ITEMS: ItemSeed[] = [
     title: 'Database Indexing Strategies',
     url: 'https://blog.bytebytego.com/p/database-indexing-strategies',
     description:
-      'ByteByteGo — artigo cobrindo clustered/non-clustered, covering index, composite, partial, expression-based. Complementa o vídeo de fundamentos.',
+      'ByteByteGo — artigo com clustered/non-clustered, covering, composite, partial, expression-based.',
     format: 'ARTICLE',
     difficulty: 'MEDIUM',
     estimatedMinutes: 15,
@@ -293,7 +293,7 @@ const ITEMS: ItemSeed[] = [
     title: '8 Data Structures That Power Your Databases',
     url: 'https://bytebytego.com/guides/8-data-structures-that-power-your-databases/',
     description:
-      'ByteByteGo Guide — as 8 estruturas que sustentam DBs modernos: B-Tree, LSM tree, skiplist, hash index, SSTable, bloom filter, inverted index, R-tree.',
+      'ByteByteGo — as 8 estruturas que aparecem por dentro de DBs: B-Tree, LSM, skiplist, hash index, SSTable, bloom filter, inverted index, R-tree.',
     format: 'ARTICLE',
     difficulty: 'MEDIUM',
     estimatedMinutes: 12,
@@ -306,7 +306,7 @@ const ITEMS: ItemSeed[] = [
     title: 'Database Pages — A Deep Dive',
     url: 'https://medium.com/@hnasr/database-pages-a-deep-dive-38cdb2c79eb5',
     description:
-      'Hussein Nasser (Medium) — armazenamento físico: por que DBs usam páginas fixas, layout de row, tuple headers, slotted pages. Pairs com o vídeo do Postgres.',
+      'Hussein Nasser (Medium) — storage físico: por que DBs usam páginas de tamanho fixo, layout de row, tuple headers, slotted pages.',
     format: 'ARTICLE',
     difficulty: 'HARD',
     estimatedMinutes: 10,
@@ -323,7 +323,7 @@ const ITEMS: ItemSeed[] = [
     title: 'Big-O Notation in 100 Seconds',
     url: 'https://www.youtube.com/watch?v=g2o22C3CRfU',
     description:
-      'Fireship — notação Big-O em 100s. Entry point pra raciocinar sobre complexidade de algoritmos em arrays/hashmaps.',
+      'Fireship — notação Big-O em 100s. O vocabulário pra comparar algoritmos em array e hashmap.',
     format: 'VIDEO',
     difficulty: 'EASY',
     estimatedMinutes: 2,
@@ -336,7 +336,7 @@ const ITEMS: ItemSeed[] = [
     title: 'Array Map in 100 Seconds',
     url: 'https://www.youtube.com/watch?v=DC471a9qrU4',
     description:
-      'Fireship — método .map() do JavaScript em 100s. Prático pra qualquer JS dev.',
+      'Fireship — .map() do JavaScript em 100s.',
     format: 'VIDEO',
     difficulty: 'EASY',
     estimatedMinutes: 2,
@@ -349,7 +349,7 @@ const ITEMS: ItemSeed[] = [
     title: 'Arrays in Programming — Fundamentals',
     url: 'https://www.youtube.com/watch?v=5tPLyHCZdU0',
     description:
-      'mycodeschool — fundamentos de array: como fica armazenado na memória, indexing, static vs dynamic. Whiteboard puro, canônico.',
+      'mycodeschool — array na memória, indexing, static vs dynamic. Whiteboard puro.',
     format: 'VIDEO',
     difficulty: 'MEDIUM',
     estimatedMinutes: 11,
@@ -362,7 +362,7 @@ const ITEMS: ItemSeed[] = [
     title: 'Data Structures: Arrays vs Linked Lists',
     url: 'https://www.youtube.com/watch?v=lC-yYCOnN8Q',
     description:
-      'mycodeschool — comparação de array vs linked list em várias operações (acesso, inserção, busca) com custos explícitos. Trade-off clássico.',
+      'mycodeschool — array vs linked list em cada operação (acesso, inserção, busca) com custo explícito.',
     format: 'VIDEO',
     difficulty: 'MEDIUM',
     estimatedMinutes: 13,
@@ -375,7 +375,7 @@ const ITEMS: ItemSeed[] = [
     title: 'Implementando um hashmap do ZERO em Python',
     url: 'https://www.youtube.com/watch?v=J4ELMYEGVS0',
     description:
-      'Augusto Galego — implementa uma hashmap do zero em Python, explicando hash function, colisões, resolução por chaining. Entende como a estrutura funciona por dentro.',
+      'Augusto Galego — implementa uma hashmap em Python do zero: hash function, colisões, chaining.',
     format: 'VIDEO',
     difficulty: 'MEDIUM',
     estimatedMinutes: 13,
@@ -388,7 +388,7 @@ const ITEMS: ItemSeed[] = [
     title: 'Asymptotic Notations 101: Big O, Big Omega, & Theta',
     url: 'https://www.youtube.com/watch?v=0oDAlMwTrLo',
     description:
-      'Back To Back SWE — aprofundamento em análise assintótica: Big O, Big Omega, Theta. Vai além do "O(n)" superficial e ensina rigor.',
+      'Back To Back SWE — Big O, Big Omega e Theta com a matemática por trás, não só a intuição.',
     format: 'VIDEO',
     difficulty: 'HARD',
     estimatedMinutes: 23,
@@ -401,7 +401,7 @@ const ITEMS: ItemSeed[] = [
     title: 'NeetCode 150 Ep.1: Arrays & Hashing Explained',
     url: 'https://www.youtube.com/watch?v=IiDuXLqV6e4',
     description:
-      'NeetCode — masterclass animada de 1h54min sobre arrays e hashing pra interview prep. Commitment alto — pode ser distribuído em múltiplas sessões na semana.',
+      'NeetCode — 1h54min animados em arrays e hashing pra entrevista. Pode ser dividido em várias sessões na semana.',
     format: 'VIDEO',
     difficulty: 'HARD',
     estimatedMinutes: 114,
@@ -414,7 +414,7 @@ const ITEMS: ItemSeed[] = [
     title: '10 Key Data Structures We Use Every Day',
     url: 'https://blog.bytebytego.com/p/ep58-10-key-data-structures-we-use',
     description:
-      'ByteByteGo Blog — as 10 ED mais usadas no dia-a-dia (array, hashmap, linked list, stack, queue, tree, graph, etc.). Bom pra mapear o campo.',
+      'ByteByteGo — as 10 ED que todo dev bate na semana: array, hashmap, linked list, stack, queue, tree, graph, e mais.',
     format: 'ARTICLE',
     difficulty: 'MEDIUM',
     estimatedMinutes: 10,
@@ -429,7 +429,7 @@ const ITEMS: ItemSeed[] = [
     title: 'Grokking Data Structures — Arrays (chapter)',
     url: 'https://github.com/mlarocca/grokking_data_structures',
     description:
-      'Capítulo de arrays do livro Grokking Data Structures (Marcello La Rocca, Manning). Cobre static vs dynamic arrays, memory layout, resize amortizado. ATENÇÃO: livro pago — ver biblioteca da Inteli ou comprar via Manning. O repo do GitHub tem só código de acompanhamento, não o PDF.',
+      'Capítulo de arrays do Grokking Data Structures (La Rocca, Manning). Static vs dynamic, memory layout, resize amortizado. Livro pago — ver biblioteca da Inteli ou Manning. O GitHub tem só o código de apoio, não o PDF.',
     format: 'BOOK',
     difficulty: 'MEDIUM',
     estimatedMinutes: 25,
@@ -449,7 +449,7 @@ const ITEMS: ItemSeed[] = [
     title: 'Introduction to Linked List',
     url: 'https://www.youtube.com/watch?v=NobHlGUjV3g',
     description:
-      'mycodeschool — introdução canônica a linked list: motivação vs array, nós + ponteiros, memory layout. Whiteboard puro.',
+      'mycodeschool — linked list do zero: por que não array, nós + ponteiros, memory layout. Whiteboard puro.',
     format: 'VIDEO',
     difficulty: 'MEDIUM',
     estimatedMinutes: 18,
@@ -462,7 +462,7 @@ const ITEMS: ItemSeed[] = [
     title: 'Introduction to Doubly Linked List',
     url: 'https://www.youtube.com/watch?v=JdQeNxWCguQ',
     description:
-      'mycodeschool — extensão da linked list com ponteiros forward+back. Trade-offs de memória e facilidade de remoção/inserção bidirecional.',
+      'mycodeschool — linked list com dois ponteiros (forward + back). Custo extra de memória vs inserção/remoção bidirecional barata.',
     format: 'VIDEO',
     difficulty: 'MEDIUM',
     estimatedMinutes: 8,
@@ -475,7 +475,7 @@ const ITEMS: ItemSeed[] = [
     title: 'Linked List in C/C++ — Inserting a node at beginning',
     url: 'https://www.youtube.com/watch?v=cAZ8CyDY56s',
     description:
-      'mycodeschool — como inserir no começo de uma linked list: acerto de head + novo nó. Mostra o algoritmo com diagrama + pseudocódigo em C.',
+      'mycodeschool — inserir no começo da linked list: mover head + novo nó. Diagrama + pseudocódigo em C.',
     format: 'VIDEO',
     difficulty: 'MEDIUM',
     estimatedMinutes: 13,
@@ -488,7 +488,7 @@ const ITEMS: ItemSeed[] = [
     title: 'Introduction to Stack',
     url: 'https://www.youtube.com/watch?v=F1F2imiOJfk',
     description:
-      'mycodeschool — stack como ED LIFO: operações push/pop/peek, overflow/underflow. Aplicações clássicas (function calls, undo, parsing).',
+      'mycodeschool — stack (LIFO): push/pop/peek, overflow/underflow, com exemplos reais (function calls, undo, parsing).',
     format: 'VIDEO',
     difficulty: 'MEDIUM',
     estimatedMinutes: 9,
@@ -501,7 +501,7 @@ const ITEMS: ItemSeed[] = [
     title: 'Como Rodar uma Linked List?',
     url: 'https://www.youtube.com/watch?v=-BU34jnMasc',
     description:
-      'Augusto Galego — traversal de linked list em Python. Pattern do ponteiro `current` + `current.next` até chegar em null.',
+      'Augusto Galego — traversal de linked list em Python: current + current.next até cair em null.',
     format: 'VIDEO',
     difficulty: 'MEDIUM',
     estimatedMinutes: 8,
@@ -514,7 +514,7 @@ const ITEMS: ItemSeed[] = [
     title: 'Como inverter uma Linked List (LeetCode 206)',
     url: 'https://www.youtube.com/watch?v=8kmAY2O4SBg',
     description:
-      'Augusto Galego — explicação do clássico LC 206 (reverse linked list). Três ponteiros: prev, curr, next. Solução iterativa com diagrama.',
+      'Augusto Galego — LC 206 (reverse linked list) iterativo com três ponteiros: prev, curr, next.',
     format: 'VIDEO',
     difficulty: 'MEDIUM',
     estimatedMinutes: 5,
@@ -527,7 +527,7 @@ const ITEMS: ItemSeed[] = [
     title: 'Linked List implementation of Queue',
     url: 'https://www.youtube.com/watch?v=A5_XdiK4J8A',
     description:
-      'mycodeschool — usa linked list pra implementar queue (FIFO) com enqueue/dequeue O(1). Composição elegante: ED simples construindo ED mais complexa.',
+      'mycodeschool — queue (FIFO) com enqueue/dequeue O(1) construída em cima de linked list.',
     format: 'VIDEO',
     difficulty: 'HARD',
     estimatedMinutes: 15,
@@ -540,7 +540,7 @@ const ITEMS: ItemSeed[] = [
     title: 'Grokking Data Structures — Linked Lists (chapter)',
     url: 'https://github.com/mlarocca/grokking_data_structures',
     description:
-      'Capítulo de linked lists do livro Grokking Data Structures (Marcello La Rocca, Manning). Cobre single vs doubly linked, pointer manipulation, operações fundamentais. ATENÇÃO: livro pago — ver biblioteca da Inteli ou comprar via Manning. O repo do GitHub tem só código de acompanhamento, não o PDF.',
+      'Capítulo de linked lists do Grokking Data Structures (La Rocca, Manning). Single vs doubly, manipulação de ponteiros, operações fundamentais. Livro pago — ver biblioteca da Inteli ou Manning. O GitHub tem só o código de apoio, não o PDF.',
     format: 'BOOK',
     difficulty: 'MEDIUM',
     estimatedMinutes: 25,
@@ -562,7 +562,7 @@ const ITEMS: ItemSeed[] = [
     title: '5 wild data structures every developer should know',
     url: 'https://www.youtube.com/watch?v=6fnmXX8RK0s',
     description:
-      'Fireship — tour por 5 ED não-óbvias: B-tree, radix tree, rope, bloom filter, cuckoo hashing. Entry point pro mundo de árvores e DS que sustentam DBs. Primeiro item cross-topic: primary=tree, covers=array+databases.',
+      'Fireship — 5 ED que você não vê na graduação: B-tree, radix tree, rope, bloom filter, cuckoo hashing.',
     format: 'VIDEO',
     difficulty: 'EASY',
     estimatedMinutes: 5,
@@ -575,7 +575,7 @@ const ITEMS: ItemSeed[] = [
     title: 'Data structures: Introduction to Trees',
     url: 'https://www.youtube.com/watch?v=qH6yxkw0u78',
     description:
-      'mycodeschool — intro canônica a árvores: terminologia (root, leaf, parent, child, depth, height), representação na memória, por que usar tree vs array/list. Whiteboard puro.',
+      'mycodeschool — árvores do zero: terminologia (root, leaf, parent, child, depth, height), representação em memória, quando tree ganha de array/list.',
     format: 'VIDEO',
     difficulty: 'MEDIUM',
     estimatedMinutes: 16,
@@ -588,7 +588,7 @@ const ITEMS: ItemSeed[] = [
     title: 'Data structures: Binary Tree',
     url: 'https://www.youtube.com/watch?v=H5JubkIy_p8',
     description:
-      'mycodeschool — árvore binária especificamente: max nodes por nível, strictly/complete/perfect/balanced, altura mínima/máxima. Base para BST e heaps.',
+      'mycodeschool — binary tree: max nodes por nível, strictly/complete/perfect/balanced, altura mín/máx.',
     format: 'VIDEO',
     difficulty: 'MEDIUM',
     estimatedMinutes: 17,
@@ -601,7 +601,7 @@ const ITEMS: ItemSeed[] = [
     title: 'Data structures: Binary Search Tree',
     url: 'https://www.youtube.com/watch?v=pYT9F8_LFTM',
     description:
-      'mycodeschool — BST: invariante de ordenação left < root < right, busca/inserção/remoção em O(log n) no caso balanceado, piora pra O(n) quando degenera. Base pra entender AVL/Red-Black depois.',
+      'mycodeschool — BST: invariante left < root < right, operações O(log n) quando balanceada, O(n) quando degenera.',
     format: 'VIDEO',
     difficulty: 'MEDIUM',
     estimatedMinutes: 20,
@@ -614,7 +614,7 @@ const ITEMS: ItemSeed[] = [
     title: 'Binary Tree Bootcamp: Full, Complete, & Perfect Trees + Traversals',
     url: 'https://www.youtube.com/watch?v=BHB0B1jFKQc',
     description:
-      'Back To Back SWE — classificação formal (full/complete/perfect) + os 3 DFS traversals (preorder/inorder/postorder) com animação. Essencial pra interview prep — quase todo LC de árvore usa um desses.',
+      'Back To Back SWE — full/complete/perfect + os 3 DFS traversals (preorder/inorder/postorder) animados. Quase todo LC de árvore cai num desses.',
     format: 'VIDEO',
     difficulty: 'MEDIUM',
     estimatedMinutes: 20,
@@ -627,7 +627,7 @@ const ITEMS: ItemSeed[] = [
     title: 'AVL Trees & Rotations (Self-Balancing Binary Search Trees)',
     url: 'https://www.youtube.com/watch?v=vRwi_UcZGjU',
     description:
-      'Back To Back SWE — por que BSTs "desbalanceiam", o que é fator de balanceamento, e os 4 tipos de rotação (LL/RR/LR/RL) pra restaurar O(log n). Deep-dive clássico — aparece em entrevistas sêniores.',
+      'Back To Back SWE — como BSTs desbalanceiam, fator de balanceamento e as 4 rotações (LL/RR/LR/RL) pra restaurar O(log n).',
     format: 'VIDEO',
     difficulty: 'HARD',
     estimatedMinutes: 21,
@@ -640,7 +640,7 @@ const ITEMS: ItemSeed[] = [
     title: 'B-Tree vs. LSM-Tree',
     url: 'https://bytebytego.com/guides/b-tree-vs/',
     description:
-      'ByteByteGo Guide — comparação detalhada entre as duas estruturas que dominam storage engines modernos: B-Tree (Postgres, MySQL) vs LSM-Tree (Cassandra, RocksDB). Trade-offs de leitura vs escrita, write amplification, compaction. Cross-topic: primary=tree, cover=databases.',
+      'ByteByteGo — B-Tree (Postgres, MySQL) vs LSM-Tree (Cassandra, RocksDB): read vs write, write amplification, compaction.',
     format: 'ARTICLE',
     difficulty: 'HARD',
     estimatedMinutes: 12,
@@ -653,7 +653,7 @@ const ITEMS: ItemSeed[] = [
     title: 'Grokking Data Structures — Trees (chapter)',
     url: 'https://github.com/mlarocca/grokking_data_structures',
     description:
-      'Capítulo de trees do livro Grokking Data Structures (Marcello La Rocca, Manning). Cobre binary trees, BSTs, traversals, balanced trees com visual-heavy approach. ATENÇÃO: livro pago — ver biblioteca da Inteli ou comprar via Manning. O repo do GitHub tem só código de acompanhamento, não o PDF.',
+      'Capítulo de trees do Grokking Data Structures (La Rocca, Manning). Binary trees, BSTs, traversals, balanced trees no estilo visual-heavy do livro. Livro pago — ver biblioteca da Inteli ou Manning. O GitHub tem só o código de apoio, não o PDF.',
     format: 'BOOK',
     difficulty: 'MEDIUM',
     estimatedMinutes: 25,
@@ -676,7 +676,7 @@ const ITEMS: ItemSeed[] = [
     title: 'Big O Notation: O Pesadelo do Programador Iniciante',
     url: 'https://www.youtube.com/watch?v=GLKDo13920k',
     description:
-      'Lucas Montano — Big-O conceitual em 14min. Pré-requisito pra comparar algoritmos de ordenação: o(n²) vs o(n log n) só faz sentido quando o aluno tem Big-O internalizado. Cross-topic: primary=sorting (é aqui que Big-O ganha peso), cover=array (também fundamenta análise de array ops).',
+      'Lucas Montano — Big-O em 14min. Sem esse vocabulário não dá pra comparar O(n²) vs O(n log n) nos algoritmos de sort.',
     format: 'VIDEO',
     difficulty: 'EASY',
     estimatedMinutes: 14,
@@ -689,7 +689,7 @@ const ITEMS: ItemSeed[] = [
     title: 'Introduction to sorting algorithms',
     url: 'https://www.youtube.com/watch?v=pkkFqlG0Hds',
     description:
-      'mycodeschool — intro canônica ao problema de ordenação: por que ordenar, comparison-based vs non-comparison, primeiro contato com bubble sort. Whiteboard puro.',
+      'mycodeschool — por que ordenar, comparison-based vs non-comparison, primeiro contato com bubble sort. Whiteboard puro.',
     format: 'VIDEO',
     difficulty: 'EASY',
     estimatedMinutes: 9,
@@ -702,7 +702,7 @@ const ITEMS: ItemSeed[] = [
     title: 'Selection sort algorithm',
     url: 'https://www.youtube.com/watch?v=GUDLRan2DWM',
     description:
-      'mycodeschool — selection sort com diagrama: escolher mínimo e trocar. Análise O(n²) com número exato de comparações/trocas. Base pra entender por que divide-and-conquer compensa.',
+      'mycodeschool — selection sort em diagrama: escolhe o mínimo e troca. Análise O(n²) com número exato de comparações/trocas.',
     format: 'VIDEO',
     difficulty: 'MEDIUM',
     estimatedMinutes: 11,
@@ -715,7 +715,7 @@ const ITEMS: ItemSeed[] = [
     title: 'Algoritmo MergeSort Explicado',
     url: 'https://www.youtube.com/watch?v=a5LfKZp34d8',
     description:
-      'Augusto Galego — merge sort com implementação em Python. Divide-and-conquer explicado com foco prático: recursão que divide ao meio + merge de dois arrays ordenados. Pair natural com o vídeo de quick sort dele.',
+      'Augusto Galego — merge sort em Python: recursão que divide ao meio + merge de dois arrays ordenados.',
     format: 'VIDEO',
     difficulty: 'MEDIUM',
     estimatedMinutes: 15,
@@ -728,7 +728,7 @@ const ITEMS: ItemSeed[] = [
     title: 'Quicksort: Implementação e Explicação',
     url: 'https://www.youtube.com/watch?v=nV_WE8SEuGE',
     description:
-      'Augusto Galego — quicksort com implementação em Python. Escolha de pivô, partição, recursão. Complementa o MergeSort do mesmo canal e serve de ponte pro video de analysis do mycodeschool.',
+      'Augusto Galego — quicksort em Python: escolha de pivô, partição, recursão.',
     format: 'VIDEO',
     difficulty: 'MEDIUM',
     estimatedMinutes: 12,
@@ -741,7 +741,7 @@ const ITEMS: ItemSeed[] = [
     title: 'Analysis of quicksort',
     url: 'https://www.youtube.com/watch?v=3Bbm3Prd5Fo',
     description:
-      'mycodeschool — análise formal de quicksort: caso médio O(n log n) vs pior caso O(n²), sensibilidade ao pivô, por que random quicksort vira estocástico. Leitura matemática densa — pra quem já implementou e quer entender por que funciona.',
+      'mycodeschool — análise do quicksort: caso médio O(n log n), pior caso O(n²), sensibilidade ao pivô, por que random quicksort funciona.',
     format: 'VIDEO',
     difficulty: 'HARD',
     estimatedMinutes: 21,
@@ -754,7 +754,7 @@ const ITEMS: ItemSeed[] = [
     title: 'Grokking Algorithms — Quicksort (chapter 4)',
     url: 'https://github.com/egonSchiele/grokking_algorithms',
     description:
-      'Capítulo 4 (Quicksort) do livro Grokking Algorithms / Entendendo Algoritmos (Aditya Y. Bhargava, Manning). Divide-and-conquer + quicksort ilustrado no estilo cartoon característico. ATENÇÃO: livro pago — ver biblioteca da Inteli ou comprar via Manning. O repo do GitHub (do próprio autor) tem só código de acompanhamento, não o PDF.',
+      'Capítulo 4 do Grokking Algorithms / Entendendo Algoritmos (Bhargava, Manning). Divide-and-conquer + quicksort no estilo cartoon do livro. Livro pago — ver biblioteca da Inteli ou Manning. O GitHub (do próprio autor) tem só o código de apoio, não o PDF.',
     format: 'BOOK',
     difficulty: 'MEDIUM',
     estimatedMinutes: 25,
@@ -776,7 +776,7 @@ const ITEMS: ItemSeed[] = [
     title: 'O Dilema da Computação — System Design #1',
     url: 'https://www.youtube.com/watch?v=g9DfXmDfE_Q',
     description:
-      'Arthur Takeda — abertura da série de System Design: por que todo sistema faz trade-off entre consistência, disponibilidade e tolerância a partição. Intro canônica ao teorema CAP em 8min.',
+      'Arthur Takeda — abertura da série de SD: por que todo sistema faz trade-off entre consistência, disponibilidade e tolerância a partição. CAP em 8min.',
     format: 'VIDEO',
     difficulty: 'MEDIUM',
     estimatedMinutes: 8,
@@ -789,7 +789,7 @@ const ITEMS: ItemSeed[] = [
     title: 'A Arte de Não Quebrar Seu App — System Design #2',
     url: 'https://www.youtube.com/watch?v=Xiod8w7QtQ4',
     description:
-      'Arthur Takeda — reliability em 12min: failure modes, redundância, graceful degradation, por que "o app caiu" quase sempre é falha arquitetural e não bug de código.',
+      'Arthur Takeda — reliability em 12min: failure modes, redundância, graceful degradation. Por que "o app caiu" quase sempre é falha arquitetural, não bug de código.',
     format: 'VIDEO',
     difficulty: 'MEDIUM',
     estimatedMinutes: 12,
@@ -802,7 +802,7 @@ const ITEMS: ItemSeed[] = [
     title: 'Cache — System Design #3',
     url: 'https://www.youtube.com/watch?v=i3Y2NmCGfuA',
     description:
-      'Arthur Takeda — cache em 8min: por que, onde e como cachear. Complementa ByteByteGo (EN, já no acervo) com a voz BR do Takeda.',
+      'Arthur Takeda — cache em 8min: por que, onde e como cachear. Versão BR do tópico.',
     format: 'VIDEO',
     difficulty: 'MEDIUM',
     estimatedMinutes: 8,
@@ -815,7 +815,7 @@ const ITEMS: ItemSeed[] = [
     title: 'Relacional vs Não-Relacional — System Design #4',
     url: 'https://www.youtube.com/watch?v=ILt31254Up4',
     description:
-      'Arthur Takeda — trade-offs entre SQL e NoSQL em 8min: quando usar cada um, schema rígido vs flexível, JOIN vs denormalização. Complementa o Fireship "7 Database Paradigms" no acervo.',
+      'Arthur Takeda — SQL vs NoSQL em 8min: quando usar cada um, schema rígido vs flexível, JOIN vs denormalização.',
     format: 'VIDEO',
     difficulty: 'MEDIUM',
     estimatedMinutes: 8,
@@ -828,7 +828,7 @@ const ITEMS: ItemSeed[] = [
     title: 'Como Escalar Banco de Dados? — System Design #5',
     url: 'https://www.youtube.com/watch?v=czMY_ATOej0',
     description:
-      'Arthur Takeda — sharding + replicação em 8min: vertical vs horizontal scaling, leader-follower, particionamento. Cross-topic: primary=sharding, cobre replication e databases também.',
+      'Arthur Takeda — sharding + replicação em 8min: vertical vs horizontal, leader-follower, particionamento.',
     format: 'VIDEO',
     difficulty: 'MEDIUM',
     estimatedMinutes: 8,
@@ -841,7 +841,7 @@ const ITEMS: ItemSeed[] = [
     title: 'Docker Explicado em 8 Minutos',
     url: 'https://www.youtube.com/watch?v=jftIzkXbKKY',
     description:
-      'Arthur Takeda — Docker do zero: imagens vs containers, layers, networking básico, por que "funciona na minha máquina" deixou de ser desculpa. Entry-point pro tópico de containers.',
+      'Arthur Takeda — Docker do zero: imagens vs containers, layers, networking básico, por que "funciona na minha máquina" deixou de ser desculpa.',
     format: 'VIDEO',
     difficulty: 'EASY',
     estimatedMinutes: 9,
@@ -854,7 +854,7 @@ const ITEMS: ItemSeed[] = [
     title: 'Autenticação Moderna em 20 Minutos',
     url: 'https://www.youtube.com/watch?v=uLY1CuLi9ac',
     description:
-      'Arthur Takeda — autenticação em 20min: sessões vs tokens, OAuth 2.0, JWT, refresh tokens, MFA, por que "hash simples de senha" é ruim. Deep-dive conceitual sem screencast.',
+      'Arthur Takeda — auth em 20min: sessões vs tokens, OAuth 2.0, JWT, refresh tokens, MFA, por que "hash simples de senha" é ruim.',
     format: 'VIDEO',
     difficulty: 'MEDIUM',
     estimatedMinutes: 20,
@@ -867,7 +867,7 @@ const ITEMS: ItemSeed[] = [
     title: 'AWS do Zero: Os Únicos Serviços que Você Precisa Conhecer',
     url: 'https://www.youtube.com/watch?v=8chgJEuDzYM',
     description:
-      'Arthur Takeda — panorama do AWS em 18min: EC2, S3, RDS, Lambda, CloudFront, IAM. Foca nos serviços core que aparecem em 95% dos projetos. Entry-point pra qualquer coisa de cloud.',
+      'Arthur Takeda — AWS em 18min: EC2, S3, RDS, Lambda, CloudFront, IAM. Os serviços que aparecem em 95% dos projetos.',
     format: 'VIDEO',
     difficulty: 'EASY',
     estimatedMinutes: 18,
@@ -880,7 +880,7 @@ const ITEMS: ItemSeed[] = [
     title: 'A Mentira do "100% Anônimo" das VPNs',
     url: 'https://www.youtube.com/watch?v=idD_vk3bTCQ',
     description:
-      'Arthur Takeda — como VPN realmente funciona em 8min: túnel IP, DNS leaks, provedor como novo middleman. Atravessa networking (como o tráfego flui) e security (o que a VPN protege vs não protege). Cross-topic: primary=networking, cover=security.',
+      'Arthur Takeda — como VPN realmente funciona em 8min: túnel IP, DNS leaks, o provedor virando o novo middleman.',
     format: 'VIDEO',
     difficulty: 'MEDIUM',
     estimatedMinutes: 8,
@@ -893,7 +893,7 @@ const ITEMS: ItemSeed[] = [
     title: '10 Conceitos-Base de Computação Que Você Precisa Saber',
     url: 'https://www.youtube.com/watch?v=zLV586SXHsU',
     description:
-      'Arthur Takeda — 10 fundamentos que qualquer dev precisa ter internalizado: binário, memória, CPU, sistema de arquivos, processos, threads, concorrência, e como tudo se conecta. Davi: "é uma ótima forma de começar os estudos — primeiro item que qualquer membro novo deve consumir antes de atacar sua trilha específica".',
+      'Arthur Takeda — 10 fundamentos que qualquer dev precisa ter internalizado: binário, memória, CPU, file system, processos, threads, concorrência. Davi: "primeiro item que qualquer membro novo deve consumir antes de atacar a trilha dele".',
     format: 'VIDEO',
     difficulty: 'EASY',
     estimatedMinutes: 11,
@@ -906,7 +906,7 @@ const ITEMS: ItemSeed[] = [
     title: 'Saber Isso Te Faz Um Dev MUITO Melhor (Design Patterns)',
     url: 'https://www.youtube.com/watch?v=G-O90vR7SCU',
     description:
-      'Arthur Takeda — panorama de Design Patterns em 11min: por que padrões importam, GoF (Gang of Four), exemplos clássicos (Observer, Factory, Strategy, Singleton). Entry-point conceitual para Design Patterns.',
+      'Arthur Takeda — Design Patterns em 11min: por que padrões importam, GoF (Gang of Four), exemplos (Observer, Factory, Strategy, Singleton).',
     format: 'VIDEO',
     difficulty: 'MEDIUM',
     estimatedMinutes: 11,

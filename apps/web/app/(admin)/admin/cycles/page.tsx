@@ -8,6 +8,7 @@ import {
   useArchiveCycle,
   type CycleRow,
 } from '../../../../lib/queries/admin-cycles';
+import { resolveActiveCycleId } from '../../../../lib/cycle/active-cycle';
 import { Eyebrow } from '../../../../components/ui/eyebrow';
 import { NewCycleModal } from '../../../../components/admin/cycles/new-cycle-modal';
 
@@ -17,34 +18,6 @@ function formatRange(start: string, end: string): string {
   const s = new Date(start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   const e = new Date(end).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   return `${s} – ${e}`;
-}
-
-/**
- * Resolve which single cycle the app considers "active" (current or nearest upcoming).
- * Must mirror the backend helper in apps/api/src/common/cycle/active-cycle.ts so the
- * admin sees the same cycle the runtime is treating as active.
- */
-function resolveActiveCycleId(cycles: CycleRow[], now: Date): string | null {
-  const activeCandidates = cycles.filter((c) => c.status === 'ACTIVE');
-  const contains = activeCandidates.filter((c) => {
-    const start = new Date(c.startsAt).getTime();
-    const end = new Date(c.endsAt).getTime();
-    return start <= now.getTime() && now.getTime() <= end;
-  });
-  if (contains.length > 0) {
-    contains.sort(
-      (a, b) => new Date(b.startsAt).getTime() - new Date(a.startsAt).getTime(),
-    );
-    return contains[0]!.id;
-  }
-  const upcoming = activeCandidates.filter(
-    (c) => new Date(c.startsAt).getTime() > now.getTime(),
-  );
-  if (upcoming.length === 0) return null;
-  upcoming.sort(
-    (a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime(),
-  );
-  return upcoming[0]!.id;
 }
 
 function phaseOf(cycle: CycleRow, activeId: string | null, now: Date): Phase {

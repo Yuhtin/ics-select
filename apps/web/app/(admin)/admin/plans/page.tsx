@@ -8,6 +8,7 @@ import {
   useAdminPlansOverview,
   type PlansOverviewStatus,
 } from '../../../../lib/queries/admin-plans-overview';
+import { resolveActiveCycleId } from '../../../../lib/cycle/active-cycle';
 import { Eyebrow } from '../../../../components/ui/eyebrow';
 import { formatRelativeFromIso } from '../../../../lib/format/time';
 
@@ -45,15 +46,16 @@ function PlansPageInner() {
   const { data: cycles, isLoading: cyclesLoading } = useAdminCycles();
   const { data, isLoading, error } = useAdminPlansOverview(cycleId, status);
 
-  // When arriving without ?cycleId, auto-select the active cycle so admins
-  // don't see an empty screen with a 'Select a cycle' prompt every time.
+  // When arriving without ?cycleId, auto-select THE active cycle via the
+  // shared resolver (current one containing `now`, else nearest upcoming).
+  // See apps/web/lib/cycle/active-cycle.ts — must mirror the backend rule
+  // documented in CLAUDE.md.
   useEffect(() => {
     if (cycleId) return;
-    if (!cycles || cycles.length === 0) return;
-    const active = cycles.find((c) => c.status === 'ACTIVE');
-    if (!active) return;
+    const activeId = resolveActiveCycleId(cycles);
+    if (!activeId) return;
     const url = new URLSearchParams(params.toString());
-    url.set('cycleId', active.id);
+    url.set('cycleId', activeId);
     router.replace(`/admin/plans?${url.toString()}`, { scroll: false });
   }, [cycleId, cycles, params, router]);
 
