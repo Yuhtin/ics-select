@@ -8,7 +8,10 @@ export default function LoginPage() {
   const loginUrl = `${apiBase}/auth/google`;
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-bg">
+    <main
+      data-theme="dark"
+      className="relative min-h-screen overflow-hidden bg-bg"
+    >
       {/* Ambient gradient backdrop — theme-aware, pure token-driven */}
       <div
         aria-hidden
