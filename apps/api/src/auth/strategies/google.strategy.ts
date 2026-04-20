@@ -24,11 +24,19 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
         'https://www.googleapis.com/auth/calendar.events',
         'https://www.googleapis.com/auth/calendar.readonly',
       ],
-      // passport-google-oauth20 accepts these at runtime but the types don't
-      // declare them on the strategy constructor options.
-      accessType: 'offline',
+    });
+  }
+
+  // passport-oauth2 calls this when building Google's authorization URL.
+  // Without it Google defaults to access_type=online (no refresh_token) and
+  // only returns refresh_token on the very first consent, so server-side
+  // API calls (listEventsInRange, etc.) fail with "No refresh token is set"
+  // as soon as the access token expires.
+  override authorizationParams(): Record<string, string> {
+    return {
+      access_type: 'offline',
       prompt: 'consent',
-    } as never);
+    };
   }
 
   validate(
