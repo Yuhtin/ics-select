@@ -1,5 +1,5 @@
 'use client';
-import { Suspense } from 'react';
+import { Suspense, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { clsx } from 'clsx';
@@ -44,6 +44,18 @@ function PlansPageInner() {
 
   const { data: cycles, isLoading: cyclesLoading } = useAdminCycles();
   const { data, isLoading, error } = useAdminPlansOverview(cycleId, status);
+
+  // When arriving without ?cycleId, auto-select the active cycle so admins
+  // don't see an empty screen with a 'Select a cycle' prompt every time.
+  useEffect(() => {
+    if (cycleId) return;
+    if (!cycles || cycles.length === 0) return;
+    const active = cycles.find((c) => c.status === 'ACTIVE');
+    if (!active) return;
+    const url = new URLSearchParams(params.toString());
+    url.set('cycleId', active.id);
+    router.replace(`/admin/plans?${url.toString()}`, { scroll: false });
+  }, [cycleId, cycles, params, router]);
 
   function update(next: Partial<{ cycleId: string | null; status: PlansOverviewStatus }>) {
     const url = new URLSearchParams(params.toString());
