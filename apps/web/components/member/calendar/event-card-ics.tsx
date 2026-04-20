@@ -20,16 +20,16 @@ const PLATFORM_CLASS: Record<string, string> = {
   book: 'bg-platform-book',
 };
 
-interface CalendarEventIcsProps {
+interface EventCardIcsProps {
   event: CalendarEvent;
   timeLabel: string;
 }
 
-export function CalendarEventIcs({ event, timeLabel }: CalendarEventIcsProps) {
+export function EventCardIcs({ event, timeLabel }: EventCardIcsProps) {
   const platform = detectPlatform(event.ics?.url, event.ics?.format);
   const outcome = event.ics?.outcome ?? 'PENDING';
   return (
-    <div className="relative flex h-full overflow-hidden rounded-input border border-border-token bg-surface cursor-grab">
+    <div className="relative flex h-full w-full overflow-hidden rounded-input border border-border-token bg-surface">
       <span className={`w-[3px] flex-shrink-0 ${PLATFORM_CLASS[platform]}`} />
       <div className="flex min-w-0 flex-1 flex-col px-2 py-1">
         <span className="truncate font-serif text-[12px] leading-tight text-fg">

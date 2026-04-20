@@ -3,17 +3,19 @@
 import { useCallback, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useMeCalendarWeek, useRescheduleEvent } from '../../../../lib/queries/me-calendar';
+import type { CalendarEvent } from '../../../../lib/queries/me-calendar';
 import { CalendarHeader } from '../../../../components/member/calendar/calendar-header';
 import { CalendarSidebar } from '../../../../components/member/calendar/calendar-sidebar';
 import { CalendarLegend } from '../../../../components/member/calendar/calendar-legend';
 import { CalendarSkeleton } from '../../../../components/member/calendar/calendar-skeleton';
-import { CalendarConnectBanner } from '../../../../components/member/calendar/calendar-connect-banner';
 import { CalendarGridSkeleton } from '../../../../components/member/calendar/calendar-grid-skeleton';
+import { CalendarConnectBanner } from '../../../../components/member/calendar/calendar-connect-banner';
+import { RescheduleModal } from '../../../../components/member/calendar/reschedule-modal';
 
-const CalendarGrid = dynamic(
+const CalendarApp = dynamic(
   () =>
-    import('../../../../components/member/calendar/calendar-grid').then(
-      (m) => m.CalendarGrid,
+    import('../../../../components/member/calendar/calendar-app').then(
+      (m) => m.CalendarApp,
     ),
   { ssr: false, loading: () => <CalendarGridSkeleton /> },
 );
@@ -36,6 +38,7 @@ export default function MeCalendarPage() {
 
   const { data, isLoading, isFetching } = useMeCalendarWeek(weekStart);
   const reschedule = useRescheduleEvent(weekStart);
+  const [editing, setEditing] = useState<CalendarEvent | null>(null);
 
   const handlePrev = useCallback(() => {
     setWeekStart((prev) => {
@@ -71,18 +74,23 @@ export default function MeCalendarPage() {
           <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
             <CalendarSidebar events={data.events} timezone={data.timezone} />
             <div className="space-y-4">
-              <CalendarGrid
+              <CalendarApp
                 weekStart={weekStart}
-                weekEnd={weekEnd}
                 timezone={data.timezone}
                 events={data.events}
-                onReschedule={(input) => reschedule.mutate(input)}
+                onRescheduleClick={setEditing}
               />
               <CalendarLegend />
             </div>
           </div>
         </>
       )}
+      <RescheduleModal
+        event={editing}
+        timezone={data?.timezone ?? 'America/Sao_Paulo'}
+        onClose={() => setEditing(null)}
+        onSubmit={(input) => reschedule.mutate(input)}
+      />
     </div>
   );
 }
