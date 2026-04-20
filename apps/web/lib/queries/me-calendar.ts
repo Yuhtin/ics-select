@@ -1,8 +1,10 @@
 'use client';
 
+import { useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { ItemOutcome } from '@ics-select/shared';
 import { apiFetch } from '../api/client';
+import { readCachedWeek, writeCachedWeek } from '../cache/calendar-cache';
 
 export type CalendarEvent = {
   id: string;
@@ -41,10 +43,18 @@ export function isoDate(d: Date): string {
 
 export function useMeCalendarWeek(weekStart: Date) {
   const key = isoDate(weekStart);
+  const cached = useMemo(() => readCachedWeek(weekStart), [key]);
+
   return useQuery({
     queryKey: ['me', 'calendar', key],
-    queryFn: () => apiFetch<GetWeekResponse>(`/me/calendar?weekStart=${key}`),
-    staleTime: 60_000,
+    queryFn: async () => {
+      const fresh = await apiFetch<GetWeekResponse>(`/me/calendar?weekStart=${key}`);
+      writeCachedWeek(weekStart, fresh);
+      return fresh;
+    },
+    initialData: cached?.data,
+    initialDataUpdatedAt: cached?.updatedAt,
+    staleTime: 0,
     refetchOnWindowFocus: true,
   });
 }
@@ -75,8 +85,10 @@ export function useRescheduleEvent(weekStart: Date) {
     onError: (_err, _input, ctx) => {
       if (ctx?.previous) qc.setQueryData(key, ctx.previous);
     },
-    onSettled: () => {
-      qc.invalidateQueries({ queryKey: key });
+    onSettled: async () => {
+      await qc.invalidateQueries({ queryKey: key });
+      const fresh = qc.getQueryData<GetWeekResponse>(key);
+      if (fresh) writeCachedWeek(weekStart, fresh);
     },
   });
 }

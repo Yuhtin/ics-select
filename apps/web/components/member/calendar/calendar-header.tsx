@@ -8,6 +8,7 @@ interface CalendarHeaderProps {
   onPrev: () => void;
   onNext: () => void;
   onToday: () => void;
+  isRefreshing?: boolean;
 }
 
 function formatRange(start: Date, end: Date): string {
@@ -16,7 +17,7 @@ function formatRange(start: Date, end: Date): string {
   return `${fmt(start)} – ${fmt(end)}`;
 }
 
-export function CalendarHeader({ weekStart, weekEnd, onPrev, onNext, onToday }: CalendarHeaderProps) {
+export function CalendarHeader({ weekStart, weekEnd, onPrev, onNext, onToday, isRefreshing = false }: CalendarHeaderProps) {
   return (
     <div className="flex items-center justify-between border-b border-border-token pb-3">
       <div className="flex items-center gap-2">
@@ -31,6 +32,12 @@ export function CalendarHeader({ weekStart, weekEnd, onPrev, onNext, onToday }: 
         <span className="font-serif text-xl font-medium tabular-nums text-fg">
           {formatRange(weekStart, weekEnd)}
         </span>
+        {isRefreshing && (
+          <span
+            className="h-1.5 w-1.5 animate-pulse rounded-full bg-fg-faint"
+            aria-label="Refreshing"
+          />
+        )}
         <button
           type="button"
           onClick={onNext}

@@ -25,7 +25,7 @@ export default function MeCalendarPage() {
     return d;
   }, [weekStart]);
 
-  const { data, isLoading } = useMeCalendarWeek(weekStart);
+  const { data, isLoading, isFetching } = useMeCalendarWeek(weekStart);
   const reschedule = useRescheduleEvent(weekStart);
 
   const handlePrev = useCallback(() => {
@@ -52,13 +52,14 @@ export default function MeCalendarPage() {
         onPrev={handlePrev}
         onNext={handleNext}
         onToday={handleToday}
+        isRefreshing={isFetching && !isLoading}
       />
-      {isLoading || !data ? (
+      {!data ? (
         <CalendarSkeleton />
       ) : (
         <>
           {!data.hasGoogleConnection && <CalendarConnectBanner variant="not_connected" />}
-          <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
+          <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
             <CalendarSidebar events={data.events} timezone={data.timezone} />
             <div className="space-y-4">
               <CalendarGrid
