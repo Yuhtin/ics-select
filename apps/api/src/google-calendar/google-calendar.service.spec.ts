@@ -170,7 +170,119 @@ describe('GoogleCalendarService', () => {
         description: 'Link: https://leetcode.com\n\nICS ID: plan-1/item-1',
         start: new Date('2026-04-17T12:10:00Z'),
         end: new Date('2026-04-17T13:10:00Z'),
+        allDay: false,
+        location: undefined,
+        htmlLink: undefined,
+        meetLink: undefined,
       },
     ]);
+  });
+
+  describe('listEventsInRange — extended fields', () => {
+    it('returns allDay=false, location, htmlLink, meetLink for timed events', async () => {
+      const row = {
+        accessTokenEnc: 'enc(plain-access)',
+        refreshTokenEnc: 'enc(plain-refresh)',
+        expiresAt: new Date(Date.now() + 30 * 60 * 1000),
+        scope: 'calendar.events',
+      };
+      const prisma = fakePrisma(row);
+      const client = mockClient();
+      client.events.list.mockResolvedValueOnce({
+        data: {
+          items: [
+            {
+              id: 'e1',
+              summary: 'Study',
+              description: 'ICS ID: p1/i1',
+              start: { dateTime: '2026-04-20T14:00:00Z' },
+              end: { dateTime: '2026-04-20T15:00:00Z' },
+              location: 'Room A',
+              htmlLink: 'https://calendar.google.com/event?eid=abc',
+              conferenceData: {
+                entryPoints: [{ entryPointType: 'video', uri: 'https://meet.google.com/xyz' }],
+              },
+            },
+          ],
+        },
+      });
+      const svc = new GoogleCalendarService(prisma as any, aes as any, () => client as any);
+      const out = await svc.listEventsInRange(
+        'user-1',
+        new Date('2026-04-20T00:00:00Z'),
+        new Date('2026-04-21T00:00:00Z'),
+      );
+      expect(out).toHaveLength(1);
+      expect(out[0]).toMatchObject({
+        id: 'e1',
+        allDay: false,
+        location: 'Room A',
+        htmlLink: 'https://calendar.google.com/event?eid=abc',
+        meetLink: 'https://meet.google.com/xyz',
+      });
+    });
+
+    it('includes all-day events when includeAllDay=true', async () => {
+      const row = {
+        accessTokenEnc: 'enc(plain-access)',
+        refreshTokenEnc: 'enc(plain-refresh)',
+        expiresAt: new Date(Date.now() + 30 * 60 * 1000),
+        scope: 'calendar.events',
+      };
+      const prisma = fakePrisma(row);
+      const client = mockClient();
+      client.events.list.mockResolvedValueOnce({
+        data: {
+          items: [
+            {
+              id: 'allday-1',
+              summary: 'Trip LA',
+              description: '',
+              start: { date: '2026-04-22' },
+              end: { date: '2026-04-23' },
+            },
+          ],
+        },
+      });
+      const svc = new GoogleCalendarService(prisma as any, aes as any, () => client as any);
+      const out = await svc.listEventsInRange(
+        'user-1',
+        new Date('2026-04-20T00:00:00Z'),
+        new Date('2026-04-27T00:00:00Z'),
+        { includeAllDay: true },
+      );
+      expect(out).toHaveLength(1);
+      expect(out[0]).toMatchObject({ id: 'allday-1', allDay: true });
+    });
+
+    it('excludes all-day events by default (backward compat)', async () => {
+      const row = {
+        accessTokenEnc: 'enc(plain-access)',
+        refreshTokenEnc: 'enc(plain-refresh)',
+        expiresAt: new Date(Date.now() + 30 * 60 * 1000),
+        scope: 'calendar.events',
+      };
+      const prisma = fakePrisma(row);
+      const client = mockClient();
+      client.events.list.mockResolvedValueOnce({
+        data: {
+          items: [
+            {
+              id: 'allday-1',
+              summary: 'Trip LA',
+              start: { date: '2026-04-22' },
+              end: { date: '2026-04-23' },
+            },
+          ],
+        },
+      });
+      const svc = new GoogleCalendarService(prisma as any, aes as any, () => client as any);
+      const out = await svc.listEventsInRange(
+        'user-1',
+        new Date('2026-04-20T00:00:00Z'),
+        new Date('2026-04-27T00:00:00Z'),
+      );
+      expect(out).toHaveLength(0);
+    });
   });
 });

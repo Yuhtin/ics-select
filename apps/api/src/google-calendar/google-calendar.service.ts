@@ -43,7 +43,18 @@ export class GoogleCalendarService {
     userId: string,
     timeMin: Date,
     timeMax: Date,
-  ): Promise<Array<{ id: string; summary: string; description: string; start: Date; end: Date }>> {
+    opts: { includeAllDay?: boolean } = {},
+  ): Promise<Array<{
+    id: string;
+    summary: string;
+    description: string;
+    start: Date;
+    end: Date;
+    allDay: boolean;
+    location?: string;
+    htmlLink?: string;
+    meetLink?: string;
+  }>> {
     const client = await this.clientFor(userId);
     const res = await client.events.list({
       calendarId: 'primary',
@@ -53,17 +64,39 @@ export class GoogleCalendarService {
       orderBy: 'startTime',
     });
     const events = res.data.items ?? [];
-    // Drop all-day events (no dateTime). Study sessions always have explicit start/end times;
-    // all-day entries would produce misleading minutesAway values downstream.
+    const includeAllDay = opts.includeAllDay === true;
     return events
-      .filter((e) => e.id && e.start?.dateTime && e.end?.dateTime)
-      .map((e) => ({
-        id: e.id!,
-        summary: e.summary ?? '',
-        description: e.description ?? '',
-        start: new Date(e.start!.dateTime!),
-        end: new Date(e.end!.dateTime!),
-      }));
+      .filter((e) => {
+        if (!e.id) return false;
+        const hasDateTime = e.start?.dateTime && e.end?.dateTime;
+        const hasDateOnly = e.start?.date && e.end?.date;
+        if (hasDateTime) return true;
+        if (hasDateOnly) return includeAllDay;
+        return false;
+      })
+      .map((e) => {
+        const allDay = !e.start?.dateTime;
+        const start = allDay
+          ? new Date(e.start!.date + 'T00:00:00')
+          : new Date(e.start!.dateTime!);
+        const end = allDay
+          ? new Date(e.end!.date + 'T00:00:00')
+          : new Date(e.end!.dateTime!);
+        const meetLink = (e.conferenceData?.entryPoints ?? []).find(
+          (p) => p.entryPointType === 'video',
+        )?.uri;
+        return {
+          id: e.id!,
+          summary: e.summary ?? '',
+          description: e.description ?? '',
+          start,
+          end,
+          allDay,
+          location: e.location ?? undefined,
+          htmlLink: e.htmlLink ?? undefined,
+          meetLink: meetLink ?? undefined,
+        };
+      });
   }
 
   async createEvent(userId: string, input: CreateEventInput): Promise<string> {
