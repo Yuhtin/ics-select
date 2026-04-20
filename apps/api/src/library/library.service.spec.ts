@@ -268,4 +268,18 @@ describe('LibraryService', () => {
     const results = await svc.search({ query: 'databases' });
     expect(results.map((r: any) => r.id)).toContain(item.id);
   });
+
+  it('search returns items whose source matches the query', async () => {
+    const prisma = fakePrisma();
+    const svc = new LibraryService(prisma as any, openai as any);
+    await svc.create({
+      title: 'How JavaScript works', description: null, url: null,
+      format: 'VIDEO', difficulty: 'MEDIUM', estimatedMinutes: 10,
+      source: 'Fireship', tags: [],
+      createdById: 'u-1',
+    });
+    const results = await svc.search({ query: 'fireship' });
+    expect(results.length).toBeGreaterThan(0);
+    expect(results[0].title).toBe('How JavaScript works');
+  });
 });
