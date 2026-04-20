@@ -32,24 +32,6 @@ export function useAdminLibrary() {
   });
 }
 
-export function useAdminLibrarySearch(params: {
-  query?: string;
-  format?: string[];
-  difficulty?: string[];
-  tracks?: string[];
-  topicId?: string;
-  maxMinutes?: number;
-}) {
-  return useQuery({
-    queryKey: ['admin', 'library-search', params],
-    queryFn: () =>
-      apiFetch<{ data: AdminLibraryItem[]; total: number }>('/library/search', {
-        method: 'POST',
-        body: JSON.stringify({ ...params, limit: 100 }),
-      }),
-  });
-}
-
 type NewLibraryItem = {
   title: string;
   url: string | null;
@@ -71,7 +53,6 @@ export function useCreateLibraryItem() {
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin', 'library'] });
-      qc.invalidateQueries({ queryKey: ['admin', 'library-search'] });
     },
   });
 }
@@ -86,7 +67,6 @@ export function useUpdateLibraryItem() {
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin', 'library'] });
-      qc.invalidateQueries({ queryKey: ['admin', 'library-search'] });
     },
   });
 }
@@ -98,7 +78,6 @@ export function useDeleteLibraryItem() {
       apiFetch<{ ok: boolean }>(`/library/${id}`, { method: 'DELETE' }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin', 'library'] });
-      qc.invalidateQueries({ queryKey: ['admin', 'library-search'] });
     },
   });
 }

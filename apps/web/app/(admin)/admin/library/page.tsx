@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Plus, Layers, Pencil, Trash2, Search } from 'lucide-react';
+import { Plus, Layers, Pencil, Trash2, Search, X } from 'lucide-react';
 import {
   useAdminLibrary,
   useDeleteLibraryItem,
@@ -287,9 +287,9 @@ export default function AdminLibraryPage() {
           <button
             type="button"
             onClick={clearAll}
-            className="font-mono text-[10px] uppercase tracking-label text-ink-mute hover:text-ink"
+            className="inline-flex items-center gap-1 font-mono text-[10px] uppercase tracking-label text-ink-mute hover:text-ink"
           >
-            ✕ clear all
+            <X className="h-3 w-3" strokeWidth={1.5} /> clear all
           </button>
         )}
       </div>
