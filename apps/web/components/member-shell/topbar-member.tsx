@@ -2,9 +2,10 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Compass, CalendarDays, Users, User } from 'lucide-react';
+import { Compass, CalendarDays, Users, LogOut } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useMeRetroCurrent } from '../../lib/queries/me-retro';
+import { useAuth } from '../../lib/auth/auth-context';
 import { ThemeToggle } from '../ui/theme-toggle';
 
 type NavItem = {
@@ -20,9 +21,21 @@ const NAV: readonly NavItem[] = [
   { href: '/me/cohort', label: 'Cohort', icon: Users },
 ];
 
+function initialsOf(name: string): string {
+  return (
+    name
+      .split(' ')
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((p) => p[0]?.toUpperCase() ?? '')
+      .join('') || '—'
+  );
+}
+
 export function TopbarMember() {
   const pathname = usePathname();
   const { data: retro } = useMeRetroCurrent();
+  const { user, logout } = useAuth();
   const retroOpen = retro?.open === true && !retro.retro;
   return (
     <header className="sticky top-0 z-40 hidden border-b border-border-token/60 bg-bg/80 backdrop-blur md:block">
@@ -69,13 +82,36 @@ export function TopbarMember() {
             </Link>
           )}
           <ThemeToggle />
-          <Link
-            href="/me/settings"
-            className="grid h-8 w-8 place-items-center rounded-full border border-border-token text-fg-soft transition-colors hover:bg-bg-subtle hover:text-fg"
-            aria-label="Settings"
-          >
-            <User className="h-4 w-4" strokeWidth={1.5} />
-          </Link>
+          {user && (
+            <>
+              <Link
+                href="/me/settings"
+                aria-label="Settings"
+                title={user.name}
+                className="inline-grid h-8 w-8 place-items-center overflow-hidden rounded-full border border-border-token bg-bg-subtle font-sans text-[11px] font-semibold text-fg-soft transition-colors hover:text-fg"
+              >
+                {user.pictureUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={user.pictureUrl}
+                    alt=""
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <span>{initialsOf(user.name)}</span>
+                )}
+              </Link>
+              <button
+                type="button"
+                onClick={() => void logout()}
+                aria-label="Sign out"
+                title="Sign out"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-input border border-transparent text-fg-mute transition-colors hover:bg-bg-subtle hover:text-fg"
+              >
+                <LogOut className="h-4 w-4" strokeWidth={1.5} />
+              </button>
+            </>
+          )}
         </div>
       </div>
     </header>
