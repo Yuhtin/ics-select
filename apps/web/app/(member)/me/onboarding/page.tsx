@@ -18,6 +18,7 @@ import {
   AvailabilityPresets,
   type AvailabilityMinutes,
 } from '../../../../components/member/availability-presets';
+import { SessionLengthPresets } from '../../../../components/member/session-length-presets';
 
 const PHONE_REGEX = /^\+\d{8,15}$/;
 
@@ -32,8 +33,6 @@ const DEFAULT_AVAILABILITY: Availability = {
   saturdayMinutes: 90,
   sundayMinutes: 0,
 };
-
-const SESSION_PRESETS = [15, 30, 45, 60, 90];
 
 type StepId = 0 | 1 | 2;
 
@@ -173,25 +172,8 @@ export default function MemberOnboardingPage() {
                   <p className="mt-1 font-sans text-[13px] text-fg-soft">
                     The chunk size we split longer items into.
                   </p>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {SESSION_PRESETS.map((mins) => {
-                      const active = sessionMin === mins;
-                      return (
-                        <button
-                          key={mins}
-                          type="button"
-                          onClick={() => setSessionMin(mins)}
-                          className={clsx(
-                            'rounded-pill border px-3 py-1.5 font-mono text-[12px] font-semibold transition-colors',
-                            active
-                              ? 'border-primary bg-primary text-primary-fg'
-                              : 'border-border-token bg-surface text-fg-soft hover:border-border-strong hover:text-fg',
-                          )}
-                        >
-                          {mins} min
-                        </button>
-                      );
-                    })}
+                  <div className="mt-3">
+                    <SessionLengthPresets value={sessionMin} onChange={setSessionMin} />
                   </div>
                 </div>
               </StepCard>
