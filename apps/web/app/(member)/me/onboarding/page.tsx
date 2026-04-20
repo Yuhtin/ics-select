@@ -19,6 +19,9 @@ import {
   type AvailabilityMinutes,
 } from '../../../../components/member/availability-presets';
 import { SessionLengthPresets } from '../../../../components/member/session-length-presets';
+import { ThemePicker } from '../../../../components/member/theme-picker';
+import { useThemeWithSync } from '../../../../lib/theme/use-theme-sync';
+import { useUpdateTheme } from '../../../../lib/queries/me-theme';
 
 const PHONE_REGEX = /^\+\d{8,15}$/;
 
@@ -34,7 +37,7 @@ const DEFAULT_AVAILABILITY: Availability = {
   sundayMinutes: 0,
 };
 
-type StepId = 0 | 1 | 2;
+type StepId = 0 | 1 | 2 | 3;
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
@@ -43,6 +46,8 @@ export default function MemberOnboardingPage() {
   const { user, refetch } = useAuth();
   const updateProfile = useUpdateProfile();
   const updateAvailability = useUpdateAvailability();
+  const { resolvedTheme, setTheme } = useThemeWithSync();
+  const updateTheme = useUpdateTheme();
 
   const [step, setStep] = useState<StepId>(0);
   const [direction, setDirection] = useState<1 | -1>(1);
@@ -59,8 +64,13 @@ export default function MemberOnboardingPage() {
     [availability],
   );
 
-  const canAdvance = step === 0 ? phoneOk : step === 1 ? trackOk : availabilityOk;
-  const submitting = updateProfile.isPending || updateAvailability.isPending;
+  const canAdvance =
+    step === 0 ? phoneOk :
+    step === 1 ? trackOk :
+    step === 2 ? availabilityOk :
+    true; // step 3 (theme) always has a default
+  const submitting =
+    updateProfile.isPending || updateAvailability.isPending || updateTheme.isPending;
 
   function goTo(next: StepId) {
     setDirection(next > step ? 1 : -1);
@@ -84,6 +94,16 @@ export default function MemberOnboardingPage() {
         timezone:
           Intl.DateTimeFormat().resolvedOptions().timeZone ?? 'America/Sao_Paulo',
       });
+      // Theme was already persisted per-click via useThemeWithSync. This is a
+      // belt-and-suspenders final write in case the user picked theme while
+      // unauthenticated (we don't believe that's possible in this flow, but the
+      // call is idempotent so we do it anyway). Failure does not block finish.
+      try {
+        const pref = (resolvedTheme === 'dark' ? 'DARK' : 'LIGHT') as 'LIGHT' | 'DARK';
+        await updateTheme.mutateAsync({ themePreference: pref });
+      } catch {
+        // swallow — localStorage already has the choice
+      }
       await refetch();
       router.replace('/me');
     } catch (err) {
@@ -106,7 +126,7 @@ export default function MemberOnboardingPage() {
           Welcome{user?.name ? `, ${firstName}` : ''}
         </p>
         <h1 className="font-serif text-[44px] font-medium leading-[1.05] tracking-tight text-fg md:text-[52px]">
-          Three small things.
+          Four small things.
         </h1>
         <p className="max-w-prose font-sans text-[15px] leading-relaxed text-fg-soft">
           Then we drop you into your week. Nothing here is permanent — tweak it
@@ -129,7 +149,7 @@ export default function MemberOnboardingPage() {
           >
             {step === 0 && (
               <StepCard
-                eyebrow="Step 1 / 3 · WhatsApp"
+                eyebrow="Step 1 / 4 · WhatsApp"
                 title="Where should we reach you?"
                 subtitle="Reminders land ten minutes before each study block. Retros open every Friday. WhatsApp only, no email spam."
               >
@@ -149,7 +169,7 @@ export default function MemberOnboardingPage() {
 
             {step === 1 && (
               <StepCard
-                eyebrow="Step 2 / 3 · Track"
+                eyebrow="Step 2 / 4 · Track"
                 title="Which one are you shooting for?"
                 subtitle="Shapes the kind of practice the director picks each week. You can switch between cycles."
               >
@@ -159,7 +179,7 @@ export default function MemberOnboardingPage() {
 
             {step === 2 && (
               <StepCard
-                eyebrow="Step 3 / 3 · Availability"
+                eyebrow="Step 3 / 4 · Availability"
                 title="How much time per day?"
                 subtitle="Rough minutes you can protect for study. The scheduler packs blocks into this budget; you can resize it anytime."
               >
@@ -176,6 +196,20 @@ export default function MemberOnboardingPage() {
                     <SessionLengthPresets value={sessionMin} onChange={setSessionMin} />
                   </div>
                 </div>
+              </StepCard>
+            )}
+
+            {step === 3 && (
+              <StepCard
+                eyebrow="Step 4 / 4 · Appearance"
+                title="Dark or light?"
+                subtitle="Preview below, the site switches as you pick. You can swap anytime in Settings."
+              >
+                <ThemePicker
+                  value={(resolvedTheme === 'dark' ? 'dark' : 'light') as 'light' | 'dark'}
+                  onChange={(next) => setTheme(next)}
+                  size="onboarding"
+                />
               </StepCard>
             )}
           </motion.div>
@@ -202,7 +236,7 @@ export default function MemberOnboardingPage() {
           Back
         </button>
 
-        {step < 2 ? (
+        {step < 3 ? (
           <button
             type="button"
             onClick={() => canAdvance && goTo((step + 1) as StepId)}
@@ -250,7 +284,7 @@ const stepVariants = {
 function Progress({ step }: { step: StepId }) {
   return (
     <ol className="flex items-center gap-3">
-      {[0, 1, 2].map((i) => {
+      {[0, 1, 2, 3].map((i) => {
         const state = i < step ? 'done' : i === step ? 'current' : 'pending';
         return (
           <li key={i} className="flex items-center gap-3">
@@ -276,7 +310,7 @@ function Progress({ step }: { step: StepId }) {
             >
               {state === 'done' ? <Check className="h-3.5 w-3.5" strokeWidth={2.5} /> : i + 1}
             </motion.span>
-            {i < 2 && (
+            {i < 3 && (
               <motion.span
                 initial={false}
                 animate={{
