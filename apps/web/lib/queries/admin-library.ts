@@ -2,6 +2,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from '../api/client';
 
+export type AdminTopicOnItem = {
+  id: string;
+  slug: string;
+  label: string;
+  isPrimary: boolean;
+};
+
 export type AdminLibraryItem = {
   id: string;
   title: string;
@@ -14,6 +21,7 @@ export type AdminLibraryItem = {
   tags: string[];
   tracks: string[];
   topicId: string | null;
+  topics: AdminTopicOnItem[];
   createdAt: string;
 };
 
