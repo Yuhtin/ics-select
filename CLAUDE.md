@@ -4,7 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-**ICS Select** is a private platform for the Inteli Consulting Society's selective program that prepares students for technical interviews at Big Techs. The admin (`Diretor Educacional`) builds personalized weekly study plans from a searchable library of materials; selected members (≤12 per cycle) follow the plans, auto-schedule study sessions against their Google Calendar, mark items with one of five outcomes (`Nailed it` / `Got it (hard)` / `Had doubts` / `Stuck` / `Not yet`), and the admin sees cohort progress + AI-assisted insights.
+**ICS Select** is a private platform for the Inteli Consulting Society's selective program. It prepares students for technical interviews across the full spectrum of tech careers, not just Big Tech. The canonical scope is the `Track` enum on `User`: `BIG_TECH | CONSULTING_TECH | COMPETITIVE_PROGRAMMING | STARTUP | OTHER` — a member who is grinding ICPC and a member who wants Stripe are both in-scope. **Never reduce the program's framing to "Big Techs only" in copy, metadata, OG tags, or member-facing UI.** The landing uses "tech de elite" as the umbrella chip-word; the bigtechs section lists representative companies (Apple/Google/Meta/Netflix/LinkedIn + Discord/Stripe/xAI/Anthropic/OpenAI) but explicitly labels them as "alvos", not the whole scope.
+
+The admin (`Diretor Educacional`) builds personalized weekly study plans from a searchable library of materials; selected members (≤12 per cycle) follow the plans, auto-schedule study sessions against their Google Calendar, mark items with one of five outcomes (`Nailed it` / `Got it (hard)` / `Had doubts` / `Stuck` / `Not yet`), and the admin sees cohort progress + AI-assisted insights.
 
 Full product spec lives at `docs/superpowers/specs/2026-04-11-ics-select-design.md`. Per-phase implementation plans live in `docs/superpowers/plans/`.
 
@@ -104,6 +106,16 @@ The library is populated via **`apps/api/scripts/seed-library.ts`** (entry `pnpm
 ### Global guards
 
 `AppModule` registers `JwtAuthGuard` and `RolesGuard` as `APP_GUARD` providers, so every controller is authenticated by default. Use `@Public()` to opt out (currently only `/health` and the `/auth/google*` routes) and `@Roles('ADMIN')` to restrict admin-only endpoints. `@CurrentUser()` pulls the JWT payload off the request.
+
+### The active cycle
+
+There is always exactly one "active cycle" at a time, and the rule is **not** "latest `Cycle` with `status=ACTIVE`". Use `resolveActiveCycle(prisma)` in `apps/api/src/common/cycle/active-cycle.ts`:
+
+1. If an `ACTIVE` cycle contains `now` (`startsAt <= now <= endsAt`), that's it.
+2. Otherwise, the nearest upcoming `ACTIVE` cycle (earliest `startsAt > now`).
+3. `ARCHIVED` cycles are never returned. If every cycle is archived, callers get `null`.
+
+There is also `resolveActiveMembership(prisma, userId)` for the member-scoped equivalent and `computeWeekPosition(cycle, now)` for "week X of N · Y days until week ends" labels. Any new endpoint that answers "which cycle is the user / landing / admin looking at right now?" must go through these helpers — hand-rolled `findFirst({ status: 'ACTIVE', orderBy: { startsAt: 'desc' } })` is wrong and will regress in the month between two cycles.
 
 ### Weekly plan flow
 

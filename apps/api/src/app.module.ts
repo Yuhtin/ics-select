@@ -26,6 +26,7 @@ import { NotificationsModule } from './notifications/notifications.module.js';
 import { MeModule } from './me/me.module.js';
 import { ReportsModule } from './reports/reports.module.js';
 import { InterestModule } from './interest/interest.module.js';
+import { PublicCohortModule } from './public-cohort/public-cohort.module.js';
 import { loadEnv } from './config/env.js';
 
 @Module({
@@ -75,6 +76,7 @@ import { loadEnv } from './config/env.js';
     MeModule,
     ReportsModule,
     InterestModule,
+    PublicCohortModule,
     HealthModule,
   ],
   providers: [

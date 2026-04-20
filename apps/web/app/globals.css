@@ -141,3 +141,231 @@ body {
 .font-mono {
   font-feature-settings: 'zero', 'ss02';
 }
+
+/* ============================================================
+   Landing page helpers — scoped utilities for the public landing.
+   Kept here instead of inline styles so the landing stays readable
+   and its tokens are reused from the same :root as the rest of the
+   app. These classes are not used anywhere else.
+   ============================================================ */
+
+/* Waitlist modal inputs */
+.modal-input {
+  padding: 12px 14px;
+  border: 1px solid hsl(var(--border));
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 14px;
+  background: hsl(var(--surface));
+  color: hsl(var(--fg));
+  transition: border-color 160ms, box-shadow 160ms;
+  width: 100%;
+}
+.modal-input:focus {
+  outline: none;
+  border-color: hsl(var(--primary));
+  box-shadow: 0 0 0 4px hsl(var(--primary) / 0.12);
+}
+
+/* Split-text: visible by default, animates only once JS marks .split-go */
+.split-text span {
+  display: inline-block;
+}
+.split-text.split-go span {
+  opacity: 0;
+  transform: translateY(40%);
+  animation: splitIn 800ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@keyframes splitIn {
+  from {
+    opacity: 0;
+    transform: translateY(40%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Chip-word bounce in hero title */
+.chip-word {
+  display: inline-block;
+  background: hsl(var(--success-soft));
+  padding: 0 28px 6px;
+  border-radius: 999px;
+  font-style: italic;
+  transform: translateZ(0);
+  animation: chipBounce 2.8s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+  vertical-align: baseline;
+  margin-top: 4px;
+}
+@keyframes chipBounce {
+  0%,
+  100% {
+    transform: rotate(-1deg) translateY(0);
+  }
+  50% {
+    transform: rotate(1deg) translateY(-3px);
+  }
+}
+
+/* Marquee */
+.marquee-track {
+  display: flex;
+  gap: 64px;
+  width: max-content;
+  animation: marquee 36s linear infinite;
+  will-change: transform;
+}
+.marquee:hover .marquee-track {
+  animation-play-state: paused;
+}
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* Hero pins float */
+.pin-float {
+  animation: pinFloat 4s ease-in-out infinite;
+}
+@keyframes pinFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+/* Live pulse dot (success) */
+.dot-live-success {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: hsl(var(--success));
+  box-shadow: 0 0 0 0 hsl(var(--success) / 0.6);
+  animation: livePulse 2s infinite;
+}
+@keyframes livePulse {
+  0% {
+    box-shadow: 0 0 0 0 hsl(var(--success) / 0.6);
+  }
+  70% {
+    box-shadow: 0 0 0 10px hsl(var(--success) / 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 hsl(var(--success) / 0);
+  }
+}
+
+/* Big-tech cards: hover glow driven by per-card --glow var */
+.btech-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at center,
+    var(--glow, hsl(var(--primary) / 0.12)) 0%,
+    transparent 60%
+  );
+  opacity: 0;
+  transition: opacity 260ms;
+  pointer-events: none;
+}
+.btech-card:hover::before {
+  opacity: 1;
+}
+
+/* Progress ring (cohort pillar mini-demo) */
+.ring-demo {
+  --pct: 60;
+  width: 88px;
+  height: 88px;
+  border-radius: 999px;
+  background: conic-gradient(
+    hsl(var(--success)) calc(var(--pct) * 1%),
+    hsl(var(--border)) 0
+  );
+  display: grid;
+  place-items: center;
+  position: relative;
+}
+.ring-demo::before {
+  content: '';
+  position: absolute;
+  inset: 10px;
+  border-radius: 999px;
+  background: hsl(var(--bg-subtle));
+}
+
+/* Landing stage frame */
+.landing-stage {
+  position: relative;
+  margin: 16px;
+  background: hsl(var(--surface));
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow:
+    0 1px 2px rgba(20, 24, 31, 0.04),
+    0 18px 48px rgba(20, 24, 31, 0.08);
+  min-height: calc(100vh - 32px);
+}
+
+/* Smooth scroll on the landing, with offset so the sticky topbar doesn't cover the target */
+html:has(.landing-stage) {
+  scroll-behavior: smooth;
+}
+.landing-stage [id] {
+  scroll-margin-top: 88px;
+}
+@media (prefers-reduced-motion: reduce) {
+  html:has(.landing-stage) {
+    scroll-behavior: auto;
+  }
+}
+
+/* Reveal on scroll */
+.reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition:
+    opacity 700ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 700ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.reveal.in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Cursor dot */
+.cursor-dot {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: hsl(var(--fg));
+  pointer-events: none;
+  z-index: 90;
+  transform: translate(-50%, -50%);
+  transition:
+    width 200ms cubic-bezier(0.16, 1, 0.3, 1),
+    height 200ms cubic-bezier(0.16, 1, 0.3, 1),
+    background 200ms,
+    opacity 200ms;
+  opacity: 0;
+  mix-blend-mode: difference;
+}
+
+@media (max-width: 960px) {
+  .cursor-dot {
+    display: none;
+  }
+}

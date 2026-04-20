@@ -1,18 +1,29 @@
-import Link from 'next/link';
-import { BrandLockup } from '../shell/brand-lockup';
+import { ArrowUpRight } from 'lucide-react';
 
 export function LandingFooter() {
   return (
-    <footer className="py-12 px-6 lg:px-8 border-t border-border">
-      <div className="mx-auto max-w-6xl flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <BrandLockup size="sm" />
-          <span className="text-caption text-foreground-subtle">Feito por Davi Duarte</span>
-        </div>
-        <div className="flex items-center gap-6 text-caption text-foreground-muted">
-          <Link href="/privacy" className="hover:text-foreground transition-colors">Politica de Privacidade</Link>
-          <span className="text-foreground-subtle">&copy; 2026</span>
-        </div>
+    <footer
+      className="grid gap-4 p-5 md:p-8 text-xs text-fg-mute grid-cols-1 sm:grid-cols-2 items-center"
+      style={{
+        borderTop: '1px solid hsl(var(--border))',
+      }}
+    >
+      <div>
+        <div className="font-semibold text-fg mb-1">ICS Select</div>
+        Inteli Consulting Society · 2026
+      </div>
+      <div className="sm:text-right">
+        Feito por{' '}
+        <a
+          href="https://www.linkedin.com/in/daviduarte/"
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex items-center gap-0.5 font-medium text-fg hover:text-primary transition-colors"
+        >
+          Davi Duarte
+          <ArrowUpRight className="w-3 h-3" strokeWidth={1.8} />
+        </a>
+        {' '}para a Comunidade Inteli
       </div>
     </footer>
   );
