@@ -41,6 +41,22 @@ Batch-curate `LibraryItem` rows for the ICS Select acervo, following the layered
    - 1× ARTICLE (Medium post, engineering blog).
    - 1× BOOK section (Grokking chapter) when the topic has one.
 
+   **Diversification check (MANDATORY — added 2026-04-19).** Davi: "estamos inflando muito com videos do mycodeschool, nao tem mais nada de outros canais?". Before searching, **name the channels you plan to pull from** and enforce these rules:
+   - **No more than ~3 items from one channel** for a 7-item topic (~40%). If you're at 4+ mycodeschool / 4+ ByteByteGo / etc., stop and rebalance.
+   - **Always check the BR trio first** when the topic is algos/EDs or architecture:
+     - **Augusto Galego** (`@GutoGalego`) — Python implementations of algos/EDs, LC walkthroughs. First stop for practice-tier BR content.
+     - **Lucas Montano** — conceitos de CS (Big-O, complexity, arquitetura distribuída). Foundational teaching, fits EASY/MEDIUM. Filter out members-only and 60min+ VSCode screencasts.
+     - **Arthur Takeda** (`@arthur.takeda`) — System Design series #1-5 (cap-consistency `g9DfXmDfE_Q`, reliability `Xiod8w7QtQ4`, caching `i3Y2NmCGfuA`, databases `ILt31254Up4`, sharding/replication `czMY_ATOej0`), fundamentos (OS `c_13dk4cxQ0`, Docker `jftIzkXbKKY`, auth `uLY1CuLi9ac`, AWS `8chgJEuDzYM`, compiladores `7R9ZYaDTAAc`), JS deep-dives (`JsvVohoIdt8`, `vvC5g9_U0wg`, `6rdD4itgDVk`). Formato 8-12min, conceitual, não screencast. Davi: "MUITO BONS".
+   - **How to search a BR channel's catalog fast:**
+     ```bash
+     curl -s -A "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36" \
+       -H "Cookie: CONSENT=YES+cb" \
+       "https://www.youtube.com/@GutoGalego/search?query=<term>" > /tmp/search.html
+     grep -oE '"videoId":"[^"]{11}"' /tmp/search.html | sort -u | head -10
+     # Then fetch title + duration for each ID via the scrape block below
+     ```
+   - **Cross-topic foundation videos** (e.g. Big-O) can enter as EASY cross-topic covers even when the topic isn't "Big-O itself" — if the ladder needs a prerequisite the student must have before consuming the rest, that's a valid EASY slot. Example: Montano Big-O entered `sorting` as EASY because O(n²) vs O(n log n) comparisons require Big-O vocabulary. `topicSlugs: ['sorting', 'array']` — cross-topic.
+
 5. **Search for real URLs** — use `WebSearch` (not guessing from memory). **Never fabricate a YouTube video ID.** For each candidate:
    - Verify title + channel with a real search result. **Even if you "remember" the URL from training data, still search** — video IDs get removed, channels rename, URLs rot. No exceptions.
    - **MANDATORY for YouTube videos**: fetch exact duration via `curl` scrape:
@@ -83,13 +99,13 @@ Batch-curate `LibraryItem` rows for the ICS Select acervo, following the layered
 | ByteByteGo | System Design (all tiers) | — |
 | The Coding Gopher | Engineering deep-dives | — |
 | Hussein Nasser | Networking + database internals | HTTP/TCP/DB protocols, MVCC, WAL, pages, storage engines |
-| Lucas Montano (BR) | Architecture videos | Architecture content only |
-| mycodeschool | Algorithms & DS fundamentals | Whiteboard-style, zero IDE. Canonical for basic DS. |
+| Lucas Montano (BR) | Architecture + CS concepts (Big-O, complexity) | Arquitetura + teaching conceitual. Filter: no members-only videos, no 60min+ VSCode screencasts. Big-O video `GLKDo13920k` confirmed good EASY for sorting/complexity. |
+| mycodeschool | Algorithms & DS fundamentals | Whiteboard-style, zero IDE. Canonical for basic DS. **Cap ~3 items per topic** to avoid over-anchoring. |
 | Back To Back SWE | Interview prep / algorithms | Animated slides + whiteboard, zero VSCode |
 | NeetCode | Arrays/hashing/algos animated explainers | **Only animated explanation videos, NOT LC solve-alongs** in VSCode. If title is "Leetcode X - Python" with code walkthrough, skip. |
 | Filipe Deschamps (BR) | Architecture-only | Filter out VSCode screencasts video-by-video. Heuristic: titles with "criando X", "codando Y", "montando Z" with a specific framework name are usually screencasts — skip. Architectural titles ("como funciona", "por que X", "entendendo Y") are usually OK. When in doubt, open the video page and check the thumbnail/description for IDE shots. |
-| Arthur Takeda (BR) | BR tech content | — |
-| Augusto Galego (BR) | Senior interview prep | Whole channel OK; senior eng playlist = BIG_TECH only |
+| Arthur Takeda (BR) `@arthur.takeda` | System Design series (#1-5) + fundamentos (OS, Docker, compiladores, auth, cloud) + JS/framework deep-dives | Davi: "MUITO BONS". Conceitual, 8-12min sweet-spot. Use pra SD topics (cap-consistency `g9DfXmDfE_Q`, reliability `Xiod8w7QtQ4`, sharding `czMY_ATOej0`) e fundamentos (containers `jftIzkXbKKY`, security/auth `uLY1CuLi9ac`, cloud `8chgJEuDzYM`). |
+| Augusto Galego (BR) | Senior interview prep + algos/EDs practice in Python | Channel `@GutoGalego`. Whole channel OK. **First stop for BR `practice`-tier content** on algos/EDs (MergeSort `a5LfKZp34d8`, Quicksort `nV_WE8SEuGE`, hashmap `J4ELMYEGVS0`, linked list `-BU34jnMasc`, LC 206 `8kmAY2O4SBg`). Senior eng playlist = BIG_TECH only. |
 
 **Rejected channels — NEVER propose**: Michael Sambol, Gaurav Sen, Jordan has no life, Fabio Akita, IBM Technology.
 
