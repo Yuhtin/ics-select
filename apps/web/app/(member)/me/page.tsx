@@ -6,6 +6,7 @@ import { DayList } from '../../../components/member/day-list';
 import { DayRingCard } from '../../../components/member/day-ring-card';
 import { CarryOverReflectionCard } from '../../../components/member/carry-over-reflection-card';
 import { PhaseProgressCard } from '../../../components/member/phase-progress-card';
+import { TopicCoverageHeatmap } from '../../../components/member/topic-coverage-heatmap';
 import { StreakCard } from '../../../components/ui/streak-card';
 import { formatMinutes } from '../../../lib/format/time';
 
@@ -72,6 +73,19 @@ export default function MeHomePage() {
       <aside className="flex flex-col gap-5">
         <DayRingCard items={data.today} nowItemId={activeItemId} />
         <StreakCard current={data.streak.current} last7={data.streak.last7} />
+        {data.topicCoverage.length > 0 && (
+          <section className="rounded-tile border border-border-token bg-surface p-6">
+            <p className="font-mono text-[10px] font-semibold uppercase tracking-eyebrow text-fg-mute">
+              Topic coverage
+            </p>
+            <div className="mt-4">
+              <TopicCoverageHeatmap
+                topics={data.topicCoverage}
+                density="compact"
+              />
+            </div>
+          </section>
+        )}
         {data.topicCoverage.length > 0 && (
           <PhaseProgressCard topics={data.topicCoverage} />
         )}

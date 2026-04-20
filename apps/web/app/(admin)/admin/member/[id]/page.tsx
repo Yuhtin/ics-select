@@ -3,7 +3,7 @@ import { use, useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, MessageCircle } from 'lucide-react';
 import { useAdminMember } from '../../../../../lib/queries/admin-member';
-import { TopicCoverageMini } from '../../../../../components/admin/plan-editor/topic-coverage-mini';
+import { TopicCoverageMatrix } from '../../../../../components/admin/member-detail/topic-coverage-matrix';
 import { TimelineTab } from '../../../../../components/admin/member-detail/timeline-tab';
 import { RetrosTab } from '../../../../../components/admin/member-detail/retros-tab';
 import { DiagnoseTab } from '../../../../../components/admin/member-detail/diagnose-tab';
@@ -107,7 +107,16 @@ export default function AdminMemberPage({ params }: { params: Promise<{ id: stri
       <section>
         <Eyebrow>Topic coverage · this cycle</Eyebrow>
         <div className="mt-3">
-          <TopicCoverageMini topics={topicCoverage} />
+          <TopicCoverageMatrix
+            topics={topicCoverage.map((t) => ({
+              topicId: t.topicId,
+              slug: t.topicSlug,
+              label: t.topicLabel,
+              order: t.order,
+              itemsPlanned: t.itemsPlanned,
+              itemsDone: t.itemsDone,
+            }))}
+          />
         </div>
       </section>
 
