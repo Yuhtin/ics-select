@@ -50,6 +50,35 @@ function parseCsv(v: string | null): string[] {
   return v.split(',').map((s) => s.trim()).filter(Boolean);
 }
 
+const DIFFICULTY_RANK: Record<string, number> = {
+  EASY: 0,
+  MEDIUM: 1,
+  HARD: 2,
+};
+
+// Learning order within a shelf/grid: primary topic's Topic.order, then
+// difficulty ladder (easy → medium → hard), then duration ascending, then
+// title. Keeps intro/foundational clips ahead of deep-dives for the same topic.
+function sortLibraryItems(
+  items: AdminLibraryItem[],
+  order: Record<string, number>,
+): AdminLibraryItem[] {
+  return [...items].sort((a, b) => {
+    const aPrimary = a.topics.find((t) => t.isPrimary) ?? a.topics[0];
+    const bPrimary = b.topics.find((t) => t.isPrimary) ?? b.topics[0];
+    const aOrder = aPrimary ? order[aPrimary.slug] ?? 999 : 999;
+    const bOrder = bPrimary ? order[bPrimary.slug] ?? 999 : 999;
+    if (aOrder !== bOrder) return aOrder - bOrder;
+    const aDiff = DIFFICULTY_RANK[a.difficulty] ?? 9;
+    const bDiff = DIFFICULTY_RANK[b.difficulty] ?? 9;
+    if (aDiff !== bDiff) return aDiff - bDiff;
+    if (a.estimatedMinutes !== b.estimatedMinutes) {
+      return a.estimatedMinutes - b.estimatedMinutes;
+    }
+    return a.title.localeCompare(b.title);
+  });
+}
+
 function groupByPhase(items: AdminLibraryItem[], order: Record<string, number>) {
   const byPhase = new Map<PhaseKey, AdminLibraryItem[]>();
   for (const item of items) {
@@ -135,6 +164,12 @@ export default function AdminLibraryPage() {
 
   const allItems = items ?? [];
 
+  const topicOrder = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const t of topics ?? []) map[t.slug] = t.order;
+    return map;
+  }, [topics]);
+
   const filtered = useMemo(() => {
     let list = allItems;
     if (topicId) {
@@ -150,8 +185,9 @@ export default function AdminLibraryPage() {
         return i.tracks.some((t) => tracks.includes(t));
       });
     }
-    if (query.trim().length >= 2) list = fuseFilter(list, query);
-    return list;
+    // Search relevance wins over learning order — only sort when not searching.
+    if (query.trim().length >= 2) return fuseFilter(list, query);
+    return sortLibraryItems(list, topicOrder);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     allItems,
@@ -160,6 +196,7 @@ export default function AdminLibraryPage() {
     difficulties.join(','),
     tracks.join(','),
     query,
+    topicOrder,
   ]);
 
   const topicCounts = useMemo(() => {
@@ -170,12 +207,6 @@ export default function AdminLibraryPage() {
       }
     return m;
   }, [allItems]);
-
-  const topicOrder = useMemo(() => {
-    const map: Record<string, number> = {};
-    for (const t of topics ?? []) map[t.slug] = t.order;
-    return map;
-  }, [topics]);
 
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<AdminLibraryItem | null>(null);
