@@ -26,6 +26,15 @@ export function slowScrollTo(target: string, durationMs = 1500): void {
     return;
   }
 
+  // The landing sets `scroll-behavior: smooth` on <html>. In Chrome that CSS
+  // intercepts every per-frame `window.scrollTo({ behavior: 'auto' })` and
+  // re-queues a smooth animation, so the 60 RAF calls fight each other and
+  // scrollY sits at 0 for ~1.3s before snapping to the target. Force the
+  // root to auto for the duration of the animation and restore it after.
+  const rootEl = document.documentElement;
+  const prevScrollBehavior = rootEl.style.scrollBehavior;
+  rootEl.style.scrollBehavior = 'auto';
+
   const startTime = performance.now();
   // easeOutCubic — starts moving immediately, decelerates toward the target.
   const ease = (t: number) => 1 - Math.pow(1 - t, 3);
@@ -34,16 +43,23 @@ export function slowScrollTo(target: string, durationMs = 1500): void {
   const cancel = () => {
     cancelled = true;
   };
+  const restore = () => {
+    rootEl.style.scrollBehavior = prevScrollBehavior;
+  };
   window.addEventListener('wheel', cancel, { passive: true, once: true });
   window.addEventListener('touchstart', cancel, { passive: true, once: true });
   window.addEventListener('keydown', cancel, { once: true });
 
   function step(now: number) {
-    if (cancelled) return;
+    if (cancelled) {
+      restore();
+      return;
+    }
     const elapsed = now - startTime;
     const t = Math.min(1, elapsed / durationMs);
     window.scrollTo({ top: startY + distance * ease(t), behavior: 'auto' });
     if (t < 1) requestAnimationFrame(step);
+    else restore();
   }
   requestAnimationFrame(step);
 }
