@@ -22,14 +22,19 @@ export class UsersService {
     const user = await this.prisma.user.findUnique({
       where: { id },
       include: {
-        googleAccount: { select: { id: true } },
+        googleAccount: { select: { id: true, refreshTokenEnc: true } },
       },
     });
     if (!user) throw new NotFoundException('user not found');
     const membership = await resolveActiveMembership(this.prisma, id);
+    // "connected" means we can make server-side Calendar calls — an account
+    // without a refresh_token can't renew its access token, so the user is
+    // effectively not connected for our purposes.
+    const googleConnected =
+      user.googleAccount !== null && user.googleAccount.refreshTokenEnc !== null;
     return {
       ...user,
-      googleConnected: user.googleAccount !== null,
+      googleConnected,
       membership: membership ? { track: (membership as any).track } : null,
     };
   }
