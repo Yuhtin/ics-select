@@ -62,6 +62,8 @@ export class GoogleCalendarService {
       timeMax: timeMax.toISOString(),
       singleEvents: true,
       orderBy: 'startTime',
+      maxResults: 100,
+      fields: 'items(id,summary,description,start,end,location,htmlLink,conferenceData/entryPoints)',
     });
     const events = res.data.items ?? [];
     const includeAllDay = opts.includeAllDay === true;

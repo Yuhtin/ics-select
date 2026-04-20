@@ -161,6 +161,8 @@ describe('GoogleCalendarService', () => {
         orderBy: 'startTime',
         timeMin: '2026-04-17T12:00:00.000Z',
         timeMax: '2026-04-17T13:00:00.000Z',
+        maxResults: 100,
+        fields: 'items(id,summary,description,start,end,location,htmlLink,conferenceData/entryPoints)',
       }),
     );
     expect(result).toEqual([
