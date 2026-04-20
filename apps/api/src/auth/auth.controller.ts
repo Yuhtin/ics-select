@@ -10,7 +10,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { AuthGuard } from '@nestjs/passport';
 import type { Request, Response } from 'express';
-import { AuthService } from './auth.service.js';
+import { AuthService, EMAIL_NOT_INVITED } from './auth.service.js';
 import { Public } from './decorators/public.decorator.js';
 import { CurrentUser } from './decorators/current-user.decorator.js';
 import type { JwtStrategyPayload } from './strategies/jwt.strategy.js';
@@ -36,9 +36,24 @@ export class AuthController {
   @UseGuards(AuthGuard('google'))
   async googleCallback(@Req() req: Request, @Res() res: Response): Promise<void> {
     const profile = req.user as Parameters<AuthService['loginWithGoogle']>[0];
-    const result = await this.auth.loginWithGoogle(profile);
-    this.setRefreshCookie(res, result.refreshToken);
     const frontend = this.config.getOrThrow<string>('FRONTEND_BASE_URL');
+    let result: Awaited<ReturnType<AuthService['loginWithGoogle']>>;
+    try {
+      result = await this.auth.loginWithGoogle(profile);
+    } catch (err) {
+      // Allowlist reject: redirect to login with a specific error code so
+      // the UI can show "email not invited". Rethrow anything else so the
+      // global filter maps it normally (500 / wrapped Unauthorized etc.).
+      const msg = err instanceof UnauthorizedException ? err.message : null;
+      if (msg === EMAIL_NOT_INVITED) {
+        const url = new URL('/login', frontend);
+        url.searchParams.set('error', 'not_invited');
+        res.redirect(url.toString());
+        return;
+      }
+      throw err;
+    }
+    this.setRefreshCookie(res, result.refreshToken);
     const url = new URL('/auth/callback', frontend);
     url.searchParams.set('token', result.accessToken);
     res.redirect(url.toString());

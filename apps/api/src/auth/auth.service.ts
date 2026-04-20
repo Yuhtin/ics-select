@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service.js';
 import { JwtTokenService } from './tokens/jwt-token.service.js';
 import { RefreshTokenService } from './tokens/refresh-token.service.js';
@@ -6,6 +6,12 @@ import type { GoogleProfilePayload } from './strategies/google.strategy.js';
 import { AesGcmService } from '../common/crypto/aes-gcm.service.js';
 
 export const BOOTSTRAP_ADMIN_EMAILS_TOKEN = 'BOOTSTRAP_ADMIN_EMAILS_TOKEN';
+
+// Marker thrown from loginWithGoogle when a first-login email is not in the
+// invite allowlist or bootstrap admin list. The controller catches it and
+// redirects the user to /login?error=not_invited so they get a UX instead
+// of a raw 401.
+export const EMAIL_NOT_INVITED = 'EMAIL_NOT_INVITED';
 
 type LoginResult = {
   user: {
@@ -35,6 +41,21 @@ export class AuthService {
     const existing = await this.prisma.user.findUnique({ where: { email: profile.email } });
     const shouldBeAdmin = this.bootstrapAdmins.includes(profile.email);
 
+    // First-login allowlist gate: if this email doesn't have a User row yet
+    // and isn't a bootstrap admin, require a pending InvitedEmail before we
+    // create the User. Domain check already ran in GoogleStrategy.validate;
+    // this is the second, email-level gate.
+    let invite: { id: string; role: 'ADMIN' | 'MEMBER' } | null = null;
+    if (!existing && !shouldBeAdmin) {
+      const row = await this.prisma.invitedEmail.findUnique({
+        where: { email: profile.email },
+      });
+      if (!row) {
+        throw new UnauthorizedException(EMAIL_NOT_INVITED);
+      }
+      invite = { id: row.id, role: row.role };
+    }
+
     const user = existing
       ? await this.prisma.user.update({
           where: { email: profile.email },
@@ -49,7 +70,7 @@ export class AuthService {
             email: profile.email,
             name: profile.name,
             pictureUrl: profile.pictureUrl,
-            role: shouldBeAdmin ? 'ADMIN' : 'MEMBER',
+            role: shouldBeAdmin ? 'ADMIN' : invite?.role ?? 'MEMBER',
           },
         });
 

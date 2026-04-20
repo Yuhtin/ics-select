@@ -12,6 +12,7 @@ type FakeUser = {
 function fakeDeps(bootstrap: string[] = []) {
   const users = new Map<string, FakeUser>();
   const googleAccounts = new Map<string, { accessTokenEnc: string; refreshTokenEnc: string | null; expiresAt: Date; scope: string; userId: string }>();
+  const invites = new Map<string, { id: string; email: string; role: 'ADMIN' | 'MEMBER' }>();
   const prisma = {
     user: {
       findUnique: jest.fn(async ({ where }: { where: { email: string } }) =>
@@ -38,6 +39,11 @@ function fakeDeps(bootstrap: string[] = []) {
         return next;
       }),
     },
+    invitedEmail: {
+      findUnique: jest.fn(async ({ where }: { where: { email: string } }) =>
+        invites.get(where.email) ?? null,
+      ),
+    },
   };
   const jwt = { sign: jest.fn(() => 'jwt.token.value') };
   const refresh = {
@@ -54,12 +60,17 @@ function fakeDeps(bootstrap: string[] = []) {
   };
   const aes = { encrypt: jest.fn((s: string) => `enc(${s})`), decrypt: jest.fn((s: string) => s.replace(/^enc\(|\)$/g, '')) };
   const svc = new AuthService(prisma as any, jwt as any, refresh as any, bootstrap, aes as any);
-  return { svc, prisma, jwt, refresh, users, googleAccounts, aes };
+  return { svc, prisma, jwt, refresh, users, googleAccounts, invites, aes };
 }
 
 describe('AuthService.loginWithGoogle', () => {
-  it('creates a new user on first login', async () => {
-    const { svc, users } = fakeDeps();
+  it('creates a new user on first login when an invite exists', async () => {
+    const { svc, users, invites } = fakeDeps();
+    invites.set('pedro@sou.inteli.edu.br', {
+      id: 'inv-1',
+      email: 'pedro@sou.inteli.edu.br',
+      role: 'MEMBER',
+    });
     const result = await svc.loginWithGoogle({
       email: 'pedro@sou.inteli.edu.br',
       name: 'Pedro',
@@ -74,8 +85,44 @@ describe('AuthService.loginWithGoogle', () => {
     expect(result.refreshToken.plaintext).toMatch(/^rt-/);
   });
 
-  it('updates name and picture on subsequent login', async () => {
-    const { svc, users, prisma } = fakeDeps();
+  it('rejects first-login when email is neither invited nor bootstrap admin', async () => {
+    const { svc, users } = fakeDeps();
+    await expect(
+      svc.loginWithGoogle({
+        email: 'stranger@sou.inteli.edu.br',
+        name: 'Stranger',
+        pictureUrl: null,
+        accessToken: 'ga',
+        refreshToken: null,
+      }),
+    ).rejects.toThrow(/EMAIL_NOT_INVITED/);
+    expect(users.size).toBe(0);
+  });
+
+  it('first-login inherits role from invite (ADMIN invite → ADMIN user)', async () => {
+    const { svc, users, invites } = fakeDeps();
+    invites.set('pedro@sou.inteli.edu.br', {
+      id: 'inv-1',
+      email: 'pedro@sou.inteli.edu.br',
+      role: 'ADMIN',
+    });
+    await svc.loginWithGoogle({
+      email: 'pedro@sou.inteli.edu.br',
+      name: 'Pedro',
+      pictureUrl: null,
+      accessToken: 'ga',
+      refreshToken: null,
+    });
+    expect(users.get('pedro@sou.inteli.edu.br')!.role).toBe('ADMIN');
+  });
+
+  it('updates name and picture on subsequent login (no invite needed once User exists)', async () => {
+    const { svc, users, prisma, invites } = fakeDeps();
+    invites.set('pedro@sou.inteli.edu.br', {
+      id: 'inv-1',
+      email: 'pedro@sou.inteli.edu.br',
+      role: 'MEMBER',
+    });
     await svc.loginWithGoogle({
       email: 'pedro@sou.inteli.edu.br',
       name: 'Pedro',
@@ -97,7 +144,7 @@ describe('AuthService.loginWithGoogle', () => {
     expect(stored.pictureUrl).toBe('http://new');
   });
 
-  it('promotes an email in BOOTSTRAP_ADMIN_EMAILS to ADMIN on first login', async () => {
+  it('promotes an email in BOOTSTRAP_ADMIN_EMAILS to ADMIN on first login (no invite needed)', async () => {
     const { svc, users } = fakeDeps(['admin@sou.inteli.edu.br']);
     await svc.loginWithGoogle({
       email: 'admin@sou.inteli.edu.br',
@@ -110,7 +157,12 @@ describe('AuthService.loginWithGoogle', () => {
   });
 
   it('persists encrypted Google access and refresh tokens on login', async () => {
-    const { svc, googleAccounts, aes } = fakeDeps();
+    const { svc, googleAccounts, aes, invites } = fakeDeps();
+    invites.set('pedro@sou.inteli.edu.br', {
+      id: 'inv-1',
+      email: 'pedro@sou.inteli.edu.br',
+      role: 'MEMBER',
+    });
     await svc.loginWithGoogle({
       email: 'pedro@sou.inteli.edu.br',
       name: 'Pedro',

@@ -7,6 +7,7 @@ import { PlanDraftsModule } from './plan-drafts/plan-drafts.module.js';
 import { NotesModule } from './notes/notes.module.js';
 import { MemberDetailModule } from './member-detail/member-detail.module.js';
 import { PlansOverviewModule } from './plans-overview/plans-overview.module.js';
+import { InvitesModule } from './invites/invites.module.js';
 
 @Module({
   imports: [
@@ -18,6 +19,8 @@ import { PlansOverviewModule } from './plans-overview/plans-overview.module.js';
     NotesModule,
     MemberDetailModule,
     PlansOverviewModule,
+    InvitesModule,
   ],
+  exports: [InvitesModule],
 })
 export class AdminModule {}

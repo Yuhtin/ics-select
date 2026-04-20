@@ -74,6 +74,14 @@ export class AvailabilityService {
               track: input.targetTrack,
             },
           });
+          // First cycle enrollment — the pending InvitedEmail (if any) has
+          // served its purpose. Drop it so the admin UI stops showing a
+          // ghost "pending" row for someone who's now a real member.
+          if (user?.email) {
+            await this.prisma.invitedEmail.deleteMany({
+              where: { email: user.email },
+            });
+          }
         }
       }
     }

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Search } from 'lucide-react';
 import { useAdminMembers } from '../../../../lib/queries/admin-members-list';
 import { Eyebrow } from '../../../../components/ui/eyebrow';
+import { InvitesSection } from '../../../../components/admin/invites-section';
 import { clsx } from 'clsx';
 
 function Initials({
@@ -89,7 +90,7 @@ export default function AdminMembersPage() {
           No members match.
         </p>
       ) : (
-        <ul className="divide-y divide-rule border border-rule rounded-card bg-surface">
+        <ul className="divide-y divide-rule border border-rule rounded-card bg-surface mb-10">
           {filtered.map((m) => (
             <li key={m.id}>
               <Link
@@ -130,6 +131,8 @@ export default function AdminMembersPage() {
           ))}
         </ul>
       )}
+
+      <InvitesSection />
     </div>
   );
 }

@@ -63,9 +63,20 @@ export class CyclesService {
   }
 
   async addMember(cycleId: string, userId: string) {
-    return this.prisma.cycleMembership.create({
+    const membership = await this.prisma.cycleMembership.create({
       data: { cycleId, userId },
     });
+    // Once the user is enrolled in any cycle the pending InvitedEmail row
+    // has served its purpose — drop it so the admin UI stops listing them
+    // as pending. Safe no-op if there was no invite (bootstrap admins, etc).
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { email: true },
+    });
+    if (user?.email) {
+      await this.prisma.invitedEmail.deleteMany({ where: { email: user.email } });
+    }
+    return membership;
   }
 
   async removeMember(cycleId: string, userId: string) {

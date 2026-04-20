@@ -95,6 +95,21 @@ model User {
   adminNotesAbout     AdminNote[]        @relation("about")
   dismissedAlerts     DismissedAlert[]
   retroRemindersSent  RetroReminderSent[]
+  invitesCreated      InvitedEmail[]     @relation("inviteCreatedBy")
+}
+
+// Allowlist for first-login. Admin pre-registers an email with a role; the
+// user can then sign in with Google even though they have no User row yet.
+// Once the user is enrolled in any CycleMembership the invite is deleted —
+// the User/CycleMembership rows are the permanent record from then on.
+model InvitedEmail {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  role        Role     @default(MEMBER)
+  createdAt   DateTime @default(now())
+  createdById String?
+
+  createdBy User? @relation("inviteCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
 }
 
 model RefreshToken {
