@@ -73,29 +73,36 @@ enum AlertType {
   CALENDAR_BROKEN
 }
 
-model User {
-  id                  String    @id @default(cuid())
-  email               String    @unique
-  name                String
-  pictureUrl          String?
-  role                Role      @default(MEMBER)
-  whatsappPhone       String?
-  privacyAcceptedAt   DateTime?
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
+enum ThemePreference {
+  LIGHT
+  DARK
+}
 
-  refreshTokens       RefreshToken[]
-  memberships         CycleMembership[]
-  googleAccount       GoogleAccount?
-  availability        MemberAvailability?
-  weeklyPlans         WeeklyPlan[]
-  attendance          ClassAttendance[]
-  retros              WeeklyRetro[]
-  adminNotesAuthored  AdminNote[]        @relation("author")
-  adminNotesAbout     AdminNote[]        @relation("about")
-  dismissedAlerts     DismissedAlert[]
-  retroRemindersSent  RetroReminderSent[]
-  invitesCreated      InvitedEmail[]     @relation("inviteCreatedBy")
+model User {
+  id                String           @id @default(cuid())
+  email             String           @unique
+  name              String
+  pictureUrl        String?
+  role              Role             @default(MEMBER)
+  whatsappPhone     String?
+  privacyAcceptedAt DateTime?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  themePreference   ThemePreference?
+  themePreferenceAt DateTime?
+
+  refreshTokens      RefreshToken[]
+  memberships        CycleMembership[]
+  googleAccount      GoogleAccount?
+  availability       MemberAvailability?
+  weeklyPlans        WeeklyPlan[]
+  attendance         ClassAttendance[]
+  retros             WeeklyRetro[]
+  adminNotesAuthored AdminNote[]         @relation("author")
+  adminNotesAbout    AdminNote[]         @relation("about")
+  dismissedAlerts    DismissedAlert[]
+  retroRemindersSent RetroReminderSent[]
+  invitesCreated     InvitedEmail[]      @relation("inviteCreatedBy")
 }
 
 // Allowlist for first-login. Admin pre-registers an email with a role; the
@@ -120,6 +127,7 @@ model RefreshToken {
   createdAt DateTime  @default(now())
   revokedAt DateTime?
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([userId])
 }
 
@@ -157,6 +165,7 @@ model CycleMembership {
   joinedAt DateTime @default(now())
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   cycle    Cycle    @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+
   @@unique([userId, cycleId])
 }
 
@@ -177,14 +186,14 @@ model MemberAvailability {
 }
 
 model ClassSession {
-  id          String   @id @default(cuid())
+  id          String            @id @default(cuid())
   cycleId     String
   title       String
   topic       String?
   scheduledAt DateTime
-  durationMin Int      @default(90)
+  durationMin Int               @default(90)
   notes       String?
-  cycle       Cycle    @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  cycle       Cycle             @relation(fields: [cycleId], references: [id], onDelete: Cascade)
   attendance  ClassAttendance[]
 }
 
@@ -195,6 +204,7 @@ model ClassAttendance {
   status         AttendanceStatus
   classSession   ClassSession     @relation(fields: [classSessionId], references: [id], onDelete: Cascade)
   user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@unique([classSessionId, userId])
 }
 
@@ -226,6 +236,7 @@ model LibraryItem {
 
   topics    LibraryItemTopic[]
   planItems WeeklyPlanItem[]
+
   @@index([format])
   @@index([difficulty])
 }
@@ -263,6 +274,7 @@ model WeeklyPlan {
   user  User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   cycle Cycle            @relation(fields: [cycleId], references: [id])
   items WeeklyPlanItem[]
+
   @@unique([userId, weekStart])
 }
 
@@ -282,6 +294,7 @@ model WeeklyPlanItem {
   libraryItem LibraryItem      @relation(fields: [libraryItemId], references: [id])
   carriedFrom WeeklyPlanItem?  @relation("carry", fields: [carriedFromItemId], references: [id])
   carriedTo   WeeklyPlanItem[] @relation("carry")
+
   @@unique([weeklyPlanId, order])
   @@index([scheduledAt])
 }
@@ -298,6 +311,7 @@ model WeeklyRetro {
 
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
   cycle Cycle @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+
   @@unique([userId, weekStart])
   @@index([cycleId, weekStart])
 }
@@ -309,8 +323,9 @@ model AdminNote {
   text      String
   createdAt DateTime @default(now())
 
-  about  User @relation("about",  fields: [aboutId],  references: [id], onDelete: Cascade)
+  about  User @relation("about", fields: [aboutId], references: [id], onDelete: Cascade)
   author User @relation("author", fields: [authorId], references: [id])
+
   @@index([aboutId])
 }
 
@@ -323,6 +338,7 @@ model DismissedAlert {
   expiresAt   DateTime
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([userId, expiresAt])
 }
 
