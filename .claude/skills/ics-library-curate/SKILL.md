@@ -46,7 +46,7 @@ Batch-curate `LibraryItem` rows for the ICS Select acervo, following the layered
    - **Always check the BR trio first** when the topic is algos/EDs or architecture:
      - **Augusto Galego** (`@GutoGalego`) — Python implementations of algos/EDs, LC walkthroughs. First stop for practice-tier BR content.
      - **Lucas Montano** — conceitos de CS (Big-O, complexity, arquitetura distribuída). Foundational teaching, fits EASY/MEDIUM. Filter out members-only and 60min+ VSCode screencasts.
-     - **Arthur Takeda** — Davi: "tem videos MUITO BONS". **Handle/URL needs confirmation — ask Davi for the channel URL the first time you need to pull from here.** Don't guess; there are multiple "Arthur Takeda" channels on YouTube.
+     - **Arthur Takeda** (`@arthur.takeda`) — System Design series #1-5 (cap-consistency `g9DfXmDfE_Q`, reliability `Xiod8w7QtQ4`, caching `i3Y2NmCGfuA`, databases `ILt31254Up4`, sharding/replication `czMY_ATOej0`), fundamentos (OS `c_13dk4cxQ0`, Docker `jftIzkXbKKY`, auth `uLY1CuLi9ac`, AWS `8chgJEuDzYM`, compiladores `7R9ZYaDTAAc`), JS deep-dives (`JsvVohoIdt8`, `vvC5g9_U0wg`, `6rdD4itgDVk`). Formato 8-12min, conceitual, não screencast. Davi: "MUITO BONS".
    - **How to search a BR channel's catalog fast:**
      ```bash
      curl -s -A "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36" \
@@ -104,7 +104,7 @@ Batch-curate `LibraryItem` rows for the ICS Select acervo, following the layered
 | Back To Back SWE | Interview prep / algorithms | Animated slides + whiteboard, zero VSCode |
 | NeetCode | Arrays/hashing/algos animated explainers | **Only animated explanation videos, NOT LC solve-alongs** in VSCode. If title is "Leetcode X - Python" with code walkthrough, skip. |
 | Filipe Deschamps (BR) | Architecture-only | Filter out VSCode screencasts video-by-video. Heuristic: titles with "criando X", "codando Y", "montando Z" with a specific framework name are usually screencasts — skip. Architectural titles ("como funciona", "por que X", "entendendo Y") are usually OK. When in doubt, open the video page and check the thumbnail/description for IDE shots. |
-| Arthur Takeda (BR) | BR tech content — Davi: "MUITO BONS" | **Handle/URL TBD** — ask Davi for the channel URL the first time you pull from this channel. Multiple "Arthur Takeda" channels exist on YouTube (fishing/RC cars/etc.); don't guess. |
+| Arthur Takeda (BR) `@arthur.takeda` | System Design series (#1-5) + fundamentos (OS, Docker, compiladores, auth, cloud) + JS/framework deep-dives | Davi: "MUITO BONS". Conceitual, 8-12min sweet-spot. Use pra SD topics (cap-consistency `g9DfXmDfE_Q`, reliability `Xiod8w7QtQ4`, sharding `czMY_ATOej0`) e fundamentos (containers `jftIzkXbKKY`, security/auth `uLY1CuLi9ac`, cloud `8chgJEuDzYM`). |
 | Augusto Galego (BR) | Senior interview prep + algos/EDs practice in Python | Channel `@GutoGalego`. Whole channel OK. **First stop for BR `practice`-tier content** on algos/EDs (MergeSort `a5LfKZp34d8`, Quicksort `nV_WE8SEuGE`, hashmap `J4ELMYEGVS0`, linked list `-BU34jnMasc`, LC 206 `8kmAY2O4SBg`). Senior eng playlist = BIG_TECH only. |
 
 **Rejected channels — NEVER propose**: Michael Sambol, Gaurav Sen, Jordan has no life, Fabio Akita, IBM Technology.
