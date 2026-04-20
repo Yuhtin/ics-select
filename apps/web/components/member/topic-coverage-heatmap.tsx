@@ -13,34 +13,37 @@ export type CoverageTopic = {
   itemsDone: number;
 };
 
-function cellTone(planned: number, done: number): string {
-  if (planned === 0) return 'bg-paper-warm';
+type MasteryTier = 'none' | 'started' | 'on-track' | 'complete';
+
+function tierOf(planned: number, done: number): MasteryTier {
+  if (planned === 0) return 'none';
   const pct = done / planned;
-  if (pct === 0) return 'bg-ink/10';
-  if (pct <= 0.25) return 'bg-ink/25';
-  if (pct <= 0.5) return 'bg-ink/45';
-  if (pct < 1) return 'bg-ink/70';
-  return 'bg-ink';
+  if (pct >= 1) return 'complete';
+  if (pct >= 0.5) return 'on-track';
+  return 'started';
 }
 
-function cellTextTone(planned: number, done: number): string {
-  if (planned === 0) return 'text-ink-faint';
-  const pct = done / planned;
-  return pct > 0.5 ? 'text-paper' : 'text-ink-soft';
-}
+const TIER_BG: Record<MasteryTier, string> = {
+  none: 'bg-paper-warm',
+  started: 'bg-ink/20',
+  'on-track': 'bg-ink/60',
+  complete: 'bg-ink',
+};
 
 interface Props {
   topics: CoverageTopic[];
   selectedId?: string | null;
   onSelect?: (topicId: string | null) => void;
-  density?: 'compact' | 'comfortable';
+  tileSize?: number;
+  showLegend?: boolean;
 }
 
 export function TopicCoverageHeatmap({
   topics,
   selectedId,
   onSelect,
-  density = 'comfortable',
+  tileSize = 22,
+  showLegend = true,
 }: Props) {
   const grouped = useMemo(() => {
     const byPhase = new Map<PhaseKey, CoverageTopic[]>();
@@ -51,76 +54,93 @@ export function TopicCoverageHeatmap({
       else byPhase.set(phase, [t]);
     }
     for (const arr of byPhase.values()) arr.sort((a, b) => a.order - b.order);
-    return PHASES
-      .map((p) => ({ ...p, topics: byPhase.get(p.key) ?? [] }))
-      .filter((p) => p.topics.length > 0);
+    return PHASES.map((p) => ({
+      ...p,
+      topics: byPhase.get(p.key) ?? [],
+    })).filter((p) => p.topics.length > 0);
   }, [topics]);
 
-  const cellClass =
-    density === 'compact'
-      ? 'h-6 min-w-0 flex-1 px-1.5'
-      : 'h-7 min-w-[84px] px-2';
-
-  const labelSize = density === 'compact' ? 'text-[9px]' : 'text-[10px]';
+  const dim = { width: tileSize, height: tileSize };
 
   return (
-    <div className="space-y-4">
-      {grouped.map((phase) => {
-        const phasePlanned = phase.topics.reduce((s, t) => s + t.itemsPlanned, 0);
-        const phaseDone = phase.topics.reduce((s, t) => s + t.itemsDone, 0);
-        return (
-          <div key={phase.key} className="space-y-1.5">
-            <div className="flex items-baseline justify-between gap-2">
-              <p className="font-mono text-[10px] font-semibold uppercase tracking-eyebrow text-ink-mute">
-                {phase.label}
-              </p>
-              <p className="font-mono text-[10px] tabular-nums text-ink-faint">
-                {phaseDone}/{phasePlanned}
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-1">
-              {phase.topics.map((t) => {
-                const tone = cellTone(t.itemsPlanned, t.itemsDone);
-                const textTone = cellTextTone(t.itemsPlanned, t.itemsDone);
-                const isSelected = selectedId === t.topicId;
-                return (
-                  <div
-                    key={t.topicId}
-                    onMouseEnter={onSelect ? () => onSelect(t.topicId) : undefined}
-                    onMouseLeave={onSelect ? () => onSelect(null) : undefined}
-                    title={`${t.label} — ${t.itemsDone}/${t.itemsPlanned}`}
-                    className={clsx(
-                      'flex items-center gap-1.5 rounded-sm border transition-colors',
-                      cellClass,
-                      tone,
-                      textTone,
-                      isSelected ? 'border-ink ring-1 ring-ink' : 'border-transparent',
-                      onSelect && 'cursor-default',
-                    )}
-                  >
-                    <span
+    <div className="space-y-3">
+      <div className="space-y-3">
+        {grouped.map((phase) => {
+          const phasePlanned = phase.topics.reduce(
+            (s, t) => s + t.itemsPlanned,
+            0,
+          );
+          const phaseDone = phase.topics.reduce((s, t) => s + t.itemsDone, 0);
+          const phaseCovered = phase.topics.filter(
+            (t) => t.itemsPlanned > 0,
+          ).length;
+          return (
+            <div key={phase.key}>
+              <div className="mb-1.5 flex items-baseline justify-between gap-3">
+                <p className="font-mono text-[10px] font-semibold uppercase tracking-eyebrow text-ink-mute">
+                  {phase.label}
+                </p>
+                <p className="font-mono text-[10px] tabular-nums text-ink-faint">
+                  <span className="text-ink-mute">{phaseCovered}</span>
+                  <span>/{phase.topics.length} covered · </span>
+                  <span className="text-ink-mute">{phaseDone}</span>
+                  <span>/{phasePlanned}</span>
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-[3px]">
+                {phase.topics.map((t) => {
+                  const tier = tierOf(t.itemsPlanned, t.itemsDone);
+                  const isSelected = selectedId === t.topicId;
+                  return (
+                    <div
+                      key={t.topicId}
+                      onMouseEnter={
+                        onSelect ? () => onSelect(t.topicId) : undefined
+                      }
+                      onMouseLeave={
+                        onSelect ? () => onSelect(null) : undefined
+                      }
+                      title={`${t.label} — ${t.itemsDone}/${t.itemsPlanned}`}
+                      style={dim}
                       className={clsx(
-                        'font-mono uppercase tracking-label truncate',
-                        labelSize,
+                        'rounded-[3px] border transition-all',
+                        TIER_BG[tier],
+                        isSelected
+                          ? 'scale-110 border-ink shadow-sm'
+                          : 'border-transparent',
                       )}
-                    >
-                      {t.label}
-                    </span>
-                    <span
-                      className={clsx(
-                        'ml-auto font-mono tabular-nums opacity-80',
-                        density === 'compact' ? 'text-[9px]' : 'text-[9px]',
-                      )}
-                    >
-                      {t.itemsDone}/{t.itemsPlanned}
-                    </span>
-                  </div>
-                );
-              })}
+                    />
+                  );
+                })}
+              </div>
             </div>
+          );
+        })}
+      </div>
+
+      {showLegend && (
+        <div className="flex items-center gap-2 pt-1">
+          <span className="font-mono text-[9px] uppercase tracking-label text-ink-faint">
+            less
+          </span>
+          <div className="flex gap-[3px]">
+            {(['none', 'started', 'on-track', 'complete'] as const).map(
+              (tier) => (
+                <div
+                  key={tier}
+                  className={clsx(
+                    'h-2.5 w-2.5 rounded-[2px]',
+                    TIER_BG[tier],
+                  )}
+                />
+              ),
+            )}
           </div>
-        );
-      })}
+          <span className="font-mono text-[9px] uppercase tracking-label text-ink-faint">
+            more
+          </span>
+        </div>
+      )}
     </div>
   );
 }

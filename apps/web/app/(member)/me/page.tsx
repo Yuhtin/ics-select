@@ -81,7 +81,7 @@ export default function MeHomePage() {
             <div className="mt-4">
               <TopicCoverageHeatmap
                 topics={data.topicCoverage}
-                density="compact"
+                tileSize={18}
               />
             </div>
           </section>
