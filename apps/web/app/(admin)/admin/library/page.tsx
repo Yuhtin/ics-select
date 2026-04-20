@@ -332,7 +332,7 @@ export default function AdminLibraryPage() {
           )}
         </div>
       ) : showShelves ? (
-        <div className="space-y-10">
+        <div className="space-y-2">
           {phaseGroups.map((phase) => (
             <LibraryShelf
               key={phase.key}

@@ -51,34 +51,20 @@ export function LibraryShelf({
   };
 
   return (
-    <section className="space-y-3">
-      <div className="flex items-baseline justify-between gap-3 px-1">
-        <div className="flex items-baseline gap-3">
-          <h2 className="font-serif text-lg font-semibold tracking-tight text-fg">
-            {label}
-          </h2>
-          <span className="font-mono text-[11px] tabular-nums text-fg-mute">
-            {items.length} {items.length === 1 ? 'item' : 'items'}
-          </span>
-        </div>
-        <div className="hidden items-center gap-1 md:flex">
-          <ShelfNavButton
-            onClick={() => scrollBy(-1)}
-            disabled={!canScrollLeft}
-            dir="left"
-          />
-          <ShelfNavButton
-            onClick={() => scrollBy(1)}
-            disabled={!canScrollRight}
-            dir="right"
-          />
-        </div>
+    <section className="space-y-1">
+      <div className="flex items-baseline gap-3 px-1">
+        <h2 className="font-sans text-[22px] font-bold leading-none tracking-[-0.01em] text-fg">
+          {label}
+        </h2>
+        <span className="font-mono text-[10px] tabular-nums text-fg-faint">
+          {items.length}
+        </span>
       </div>
 
-      <div className="relative">
+      <div className="group/shelf relative">
         <div
           ref={scrollRef}
-          className="flex gap-4 overflow-x-auto scroll-smooth py-6 pl-1 pr-1 [scrollbar-width:thin]"
+          className="flex gap-4 overflow-x-auto scroll-smooth pb-5 pl-1 pr-1 pt-2 [scrollbar-width:thin]"
           style={{ scrollSnapType: 'x proximity' }}
         >
           {items.map((item) => (
@@ -92,42 +78,61 @@ export function LibraryShelf({
             </div>
           ))}
         </div>
-        <div
-          className={clsx(
-            'pointer-events-none absolute left-0 top-0 h-full w-10 bg-gradient-to-r from-bg to-transparent transition-opacity',
-            canScrollLeft ? 'opacity-100' : 'opacity-0',
-          )}
+
+        {/* Left edge nav — overlaid on cards, visible only when scrollable */}
+        <ShelfEdgeNav
+          dir="left"
+          onClick={() => scrollBy(-1)}
+          visible={canScrollLeft}
         />
-        <div
-          className={clsx(
-            'pointer-events-none absolute right-0 top-0 h-full w-10 bg-gradient-to-l from-bg to-transparent transition-opacity',
-            canScrollRight ? 'opacity-100' : 'opacity-0',
-          )}
+        <ShelfEdgeNav
+          dir="right"
+          onClick={() => scrollBy(1)}
+          visible={canScrollRight}
         />
       </div>
     </section>
   );
 }
 
-function ShelfNavButton({
+function ShelfEdgeNav({
   dir,
   onClick,
-  disabled,
+  visible,
 }: {
   dir: 'left' | 'right';
   onClick: () => void;
-  disabled: boolean;
+  visible: boolean;
 }) {
   const Icon = dir === 'left' ? ChevronLeft : ChevronRight;
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      aria-label={dir === 'left' ? 'Scroll left' : 'Scroll right'}
-      className="grid h-7 w-7 place-items-center rounded-input border border-border-token text-fg-mute transition-colors hover:bg-bg-subtle hover:text-fg disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent"
+    <div
+      aria-hidden={!visible}
+      className={clsx(
+        'pointer-events-none absolute top-0 z-20 flex h-full w-[72px] items-center transition-opacity duration-200',
+        dir === 'left'
+          ? 'left-0 justify-start pl-1'
+          : 'right-0 justify-end pr-1',
+        // Subtle fade matching page bg, keeps cards visible underneath.
+        dir === 'left'
+          ? 'bg-gradient-to-r from-bg via-bg/75 to-transparent'
+          : 'bg-gradient-to-l from-bg via-bg/75 to-transparent',
+        visible
+          ? 'opacity-100 md:opacity-0 md:group-hover/shelf:opacity-100 md:group-focus-within/shelf:opacity-100'
+          : 'opacity-0',
+      )}
     >
-      <Icon className="h-4 w-4" strokeWidth={1.8} />
-    </button>
+      <button
+        type="button"
+        onClick={onClick}
+        aria-label={dir === 'left' ? 'Scroll left' : 'Scroll right'}
+        tabIndex={visible ? 0 : -1}
+        className={clsx(
+          'pointer-events-auto grid h-14 w-11 place-items-center rounded-input bg-black/70 text-white shadow-xl backdrop-blur transition-all duration-200 hover:scale-[1.08] hover:bg-black/85 focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-bg',
+        )}
+      >
+        <Icon className="h-6 w-6" strokeWidth={2.2} />
+      </button>
+    </div>
   );
 }
