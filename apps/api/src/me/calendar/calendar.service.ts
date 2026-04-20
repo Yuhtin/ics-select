@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { ForbiddenException, Injectable, Logger } from '@nestjs/common';
 import type { ItemOutcome, ItemFormat } from '@ics-select/prisma';
 import { PrismaService } from '../../common/prisma/prisma.service.js';
 import { GoogleCalendarService } from '../../google-calendar/google-calendar.service.js';
@@ -165,5 +165,26 @@ export class MeCalendarService {
     });
 
     return { ...base, hasGoogleConnection: true, events };
+  }
+
+  async reschedule(
+    userId: string,
+    eventId: string,
+    start: Date,
+    end: Date,
+  ): Promise<void> {
+    // Look up the event in a 48h window around the new time to verify it's ICS.
+    // Using listEventsInRange keeps us on one auth path; googleapis lacks a
+    // cheap "get single event by id" without another service method.
+    const windowStart = new Date(start.getTime() - 24 * 60 * 60 * 1000);
+    const windowEnd = new Date(end.getTime() + 24 * 60 * 60 * 1000);
+    const events = await this.gcal.listEventsInRange(userId, windowStart, windowEnd, {
+      includeAllDay: true,
+    });
+    const target = events.find((e) => e.id === eventId);
+    if (!target || !extractIcsId(target.description)) {
+      throw new ForbiddenException('Cannot reschedule non-ICS events');
+    }
+    await this.gcal.rescheduleEvent(userId, eventId, start, end);
   }
 }

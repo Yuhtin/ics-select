@@ -150,4 +150,53 @@ describe('MeCalendarService', () => {
       );
     });
   });
+
+  describe('reschedule', () => {
+    it('throws ForbiddenException when target event has no ICS ID', async () => {
+      gcal.listEventsInRange.mockResolvedValue([
+        {
+          id: 'e-ext',
+          summary: 'Standup',
+          description: 'no marker here',
+          start: new Date('2026-04-20T13:00:00Z'),
+          end: new Date('2026-04-20T13:15:00Z'),
+          allDay: false,
+        },
+      ]);
+      await expect(
+        service.reschedule(
+          'user-1',
+          'e-ext',
+          new Date('2026-04-20T14:00:00Z'),
+          new Date('2026-04-20T15:00:00Z'),
+        ),
+      ).rejects.toThrow(/Cannot reschedule non-ICS/);
+    });
+
+    it('calls rescheduleEvent when target event has an ICS ID', async () => {
+      gcal.listEventsInRange.mockResolvedValue([
+        {
+          id: 'e-ics',
+          summary: 'Two pointers',
+          description: 'ICS ID: plan-1/item-1',
+          start: new Date('2026-04-20T14:00:00Z'),
+          end: new Date('2026-04-20T14:30:00Z'),
+          allDay: false,
+        },
+      ]);
+      gcal.rescheduleEvent.mockResolvedValue(undefined);
+      await service.reschedule(
+        'user-1',
+        'e-ics',
+        new Date('2026-04-20T16:00:00Z'),
+        new Date('2026-04-20T16:30:00Z'),
+      );
+      expect(gcal.rescheduleEvent).toHaveBeenCalledWith(
+        'user-1',
+        'e-ics',
+        new Date('2026-04-20T16:00:00Z'),
+        new Date('2026-04-20T16:30:00Z'),
+      );
+    });
+  });
 });
