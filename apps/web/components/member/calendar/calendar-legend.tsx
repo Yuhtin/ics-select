@@ -8,14 +8,23 @@ const ITEMS: { label: string; cls: string }[] = [
 
 export function CalendarLegend() {
   return (
-    <div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-border-token pt-4 font-mono text-[10px] uppercase tracking-eyebrow text-fg-mute">
-      <span className="font-semibold">Outcomes</span>
-      {ITEMS.map(({ label, cls }) => (
-        <span key={label} className="inline-flex items-center gap-1.5">
-          <span className={`inline-block h-2 w-2 rounded-full ${cls}`} />
-          {label}
+    <details className="border-t border-border-token pt-4 font-mono text-[10px] uppercase tracking-eyebrow text-fg-mute">
+      <summary className="flex cursor-pointer list-none items-center gap-2">
+        <span className="font-semibold">Outcomes</span>
+        <span className="flex items-center gap-1">
+          {ITEMS.map(({ label, cls }) => (
+            <span key={label} className={`inline-block h-2 w-2 rounded-full ${cls}`} aria-hidden />
+          ))}
         </span>
-      ))}
-    </div>
+      </summary>
+      <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2">
+        {ITEMS.map(({ label, cls }) => (
+          <span key={label} className="inline-flex items-center gap-1.5">
+            <span className={`inline-block h-2 w-2 rounded-full ${cls}`} />
+            {label}
+          </span>
+        ))}
+      </div>
+    </details>
   );
 }
