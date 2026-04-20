@@ -48,10 +48,10 @@ describe('MeService', () => {
     const after = Date.now();
 
     expect(prisma.user.update).toHaveBeenCalledTimes(1);
-    const call = prisma.user.update.mock.calls[0][0];
+    const call = prisma.user.update.mock.calls[0]![0] as { where: { id: string }; data: { themePreference: string; themePreferenceAt: Date } };
     expect(call.where).toEqual({ id: 'u-1' });
     expect(call.data.themePreference).toBe('DARK');
-    const writtenAt = call.data.themePreferenceAt as Date;
+    const writtenAt = call.data.themePreferenceAt;
     expect(writtenAt.getTime()).toBeGreaterThanOrEqual(before);
     expect(writtenAt.getTime()).toBeLessThanOrEqual(after);
   });
@@ -62,7 +62,8 @@ describe('MeService', () => {
     await svc.updateThemePreference('u-1', 'LIGHT');
     await svc.updateThemePreference('u-1', 'DARK');
     expect(prisma.user.update).toHaveBeenCalledTimes(2);
-    expect(prisma.user.update.mock.calls[1][0].data.themePreference).toBe('DARK');
+    const secondCall = prisma.user.update.mock.calls[1]![0] as { data: { themePreference: string } };
+    expect(secondCall.data.themePreference).toBe('DARK');
   });
 });
 
