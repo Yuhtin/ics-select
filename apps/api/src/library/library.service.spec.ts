@@ -229,4 +229,22 @@ describe('LibraryService', () => {
     const items = await svc.list();
     expect(items).toHaveLength(2);
   });
+
+  it('search returns empty array when the query matches nothing', async () => {
+    const prisma = fakePrisma();
+    const svc = new LibraryService(prisma as any, openai as any);
+    // Seed two items that do NOT mention "zzzunmatchable".
+    await svc.create({
+      title: 'Arrays 101', description: null, url: null, format: 'ARTICLE',
+      difficulty: 'EASY', estimatedMinutes: 10, source: null, tags: ['arrays'],
+      createdById: 'u-1',
+    });
+    await svc.create({
+      title: 'Trees 101', description: null, url: null, format: 'ARTICLE',
+      difficulty: 'EASY', estimatedMinutes: 10, source: null, tags: ['tree'],
+      createdById: 'u-1',
+    });
+    const results = await svc.search({ query: 'zzzunmatchable' });
+    expect(results).toEqual([]);
+  });
 });

@@ -204,8 +204,8 @@ export class LibraryService {
         "estimatedMinutes", "source", "tags", "tracks",
         "createdAt", "updatedAt",
         CASE
-          WHEN search_vector @@ plainto_tsquery('simple', lower($1))
-            THEN ts_rank(search_vector, plainto_tsquery('simple', lower($1))) * 4
+          WHEN search_vector @@ plainto_tsquery('english', $1)
+            THEN ts_rank(search_vector, plainto_tsquery('english', $1)) * 4
           WHEN "title" ILIKE '%' || $1 || '%' THEN 2
           WHEN "description" ILIKE '%' || $1 || '%' THEN 1
           WHEN "url" ILIKE '%' || $1 || '%' THEN 0.5
@@ -214,7 +214,7 @@ export class LibraryService {
       FROM "LibraryItem"
       WHERE
         (
-          search_vector @@ plainto_tsquery('simple', lower($1))
+          search_vector @@ plainto_tsquery('english', $1)
           OR "title" ILIKE '%' || $1 || '%'
           OR "description" ILIKE '%' || $1 || '%'
           OR "url" ILIKE '%' || $1 || '%'
@@ -258,17 +258,6 @@ export class LibraryService {
         const topics = (i.topics ?? []) as TopicRef[];
         return topics.some((t) => t.id === wantedTopic);
       });
-    }
-
-    // Supplement with the filtered listing when the query returned too few hits.
-    if (filtered.length < Math.min(5, limit)) {
-      const fallback = await filteredListing();
-      const seen = new Set(filtered.map((i) => i.id as string));
-      for (const item of fallback) {
-        if (seen.has(item.id as string)) continue;
-        filtered.push(item);
-        if (filtered.length >= limit) break;
-      }
     }
 
     return filtered;
