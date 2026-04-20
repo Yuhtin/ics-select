@@ -8,11 +8,13 @@ import { GoogleStrategy } from './strategies/google.strategy.js';
 import { JwtStrategy } from './strategies/jwt.strategy.js';
 import { JwtTokenService } from './tokens/jwt-token.service.js';
 import { RefreshTokenService } from './tokens/refresh-token.service.js';
+import { GoogleCalendarModule } from '../google-calendar/google-calendar.module.js';
 
 @Module({
   imports: [
     ConfigModule,
     PassportModule,
+    GoogleCalendarModule,
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({

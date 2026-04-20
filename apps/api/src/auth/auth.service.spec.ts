@@ -59,8 +59,9 @@ function fakeDeps(bootstrap: string[] = []) {
     })),
   };
   const aes = { encrypt: jest.fn((s: string) => `enc(${s})`), decrypt: jest.fn((s: string) => s.replace(/^enc\(|\)$/g, '')) };
-  const svc = new AuthService(prisma as any, jwt as any, refresh as any, bootstrap, aes as any);
-  return { svc, prisma, jwt, refresh, users, googleAccounts, invites, aes };
+  const gcal = { invalidateAuth: jest.fn() };
+  const svc = new AuthService(prisma as any, jwt as any, refresh as any, bootstrap, aes as any, gcal as any);
+  return { svc, prisma, jwt, refresh, users, googleAccounts, invites, aes, gcal };
 }
 
 describe('AuthService.loginWithGoogle', () => {
@@ -175,5 +176,22 @@ describe('AuthService.loginWithGoogle', () => {
     const row = Array.from(googleAccounts.values())[0];
     expect(row?.accessTokenEnc).toBe('enc(ga-plain)');
     expect(row?.refreshTokenEnc).toBe('enc(gr-plain)');
+  });
+
+  it('invalidates the GoogleCalendarService auth cache after upserting GoogleAccount', async () => {
+    const { svc, gcal, invites } = fakeDeps();
+    invites.set('pedro@sou.inteli.edu.br', {
+      id: 'inv-1',
+      email: 'pedro@sou.inteli.edu.br',
+      role: 'MEMBER',
+    });
+    const result = await svc.loginWithGoogle({
+      email: 'pedro@sou.inteli.edu.br',
+      name: 'Pedro',
+      pictureUrl: null,
+      accessToken: 'ga',
+      refreshToken: null,
+    });
+    expect(gcal.invalidateAuth).toHaveBeenCalledWith(result.user.id);
   });
 });
