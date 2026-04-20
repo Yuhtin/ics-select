@@ -34,9 +34,13 @@ export type GetWeekResponse = {
   events: CalendarEvent[];
 };
 
-function isInvalidGrant(err: unknown): boolean {
+function isGoogleAuthFailure(err: unknown): boolean {
   const msg = (err as { message?: string })?.message ?? String(err);
-  return msg.includes('invalid_grant') || msg.includes('Invalid Credentials');
+  return (
+    msg.includes('invalid_grant') ||
+    msg.includes('Invalid Credentials') ||
+    msg.includes('No refresh token')
+  );
 }
 
 @Injectable()
@@ -77,8 +81,10 @@ export class MeCalendarService {
         includeAllDay: true,
       });
     } catch (err) {
-      if (isInvalidGrant(err)) {
-        this.logger.warn(`calendar: invalid_grant for user ${userId}`);
+      if (isGoogleAuthFailure(err)) {
+        this.logger.warn(
+          `calendar: google auth failed for user ${userId}: ${(err as Error).message}`,
+        );
         return { ...base, hasGoogleConnection: false, events: [] };
       }
       throw err;

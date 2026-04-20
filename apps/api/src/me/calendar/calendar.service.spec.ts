@@ -53,6 +53,15 @@ describe('MeCalendarService', () => {
       expect(result.events).toEqual([]);
     });
 
+    it('returns hasGoogleConnection=false when listEventsInRange throws "No refresh token is set"', async () => {
+      prisma.googleAccount.findUnique.mockResolvedValue({ userId: 'user-1' });
+      prisma.memberAvailability.findUnique.mockResolvedValue({ timezone: 'America/Sao_Paulo' });
+      gcal.listEventsInRange.mockRejectedValue(new Error('No refresh token is set.'));
+      const result = await service.getWeek('user-1', weekStart);
+      expect(result.hasGoogleConnection).toBe(false);
+      expect(result.events).toEqual([]);
+    });
+
     it('classifies events with ICS ID marker as kind=ICS, others as EXTERNAL', async () => {
       prisma.googleAccount.findUnique.mockResolvedValue({ userId: 'user-1' });
       prisma.memberAvailability.findUnique.mockResolvedValue({ timezone: 'America/Sao_Paulo' });
