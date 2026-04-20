@@ -18,6 +18,12 @@ type Item = {
 function fakePrisma() {
   const items = new Map<string, Item>();
   const raw: Array<{ embeddingRaw: number[]; id: string }> = [];
+  const topicRows: Array<{ id: string; slug: string; label: string }> = [];
+  const libraryItemTopicRows: Array<{
+    itemId: string;
+    topicId: string;
+    isPrimary: boolean;
+  }> = [];
   return {
     items,
     raw,
@@ -53,12 +59,52 @@ function fakePrisma() {
       }),
     },
     libraryItemTopic: {
-      findMany: jest.fn(async () => []),
+      rows: libraryItemTopicRows,
+      findMany: jest.fn(async (args?: any) => {
+        const w = args?.where ?? {};
+        const filtered = libraryItemTopicRows.filter((r) => {
+          if (w.itemId?.in && !w.itemId.in.includes(r.itemId)) return false;
+          if (w.topicId?.in && !w.topicId.in.includes(r.topicId)) return false;
+          if (w.topicId && typeof w.topicId === 'string' && r.topicId !== w.topicId) {
+            return false;
+          }
+          return true;
+        });
+        // If the service asked for `include: { topic: { select: ... } }`,
+        // emulate the join; otherwise return the raw rows.
+        if (args?.include?.topic) {
+          const byId = new Map(topicRows.map((t) => [t.id, t]));
+          return filtered.map((r) => ({ ...r, topic: byId.get(r.topicId) ?? null }));
+        }
+        return filtered;
+      }),
       deleteMany: jest.fn(async () => ({ count: 0 })),
       create: jest.fn(async ({ data }: any) => data),
     },
     topic: {
-      findMany: jest.fn(async () => []),
+      // Tests seed rows via `prisma.topic.rows.push(...)`. Do NOT reassign
+      // `prisma.topic.rows = [...]` — the mock closes over the original array
+      // reference, so reassignment leaves the mock reading a stale empty array.
+      rows: topicRows,
+      findMany: jest.fn(async (args?: any) => {
+        const w = args?.where;
+        if (!w) return [...topicRows];
+        if (w.slug?.in) {
+          return topicRows.filter((r) => (w.slug.in as string[]).includes(r.slug));
+        }
+        // OR: [{ label: { contains: q, mode: 'insensitive' } }, { slug: { contains: q, mode: 'insensitive' } }]
+        if (Array.isArray(w.OR)) {
+          const q: string =
+            w.OR[0]?.label?.contains ?? w.OR[0]?.slug?.contains ?? '';
+          const qLow = q.toLowerCase();
+          return topicRows.filter(
+            (r) =>
+              r.label.toLowerCase().includes(qLow) ||
+              r.slug.toLowerCase().includes(qLow),
+          );
+        }
+        return [...topicRows];
+      }),
     },
     $transaction: jest.fn(async (ops: any[]) => Promise.all(ops)),
     $executeRawUnsafe: jest.fn(async (_sql: string, ...values: unknown[]) => {
@@ -67,8 +113,22 @@ function fakePrisma() {
       raw.push({ id, embeddingRaw: nums });
       return 1;
     }),
-    $queryRawUnsafe: jest.fn(async (_sql: string, ..._values: unknown[]) => {
-      return Array.from(items.values()).map((it) => ({ ...it, score: 0.5 }));
+    $queryRawUnsafe: jest.fn(async (_sql: string, ...values: unknown[]) => {
+      const q = ((values[0] as string | null) ?? '').trim().toLowerCase();
+      if (!q) return [];
+      const hit = (s: string | null | undefined) =>
+        !!s && s.toLowerCase().includes(q);
+      return Array.from(items.values())
+        .map((it) => {
+          if (hit(it.title)) return { ...it, score: 4 };
+          if (hit(it.description)) return { ...it, score: 2 };
+          if (hit(it.tags.join(' '))) return { ...it, score: 1 };
+          if (hit(it.source)) return { ...it, score: 1 };
+          if (hit(it.url)) return { ...it, score: 0.5 };
+          return null;
+        })
+        .filter((x): x is NonNullable<typeof x> => x !== null)
+        .sort((a, b) => b.score - a.score);
     }),
   };
 }
