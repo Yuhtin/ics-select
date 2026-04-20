@@ -56,9 +56,11 @@ const DIFFICULTY_RANK: Record<string, number> = {
   HARD: 2,
 };
 
-// Learning order within a shelf/grid: primary topic's Topic.order, then
-// difficulty ladder (easy → medium → hard), then duration ascending, then
-// title. Keeps intro/foundational clips ahead of deep-dives for the same topic.
+// Learning order within a shelf / grid, matching the curation ladder
+// documented in .claude/skills/ics-library-curate/SKILL.md: primary topic's
+// Topic.order (pedagogical sequence of topics per phase), then the
+// EASY → MEDIUM → HARD ladder (entry-point → practical → deep-dive), then
+// title A-Z as a neutral tiebreaker.
 function sortLibraryItems(
   items: AdminLibraryItem[],
   order: Record<string, number>,
@@ -72,9 +74,6 @@ function sortLibraryItems(
     const aDiff = DIFFICULTY_RANK[a.difficulty] ?? 9;
     const bDiff = DIFFICULTY_RANK[b.difficulty] ?? 9;
     if (aDiff !== bDiff) return aDiff - bDiff;
-    if (a.estimatedMinutes !== b.estimatedMinutes) {
-      return a.estimatedMinutes - b.estimatedMinutes;
-    }
     return a.title.localeCompare(b.title);
   });
 }
