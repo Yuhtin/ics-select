@@ -65,3 +65,35 @@ describe('MeService', () => {
     expect(prisma.user.update.mock.calls[1][0].data.themePreference).toBe('DARK');
   });
 });
+
+import { MeController } from './me.controller';
+
+describe('MeController', () => {
+  it('updateTheme parses body and delegates to service', async () => {
+    const prisma = fakePrisma();
+    const svc = new MeService(prisma as any);
+    const controller = new MeController(svc);
+    const user = { sub: 'u-1', email: 'a@x.com', role: 'MEMBER' } as any;
+
+    await controller.updateTheme(user, { themePreference: 'DARK' });
+
+    expect(prisma.user.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'u-1' },
+        data: expect.objectContaining({ themePreference: 'DARK' }),
+      }),
+    );
+  });
+
+  it('updateTheme rejects invalid enum via Zod', async () => {
+    const prisma = fakePrisma();
+    const svc = new MeService(prisma as any);
+    const controller = new MeController(svc);
+    const user = { sub: 'u-1', email: 'a@x.com', role: 'MEMBER' } as any;
+
+    await expect(
+      controller.updateTheme(user, { themePreference: 'SYSTEM' } as any),
+    ).rejects.toThrow();
+    expect(prisma.user.update).not.toHaveBeenCalled();
+  });
+});
