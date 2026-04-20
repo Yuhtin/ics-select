@@ -56,14 +56,11 @@ export class MeCalendarService {
     const weekEnd = new Date(weekStart);
     weekEnd.setDate(weekEnd.getDate() + 7);
 
-    const availability = await this.prisma.memberAvailability.findUnique({
-      where: { userId },
-    });
+    const [availability, googleAccount] = await Promise.all([
+      this.prisma.memberAvailability.findUnique({ where: { userId } }),
+      this.prisma.googleAccount.findUnique({ where: { userId } }),
+    ]);
     const timezone = availability?.timezone ?? DEFAULT_TZ;
-
-    const googleAccount = await this.prisma.googleAccount.findUnique({
-      where: { userId },
-    });
 
     const base = {
       weekStart: weekStart.toISOString(),

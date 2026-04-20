@@ -158,6 +158,29 @@ describe('MeCalendarService', () => {
         { includeAllDay: true },
       );
     });
+
+    it('fetches availability and googleAccount in parallel', async () => {
+      const resolveAvailability = { value: null as any };
+      const resolveGoogle = { value: null as any };
+      prisma.memberAvailability.findUnique.mockImplementationOnce(
+        () => new Promise((r) => { resolveAvailability.value = r; }),
+      );
+      prisma.googleAccount.findUnique.mockImplementationOnce(
+        () => new Promise((r) => { resolveGoogle.value = r; }),
+      );
+
+      const pending = service.getWeek('user-1', weekStart);
+
+      // Both Prisma calls must be in-flight before either resolves,
+      // which only happens if they were initiated in parallel.
+      await Promise.resolve();
+      expect(resolveAvailability.value).toBeDefined();
+      expect(resolveGoogle.value).toBeDefined();
+
+      resolveAvailability.value({ timezone: 'America/Sao_Paulo' });
+      resolveGoogle.value(null);
+      await pending;
+    });
   });
 
   describe('reschedule', () => {
