@@ -4,7 +4,8 @@ import { clsx } from 'clsx';
 import { Check } from 'lucide-react';
 
 interface Props {
-  value: 'light' | 'dark';
+  /** Current theme. Pass nullish (e.g. before next-themes hydrates) to show no selection. */
+  value: 'light' | 'dark' | null | undefined;
   onChange: (next: 'light' | 'dark') => void;
   /** Minor padding/sizing variation between onboarding and settings. */
   size?: 'onboarding' | 'settings';

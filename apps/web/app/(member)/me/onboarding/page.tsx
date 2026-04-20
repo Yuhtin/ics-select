@@ -46,7 +46,7 @@ export default function MemberOnboardingPage() {
   const { user, refetch } = useAuth();
   const updateProfile = useUpdateProfile();
   const updateAvailability = useUpdateAvailability();
-  const { resolvedTheme, setTheme } = useThemeWithSync();
+  const { resolvedTheme, setTheme, mounted } = useThemeWithSync();
   const updateTheme = useUpdateTheme();
 
   const [step, setStep] = useState<StepId>(0);
@@ -206,7 +206,7 @@ export default function MemberOnboardingPage() {
                 subtitle="Preview below, the site switches as you pick. You can swap anytime in Settings."
               >
                 <ThemePicker
-                  value={(resolvedTheme === 'dark' ? 'dark' : 'light') as 'light' | 'dark'}
+                  value={mounted ? (resolvedTheme === 'dark' ? 'dark' : 'light') : undefined}
                   onChange={(next) => setTheme(next)}
                   size="onboarding"
                 />

@@ -13,7 +13,7 @@ import { SectionLabel } from '../../../../components/ui/section-label';
 export default function SettingsPage() {
   const { user } = useAuth();
   const { data: availability, isLoading } = useMeAvailability();
-  const { resolvedTheme, setTheme } = useThemeWithSync();
+  const { resolvedTheme, setTheme, mounted } = useThemeWithSync();
 
   if (!user) {
     return (
@@ -21,7 +21,7 @@ export default function SettingsPage() {
     );
   }
 
-  const currentTheme: 'light' | 'dark' = resolvedTheme === 'dark' ? 'dark' : 'light';
+  const currentTheme = mounted ? (resolvedTheme === 'dark' ? 'dark' : 'light') : undefined;
 
   return (
     <div className="max-w-2xl space-y-14">

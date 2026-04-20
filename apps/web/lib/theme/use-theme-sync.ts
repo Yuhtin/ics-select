@@ -1,19 +1,22 @@
 'use client';
-import { useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useTheme } from 'next-themes';
 import { useAuth } from '../auth/auth-context';
 import { useUpdateTheme } from '../queries/me-theme';
 
 export function useThemeWithSync() {
-  const { theme, resolvedTheme, setTheme } = useTheme();
-  const update = useUpdateTheme();
+  const { resolvedTheme, setTheme } = useTheme();
+  const { mutate } = useUpdateTheme();
   const { user } = useAuth();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
 
   const setAndPersist = useCallback(
     (next: 'light' | 'dark') => {
       setTheme(next);
       if (user) {
-        update.mutate(
+        mutate(
           { themePreference: next.toUpperCase() as 'LIGHT' | 'DARK' },
           {
             onError: (err) => {
@@ -23,8 +26,8 @@ export function useThemeWithSync() {
         );
       }
     },
-    [setTheme, update, user],
+    [setTheme, mutate, user],
   );
 
-  return { theme, resolvedTheme, setTheme: setAndPersist, isPending: update.isPending };
+  return { resolvedTheme, setTheme: setAndPersist, mounted };
 }

@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { useThemeWithSync } from '../../lib/theme/use-theme-sync';
 import { Moon, Sun } from 'lucide-react';
 import { clsx } from 'clsx';
@@ -10,14 +9,7 @@ interface Props {
 }
 
 export function ThemeToggle({ className }: Props) {
-  const { resolvedTheme, setTheme } = useThemeWithSync();
-  const [mounted, setMounted] = useState(false);
-
-  // Avoid hydration flash — render a neutral icon on the server.
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
+  const { resolvedTheme, setTheme, mounted } = useThemeWithSync();
   const isDark = mounted && resolvedTheme === 'dark';
 
   return (
