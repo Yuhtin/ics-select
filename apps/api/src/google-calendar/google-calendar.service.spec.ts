@@ -285,4 +285,32 @@ describe('GoogleCalendarService', () => {
       expect(out).toHaveLength(0);
     });
   });
+
+  describe('rescheduleEvent', () => {
+    it('patches only start and end on the primary calendar', async () => {
+      const row = {
+        accessTokenEnc: 'enc(plain-access)',
+        refreshTokenEnc: 'enc(plain-refresh)',
+        expiresAt: new Date(Date.now() + 30 * 60 * 1000),
+        scope: 'calendar.events',
+      };
+      const prisma = fakePrisma(row);
+      const client = mockClient();
+      const svc = new GoogleCalendarService(prisma as any, aes as any, () => client as any);
+      await svc.rescheduleEvent(
+        'user-1',
+        'event-1',
+        new Date('2026-04-20T14:00:00Z'),
+        new Date('2026-04-20T15:00:00Z'),
+      );
+      expect(client.events.patch).toHaveBeenCalledWith({
+        calendarId: 'primary',
+        eventId: 'event-1',
+        requestBody: {
+          start: { dateTime: '2026-04-20T14:00:00.000Z' },
+          end: { dateTime: '2026-04-20T15:00:00.000Z' },
+        },
+      });
+    });
+  });
 });

@@ -132,6 +132,23 @@ export class GoogleCalendarService {
     });
   }
 
+  async rescheduleEvent(
+    userId: string,
+    eventId: string,
+    start: Date,
+    end: Date,
+  ): Promise<void> {
+    const client = await this.clientFor(userId);
+    await client.events.patch({
+      calendarId: 'primary',
+      eventId,
+      requestBody: {
+        start: { dateTime: start.toISOString() },
+        end: { dateTime: end.toISOString() },
+      },
+    });
+  }
+
   async deleteEvent(userId: string, eventId: string): Promise<void> {
     const client = await this.clientFor(userId);
     await client.events.delete({ calendarId: 'primary', eventId });
