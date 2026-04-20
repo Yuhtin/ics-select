@@ -89,7 +89,7 @@ The `<html>` element must also have `className="light"` and `data-theme="light"`
 
 ### Prisma & pgvector
 
-Prisma can't describe `vector(1536)` or `tsvector` natively, so migrations `0_init` (extension), `3_library_search_columns` (embedding column + tsvector + trigger + ivfflat index) and all semantic-search queries go through `$queryRawUnsafe` / `$executeRawUnsafe` in `apps/api/src/library/library.service.ts`. Re-embedding happens on create/update via `OpenAiService.embed`. The `tsvector` is maintained by a Postgres trigger, not from app code.
+Prisma can't describe `vector(1536)` or `tsvector` natively, so migrations `0_init` (extension), `3_library_search_columns` / `e_library_search_v2` / `h_library_search_english` (embedding column + tsvector + trigger + ivfflat index) go through `$queryRawUnsafe` / `$executeRawUnsafe` in `apps/api/src/library/library.service.ts`. The `search` method uses **lexical** tsvector (`english` stemming, weighted title/description/tags/source + simple-tokenized URL) plus a service-side topic-label match; vector embeddings are written on create/update via `OpenAiService.embed` but are **not** consumed by any `SELECT` today — the column is maintained for a future semantic-search feature. The `tsvector` is maintained by a Postgres trigger, not from app code.
 
 ### Library (acervo) curation & topic M2M
 
