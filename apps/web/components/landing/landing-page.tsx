@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { LandingBigTechs } from './landing-bigtechs';
 import { LandingClosingCta } from './landing-closing-cta';
 import { LandingFooter } from './landing-footer';
@@ -15,6 +15,21 @@ export function LandingPage() {
   const [waitlistOpen, setWaitlistOpen] = useState(false);
   const open = () => setWaitlistOpen(true);
   const close = () => setWaitlistOpen(false);
+
+  // Landing is locked to the light palette — the marketing page is designed
+  // against cream/ivory art direction and would read wrong in dark. We
+  // override the html data-theme for the duration of the landing mount and
+  // restore the user's persisted choice on unmount so their dark preference
+  // survives navigation to the rest of the app.
+  useEffect(() => {
+    const html = document.documentElement;
+    const previous = html.getAttribute('data-theme');
+    html.setAttribute('data-theme', 'light');
+    return () => {
+      if (previous) html.setAttribute('data-theme', previous);
+      else html.removeAttribute('data-theme');
+    };
+  }, []);
 
   return (
     <>
