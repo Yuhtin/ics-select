@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { House, Menu, Users, ArrowUpRight } from 'lucide-react';
-import { slowScrollTo } from './use-slow-scroll';
 
 export function LandingTopbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -59,14 +59,13 @@ export function LandingTopbar() {
       </nav>
 
       <div className="flex justify-end items-center gap-2.5">
-        <button
-          type="button"
-          onClick={() => slowScrollTo('#cohorts')}
+        <Link
+          href="/login"
           className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-fg text-bg text-[13px] font-medium hover:bg-primary transition-all hover:-translate-y-px"
         >
-          Quero conhecer
+          Sou membro
           <ArrowUpRight className="w-3.5 h-3.5" strokeWidth={2} />
-        </button>
+        </Link>
       </div>
     </header>
   );
