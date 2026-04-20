@@ -14,6 +14,7 @@ function fakePrisma() {
     user: {
       findUnique: jest.fn(async () => user),
       delete: jest.fn(async () => user),
+      update: jest.fn(async ({ data }: { data: any }) => ({ ...user, ...data })),
     },
     memberAvailability: { findUnique: jest.fn(async () => null) },
     cycleMembership: { findMany: jest.fn(async () => []) },
@@ -37,5 +38,30 @@ describe('MeService', () => {
     const result = await svc.deleteUser('u-1');
     expect(result.deleted).toBe(true);
     expect(prisma.user.delete).toHaveBeenCalledWith({ where: { id: 'u-1' } });
+  });
+
+  it('updateThemePreference writes both columns keyed on userId', async () => {
+    const prisma = fakePrisma();
+    const svc = new MeService(prisma as any);
+    const before = Date.now();
+    await svc.updateThemePreference('u-1', 'DARK');
+    const after = Date.now();
+
+    expect(prisma.user.update).toHaveBeenCalledTimes(1);
+    const call = prisma.user.update.mock.calls[0][0];
+    expect(call.where).toEqual({ id: 'u-1' });
+    expect(call.data.themePreference).toBe('DARK');
+    const writtenAt = call.data.themePreferenceAt as Date;
+    expect(writtenAt.getTime()).toBeGreaterThanOrEqual(before);
+    expect(writtenAt.getTime()).toBeLessThanOrEqual(after);
+  });
+
+  it('updateThemePreference is idempotent — second call overwrites', async () => {
+    const prisma = fakePrisma();
+    const svc = new MeService(prisma as any);
+    await svc.updateThemePreference('u-1', 'LIGHT');
+    await svc.updateThemePreference('u-1', 'DARK');
+    expect(prisma.user.update).toHaveBeenCalledTimes(2);
+    expect(prisma.user.update.mock.calls[1][0].data.themePreference).toBe('DARK');
   });
 });
