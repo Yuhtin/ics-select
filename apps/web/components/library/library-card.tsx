@@ -1,11 +1,16 @@
 'use client';
 
+import { useState } from 'react';
 import { clsx } from 'clsx';
 import { ExternalLink, Pencil, Trash2 } from 'lucide-react';
 import {
   detectPlatform,
   platformLabel,
 } from '../../lib/format/platform';
+import {
+  extractYoutubeVideoId,
+  youtubeThumb,
+} from '../../lib/format/youtube';
 import { PlatformBadge, platformPreviewClass } from './platform-badge';
 import type { AdminLibraryItem } from '../../lib/queries/admin-library';
 
@@ -38,6 +43,11 @@ export function LibraryCard({
   const primaryTopic = item.topics.find((t) => t.isPrimary) ?? item.topics[0] ?? null;
   const secondaryTopics = item.topics.filter((t) => t !== primaryTopic);
 
+  const ytVideoId =
+    platform === 'youtube' ? extractYoutubeVideoId(item.url) : null;
+  const [thumbFailed, setThumbFailed] = useState(false);
+  const showThumb = ytVideoId !== null && !thumbFailed;
+
   const handleOpen = () => {
     if (capability === 'edit') onEdit?.(item);
     else if (item.url) window.open(item.url, '_blank', 'noopener,noreferrer');
@@ -63,18 +73,35 @@ export function LibraryCard({
     >
       <div
         className={clsx(
-          'relative h-[100px] w-full overflow-hidden',
-          bg,
+          'relative h-[110px] w-full overflow-hidden',
+          showThumb ? 'bg-fg/5' : bg,
         )}
       >
-        <div className="absolute inset-0 grid place-items-center">
-          <PlatformBadge
-            url={item.url}
-            format={item.format}
-            size="lg"
-          />
-        </div>
-        <div className="absolute left-3 top-3 inline-flex items-center rounded-pill border border-border-token/60 bg-surface/85 px-2 py-0.5 font-mono text-[9px] uppercase tracking-label text-fg-soft backdrop-blur">
+        {showThumb ? (
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={youtubeThumb(ytVideoId, 'hq')}
+              alt=""
+              loading="lazy"
+              onError={() => setThumbFailed(true)}
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-12 bg-gradient-to-b from-fg/35 to-transparent" />
+          </>
+        ) : (
+          <div className="absolute inset-0 grid place-items-center">
+            <PlatformBadge url={item.url} format={item.format} size="lg" />
+          </div>
+        )}
+        <div
+          className={clsx(
+            'absolute left-3 top-3 inline-flex items-center rounded-pill px-2 py-0.5 font-mono text-[9px] uppercase tracking-label backdrop-blur',
+            showThumb
+              ? 'bg-bg/85 text-fg'
+              : 'border border-border-token/60 bg-surface/85 text-fg-soft',
+          )}
+        >
           {platformLabel(platform)}
         </div>
         <div className="absolute right-3 top-3 inline-flex items-center rounded-pill bg-fg/85 px-2 py-0.5 font-mono text-[10px] tabular-nums text-bg">
