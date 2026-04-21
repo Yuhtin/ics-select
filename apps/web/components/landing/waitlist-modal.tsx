@@ -71,7 +71,6 @@ export function WaitlistModal({
         skillLevel: skill,
         github: String(formData.get('github') ?? '').trim() || undefined,
         linkedin: String(formData.get('linkedin') ?? '').trim() || undefined,
-        wantsUpdates: formData.get('updates') === 'on',
         website: String(formData.get('website') ?? ''),
       });
       setState('success');
@@ -196,17 +195,6 @@ export function WaitlistModal({
                   <Field label="Nível de conhecimento em programação">
                     <SkillScale name="skill" />
                   </Field>
-                  <label className="flex items-start gap-2.5 py-1.5 text-[13px] text-fg-soft cursor-pointer">
-                    <input
-                      type="checkbox"
-                      name="updates"
-                      defaultChecked
-                      className="mt-0.5 accent-primary"
-                    />
-                    <span>
-                      Quero receber notas mensais sobre progresso das cohorts atuais.
-                    </span>
-                  </label>
                   <button
                     type="submit"
                     disabled={state === 'submitting' || !config?.cycleTarget}

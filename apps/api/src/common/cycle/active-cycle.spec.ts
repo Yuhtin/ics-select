@@ -34,6 +34,12 @@ function makePrisma() {
         if (orderBy?.startsAt === 'desc') matches.sort((a, b) => b.startsAt - a.startsAt);
         return matches[0] ?? null;
       }),
+      findMany: jest.fn(async ({ where, orderBy, take }: any) => {
+        const matches = cycles.filter((c) => matchesCycle(c, where));
+        if (orderBy?.startsAt === 'asc') matches.sort((a, b) => a.startsAt - b.startsAt);
+        if (orderBy?.startsAt === 'desc') matches.sort((a, b) => b.startsAt - a.startsAt);
+        return take ? matches.slice(0, take) : matches;
+      }),
     },
     cycleMembership: {
       findFirst: jest.fn(async ({ where, orderBy }: any) => {
@@ -207,16 +213,27 @@ describe('resolveWaitlistTargetCycle', () => {
     expect(result?.id).toBe('upcoming');
   });
 
-  it('returns the nearest upcoming cycle when there is no running cycle', async () => {
+  it('returns null when only one upcoming cycle exists (it is the imminent one, already being selected for)', async () => {
     const prisma = makePrisma();
     prisma.cycles.push({
-      id: 'upcoming',
+      id: 'imminent',
       status: 'ACTIVE',
       startsAt: new Date('2026-07-01'),
       endsAt: new Date('2026-12-31'),
     });
     const result = await resolveWaitlistTargetCycle(prisma as any, NOW);
-    expect(result?.id).toBe('upcoming');
+    expect(result).toBeNull();
+  });
+
+  it('skips the imminent upcoming cycle and returns the second when no cycle is running', async () => {
+    const prisma = makePrisma();
+    prisma.cycles.push(
+      { id: 'imminent', status: 'ACTIVE', startsAt: new Date('2026-05-01'), endsAt: new Date('2026-07-31') },
+      { id: 'target',   status: 'ACTIVE', startsAt: new Date('2026-08-01'), endsAt: new Date('2026-11-30') },
+      { id: 'later',    status: 'ACTIVE', startsAt: new Date('2026-12-01'), endsAt: new Date('2027-02-28') },
+    );
+    const result = await resolveWaitlistTargetCycle(prisma as any, NOW);
+    expect(result?.id).toBe('target');
   });
 
   it('returns the earliest upcoming cycle after the running one when multiple exist', async () => {

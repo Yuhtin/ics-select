@@ -83,25 +83,59 @@ function makePrisma() {
   });
 
   const cycles: Array<{ id: string; name: string; startsAt: Date; endsAt: Date; status: string }> = [];
-  const cycleFindFirst = jest.fn(async ({ where, orderBy }: any = {}) => {
+  const filterCycles = (where: any) => {
     let rows = cycles.filter((c) => c.status === (where?.status ?? c.status));
-    // minimal filter for our helper's shapes
     if (where?.startsAt?.lte && where?.endsAt?.gte) {
       rows = rows.filter((c) => c.startsAt <= where.startsAt.lte && c.endsAt >= where.endsAt.gte);
     } else if (where?.startsAt?.gt) {
       rows = rows.filter((c) => c.startsAt > where.startsAt.gt);
     }
-    if (orderBy?.startsAt === 'desc') rows = rows.sort((a, b) => b.startsAt.getTime() - a.startsAt.getTime());
-    else if (orderBy?.startsAt === 'asc') rows = rows.sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime());
+    return rows;
+  };
+  const sortCycles = (rows: typeof cycles, orderBy: any) => {
+    if (orderBy?.startsAt === 'desc') rows.sort((a, b) => b.startsAt.getTime() - a.startsAt.getTime());
+    else if (orderBy?.startsAt === 'asc') rows.sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime());
+    return rows;
+  };
+  const cycleFindFirst = jest.fn(async ({ where, orderBy }: any = {}) => {
+    const rows = sortCycles(filterCycles(where), orderBy);
     return rows[0] ?? null;
+  });
+  const cycleFindMany = jest.fn(async ({ where, orderBy, take }: any = {}) => {
+    const rows = sortCycles(filterCycles(where), orderBy);
+    return take ? rows.slice(0, take) : rows;
   });
 
   return {
     waitlistEntry: { upsert, findMany, count, groupBy },
-    cycle: { findFirst: cycleFindFirst },
+    cycle: { findFirst: cycleFindFirst, findMany: cycleFindMany },
     _byEmail: byEmail,
     _cycles: cycles,
   };
+}
+
+// Seeds two upcoming cycles: imminent (selection already in progress) + target
+// (the one waitlist signups go to). Matches the production rule: always skip
+// the nearest cycle and queue for the one after it.
+function seedWaitlistTarget(prisma: ReturnType<typeof makePrisma>) {
+  const day = 24 * 60 * 60 * 1000;
+  const weekFromNow = Date.now() + 7 * day;
+  prisma._cycles.push(
+    {
+      id: 'imminent',
+      name: '2026.2',
+      startsAt: new Date(weekFromNow),
+      endsAt: new Date(weekFromNow + 60 * day),
+      status: 'ACTIVE',
+    },
+    {
+      id: 'target',
+      name: '2026.3',
+      startsAt: new Date(weekFromNow + 90 * day),
+      endsAt: new Date(weekFromNow + 270 * day),
+      status: 'ACTIVE',
+    },
+  );
 }
 
 const VALID = {
@@ -117,13 +151,7 @@ const VALID = {
 describe('WaitlistService', () => {
   it('upserts a new submission by email', async () => {
     const prisma = makePrisma();
-    prisma._cycles.push({
-      id: 'c-1',
-      name: '2026.3',
-      startsAt: new Date('2026-07-01T00:00:00Z'),
-      endsAt: new Date('2026-12-31T23:59:59Z'),
-      status: 'ACTIVE',
-    });
+    seedWaitlistTarget(prisma);
     const svc = new WaitlistService(prisma as any);
     await svc.submit({ ...VALID }, 'ip-hash-a', 'ua-a');
     expect(prisma.waitlistEntry.upsert).toHaveBeenCalledWith(
@@ -150,13 +178,7 @@ describe('WaitlistService', () => {
 
   it('on re-submit by the same email, update overwrites fields but cycleTarget comes from server', async () => {
     const prisma = makePrisma();
-    prisma._cycles.push({
-      id: 'c-1',
-      name: '2026.3',
-      startsAt: new Date('2026-07-01T00:00:00Z'),
-      endsAt: new Date('2026-12-31T23:59:59Z'),
-      status: 'ACTIVE',
-    });
+    seedWaitlistTarget(prisma);
     const svc = new WaitlistService(prisma as any);
     await svc.submit({ ...VALID }, 'ip-a', 'ua-a');
     await svc.submit({ ...VALID, skillLevel: 5 }, 'ip-b', 'ua-b');
@@ -168,13 +190,7 @@ describe('WaitlistService', () => {
 
   it('list returns rows matching filters, newest first, paginated', async () => {
     const prisma = makePrisma();
-    prisma._cycles.push({
-      id: 'c-1',
-      name: '2026.3',
-      startsAt: new Date('2026-07-01T00:00:00Z'),
-      endsAt: new Date('2026-12-31T23:59:59Z'),
-      status: 'ACTIVE',
-    });
+    seedWaitlistTarget(prisma);
     const svc = new WaitlistService(prisma as any);
     await svc.submit({ ...VALID, email: 'a@x.com', course: 'CIENCIA_COMPUTACAO', skillLevel: 3 }, null, null);
     await svc.submit({ ...VALID, email: 'b@x.com', course: 'ADMINISTRACAO',       skillLevel: 5 }, null, null);
@@ -186,13 +202,7 @@ describe('WaitlistService', () => {
 
   it('stats aggregates total, last7d, wantsUpdatesPct, byCourse, bySkill', async () => {
     const prisma = makePrisma();
-    prisma._cycles.push({
-      id: 'c-1',
-      name: '2026.3',
-      startsAt: new Date('2026-07-01T00:00:00Z'),
-      endsAt: new Date('2026-12-31T23:59:59Z'),
-      status: 'ACTIVE',
-    });
+    seedWaitlistTarget(prisma);
     const svc = new WaitlistService(prisma as any);
     await svc.submit({ ...VALID, email: 'a@x.com', wantsUpdates: true  }, null, null);
     await svc.submit({ ...VALID, email: 'b@x.com', wantsUpdates: false }, null, null);
@@ -206,13 +216,7 @@ describe('WaitlistService', () => {
 
   it('iterateAll yields every row, newest first', async () => {
     const prisma = makePrisma();
-    prisma._cycles.push({
-      id: 'c-1',
-      name: '2026.3',
-      startsAt: new Date('2026-07-01T00:00:00Z'),
-      endsAt: new Date('2026-12-31T23:59:59Z'),
-      status: 'ACTIVE',
-    });
+    seedWaitlistTarget(prisma);
     const svc = new WaitlistService(prisma as any);
     for (const i of [1, 2, 3]) {
       await svc.submit({ ...VALID, email: `u${i}@x.com` }, null, null);
@@ -233,18 +237,11 @@ describe('WaitlistService', () => {
 
   it('getConfig returns the target cycle', async () => {
     const prisma = makePrisma();
-    prisma._cycles.push({
-      id: 'c-1',
-      name: '2026.3',
-      startsAt: new Date('2026-07-01T00:00:00Z'),
-      endsAt: new Date('2026-12-31T23:59:59Z'),
-      status: 'ACTIVE',
-    });
+    seedWaitlistTarget(prisma);
     const svc = new WaitlistService(prisma as any);
-    expect(await svc.getConfig()).toEqual({
-      cycleTarget: '2026.3',
-      startsAt: '2026-07-01T00:00:00.000Z',
-    });
+    const cfg = await svc.getConfig();
+    expect(cfg?.cycleTarget).toBe('2026.3');
+    expect(cfg?.startsAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
   });
 
   it('getConfig returns null when no cycle is programmed', async () => {

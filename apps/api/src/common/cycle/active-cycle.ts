@@ -47,19 +47,21 @@ export async function resolveActiveCycle(
 /**
  * The cycle a waitlist signup targets.
  *
- * Rule:
- *   1. If a cycle currently contains `now` (active/running), the waitlist is
- *      for the NEXT cycle after it — the running one's 12 spots are already
- *      taken.
- *   2. Otherwise, the waitlist is for the nearest ACTIVE cycle with
- *      startsAt > now (same as resolveActiveCycle's second branch).
- *   3. Returns null if no cycle qualifies. Caller decides how to handle.
+ * Rule: always skip the "current-or-imminent" cycle. A cycle that's already
+ * running has its 12 spots taken; a cycle that's imminent (next upcoming)
+ * already has selection in progress. Waitlist signups go to the cycle AFTER
+ * whichever of those is relevant.
+ *
+ *   1. If a cycle is running (now ∈ [startsAt, endsAt]), return the nearest
+ *      upcoming cycle with startsAt > running.endsAt.
+ *   2. Otherwise, skip the nearest upcoming cycle and return the one after it.
+ *   3. Returns null if no qualifying cycle exists. Caller decides how to handle.
  */
 export async function resolveWaitlistTargetCycle(
   prisma: PrismaCycleClient,
   now: Date = new Date(),
 ) {
-  const current = await prisma.cycle.findFirst({
+  const running = await prisma.cycle.findFirst({
     where: {
       status: 'ACTIVE',
       startsAt: { lte: now },
@@ -67,16 +69,18 @@ export async function resolveWaitlistTargetCycle(
     },
     orderBy: { startsAt: 'desc' },
   });
-  if (current) {
+  if (running) {
     return prisma.cycle.findFirst({
-      where: { status: 'ACTIVE', startsAt: { gt: current.endsAt } },
+      where: { status: 'ACTIVE', startsAt: { gt: running.endsAt } },
       orderBy: { startsAt: 'asc' },
     });
   }
-  return prisma.cycle.findFirst({
+  const upcoming = await prisma.cycle.findMany({
     where: { status: 'ACTIVE', startsAt: { gt: now } },
     orderBy: { startsAt: 'asc' },
+    take: 2,
   });
+  return upcoming[1] ?? null;
 }
 
 type ResolveMembershipInclude = {

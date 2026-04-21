@@ -8,7 +8,6 @@ export type WaitlistSubmitPayload = {
   skillLevel: number;
   github?: string;
   linkedin?: string;
-  wantsUpdates: boolean;
   website?: string; // honeypot
 };
 
