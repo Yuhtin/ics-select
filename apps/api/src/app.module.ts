@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { LoggerModule } from 'nestjs-pino';
 import { PrismaModule } from './common/prisma/prisma.module.js';
 import { HealthModule } from './health/health.module.js';
@@ -40,6 +41,13 @@ import { loadEnv } from './config/env.js';
         },
       ],
     }),
+    ThrottlerModule.forRoot([
+      {
+        name: 'default',
+        ttl: 600_000, // 10 minutes in ms
+        limit: 5,
+      },
+    ]),
     LoggerModule.forRoot({
       pinoHttp: {
         level: process.env.LOG_LEVEL ?? 'info',

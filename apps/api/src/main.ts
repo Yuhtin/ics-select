@@ -10,6 +10,12 @@ async function bootstrap() {
   const env = loadEnv();
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
 
+  const expressApp = app.getHttpAdapter().getInstance();
+  // Express instance — EasyPanel + Cloudflare proxy hop in prod. Without this,
+  // req.ip reflects the proxy, not the client — throttler would then rate-limit
+  // everyone as one.
+  (expressApp as unknown as { set: (k: string, v: unknown) => void }).set('trust proxy', 1);
+
   app.useLogger(app.get(Logger));
   app.useGlobalFilters(new HttpExceptionFilter());
   app.use(cookieParser());
