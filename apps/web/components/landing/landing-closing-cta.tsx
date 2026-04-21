@@ -63,19 +63,14 @@ export function LandingClosingCta({
               ? '1 selecionado no ciclo atual'
               : `${data!.members.length} selecionados no ciclo atual`}
           </p>
-          <ul
-            className="mx-auto mb-10 grid gap-x-5 gap-y-6 justify-center"
-            style={{
-              gridTemplateColumns: `repeat(${Math.min(data!.members.length, 6)}, minmax(88px, 112px))`,
-            }}
-          >
+          <ul className="mx-auto mb-10 flex flex-wrap justify-center gap-x-3 gap-y-5 md:gap-x-5 md:gap-y-6 max-w-[360px] md:max-w-[640px]">
             {data!.members.map((m, i) => (
               <li
                 key={`${m.name}-${i}`}
-                className="flex flex-col items-center text-center gap-2.5"
+                className="flex flex-col items-center text-center gap-2 md:gap-2.5 w-[56px] md:w-[96px]"
               >
                 <CohortAvatar src={m.avatar} name={m.name} />
-                <span className="text-[13px] font-medium text-fg leading-tight">
+                <span className="text-[11px] md:text-[13px] font-medium text-fg leading-tight break-words w-full">
                   {m.name}
                 </span>
               </li>
@@ -118,14 +113,14 @@ function CohortAvatar({ src, name }: { src: string | null; name: string }) {
         alt=""
         width={144}
         height={144}
-        className="w-[72px] h-[72px] rounded-full object-cover border border-border-token"
+        className="w-[48px] h-[48px] md:w-[72px] md:h-[72px] rounded-full object-cover border border-border-token"
       />
     );
   }
   return (
     <span
       aria-hidden
-      className="w-[72px] h-[72px] rounded-full bg-bg-subtle border border-border-token grid place-items-center font-serif text-lg text-fg-soft"
+      className="w-[48px] h-[48px] md:w-[72px] md:h-[72px] rounded-full bg-bg-subtle border border-border-token grid place-items-center font-serif text-sm md:text-lg text-fg-soft"
     >
       {initials || '–'}
     </span>

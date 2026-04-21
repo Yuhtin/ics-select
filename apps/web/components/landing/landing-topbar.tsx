@@ -17,7 +17,7 @@ export function LandingTopbar() {
   return (
     <header
       data-scrolled={scrolled || undefined}
-      className="fixed top-0 left-0 right-0 z-50 grid items-center px-5 md:px-8 transition-[padding,background,border-color,box-shadow] duration-300 ease-[cubic-bezier(.16,1,.3,1)] py-5 md:py-[22px] data-[scrolled]:py-3 data-[scrolled]:md:py-3.5 border-b border-transparent data-[scrolled]:border-border-token"
+      className="fixed top-0 left-0 right-0 z-50 flex md:grid items-center justify-between px-5 md:px-8 transition-[padding,background,border-color,box-shadow] duration-300 ease-[cubic-bezier(.16,1,.3,1)] py-4 md:py-[22px] data-[scrolled]:py-3 data-[scrolled]:md:py-3.5 border-b border-transparent data-[scrolled]:border-border-token"
       style={{
         gridTemplateColumns: '1fr auto 1fr',
         background: scrolled ? 'hsl(var(--surface) / 0.72)' : 'transparent',
@@ -26,8 +26,8 @@ export function LandingTopbar() {
         boxShadow: scrolled ? '0 1px 2px rgba(20,24,31,.04)' : 'none',
       }}
     >
-      <a href="#top" className="flex items-center gap-2.5 font-semibold tracking-[-0.01em] text-base">
-        <div className="relative w-[30px] h-[30px] rounded-[9px] bg-fg text-bg grid place-items-center font-bold text-[11px] overflow-hidden">
+      <a href="#top" className="flex items-center gap-2.5 font-semibold tracking-[-0.01em] text-[15px] md:text-base whitespace-nowrap">
+        <div className="relative w-[30px] h-[30px] shrink-0 rounded-[9px] bg-fg text-bg grid place-items-center font-bold text-[11px] overflow-hidden">
           <span className="relative z-10">ICS</span>
           <span
             className="absolute inset-[-10%] rounded-full"
