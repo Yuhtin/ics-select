@@ -160,4 +160,16 @@ describe('WaitlistService', () => {
     expect(s.byCourse).toEqual(expect.arrayContaining([{ course: 'CIENCIA_COMPUTACAO', count: 2 }]));
     expect(s.bySkill).toEqual(expect.arrayContaining([{ skillLevel: 4, count: 2 }]));
   });
+
+  it('iterateAll yields every row, newest first', async () => {
+    const prisma = makePrisma();
+    const svc = new WaitlistService(prisma as any);
+    for (const i of [1, 2, 3]) {
+      await svc.submit({ ...VALID, email: `u${i}@x.com` }, null, null);
+    }
+    const emails: string[] = [];
+    for await (const row of svc.iterateAll()) emails.push(row.email);
+    expect(emails).toHaveLength(3);
+    expect(new Set(emails)).toEqual(new Set(['u1@x.com', 'u2@x.com', 'u3@x.com']));
+  });
 });
