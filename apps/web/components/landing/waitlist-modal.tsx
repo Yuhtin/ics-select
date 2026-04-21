@@ -242,7 +242,9 @@ export function WaitlistModal({
                   Você está na lista.
                 </h4>
                 <p className="text-fg-mute text-sm">
-                  Te avisamos assim que o ciclo 2026.3 abrir. Enquanto isso, dá uma olhada em{' '}
+                  {config?.cycleTarget
+                    ? `Te avisamos assim que o ciclo ${config.cycleTarget} abrir. Enquanto isso, dá uma olhada em `
+                    : 'Te avisamos assim que o próximo ciclo abrir. Enquanto isso, dá uma olhada em '}
                   <a
                     href="#program"
                     onClick={onClose}

@@ -6,18 +6,20 @@ import { WaitlistStats } from '../../../../components/admin/waitlist/waitlist-st
 import { WaitlistFilters } from '../../../../components/admin/waitlist/waitlist-filters';
 import { WaitlistTable } from '../../../../components/admin/waitlist/waitlist-table';
 import { WaitlistExportButton } from '../../../../components/admin/waitlist/waitlist-export-button';
-import { useWaitlistList } from '../../../../lib/queries/waitlist';
+import { useWaitlistConfig, useWaitlistList } from '../../../../lib/queries/waitlist';
 import type { WaitlistFilters as Filters } from '../../../../lib/waitlist/api';
 
 export default function AdminWaitlistPage() {
   const [filters, setFilters] = useState<Filters>({ page: 1, pageSize: 50 });
   const { data, isLoading } = useWaitlistList(filters);
+  const { data: config } = useWaitlistConfig();
+  const cycleLabel = config?.cycleTarget ? `Ciclo ${config.cycleTarget}` : 'Próximo ciclo';
 
   return (
     <div className="max-w-6xl space-y-8">
       <header className="flex items-end justify-between gap-4">
         <div>
-          <Eyebrow>Waitlist · Ciclo 2026.3</Eyebrow>
+          <Eyebrow>Waitlist · {cycleLabel}</Eyebrow>
           <h1 className="mt-3 font-serif-tool text-4xl font-semibold tracking-tight leading-tight">
             Inscritos
           </h1>

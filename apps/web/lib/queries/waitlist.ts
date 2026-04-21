@@ -1,6 +1,6 @@
 'use client';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
-import { getWaitlistStats, listWaitlist, type WaitlistFilters } from '../waitlist/api';
+import { getWaitlistConfig, getWaitlistStats, listWaitlist, type WaitlistFilters } from '../waitlist/api';
 
 export function useWaitlistList(filters: WaitlistFilters) {
   return useQuery({
@@ -16,5 +16,13 @@ export function useWaitlistStats() {
     queryKey: ['waitlist', 'stats'],
     queryFn: getWaitlistStats,
     staleTime: 30_000,
+  });
+}
+
+export function useWaitlistConfig() {
+  return useQuery({
+    queryKey: ['waitlist', 'config'],
+    queryFn: getWaitlistConfig,
+    staleTime: 5 * 60_000,
   });
 }
