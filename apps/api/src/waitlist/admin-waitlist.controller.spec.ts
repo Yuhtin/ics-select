@@ -25,10 +25,10 @@ describe('AdminWaitlistController', () => {
     expect(result).toEqual({ items: [], total: 0, page: 1, pageSize: 50 });
   });
 
-  it('list rejects invalid query params', async () => {
+  it('list rejects invalid query params', () => {
     const service = { list: jest.fn() } as any;
     const ctrl = new AdminWaitlistController(service);
-    await expect(ctrl.list({ page: '-1' } as any)).rejects.toThrow();
+    expect(() => ctrl.list({ page: '-1' } as any)).toThrow();
     expect(service.list).not.toHaveBeenCalled();
   });
 

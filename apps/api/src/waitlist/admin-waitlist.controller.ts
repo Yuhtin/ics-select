@@ -9,7 +9,7 @@ export class AdminWaitlistController {
   constructor(private readonly service: WaitlistService) {}
 
   @Get()
-  async list(@Query() query: unknown) {
+  list(@Query() query: unknown) {
     const parsed = ListWaitlistQuerySchema.safeParse(query);
     if (!parsed.success) {
       const detail = parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ');
