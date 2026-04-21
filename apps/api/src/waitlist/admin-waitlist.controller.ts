@@ -53,6 +53,6 @@ export class AdminWaitlistController {
 
 function csvEscape(v: string): string {
   if (v === '') return '';
-  if (/[",\n]/.test(v)) return `"${v.replace(/"/g, '""')}"`;
+  if (/[",\n\r]/.test(v)) return `"${v.replace(/"/g, '""')}"`;
   return v;
 }

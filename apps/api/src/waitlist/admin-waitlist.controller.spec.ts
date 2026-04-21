@@ -76,4 +76,35 @@ describe('AdminWaitlistController', () => {
     expect(csv).toContain('"Ada ""the Great"""');
     expect(res.end).toHaveBeenCalled();
   });
+
+  it('export wraps values containing carriage returns (RFC 4180)', async () => {
+    const row = {
+      id: 'w-2',
+      name: 'multi\rline',
+      email: 'cr@x.com',
+      course: 'CIENCIA_COMPUTACAO',
+      skillLevel: 3,
+      github: null,
+      linkedin: null,
+      wantsUpdates: true,
+      cycleTarget: '2026.3',
+      createdAt: new Date('2026-04-20T12:00:00Z'),
+      updatedAt: new Date('2026-04-20T12:00:00Z'),
+      ipHash: null,
+      userAgent: null,
+    };
+    async function* gen() { yield row as any; }
+    const service = { iterateAll: () => gen() } as any;
+    const ctrl = new AdminWaitlistController(service);
+
+    const chunks: string[] = [];
+    const res: any = {
+      setHeader: jest.fn(),
+      write:     (s: string) => chunks.push(s),
+      end:       jest.fn(),
+    };
+    await ctrl.exportCsv(res);
+
+    expect(chunks.join('')).toContain('"multi\rline"');
+  });
 });
