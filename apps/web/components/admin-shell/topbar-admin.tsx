@@ -7,6 +7,7 @@ import {
   Bell,
   BookOpen,
   CircleDot,
+  ClipboardList,
   ListChecks,
   LogOut,
   Sparkles,
@@ -29,6 +30,7 @@ const NAV: readonly NavItem[] = [
   { href: '/admin/cycles', label: 'Cycles', icon: CircleDot },
   { href: '/admin/plans', label: 'Plans', icon: ListChecks },
   { href: '/admin/library', label: 'Library', icon: BookOpen },
+  { href: '/admin/waitlist', label: 'Waitlist', icon: ClipboardList },
   { href: '/admin/ai-usage', label: 'AI usage', icon: Sparkles },
 ];
 
