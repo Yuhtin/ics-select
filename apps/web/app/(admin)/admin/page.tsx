@@ -4,6 +4,7 @@ import { TriageAlertRow } from '../../../components/admin/triage-alert-row';
 import { CohortStrip } from '../../../components/admin/cohort-strip';
 import { SectionLabel } from '../../../components/ui/section-label';
 import { Eyebrow } from '../../../components/ui/eyebrow';
+import { WaitlistHomeCard } from '../../../components/admin/waitlist/waitlist-home-card';
 
 export default function AdminTriagePage() {
   const { data, isLoading } = useAdminTriage();
@@ -67,6 +68,8 @@ export default function AdminTriagePage() {
           </div>
         </section>
       )}
+
+      <WaitlistHomeCard />
 
       <section>
         <SectionLabel>Cohort</SectionLabel>

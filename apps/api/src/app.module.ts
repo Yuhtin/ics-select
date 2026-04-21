@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { LoggerModule } from 'nestjs-pino';
 import { PrismaModule } from './common/prisma/prisma.module.js';
 import { HealthModule } from './health/health.module.js';
@@ -25,7 +26,7 @@ import { WhatsappModule } from './whatsapp/whatsapp.module.js';
 import { NotificationsModule } from './notifications/notifications.module.js';
 import { MeModule } from './me/me.module.js';
 import { ReportsModule } from './reports/reports.module.js';
-import { InterestModule } from './interest/interest.module.js';
+import { WaitlistModule } from './waitlist/waitlist.module.js';
 import { PublicCohortModule } from './public-cohort/public-cohort.module.js';
 import { loadEnv } from './config/env.js';
 
@@ -40,6 +41,13 @@ import { loadEnv } from './config/env.js';
         },
       ],
     }),
+    ThrottlerModule.forRoot([
+      {
+        name: 'default',
+        ttl: 600_000, // 10 minutes in ms
+        limit: 5,
+      },
+    ]),
     LoggerModule.forRoot({
       pinoHttp: {
         level: process.env.LOG_LEVEL ?? 'info',
@@ -75,7 +83,7 @@ import { loadEnv } from './config/env.js';
     NotificationsModule,
     MeModule,
     ReportsModule,
-    InterestModule,
+    WaitlistModule,
     PublicCohortModule,
     HealthModule,
   ],

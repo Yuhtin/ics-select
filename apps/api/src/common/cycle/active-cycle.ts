@@ -44,6 +44,41 @@ export async function resolveActiveCycle(
   });
 }
 
+/**
+ * The cycle a waitlist signup targets.
+ *
+ * Rule:
+ *   1. If a cycle currently contains `now` (active/running), the waitlist is
+ *      for the NEXT cycle after it — the running one's 12 spots are already
+ *      taken.
+ *   2. Otherwise, the waitlist is for the nearest ACTIVE cycle with
+ *      startsAt > now (same as resolveActiveCycle's second branch).
+ *   3. Returns null if no cycle qualifies. Caller decides how to handle.
+ */
+export async function resolveWaitlistTargetCycle(
+  prisma: PrismaCycleClient,
+  now: Date = new Date(),
+) {
+  const current = await prisma.cycle.findFirst({
+    where: {
+      status: 'ACTIVE',
+      startsAt: { lte: now },
+      endsAt: { gte: now },
+    },
+    orderBy: { startsAt: 'desc' },
+  });
+  if (current) {
+    return prisma.cycle.findFirst({
+      where: { status: 'ACTIVE', startsAt: { gt: current.endsAt } },
+      orderBy: { startsAt: 'asc' },
+    });
+  }
+  return prisma.cycle.findFirst({
+    where: { status: 'ACTIVE', startsAt: { gt: now } },
+    orderBy: { startsAt: 'asc' },
+  });
+}
+
 type ResolveMembershipInclude = {
   cycle?: boolean;
   user?: boolean;
