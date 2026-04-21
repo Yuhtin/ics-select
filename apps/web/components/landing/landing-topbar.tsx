@@ -17,13 +17,13 @@ export function LandingTopbar() {
   return (
     <header
       data-scrolled={scrolled || undefined}
-      className="fixed top-0 left-0 right-0 z-50 flex md:grid items-center justify-between px-5 md:px-8 transition-[padding,background,border-color,box-shadow] duration-300 ease-[cubic-bezier(.16,1,.3,1)] py-4 md:py-[22px] data-[scrolled]:py-3 data-[scrolled]:md:py-3.5 border-b border-transparent data-[scrolled]:border-border-token"
+      className="fixed top-2 md:top-3 left-2 md:left-4 right-2 md:right-4 z-50 flex md:grid items-center justify-between rounded-2xl px-3 md:px-5 transition-[padding,background,border-color,box-shadow] duration-300 ease-[cubic-bezier(.16,1,.3,1)] py-3 md:py-3.5 data-[scrolled]:py-2.5 data-[scrolled]:md:py-3 border border-transparent data-[scrolled]:border-border-token"
       style={{
         gridTemplateColumns: '1fr auto 1fr',
-        background: scrolled ? 'hsl(var(--surface) / 0.72)' : 'transparent',
+        background: scrolled ? 'hsl(var(--surface) / 0.82)' : 'transparent',
         backdropFilter: scrolled ? 'blur(18px) saturate(140%)' : 'none',
         WebkitBackdropFilter: scrolled ? 'blur(18px) saturate(140%)' : 'none',
-        boxShadow: scrolled ? '0 1px 2px rgba(20,24,31,.04)' : 'none',
+        boxShadow: scrolled ? '0 6px 24px rgba(20,24,31,.06)' : 'none',
       }}
     >
       <a href="#top" className="flex items-center gap-2.5 font-semibold tracking-[-0.01em] text-[15px] md:text-base whitespace-nowrap">
