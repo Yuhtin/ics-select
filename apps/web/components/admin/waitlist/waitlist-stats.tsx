@@ -11,11 +11,10 @@ export function WaitlistStats() {
   const cards = [
     { label: 'Total inscritos',  value: data.total },
     { label: 'Últimos 7 dias',   value: data.last7d },
-    { label: 'Quer updates (%)', value: `${data.wantsUpdatesPct}%` },
     { label: 'Cursos distintos', value: distinctCourses },
   ];
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-rule border border-rule">
+    <div className="grid grid-cols-3 gap-px bg-rule border border-rule">
       {cards.map((c) => (
         <div key={c.label} className="bg-surface p-5">
           <p className="font-mono text-[11px] uppercase tracking-label text-ink-mute">{c.label}</p>

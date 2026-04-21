@@ -69,6 +69,8 @@ export function WaitlistModal({
         email: String(formData.get('email') ?? '').trim(),
         course,
         skillLevel: skill,
+        // Stub — wizard rewrite in the next commit asks this properly via UI.
+        year: 1,
         github: String(formData.get('github') ?? '').trim() || undefined,
         linkedin: String(formData.get('linkedin') ?? '').trim() || undefined,
         website: String(formData.get('website') ?? ''),

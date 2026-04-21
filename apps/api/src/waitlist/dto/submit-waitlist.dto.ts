@@ -18,12 +18,20 @@ const optionalUrl = z
 
 export const SubmitWaitlistSchema = z.object({
   name: z.string().trim().min(1).max(200),
-  email: z.string().trim().toLowerCase().email().max(200),
+  email: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .email()
+    .max(200)
+    .refine((v) => /@sou\.inteli\.edu\.br$/i.test(v), {
+      message: 'use seu email @sou.inteli.edu.br',
+    }),
   course: z.enum(COURSE_VALUES),
   skillLevel: z.number().int().min(1).max(5),
+  year: z.number().int().min(1).max(4),
   github: optionalUrl,
   linkedin: optionalUrl,
-  wantsUpdates: z.boolean().default(true),
   // Honeypot — if a bot fills this, the service silent-drops.
   website: z.string().max(500).optional(),
 });

@@ -10,7 +10,6 @@ export const ListWaitlistQuerySchema = z.object({
   course:       z.enum(WAITLIST_COURSES).optional(),
   skillMin:     int.min(1).max(5).optional(),
   skillMax:     int.min(1).max(5).optional(),
-  wantsUpdates: z.enum(['true', 'false']).transform((v) => v === 'true').optional(),
   q:            z.string().trim().min(1).max(200).optional(),
 });
 

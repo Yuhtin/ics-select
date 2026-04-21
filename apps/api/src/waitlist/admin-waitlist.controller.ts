@@ -30,7 +30,7 @@ export class AdminWaitlistController {
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', `attachment; filename="waitlist-${today}.csv"`);
 
-    const header = 'createdAt,name,email,course,skillLevel,github,linkedin,wantsUpdates,cycleTarget';
+    const header = 'createdAt,name,email,course,year,skillLevel,github,linkedin,cycleTarget';
     res.write(header + '\n');
 
     for await (const row of this.service.iterateAll()) {
@@ -39,10 +39,10 @@ export class AdminWaitlistController {
         csvEscape(row.name),
         row.email,
         row.course,
+        String(row.year),
         String(row.skillLevel),
         csvEscape(row.github ?? ''),
         csvEscape(row.linkedin ?? ''),
-        row.wantsUpdates ? 'true' : 'false',
         row.cycleTarget,
       ].join(',');
       res.write(line + '\n');

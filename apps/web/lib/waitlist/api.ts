@@ -6,6 +6,7 @@ export type WaitlistSubmitPayload = {
   email: string;
   course: WaitlistCourse;
   skillLevel: number;
+  year: number;
   github?: string;
   linkedin?: string;
   website?: string; // honeypot
@@ -41,9 +42,9 @@ export type WaitlistEntry = {
   email: string;
   course: WaitlistCourse;
   skillLevel: number;
+  year: number;
   github: string | null;
   linkedin: string | null;
-  wantsUpdates: boolean;
   cycleTarget: string;
   createdAt: string;
   updatedAt: string;
@@ -62,7 +63,6 @@ export type WaitlistFilters = {
   course?: WaitlistCourse;
   skillMin?: number;
   skillMax?: number;
-  wantsUpdates?: boolean;
   q?: string;
 };
 
@@ -77,7 +77,6 @@ export function listWaitlist(filters: WaitlistFilters): Promise<WaitlistListResp
 export type WaitlistStats = {
   total: number;
   last7d: number;
-  wantsUpdatesPct: number;
   byCourse: { course: WaitlistCourse; count: number }[];
   bySkill: { skillLevel: number; count: number }[];
 };

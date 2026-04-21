@@ -11,10 +11,10 @@ function makeReq(ip = '203.0.113.1', ua = 'jest/1.0') {
 describe('WaitlistController', () => {
   const validBody = {
     name: 'Ada Lovelace',
-    email: 'ada@inteli.edu.br',
+    email: 'ada@sou.inteli.edu.br',
     course: 'CIENCIA_COMPUTACAO',
     skillLevel: 4,
-    wantsUpdates: true,
+    year: 2,
   };
 
   it('accepts a valid submission and delegates to service', async () => {
@@ -23,7 +23,7 @@ describe('WaitlistController', () => {
     const res = await ctrl.submit(validBody, makeReq());
     expect(res).toEqual({ ok: true });
     expect(service.submit).toHaveBeenCalledWith(
-      expect.objectContaining({ email: 'ada@inteli.edu.br' }),
+      expect.objectContaining({ email: 'ada@sou.inteli.edu.br' }),
       expect.any(String),
       expect.stringContaining('jest'),
     );

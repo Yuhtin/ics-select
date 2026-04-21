@@ -1,6 +1,6 @@
 'use client';
 
-import { Github, Linkedin, Check, Minus } from 'lucide-react';
+import { Github, Linkedin } from 'lucide-react';
 import type { WaitlistEntry } from '../../../lib/waitlist/api';
 import { courseToLabel } from '../../../lib/waitlist/course';
 
@@ -20,9 +20,9 @@ export function WaitlistTable({ rows }: { rows: WaitlistEntry[] }) {
           <Th>Nome</Th>
           <Th>Email</Th>
           <Th>Curso</Th>
+          <Th className="w-16">Ano</Th>
           <Th className="w-24">Skill</Th>
           <Th className="w-20">Links</Th>
-          <Th className="w-16">Updates</Th>
         </tr>
       </thead>
       <tbody>
@@ -36,6 +36,7 @@ export function WaitlistTable({ rows }: { rows: WaitlistEntry[] }) {
               <a href={`mailto:${r.email}`} className="hover:underline">{r.email}</a>
             </Td>
             <Td className="text-ink-soft">{courseToLabel(r.course)}</Td>
+            <Td className="font-mono text-xs tabular-nums text-ink-soft">{r.year}º</Td>
             <Td><SkillDots level={r.skillLevel} /></Td>
             <Td>
               <div className="flex gap-2">
@@ -50,11 +51,6 @@ export function WaitlistTable({ rows }: { rows: WaitlistEntry[] }) {
                   </a>
                 )}
               </div>
-            </Td>
-            <Td>
-              {r.wantsUpdates
-                ? <Check className="w-4 h-4 text-ink" strokeWidth={1.5} />
-                : <Minus className="w-4 h-4 text-ink-faint" strokeWidth={1.5} />}
             </Td>
           </tr>
         ))}

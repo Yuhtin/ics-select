@@ -11,9 +11,9 @@ type WaitlistRow = {
   email: string;
   course: Course;
   skillLevel: number;
+  year: number;
   github: string | null;
   linkedin: string | null;
-  wantsUpdates: boolean;
   cycleTarget: string;
   ipHash: string | null;
   userAgent: string | null;
@@ -43,9 +43,9 @@ export class WaitlistService {
       email: dto.email,
       course: dto.course as Course,
       skillLevel: dto.skillLevel,
+      year: dto.year,
       github: dto.github ?? null,
       linkedin: dto.linkedin ?? null,
-      wantsUpdates: dto.wantsUpdates,
       cycleTarget: cycle.name,
       ipHash,
       userAgent,
@@ -83,17 +83,15 @@ export class WaitlistService {
 
   async stats() {
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-    const [total, last7d, wantsUpdatesCount, courseGroups, skillGroups] = await Promise.all([
+    const [total, last7d, courseGroups, skillGroups] = await Promise.all([
       this.prisma.waitlistEntry.count(),
       this.prisma.waitlistEntry.count({ where: { createdAt: { gte: sevenDaysAgo } } }),
-      this.prisma.waitlistEntry.count({ where: { wantsUpdates: true } }),
       this.prisma.waitlistEntry.groupBy({ by: ['course'],      _count: { _all: true } }),
       this.prisma.waitlistEntry.groupBy({ by: ['skillLevel'],  _count: { _all: true } }),
     ]);
     return {
       total,
       last7d,
-      wantsUpdatesPct: total > 0 ? Math.round((wantsUpdatesCount / total) * 100) : 0,
       byCourse: courseGroups.map((g: any) => ({ course: g.course as Course, count: g._count._all })),
       bySkill:  skillGroups.map((g: any) => ({ skillLevel: g.skillLevel as number, count: g._count._all })),
     };
@@ -124,7 +122,6 @@ export class WaitlistService {
         ...(q.skillMax ? { lte: q.skillMax } : {}),
       };
     }
-    if (q.wantsUpdates !== undefined) where.wantsUpdates = q.wantsUpdates;
     if (q.q) {
       where.OR = [
         { name:  { contains: q.q, mode: 'insensitive' } },

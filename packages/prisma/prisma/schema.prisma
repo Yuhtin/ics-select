@@ -390,9 +390,9 @@ model WaitlistEntry {
   email        String   @unique
   course       Course
   skillLevel   Int
+  year         Int
   github       String?
   linkedin     String?
-  wantsUpdates Boolean  @default(true)
   cycleTarget  String
   ipHash       String?
   userAgent    String?

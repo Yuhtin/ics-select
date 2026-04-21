@@ -7,9 +7,9 @@ function makePrisma() {
     email: string;
     course: string;
     skillLevel: number;
+    year: number;
     github: string | null;
     linkedin: string | null;
-    wantsUpdates: boolean;
     cycleTarget: string;
     ipHash: string | null;
     userAgent: string | null;
@@ -46,7 +46,6 @@ function makePrisma() {
     if (where?.course)            rows = rows.filter((r) => r.course === where.course);
     if (where?.skillLevel?.gte)   rows = rows.filter((r) => r.skillLevel >= where.skillLevel.gte);
     if (where?.skillLevel?.lte)   rows = rows.filter((r) => r.skillLevel <= where.skillLevel.lte);
-    if (where?.wantsUpdates !== undefined) rows = rows.filter((r) => r.wantsUpdates === where.wantsUpdates);
     if (where?.OR) {
       const needles = where.OR.map((c: any) =>
         (c.name?.contains ?? c.email?.contains ?? '').toLowerCase(),
@@ -140,12 +139,12 @@ function seedWaitlistTarget(prisma: ReturnType<typeof makePrisma>) {
 
 const VALID = {
   name: 'Ada Lovelace',
-  email: 'ada@inteli.edu.br',
+  email: 'ada@sou.inteli.edu.br',
   course: 'CIENCIA_COMPUTACAO' as const,
   skillLevel: 4,
+  year: 2,
   github: 'https://github.com/ada',
   linkedin: undefined,
-  wantsUpdates: true,
 };
 
 describe('WaitlistService', () => {
@@ -156,11 +155,12 @@ describe('WaitlistService', () => {
     await svc.submit({ ...VALID }, 'ip-hash-a', 'ua-a');
     expect(prisma.waitlistEntry.upsert).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { email: 'ada@inteli.edu.br' },
+        where: { email: 'ada@sou.inteli.edu.br' },
         create: expect.objectContaining({
           name: 'Ada Lovelace',
           course: 'CIENCIA_COMPUTACAO',
           skillLevel: 4,
+          year: 2,
           cycleTarget: '2026.3',
           ipHash: 'ip-hash-a',
           userAgent: 'ua-a',
@@ -182,7 +182,7 @@ describe('WaitlistService', () => {
     const svc = new WaitlistService(prisma as any);
     await svc.submit({ ...VALID }, 'ip-a', 'ua-a');
     await svc.submit({ ...VALID, skillLevel: 5 }, 'ip-b', 'ua-b');
-    const stored = prisma._byEmail.get('ada@inteli.edu.br')!;
+    const stored = prisma._byEmail.get('ada@sou.inteli.edu.br')!;
     expect(stored.skillLevel).toBe(5);
     expect(stored.cycleTarget).toBe('2026.3');
     expect(stored.ipHash).toBe('ip-b');
@@ -200,16 +200,15 @@ describe('WaitlistService', () => {
     expect(result.items.map((r) => r.email)).toEqual(['a@x.com']);
   });
 
-  it('stats aggregates total, last7d, wantsUpdatesPct, byCourse, bySkill', async () => {
+  it('stats aggregates total, last7d, byCourse, bySkill', async () => {
     const prisma = makePrisma();
     seedWaitlistTarget(prisma);
     const svc = new WaitlistService(prisma as any);
-    await svc.submit({ ...VALID, email: 'a@x.com', wantsUpdates: true  }, null, null);
-    await svc.submit({ ...VALID, email: 'b@x.com', wantsUpdates: false }, null, null);
+    await svc.submit({ ...VALID, email: 'a@sou.inteli.edu.br' }, null, null);
+    await svc.submit({ ...VALID, email: 'b@sou.inteli.edu.br' }, null, null);
     const s = await svc.stats();
     expect(s.total).toBe(2);
     expect(s.last7d).toBe(2);
-    expect(s.wantsUpdatesPct).toBe(50);
     expect(s.byCourse).toEqual(expect.arrayContaining([{ course: 'CIENCIA_COMPUTACAO', count: 2 }]));
     expect(s.bySkill).toEqual(expect.arrayContaining([{ skillLevel: 4, count: 2 }]));
   });

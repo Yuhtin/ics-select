@@ -11,7 +11,6 @@ describe('AdminWaitlistController', () => {
       pageSize: '10',
       course: 'CIENCIA_COMPUTACAO',
       skillMin: '3',
-      wantsUpdates: 'true',
       q: '  ada  ',
     } as any);
     expect(service.list).toHaveBeenCalledWith(expect.objectContaining({
@@ -19,7 +18,6 @@ describe('AdminWaitlistController', () => {
       pageSize: 10,
       course: 'CIENCIA_COMPUTACAO',
       skillMin: 3,
-      wantsUpdates: true,
       q: 'ada',
     }));
     expect(result).toEqual({ items: [], total: 0, page: 1, pageSize: 50 });
@@ -34,7 +32,7 @@ describe('AdminWaitlistController', () => {
 
   it('stats delegates to service unchanged', async () => {
     const payload = {
-      total: 12, last7d: 4, wantsUpdatesPct: 80, byCourse: [], bySkill: [],
+      total: 12, last7d: 4, byCourse: [], bySkill: [],
     };
     const service = { stats: jest.fn().mockResolvedValue(payload) } as any;
     const ctrl = new AdminWaitlistController(service);
@@ -50,7 +48,7 @@ describe('AdminWaitlistController', () => {
       skillLevel: 5,
       github: 'https://github.com/ada',
       linkedin: null,
-      wantsUpdates: true,
+      year: 2,
       cycleTarget: '2026.3',
       createdAt: new Date('2026-04-20T12:00:00Z'),
       updatedAt: new Date('2026-04-20T12:00:00Z'),
@@ -72,7 +70,7 @@ describe('AdminWaitlistController', () => {
     expect(res.setHeader).toHaveBeenCalledWith('Content-Type', 'text/csv; charset=utf-8');
     expect(res.setHeader).toHaveBeenCalledWith('Content-Disposition', expect.stringMatching(/^attachment; filename="waitlist-\d{8}\.csv"$/));
     const csv = chunks.join('');
-    expect(csv.split('\n')[0]).toBe('createdAt,name,email,course,skillLevel,github,linkedin,wantsUpdates,cycleTarget');
+    expect(csv.split('\n')[0]).toBe('createdAt,name,email,course,year,skillLevel,github,linkedin,cycleTarget');
     expect(csv).toContain('"Ada ""the Great"""');
     expect(res.end).toHaveBeenCalled();
   });
@@ -86,7 +84,7 @@ describe('AdminWaitlistController', () => {
       skillLevel: 3,
       github: null,
       linkedin: null,
-      wantsUpdates: true,
+      year: 2,
       cycleTarget: '2026.3',
       createdAt: new Date('2026-04-20T12:00:00Z'),
       updatedAt: new Date('2026-04-20T12:00:00Z'),

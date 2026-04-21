@@ -66,14 +66,6 @@ export function WaitlistFilters({ value, onChange }: Props) {
             className="w-16 rounded-md border border-rule px-2 py-1 font-mono text-sm bg-surface text-ink"
           />
         </label>
-        <label className="flex items-center gap-2 text-xs text-ink-soft">
-          <input
-            type="checkbox"
-            checked={value.wantsUpdates === true}
-            onChange={(e) => onChange({ ...value, wantsUpdates: e.target.checked ? true : undefined, page: 1 })}
-          />
-          <span>Só quem quer updates</span>
-        </label>
         <label className="flex items-center gap-2 text-xs text-ink-soft flex-1 min-w-[200px]">
           <span>Busca</span>
           <input
