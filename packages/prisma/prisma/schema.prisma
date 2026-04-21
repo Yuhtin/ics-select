@@ -366,15 +366,6 @@ model AiGeneration {
   createdAt      DateTime @default(now())
 }
 
-model InterestSubmission {
-  id        String   @id @default(cuid())
-  name      String
-  email     String
-  createdAt DateTime @default(now())
-
-  @@index([email])
-}
-
 model WhatsappLog {
   id          String    @id @default(cuid())
   userId      String
@@ -383,4 +374,31 @@ model WhatsappLog {
   sentAt      DateTime  @default(now())
   deliveredAt DateTime?
   error       String?
+}
+
+enum Course {
+  CIENCIA_COMPUTACAO
+  ADMINISTRACAO
+  ENGENHARIA_SOFTWARE
+  ENGENHARIA_COMPUTACAO
+  SISTEMAS_INFORMACAO
+}
+
+model WaitlistEntry {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  course       Course
+  skillLevel   Int
+  github       String?
+  linkedin     String?
+  wantsUpdates Boolean  @default(true)
+  cycleTarget  String
+  ipHash       String?
+  userAgent    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([cycleTarget, createdAt])
+  @@index([course])
 }
