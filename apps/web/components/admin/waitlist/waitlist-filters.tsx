@@ -19,6 +19,7 @@ export function WaitlistFilters({ value, onChange }: Props) {
           <button
             key={c}
             onClick={() => toggleCourse(c)}
+            aria-pressed={value.course === c}
             className={`font-mono text-[11px] uppercase tracking-label px-3 py-1.5 rounded-full border transition-colors ${
               value.course === c
                 ? 'bg-ink text-surface border-ink'
@@ -36,7 +37,15 @@ export function WaitlistFilters({ value, onChange }: Props) {
           <input
             type="number" min={1} max={5}
             value={value.skillMin ?? ''}
-            onChange={(e) => onChange({ ...value, skillMin: e.target.value ? Number(e.target.value) : undefined, page: 1 })}
+            onChange={(e) => {
+              const raw = e.target.value;
+              const parsed = raw === '' ? undefined : Number(raw);
+              onChange({
+                ...value,
+                skillMin: parsed !== undefined && Number.isFinite(parsed) ? parsed : undefined,
+                page: 1,
+              });
+            }}
             className="w-16 rounded-md border border-rule px-2 py-1 font-mono text-sm bg-surface text-ink"
           />
         </label>
@@ -45,7 +54,15 @@ export function WaitlistFilters({ value, onChange }: Props) {
           <input
             type="number" min={1} max={5}
             value={value.skillMax ?? ''}
-            onChange={(e) => onChange({ ...value, skillMax: e.target.value ? Number(e.target.value) : undefined, page: 1 })}
+            onChange={(e) => {
+              const raw = e.target.value;
+              const parsed = raw === '' ? undefined : Number(raw);
+              onChange({
+                ...value,
+                skillMax: parsed !== undefined && Number.isFinite(parsed) ? parsed : undefined,
+                page: 1,
+              });
+            }}
             className="w-16 rounded-md border border-rule px-2 py-1 font-mono text-sm bg-surface text-ink"
           />
         </label>
