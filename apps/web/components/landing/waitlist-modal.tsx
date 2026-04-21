@@ -4,8 +4,10 @@ import { useEffect, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Check, X, ArrowUpRight } from 'lucide-react';
+import { submitWaitlist } from '../../lib/waitlist/api';
+import { labelToCourse } from '../../lib/waitlist/course';
 
-type ModalState = 'form' | 'success';
+type ModalState = 'form' | 'submitting' | 'success' | 'error';
 
 export function WaitlistModal({
   open,
@@ -38,10 +40,38 @@ export function WaitlistModal({
     if (open) setState('form');
   }, [open]);
 
-  const handleSubmit = useCallback((e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // Mock submit — in real app this would POST to /waitlist endpoint
-    setState('success');
+    setState('submitting');
+    const formData = new FormData(e.currentTarget);
+    const courseLabel = formData.get('course')?.toString() ?? '';
+    const course = labelToCourse(courseLabel);
+    if (!course) {
+      setState('error');
+      return;
+    }
+    const skill = Number(formData.get('skill') ?? 0);
+    if (!Number.isFinite(skill) || skill < 1 || skill > 5) {
+      setState('error');
+      return;
+    }
+
+    try {
+      await submitWaitlist({
+        name: String(formData.get('name') ?? '').trim(),
+        email: String(formData.get('email') ?? '').trim(),
+        course,
+        skillLevel: skill,
+        github: String(formData.get('github') ?? '').trim() || undefined,
+        linkedin: String(formData.get('linkedin') ?? '').trim() || undefined,
+        wantsUpdates: formData.get('updates') === 'on',
+        cycleTarget: process.env.NEXT_PUBLIC_WAITLIST_CYCLE ?? '2026.3',
+        website: String(formData.get('website') ?? ''),
+      });
+      setState('success');
+    } catch {
+      setState('error');
+    }
   }, []);
 
   if (!mounted) return null;
@@ -83,7 +113,7 @@ export function WaitlistModal({
               <X className="w-4 h-4" strokeWidth={1.5} />
             </button>
 
-            {state === 'form' && (
+            {(state === 'form' || state === 'submitting' || state === 'error') && (
               <>
                 <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-success-soft font-mono text-[11px] font-medium tracking-[0.02em] text-fg">
                   <span className="relative inline-block w-2 h-2 rounded-full bg-success animate-pulse-ring" />
@@ -100,6 +130,15 @@ export function WaitlistModal({
                 </p>
 
                 <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
+                  {/* Honeypot — off-screen text input; bots fill it, humans never see it. */}
+                  <input
+                    type="text"
+                    name="website"
+                    tabIndex={-1}
+                    autoComplete="off"
+                    aria-hidden="true"
+                    className="absolute left-[-9999px] top-auto h-0 w-0 overflow-hidden"
+                  />
                   <Field label="Nome">
                     <input
                       type="text"
@@ -162,11 +201,19 @@ export function WaitlistModal({
                   </label>
                   <button
                     type="submit"
-                    className="mt-1 flex items-center justify-center gap-2 bg-fg text-bg rounded-full py-3.5 px-5 text-sm font-medium hover:bg-primary transition-colors"
+                    disabled={state === 'submitting'}
+                    className="mt-1 flex items-center justify-center gap-2 bg-fg text-bg rounded-full py-3.5 px-5 text-sm font-medium hover:bg-primary transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                   >
-                    Entrar na lista
-                    <ArrowUpRight className="w-3.5 h-3.5" strokeWidth={2} />
+                    {state === 'submitting' ? 'Enviando…' : 'Entrar na lista'}
+                    {state !== 'submitting' && (
+                      <ArrowUpRight className="w-3.5 h-3.5" strokeWidth={2} />
+                    )}
                   </button>
+                  {state === 'error' && (
+                    <p className="text-red-600 text-xs mt-1 text-center">
+                      Não foi possível enviar. Tenta de novo em instantes.
+                    </p>
+                  )}
                   <p className="text-[11px] text-fg-faint text-center mt-1">
                     Ao enviar, concorda com nossos{' '}
                     <a href="#" className="text-fg-mute underline-offset-2 hover:underline">
