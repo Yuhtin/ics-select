@@ -24,8 +24,8 @@ export function LandingProduct() {
             Sua home. O único lugar que você abre de manhã.
           </h2>
           <p className="text-fg-mute max-w-[60ch] text-[17px]">
-            O plano do dia, a cohort, o streak, e o que está travando. Tudo acima da dobra, sem
-            navegar em 12 abas.
+            O plano do dia, onde a cohort tá, e o que você deixou pra trás — tudo numa tela. Você
+            abre o app de manhã e sabe o próximo passo em 2 segundos.
           </p>
 
           <ul className="flex flex-col gap-[22px] mt-8 list-none p-0">
@@ -33,7 +33,10 @@ export function LandingProduct() {
               num="01"
               title={'Hero "agora"'}
               body={
-                <>O próximo item. Com o Calendar aberto do lado, é só bater Cmd+↵ e começar.</>
+                <>
+                  O próximo item da semana, com horário no Calendar e tempo estimado. Você não
+                  precisa decidir o que estudar agora — o admin já decidiu por você.
+                </>
               }
             />
             <Feature
@@ -51,8 +54,9 @@ export function LandingProduct() {
               title="Carried over"
               body={
                 <>
-                  Terracota só aparece quando há algo voltando. É a cor que diz &ldquo;eu sei que
-                  você deixou isso pra trás, não esqueci&rdquo;.
+                  Item que você não fechou semana passada volta destacado, até bater um outcome.
+                  Não se esconde num relatório e não vira débito silencioso — fica no topo do plano
+                  novo até resolver.
                 </>
               }
               last
