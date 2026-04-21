@@ -1,13 +1,44 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Check, X, ArrowUpRight } from 'lucide-react';
-import { submitWaitlist, getWaitlistConfig, type WaitlistConfig } from '../../lib/waitlist/api';
-import { labelToCourse } from '../../lib/waitlist/course';
+import { ArrowRight, ArrowUpRight, Check, X } from 'lucide-react';
+import {
+  submitWaitlist,
+  getWaitlistConfig,
+  type WaitlistConfig,
+} from '../../lib/waitlist/api';
+import {
+  WAITLIST_COURSES,
+  courseToLabel,
+  type WaitlistCourse,
+} from '../../lib/waitlist/course';
 
+type Step = 1 | 2 | 3 | 4;
 type ModalState = 'form' | 'submitting' | 'success' | 'error';
+
+type FormData = {
+  name: string;
+  email: string;
+  course: WaitlistCourse | null;
+  year: number | null;
+  skillLevel: number;
+  github: string;
+  linkedin: string;
+};
+
+const INITIAL: FormData = {
+  name: '',
+  email: '',
+  course: null,
+  year: null,
+  skillLevel: 0,
+  github: '',
+  linkedin: '',
+};
+
+const EASE = [0.16, 1, 0.3, 1] as const;
 
 export function WaitlistModal({
   open,
@@ -19,13 +50,25 @@ export function WaitlistModal({
   const [mounted, setMounted] = useState(false);
   const [state, setState] = useState<ModalState>('form');
   const [config, setConfig] = useState<WaitlistConfig | null>(null);
+  const [step, setStep] = useState<Step>(1);
+  const [direction, setDirection] = useState<1 | -1>(1);
+  const [data, setData] = useState<FormData>(INITIAL);
+  const [stepError, setStepError] = useState<string | null>(null);
+
+  const honeypotRef = useRef<HTMLInputElement>(null);
+  const nameRef = useRef<HTMLInputElement>(null);
+  const emailRef = useRef<HTMLInputElement>(null);
+  const githubRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => setMounted(true), []);
 
-  // Fetch waitlist config (target cycle) whenever the modal opens.
   useEffect(() => {
     if (!open) return;
-    getWaitlistConfig().then(setConfig).catch(() => {/* leave config null on failure */});
+    getWaitlistConfig()
+      .then(setConfig)
+      .catch(() => {
+        /* leave config null */
+      });
   }, [open]);
 
   // Body scroll lock + Esc close
@@ -42,46 +85,97 @@ export function WaitlistModal({
     };
   }, [open, onClose]);
 
-  // Reset to form whenever modal re-opens
+  // Reset wizard whenever modal re-opens
   useEffect(() => {
-    if (open) setState('form');
+    if (!open) return;
+    setStep(1);
+    setDirection(1);
+    setState('form');
+    setData(INITIAL);
+    setStepError(null);
   }, [open]);
 
-  const handleSubmit = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setState('submitting');
-    const formData = new FormData(e.currentTarget);
-    const courseLabel = formData.get('course')?.toString() ?? '';
-    const course = labelToCourse(courseLabel);
-    if (!course) {
-      setState('error');
-      return;
-    }
-    const skill = Number(formData.get('skill') ?? 0);
-    if (!Number.isFinite(skill) || skill < 1 || skill > 5) {
-      setState('error');
-      return;
-    }
+  // Auto-focus the primary input of each step
+  useEffect(() => {
+    if (!open) return;
+    const timer = window.setTimeout(() => {
+      if (step === 1) nameRef.current?.focus();
+      else if (step === 2) emailRef.current?.focus();
+      else if (step === 4) githubRef.current?.focus();
+    }, 320); // after step enter animation
+    return () => window.clearTimeout(timer);
+  }, [open, step]);
 
+  const advance = () => {
+    setDirection(1);
+    setStep((s) => Math.min(4, s + 1) as Step);
+    setStepError(null);
+  };
+  const goBack = () => {
+    setDirection(-1);
+    setStep((s) => Math.max(1, s - 1) as Step);
+    setStepError(null);
+  };
+
+  const submitFinal = async () => {
+    if (!data.course || !data.year) {
+      setState('error');
+      return;
+    }
+    setState('submitting');
     try {
       await submitWaitlist({
-        name: String(formData.get('name') ?? '').trim(),
-        email: String(formData.get('email') ?? '').trim(),
-        course,
-        skillLevel: skill,
-        // Stub — wizard rewrite in the next commit asks this properly via UI.
-        year: 1,
-        github: String(formData.get('github') ?? '').trim() || undefined,
-        linkedin: String(formData.get('linkedin') ?? '').trim() || undefined,
-        website: String(formData.get('website') ?? ''),
+        name: data.name.trim(),
+        email: data.email.trim().toLowerCase(),
+        course: data.course,
+        year: data.year,
+        skillLevel: data.skillLevel,
+        github: data.github.trim() || undefined,
+        linkedin: data.linkedin.trim() || undefined,
+        website: honeypotRef.current?.value ?? '',
       });
       setState('success');
     } catch {
       setState('error');
     }
-  }, []);
+  };
+
+  const handleStepSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setStepError(null);
+
+    if (step === 1) {
+      if (!data.name.trim()) {
+        setStepError('Preenche teu nome.');
+        return;
+      }
+      advance();
+      return;
+    }
+    if (step === 2) {
+      const email = data.email.trim().toLowerCase();
+      if (!/@sou\.inteli\.edu\.br$/i.test(email)) {
+        setStepError('Precisa ser um email @sou.inteli.edu.br');
+        return;
+      }
+      setData((d) => ({ ...d, email }));
+      advance();
+      return;
+    }
+    if (step === 3) {
+      if (!data.course || !data.year || data.skillLevel < 1) {
+        setStepError('Preenche todos os campos.');
+        return;
+      }
+      advance();
+      return;
+    }
+    await submitFinal();
+  };
 
   if (!mounted) return null;
+
+  const canSubmit = state !== 'submitting' && !!config?.cycleTarget;
 
   return createPortal(
     <AnimatePresence>
@@ -96,7 +190,7 @@ export function WaitlistModal({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.26, ease: [0.16, 1, 0.3, 1] }}
+          transition={{ duration: 0.26, ease: EASE }}
           onClick={(e) => {
             if (e.target === e.currentTarget) onClose();
           }}
@@ -109,7 +203,7 @@ export function WaitlistModal({
             initial={{ y: 24, scale: 0.98, opacity: 0 }}
             animate={{ y: 0, scale: 1, opacity: 1 }}
             exit={{ y: 24, scale: 0.98, opacity: 0 }}
-            transition={{ duration: 0.36, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: 0.36, ease: EASE }}
           >
             <button
               type="button"
@@ -120,7 +214,7 @@ export function WaitlistModal({
               <X className="w-4 h-4" strokeWidth={1.5} />
             </button>
 
-            {(state === 'form' || state === 'submitting' || state === 'error') && (
+            {state !== 'success' && (
               <>
                 <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-success-soft font-mono text-[11px] font-medium tracking-[0.02em] text-fg">
                   <span className="relative inline-block w-2 h-2 rounded-full bg-success animate-pulse-ring" />
@@ -128,97 +222,126 @@ export function WaitlistModal({
                     ? `Ciclo ${config.cycleTarget} · abre em ${formatStartsAt(config.startsAt)}`
                     : 'Próximo ciclo ainda não anunciado'}
                 </div>
+
                 <h3
                   id="waitlist-title"
                   className="font-serif text-[34px] font-normal tracking-[-0.025em] leading-[1.05] mt-3.5 mb-2.5 text-fg"
                 >
-                  Receba um aviso<br />quando abrirmos.
+                  Entre na seleção.
                 </h3>
-                <p className="text-fg-mute text-sm leading-[1.5] mb-6">
-                  Sem spam. Um email só: no dia que as aplicações abrirem, com o link direto.
+                <p className="text-fg-mute text-sm leading-[1.5] mb-5">
+                  Se abrir vaga, entrevistamos na ordem de inscrição. Sem pegadinha.
                 </p>
 
-                <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
-                  {/* Honeypot — off-screen text input; bots fill it, humans never see it. */}
-                  <input
-                    type="text"
-                    name="website"
-                    tabIndex={-1}
-                    autoComplete="off"
-                    aria-hidden="true"
-                    className="absolute left-[-9999px] top-auto h-0 w-0 overflow-hidden"
-                  />
-                  <Field label="Nome">
-                    <input
-                      type="text"
-                      name="name"
-                      required
-                      placeholder="Como devemos te chamar?"
-                      className="modal-input"
-                    />
-                  </Field>
-                  <Field label="Email">
-                    <input
-                      type="email"
-                      name="email"
-                      required
-                      placeholder="seu@email.com"
-                      className="modal-input"
-                    />
-                  </Field>
-                  <Field label="Curso">
-                    <select name="course" required className="modal-input">
-                      <option value="">Selecione…</option>
-                      <option>Ciência da Computação</option>
-                      <option>Administração</option>
-                      <option>Engenharia de Software</option>
-                      <option>Engenharia de Computação</option>
-                      <option>Sistemas de Informação</option>
-                    </select>
-                  </Field>
-                  <div className="grid grid-cols-2 gap-3">
-                    <Field label="Link GitHub">
-                      <input
-                        type="url"
-                        name="github"
-                        placeholder="github.com/seuuser"
-                        className="modal-input"
-                      />
-                    </Field>
-                    <Field label="Link LinkedIn">
-                      <input
-                        type="url"
-                        name="linkedin"
-                        placeholder="linkedin.com/in/seuuser"
-                        className="modal-input"
-                      />
-                    </Field>
+                <ProgressDots step={step} />
+
+                {/* Honeypot kept outside AnimatePresence so it's always mounted */}
+                <input
+                  ref={honeypotRef}
+                  type="text"
+                  name="website"
+                  tabIndex={-1}
+                  autoComplete="off"
+                  aria-hidden="true"
+                  className="absolute left-[-9999px] top-auto h-0 w-0 overflow-hidden"
+                />
+
+                <form onSubmit={handleStepSubmit} className="flex flex-col gap-4">
+                  <div className="relative min-h-[180px]">
+                    <AnimatePresence mode="wait" custom={direction}>
+                      <motion.div
+                        key={step}
+                        custom={direction}
+                        variants={{
+                          enter: (dir: number) => ({ opacity: 0, x: 16 * dir }),
+                          center: { opacity: 1, x: 0 },
+                          exit: (dir: number) => ({ opacity: 0, x: -16 * dir }),
+                        }}
+                        initial="enter"
+                        animate="center"
+                        exit="exit"
+                        transition={{ duration: 0.28, ease: EASE }}
+                        className="flex flex-col gap-3.5"
+                      >
+                        {step === 1 && (
+                          <StepName
+                            innerRef={nameRef}
+                            value={data.name}
+                            onChange={(v) => setData((d) => ({ ...d, name: v }))}
+                          />
+                        )}
+                        {step === 2 && (
+                          <StepEmail
+                            innerRef={emailRef}
+                            value={data.email}
+                            onChange={(v) => setData((d) => ({ ...d, email: v }))}
+                          />
+                        )}
+                        {step === 3 && (
+                          <StepContext
+                            course={data.course}
+                            year={data.year}
+                            skillLevel={data.skillLevel}
+                            onCourse={(c) => setData((d) => ({ ...d, course: c }))}
+                            onYear={(y) => setData((d) => ({ ...d, year: y }))}
+                            onSkill={(s) => setData((d) => ({ ...d, skillLevel: s }))}
+                          />
+                        )}
+                        {step === 4 && (
+                          <StepLinks
+                            githubRef={githubRef}
+                            github={data.github}
+                            linkedin={data.linkedin}
+                            onGithub={(v) => setData((d) => ({ ...d, github: v }))}
+                            onLinkedin={(v) => setData((d) => ({ ...d, linkedin: v }))}
+                          />
+                        )}
+                      </motion.div>
+                    </AnimatePresence>
                   </div>
-                  <Field label="Nível de conhecimento em programação">
-                    <SkillScale name="skill" />
-                  </Field>
-                  <button
-                    type="submit"
-                    disabled={state === 'submitting' || !config?.cycleTarget}
-                    className="mt-1 flex items-center justify-center gap-2 bg-fg text-bg rounded-full py-3.5 px-5 text-sm font-medium hover:bg-primary transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-                  >
-                    {state === 'submitting' ? 'Enviando…' : config?.cycleTarget ? 'Entrar na lista' : 'Aguardando abertura do próximo ciclo'}
-                    {state !== 'submitting' && config?.cycleTarget && (
-                      <ArrowUpRight className="w-3.5 h-3.5" strokeWidth={2} />
-                    )}
-                  </button>
-                  {state === 'error' && (
-                    <p className="text-red-600 text-xs mt-1 text-center">
+
+                  {stepError && (
+                    <p className="text-red-600 text-xs text-center -mt-2">{stepError}</p>
+                  )}
+                  {state === 'error' && !stepError && (
+                    <p className="text-red-600 text-xs text-center -mt-2">
                       Não foi possível enviar. Tenta de novo em instantes.
                     </p>
                   )}
-                  <p className="text-[11px] text-fg-faint text-center mt-1">
-                    Ao enviar, concorda com nossos{' '}
-                    <a href="#" className="text-fg-mute underline-offset-2 hover:underline">
-                      termos
-                    </a>
-                    . 6 meses, 12 vagas, 1 ciclo por vez.
-                  </p>
+
+                  <div className="flex items-center justify-between gap-3 mt-1">
+                    {step > 1 ? (
+                      <button
+                        type="button"
+                        onClick={goBack}
+                        className="text-[13px] text-fg-mute hover:text-fg transition-colors"
+                      >
+                        ← Voltar
+                      </button>
+                    ) : (
+                      <span />
+                    )}
+                    <button
+                      type="submit"
+                      disabled={!canSubmit}
+                      className="inline-flex items-center justify-center gap-2 bg-fg text-bg rounded-full py-3 px-5 text-sm font-medium hover:bg-primary transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                      {!config?.cycleTarget
+                        ? 'Aguardando abertura'
+                        : state === 'submitting'
+                          ? 'Enviando…'
+                          : step === 4
+                            ? 'Enviar inscrição'
+                            : 'Continuar'}
+                      {state !== 'submitting' &&
+                        config?.cycleTarget &&
+                        (step === 4 ? (
+                          <ArrowUpRight className="w-3.5 h-3.5" strokeWidth={2} />
+                        ) : (
+                          <ArrowRight className="w-3.5 h-3.5" strokeWidth={2} />
+                        ))}
+                    </button>
+                  </div>
                 </form>
               </>
             )}
@@ -229,12 +352,10 @@ export function WaitlistModal({
                   <Check className="w-8 h-8" strokeWidth={2.5} />
                 </div>
                 <h4 className="font-serif text-[26px] font-medium tracking-[-0.02em] mb-2 text-fg">
-                  Você está na lista.
+                  Inscrição recebida.
                 </h4>
-                <p className="text-fg-mute text-sm">
-                  {config?.cycleTarget
-                    ? `Te avisamos assim que o ciclo ${config.cycleTarget} abrir. Enquanto isso, dá uma olhada em `
-                    : 'Te avisamos assim que o próximo ciclo abrir. Enquanto isso, dá uma olhada em '}
+                <p className="text-fg-mute text-sm leading-[1.5]">
+                  Quando abrir vaga, te chamamos pra entrevista. Sua posição respeita a ordem de chegada. Enquanto isso, dá uma olhada em{' '}
                   <a
                     href="#como-funciona"
                     onClick={onClose}
@@ -250,7 +371,189 @@ export function WaitlistModal({
         </motion.div>
       )}
     </AnimatePresence>,
-    document.body
+    document.body,
+  );
+}
+
+function ProgressDots({ step }: { step: Step }) {
+  return (
+    <div className="flex gap-1.5 mb-6 mt-5">
+      {[1, 2, 3, 4].map((n) => (
+        <span
+          key={n}
+          className={`h-1.5 rounded-full transition-all duration-300 ${
+            n === step
+              ? 'w-6 bg-fg'
+              : n < step
+                ? 'w-1.5 bg-fg'
+                : 'w-1.5 bg-border-token'
+          }`}
+        />
+      ))}
+    </div>
+  );
+}
+
+function StepName({
+  innerRef,
+  value,
+  onChange,
+}: {
+  innerRef: React.RefObject<HTMLInputElement | null>;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <Field label="Qual seu nome?">
+      <input
+        ref={innerRef}
+        type="text"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="Como devemos te chamar?"
+        className="modal-input"
+        autoComplete="name"
+      />
+    </Field>
+  );
+}
+
+function StepEmail({
+  innerRef,
+  value,
+  onChange,
+}: {
+  innerRef: React.RefObject<HTMLInputElement | null>;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <Field label="Seu email Inteli">
+      <input
+        ref={innerRef}
+        type="email"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="seu@sou.inteli.edu.br"
+        className="modal-input"
+        autoComplete="email"
+        inputMode="email"
+      />
+      <span className="text-[11px] text-fg-faint">
+        Só aceita email @sou.inteli.edu.br.
+      </span>
+    </Field>
+  );
+}
+
+function StepContext({
+  course,
+  year,
+  skillLevel,
+  onCourse,
+  onYear,
+  onSkill,
+}: {
+  course: WaitlistCourse | null;
+  year: number | null;
+  skillLevel: number;
+  onCourse: (c: WaitlistCourse) => void;
+  onYear: (y: number) => void;
+  onSkill: (s: number) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-4">
+      <Field label="Curso">
+        <div className="flex flex-wrap gap-1.5">
+          {WAITLIST_COURSES.map((c) => {
+            const active = course === c;
+            return (
+              <button
+                key={c}
+                type="button"
+                onClick={() => onCourse(c)}
+                aria-pressed={active}
+                className={`px-3 py-2 rounded-full border font-mono text-[11px] uppercase tracking-[0.04em] transition-colors ${
+                  active
+                    ? 'bg-fg text-bg border-fg'
+                    : 'bg-surface text-fg-soft border-border-token hover:border-fg-soft hover:text-fg'
+                }`}
+              >
+                {courseToLabel(c)}
+              </button>
+            );
+          })}
+        </div>
+      </Field>
+      <Field label="Em que ano você tá?">
+        <div className="grid grid-cols-4 gap-1.5">
+          {[1, 2, 3, 4].map((n) => {
+            const active = year === n;
+            return (
+              <button
+                key={n}
+                type="button"
+                onClick={() => onYear(n)}
+                aria-pressed={active}
+                className={`h-10 rounded-[8px] border font-mono text-sm transition-colors ${
+                  active
+                    ? 'bg-fg text-bg border-fg'
+                    : 'bg-surface text-fg-soft border-border-token hover:border-fg-soft hover:text-fg'
+                }`}
+              >
+                {n}º
+              </button>
+            );
+          })}
+        </div>
+      </Field>
+      <Field label="Nível de conhecimento em programação">
+        <SkillScale value={skillLevel} onChange={onSkill} />
+      </Field>
+    </div>
+  );
+}
+
+function StepLinks({
+  githubRef,
+  github,
+  linkedin,
+  onGithub,
+  onLinkedin,
+}: {
+  githubRef: React.RefObject<HTMLInputElement | null>;
+  github: string;
+  linkedin: string;
+  onGithub: (v: string) => void;
+  onLinkedin: (v: string) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-3.5">
+      <p className="text-fg-mute text-[13px] leading-[1.5]">
+        Compartilha seus links se quiser acelerar a triagem. Pode deixar em branco.
+      </p>
+      <Field label="GitHub (opcional)">
+        <input
+          ref={githubRef}
+          type="url"
+          value={github}
+          onChange={(e) => onGithub(e.target.value)}
+          placeholder="github.com/seuuser"
+          className="modal-input"
+          autoComplete="off"
+        />
+      </Field>
+      <Field label="LinkedIn (opcional)">
+        <input
+          type="url"
+          value={linkedin}
+          onChange={(e) => onLinkedin(e.target.value)}
+          placeholder="linkedin.com/in/seuuser"
+          className="modal-input"
+          autoComplete="off"
+        />
+      </Field>
+    </div>
   );
 }
 
@@ -269,8 +572,13 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-function SkillScale({ name }: { name: string }) {
-  const [value, setValue] = useState<number>(0);
+function SkillScale({
+  value,
+  onChange,
+}: {
+  value: number;
+  onChange: (n: number) => void;
+}) {
   return (
     <div className="grid grid-cols-5 gap-1.5" role="radiogroup" aria-label="Nível de 1 a 5">
       {[1, 2, 3, 4, 5].map((n) => {
@@ -281,7 +589,7 @@ function SkillScale({ name }: { name: string }) {
             type="button"
             role="radio"
             aria-checked={active}
-            onClick={() => setValue(n)}
+            onClick={() => onChange(n)}
             className={`h-10 rounded-[8px] border font-mono text-sm transition-colors ${
               active
                 ? 'bg-fg text-bg border-fg'
@@ -292,7 +600,6 @@ function SkillScale({ name }: { name: string }) {
           </button>
         );
       })}
-      <input type="hidden" name={name} value={value || ''} required />
     </div>
   );
 }

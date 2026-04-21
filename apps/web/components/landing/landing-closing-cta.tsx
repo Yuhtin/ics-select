@@ -95,7 +95,7 @@ export function LandingClosingCta({
           className="inline-flex items-center gap-2 px-8 py-[18px] rounded-full bg-fg text-bg text-base font-medium hover:bg-primary transition-all hover:-translate-y-0.5"
           style={{ boxShadow: '0 1px 2px rgba(20,24,31,.06)' }}
         >
-          Entrar na lista de espera
+          Entrar na seleção
           <ArrowUpRight className="w-4 h-4" strokeWidth={2} />
         </button>
       </Reveal>
