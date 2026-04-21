@@ -15,7 +15,6 @@ describe('WaitlistController', () => {
     course: 'CIENCIA_COMPUTACAO',
     skillLevel: 4,
     wantsUpdates: true,
-    cycleTarget: '2026.3',
   };
 
   it('accepts a valid submission and delegates to service', async () => {

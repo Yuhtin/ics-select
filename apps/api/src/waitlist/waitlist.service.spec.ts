@@ -82,9 +82,25 @@ function makePrisma() {
     return Array.from(countMap, ([k, n]) => ({ [field]: valMap.get(k), _count: { _all: n } }));
   });
 
+  const cycles: Array<{ id: string; name: string; startsAt: Date; endsAt: Date; status: string }> = [];
+  const cycleFindFirst = jest.fn(async ({ where, orderBy }: any = {}) => {
+    let rows = cycles.filter((c) => c.status === (where?.status ?? c.status));
+    // minimal filter for our helper's shapes
+    if (where?.startsAt?.lte && where?.endsAt?.gte) {
+      rows = rows.filter((c) => c.startsAt <= where.startsAt.lte && c.endsAt >= where.endsAt.gte);
+    } else if (where?.startsAt?.gt) {
+      rows = rows.filter((c) => c.startsAt > where.startsAt.gt);
+    }
+    if (orderBy?.startsAt === 'desc') rows = rows.sort((a, b) => b.startsAt.getTime() - a.startsAt.getTime());
+    else if (orderBy?.startsAt === 'asc') rows = rows.sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime());
+    return rows[0] ?? null;
+  });
+
   return {
     waitlistEntry: { upsert, findMany, count, groupBy },
+    cycle: { findFirst: cycleFindFirst },
     _byEmail: byEmail,
+    _cycles: cycles,
   };
 }
 
@@ -96,12 +112,18 @@ const VALID = {
   github: 'https://github.com/ada',
   linkedin: undefined,
   wantsUpdates: true,
-  cycleTarget: '2026.3',
 };
 
 describe('WaitlistService', () => {
   it('upserts a new submission by email', async () => {
     const prisma = makePrisma();
+    prisma._cycles.push({
+      id: 'c-1',
+      name: '2026.3',
+      startsAt: new Date('2026-07-01T00:00:00Z'),
+      endsAt: new Date('2026-12-31T23:59:59Z'),
+      status: 'ACTIVE',
+    });
     const svc = new WaitlistService(prisma as any);
     await svc.submit({ ...VALID }, 'ip-hash-a', 'ua-a');
     expect(prisma.waitlistEntry.upsert).toHaveBeenCalledWith(
@@ -126,19 +148,33 @@ describe('WaitlistService', () => {
     expect(prisma.waitlistEntry.upsert).not.toHaveBeenCalled();
   });
 
-  it('on re-submit by the same email, update overwrites all fields (latest wins)', async () => {
+  it('on re-submit by the same email, update overwrites fields but cycleTarget comes from server', async () => {
     const prisma = makePrisma();
+    prisma._cycles.push({
+      id: 'c-1',
+      name: '2026.3',
+      startsAt: new Date('2026-07-01T00:00:00Z'),
+      endsAt: new Date('2026-12-31T23:59:59Z'),
+      status: 'ACTIVE',
+    });
     const svc = new WaitlistService(prisma as any);
     await svc.submit({ ...VALID }, 'ip-a', 'ua-a');
-    await svc.submit({ ...VALID, skillLevel: 5, cycleTarget: '2026.4' }, 'ip-b', 'ua-b');
+    await svc.submit({ ...VALID, skillLevel: 5 }, 'ip-b', 'ua-b');
     const stored = prisma._byEmail.get('ada@inteli.edu.br')!;
     expect(stored.skillLevel).toBe(5);
-    expect(stored.cycleTarget).toBe('2026.4');
+    expect(stored.cycleTarget).toBe('2026.3');
     expect(stored.ipHash).toBe('ip-b');
   });
 
   it('list returns rows matching filters, newest first, paginated', async () => {
     const prisma = makePrisma();
+    prisma._cycles.push({
+      id: 'c-1',
+      name: '2026.3',
+      startsAt: new Date('2026-07-01T00:00:00Z'),
+      endsAt: new Date('2026-12-31T23:59:59Z'),
+      status: 'ACTIVE',
+    });
     const svc = new WaitlistService(prisma as any);
     await svc.submit({ ...VALID, email: 'a@x.com', course: 'CIENCIA_COMPUTACAO', skillLevel: 3 }, null, null);
     await svc.submit({ ...VALID, email: 'b@x.com', course: 'ADMINISTRACAO',       skillLevel: 5 }, null, null);
@@ -150,6 +186,13 @@ describe('WaitlistService', () => {
 
   it('stats aggregates total, last7d, wantsUpdatesPct, byCourse, bySkill', async () => {
     const prisma = makePrisma();
+    prisma._cycles.push({
+      id: 'c-1',
+      name: '2026.3',
+      startsAt: new Date('2026-07-01T00:00:00Z'),
+      endsAt: new Date('2026-12-31T23:59:59Z'),
+      status: 'ACTIVE',
+    });
     const svc = new WaitlistService(prisma as any);
     await svc.submit({ ...VALID, email: 'a@x.com', wantsUpdates: true  }, null, null);
     await svc.submit({ ...VALID, email: 'b@x.com', wantsUpdates: false }, null, null);
@@ -163,6 +206,13 @@ describe('WaitlistService', () => {
 
   it('iterateAll yields every row, newest first', async () => {
     const prisma = makePrisma();
+    prisma._cycles.push({
+      id: 'c-1',
+      name: '2026.3',
+      startsAt: new Date('2026-07-01T00:00:00Z'),
+      endsAt: new Date('2026-12-31T23:59:59Z'),
+      status: 'ACTIVE',
+    });
     const svc = new WaitlistService(prisma as any);
     for (const i of [1, 2, 3]) {
       await svc.submit({ ...VALID, email: `u${i}@x.com` }, null, null);
@@ -171,5 +221,35 @@ describe('WaitlistService', () => {
     for await (const row of svc.iterateAll()) emails.push(row.email);
     expect(emails).toHaveLength(3);
     expect(new Set(emails)).toEqual(new Set(['u1@x.com', 'u2@x.com', 'u3@x.com']));
+  });
+
+  it('throws ServiceUnavailableException when no future cycle is programmed', async () => {
+    const prisma = makePrisma();
+    // intentionally do NOT seed any cycle
+    const svc = new WaitlistService(prisma as any);
+    await expect(svc.submit({ ...VALID }, null, null)).rejects.toThrow(/próximo ciclo/i);
+    expect(prisma.waitlistEntry.upsert).not.toHaveBeenCalled();
+  });
+
+  it('getConfig returns the target cycle', async () => {
+    const prisma = makePrisma();
+    prisma._cycles.push({
+      id: 'c-1',
+      name: '2026.3',
+      startsAt: new Date('2026-07-01T00:00:00Z'),
+      endsAt: new Date('2026-12-31T23:59:59Z'),
+      status: 'ACTIVE',
+    });
+    const svc = new WaitlistService(prisma as any);
+    expect(await svc.getConfig()).toEqual({
+      cycleTarget: '2026.3',
+      startsAt: '2026-07-01T00:00:00.000Z',
+    });
+  });
+
+  it('getConfig returns null when no cycle is programmed', async () => {
+    const prisma = makePrisma();
+    const svc = new WaitlistService(prisma as any);
+    expect(await svc.getConfig()).toBeNull();
   });
 });

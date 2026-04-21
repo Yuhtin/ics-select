@@ -24,7 +24,6 @@ export const SubmitWaitlistSchema = z.object({
   github: optionalUrl,
   linkedin: optionalUrl,
   wantsUpdates: z.boolean().default(true),
-  cycleTarget: z.string().regex(/^\d{4}\.\d$/).max(10),
   // Honeypot — if a bot fills this, the service silent-drops.
   website: z.string().max(500).optional(),
 });

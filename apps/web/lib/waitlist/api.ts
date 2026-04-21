@@ -9,7 +9,6 @@ export type WaitlistSubmitPayload = {
   github?: string;
   linkedin?: string;
   wantsUpdates: boolean;
-  cycleTarget: string;
   website?: string; // honeypot
 };
 
@@ -22,6 +21,18 @@ export async function submitWaitlist(payload: WaitlistSubmitPayload): Promise<{ 
     body: JSON.stringify(payload),
   });
   if (!res.ok) throw new Error(`waitlist_submit_failed_${res.status}`);
+  return res.json();
+}
+
+export type WaitlistConfig = {
+  cycleTarget: string | null;
+  startsAt: string | null;
+};
+
+export async function getWaitlistConfig(): Promise<WaitlistConfig> {
+  const base = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+  const res = await fetch(`${base}/waitlist/config`);
+  if (!res.ok) throw new Error(`waitlist_config_failed_${res.status}`);
   return res.json();
 }
 

@@ -1,5 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, ServiceUnavailableException } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service.js';
+import { resolveWaitlistTargetCycle } from '../common/cycle/active-cycle.js';
 import type { SubmitWaitlistDto } from './dto/submit-waitlist.dto.js';
 import type { ListWaitlistQuery } from './dto/list-waitlist.query.js';
 import type { Course } from '@ics-select/prisma';
@@ -30,6 +31,13 @@ export class WaitlistService {
       return { ok: true as const };
     }
 
+    const cycle = await resolveWaitlistTargetCycle(this.prisma);
+    if (!cycle) {
+      throw new ServiceUnavailableException(
+        'Waitlist fechada: próximo ciclo ainda não foi programado.',
+      );
+    }
+
     const data = {
       name: dto.name,
       email: dto.email,
@@ -38,7 +46,7 @@ export class WaitlistService {
       github: dto.github ?? null,
       linkedin: dto.linkedin ?? null,
       wantsUpdates: dto.wantsUpdates,
-      cycleTarget: dto.cycleTarget,
+      cycleTarget: cycle.name,
       ipHash,
       userAgent,
     };
@@ -50,6 +58,12 @@ export class WaitlistService {
     });
 
     return { ok: true as const };
+  }
+
+  async getConfig(): Promise<{ cycleTarget: string; startsAt: string } | null> {
+    const cycle = await resolveWaitlistTargetCycle(this.prisma);
+    if (!cycle) return null;
+    return { cycleTarget: cycle.name, startsAt: cycle.startsAt.toISOString() };
   }
 
   async list(query: ListWaitlistQuery) {

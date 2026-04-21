@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Check, X, ArrowUpRight } from 'lucide-react';
-import { submitWaitlist } from '../../lib/waitlist/api';
+import { submitWaitlist, getWaitlistConfig, type WaitlistConfig } from '../../lib/waitlist/api';
 import { labelToCourse } from '../../lib/waitlist/course';
 
 type ModalState = 'form' | 'submitting' | 'success' | 'error';
@@ -18,8 +18,15 @@ export function WaitlistModal({
 }) {
   const [mounted, setMounted] = useState(false);
   const [state, setState] = useState<ModalState>('form');
+  const [config, setConfig] = useState<WaitlistConfig | null>(null);
 
   useEffect(() => setMounted(true), []);
+
+  // Fetch waitlist config (target cycle) whenever the modal opens.
+  useEffect(() => {
+    if (!open) return;
+    getWaitlistConfig().then(setConfig).catch(() => {/* leave config null on failure */});
+  }, [open]);
 
   // Body scroll lock + Esc close
   useEffect(() => {
@@ -65,7 +72,6 @@ export function WaitlistModal({
         github: String(formData.get('github') ?? '').trim() || undefined,
         linkedin: String(formData.get('linkedin') ?? '').trim() || undefined,
         wantsUpdates: formData.get('updates') === 'on',
-        cycleTarget: process.env.NEXT_PUBLIC_WAITLIST_CYCLE ?? '2026.3',
         website: String(formData.get('website') ?? ''),
       });
       setState('success');
@@ -117,7 +123,9 @@ export function WaitlistModal({
               <>
                 <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-success-soft font-mono text-[11px] font-medium tracking-[0.02em] text-fg">
                   <span className="relative inline-block w-2 h-2 rounded-full bg-success animate-pulse-ring" />
-                  Ciclo 2026.3 · abre em Julho
+                  {config?.cycleTarget
+                    ? `Ciclo ${config.cycleTarget} · abre em ${formatStartsAt(config.startsAt)}`
+                    : 'Próximo ciclo ainda não anunciado'}
                 </div>
                 <h3
                   id="waitlist-title"
@@ -201,11 +209,11 @@ export function WaitlistModal({
                   </label>
                   <button
                     type="submit"
-                    disabled={state === 'submitting'}
+                    disabled={state === 'submitting' || !config?.cycleTarget}
                     className="mt-1 flex items-center justify-center gap-2 bg-fg text-bg rounded-full py-3.5 px-5 text-sm font-medium hover:bg-primary transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                   >
-                    {state === 'submitting' ? 'Enviando…' : 'Entrar na lista'}
-                    {state !== 'submitting' && (
+                    {state === 'submitting' ? 'Enviando…' : config?.cycleTarget ? 'Entrar na lista' : 'Aguardando abertura do próximo ciclo'}
+                    {state !== 'submitting' && config?.cycleTarget && (
                       <ArrowUpRight className="w-3.5 h-3.5" strokeWidth={2} />
                     )}
                   </button>
@@ -252,6 +260,12 @@ export function WaitlistModal({
     </AnimatePresence>,
     document.body
   );
+}
+
+function formatStartsAt(iso: string | null): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return d.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {

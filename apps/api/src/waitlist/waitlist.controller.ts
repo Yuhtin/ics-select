@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Post, Req, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { createHash } from 'node:crypto';
 import type { Request } from 'express';
@@ -9,6 +9,12 @@ import { WaitlistService } from './waitlist.service.js';
 @Controller('waitlist')
 export class WaitlistController {
   constructor(private readonly service: WaitlistService) {}
+
+  @Public()
+  @Get('config')
+  config() {
+    return this.service.getConfig().then((data) => data ?? { cycleTarget: null, startsAt: null });
+  }
 
   @Public()
   @UseGuards(ThrottlerGuard)

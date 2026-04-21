@@ -2,6 +2,7 @@ import {
   computeWeekPosition,
   resolveActiveCycle,
   resolveActiveMembership,
+  resolveWaitlistTargetCycle,
 } from './active-cycle';
 
 function makePrisma() {
@@ -174,6 +175,71 @@ describe('resolveActiveMembership', () => {
     });
     const result = await resolveActiveMembership(prisma as any, 'u1', NOW);
     expect(result?.id).toBe('m-upcoming');
+  });
+});
+
+describe('resolveWaitlistTargetCycle', () => {
+  it('returns null when there are no cycles', async () => {
+    const prisma = makePrisma();
+    const result = await resolveWaitlistTargetCycle(prisma as any, NOW);
+    expect(result).toBeNull();
+  });
+
+  it('returns null when only a running cycle exists and there is no upcoming one', async () => {
+    const prisma = makePrisma();
+    prisma.cycles.push({
+      id: 'running',
+      status: 'ACTIVE',
+      startsAt: new Date('2026-04-01'),
+      endsAt: new Date('2026-06-30'),
+    });
+    const result = await resolveWaitlistTargetCycle(prisma as any, NOW);
+    expect(result).toBeNull();
+  });
+
+  it('returns the upcoming cycle when a running cycle exists', async () => {
+    const prisma = makePrisma();
+    prisma.cycles.push(
+      { id: 'running',  status: 'ACTIVE', startsAt: new Date('2026-04-01'), endsAt: new Date('2026-06-30') },
+      { id: 'upcoming', status: 'ACTIVE', startsAt: new Date('2026-07-01'), endsAt: new Date('2026-12-31') },
+    );
+    const result = await resolveWaitlistTargetCycle(prisma as any, NOW);
+    expect(result?.id).toBe('upcoming');
+  });
+
+  it('returns the nearest upcoming cycle when there is no running cycle', async () => {
+    const prisma = makePrisma();
+    prisma.cycles.push({
+      id: 'upcoming',
+      status: 'ACTIVE',
+      startsAt: new Date('2026-07-01'),
+      endsAt: new Date('2026-12-31'),
+    });
+    const result = await resolveWaitlistTargetCycle(prisma as any, NOW);
+    expect(result?.id).toBe('upcoming');
+  });
+
+  it('returns the earliest upcoming cycle after the running one when multiple exist', async () => {
+    const prisma = makePrisma();
+    prisma.cycles.push(
+      { id: 'running', status: 'ACTIVE', startsAt: new Date('2026-04-01'), endsAt: new Date('2026-06-30') },
+      { id: 'next',    status: 'ACTIVE', startsAt: new Date('2026-07-01'), endsAt: new Date('2026-09-30') },
+      { id: 'later',   status: 'ACTIVE', startsAt: new Date('2026-10-01'), endsAt: new Date('2026-12-31') },
+    );
+    const result = await resolveWaitlistTargetCycle(prisma as any, NOW);
+    expect(result?.id).toBe('next');
+  });
+
+  it('excludes ARCHIVED cycles', async () => {
+    const prisma = makePrisma();
+    prisma.cycles.push({
+      id: 'archived',
+      status: 'ARCHIVED',
+      startsAt: new Date('2026-07-01'),
+      endsAt: new Date('2026-12-31'),
+    });
+    const result = await resolveWaitlistTargetCycle(prisma as any, NOW);
+    expect(result).toBeNull();
   });
 });
 
