@@ -3,7 +3,7 @@ import { Reveal } from './reveal';
 
 export function LandingPillars() {
   return (
-    <section className="block pt-16 md:pt-20 pb-10 md:pb-12 px-5 md:px-8 relative">
+    <section id="como-funciona" className="block pt-16 md:pt-20 pb-10 md:pb-12 px-5 md:px-8 relative">
       <Reveal>
         <div className="flex items-center gap-2.5 font-mono text-[11px] tracking-[0.1em] uppercase text-fg-mute font-medium">
           <span className="w-7 h-px bg-border-strong" />§ 01 · Como funciona

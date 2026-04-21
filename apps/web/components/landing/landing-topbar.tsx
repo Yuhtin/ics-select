@@ -47,13 +47,13 @@ export function LandingTopbar() {
       >
         <NavPill href="#top" label="Home" icon={<House className="w-3.5 h-3.5" strokeWidth={1.8} />} />
         <NavPill
-          href="#program"
+          href="#como-funciona"
           label="Programa"
           icon={<Menu className="w-3.5 h-3.5" strokeWidth={1.8} />}
         />
         <NavPill
           href="#cohorts"
-          label="Cohorts"
+          label="Ciclos"
           icon={<Users className="w-3.5 h-3.5" strokeWidth={1.8} />}
         />
       </nav>

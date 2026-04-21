@@ -234,7 +234,7 @@ export function WaitlistModal({
                     ? `Te avisamos assim que o ciclo ${config.cycleTarget} abrir. Enquanto isso, dá uma olhada em `
                     : 'Te avisamos assim que o próximo ciclo abrir. Enquanto isso, dá uma olhada em '}
                   <a
-                    href="#program"
+                    href="#como-funciona"
                     onClick={onClose}
                     className="text-primary font-medium no-underline hover:underline"
                   >
