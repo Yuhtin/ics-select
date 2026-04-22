@@ -55,10 +55,29 @@ import { loadEnv } from './config/env.js';
           target: 'pino-pretty',
           options: {
             singleLine: true,
-            colorize: process.env.NODE_ENV !== 'production',
+            colorize: true,
             translateTime: 'HH:MM:ss',
-            ignore: 'pid,hostname',
+            // Hide the big req/res/responseTime blobs — their info is already
+            // baked into customSuccessMessage/customErrorMessage below.
+            ignore: 'pid,hostname,req,res,responseTime,context,reqId',
+            messageFormat: '[{context}] {msg}',
           },
+        },
+        // Compact, NestJS-style one-liner for HTTP logs.
+        customSuccessMessage: (req, res, responseTime) =>
+          `${req.method} ${req.url} ${res.statusCode} ${responseTime}ms`,
+        customErrorMessage: (req, res, err) =>
+          `${req.method} ${req.url} ${res.statusCode} · ${err?.message ?? 'error'}`,
+        customLogLevel: (_req, res, err) => {
+          if (err || res.statusCode >= 500) return 'error';
+          if (res.statusCode >= 400) return 'warn';
+          return 'info';
+        },
+        // Drop the full serialized objects — ignore above hides them from the
+        // formatter, but removing them from the record keeps prod logs small.
+        serializers: {
+          req: () => undefined,
+          res: () => undefined,
         },
         redact: ['req.headers.authorization', 'req.headers.cookie'],
       },
