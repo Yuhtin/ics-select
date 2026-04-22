@@ -1,4 +1,5 @@
 'use client';
+import { clsx } from 'clsx';
 import { useMeCohort } from '../../../../lib/queries/me-cohort';
 import { CohortFeed } from '../../../../components/member/cohort-feed';
 import { CohortRanking } from '../../../../components/member/cohort-ranking';
@@ -19,7 +20,7 @@ export default function MeCohortPage() {
   const hasMembers = data.members.length > 0;
 
   return (
-    <div className="max-w-5xl space-y-10">
+    <div className="max-w-6xl space-y-10">
       <div>
         <Eyebrow>{`Cohort · ${data.cycleName || 'active cycle'}`}</Eyebrow>
         <h1 className="mt-2 font-serif text-4xl font-medium tracking-tight">
@@ -29,20 +30,28 @@ export default function MeCohortPage() {
         </h1>
       </div>
 
-      {hasMembers && <CohortRoster members={data.members} />}
-
       <div
-        className={
-          hasRanking ? 'grid gap-10 md:grid-cols-[minmax(0,1fr)_280px]' : ''
-        }
+        className={clsx(
+          'gap-10',
+          hasMembers ? 'flex flex-col md:grid md:grid-cols-[minmax(0,1fr)_340px]' : '',
+        )}
       >
-        <div className="min-w-0 space-y-4">
-          <SectionLabel>Activity · last 24h</SectionLabel>
-          <CohortFeed feed={data.feed} />
+        <div className="min-w-0 space-y-10 md:order-1">
+          <section className="space-y-4">
+            <SectionLabel>Activity · last 7d</SectionLabel>
+            <CohortFeed feed={data.feed} />
+          </section>
+
+          {hasRanking && (
+            <section>
+              <CohortRanking ranking={data.ranking!} weekEndsAt={data.weekEndsAt} />
+            </section>
+          )}
         </div>
-        {hasRanking && (
-          <aside>
-            <CohortRanking ranking={data.ranking!} weekEndsAt={data.weekEndsAt} />
+
+        {hasMembers && (
+          <aside className="md:order-2 md:sticky md:top-6 md:max-h-[calc(100vh-3rem)] md:overflow-y-auto">
+            <CohortRoster members={data.members} />
           </aside>
         )}
       </div>

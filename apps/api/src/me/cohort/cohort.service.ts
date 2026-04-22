@@ -90,9 +90,9 @@ export class CohortService {
     weekEnd.setUTCDate(weekEnd.getUTCDate() + 7);
     weekEnd.setUTCMilliseconds(-1);
 
-    // Feed window (last 24h).
+    // Feed window (last 7d).
     const since = new Date(now);
-    since.setUTCDate(since.getUTCDate() - 1);
+    since.setUTCDate(since.getUTCDate() - 7);
 
     const recentItems = await this.prisma.weeklyPlanItem.findMany({
       where: {
