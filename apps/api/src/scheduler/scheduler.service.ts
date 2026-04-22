@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 
 export type ItemInput = { id: string; estimatedMinutes: number };
 
-export type BusyBlock = { startMinute: number; endMinute: number };
+export type BusyBlock = { start: Date; end: Date };
 
 export type SchedulerInput = {
   weekStart: Date;
@@ -17,8 +17,10 @@ export type SchedulerInput = {
     preferredSessionMinutes: number;
     timezone: string;
   };
-  // Key: day index 0..6 (0=Mon); value: busy blocks in minutes-of-day
-  busyByDay: Record<number, BusyBlock[]>;
+  // Raw busy intervals straight from Google Calendar freebusy (UTC instants).
+  // The scheduler slices these into per-day minute-of-local-day ranges using
+  // the availability.timezone and avoids packing any chunk over a busy range.
+  busyBlocks: BusyBlock[];
   items: ItemInput[];
   // Current time, used to skip past days and start today at/after "now".
   // Defaults to new Date() for safety; tests override this.
@@ -53,6 +55,15 @@ const DAY_END_MINUTE = 22 * 60; // 22:00 local — don't schedule into the night
 const BUFFER_MINUTES = 10;
 const ROUND_TO_MINUTES = 15;
 
+type Interval = { start: number; end: number }; // minute-of-local-day
+
+type DayState = {
+  freeIntervals: Interval[];
+  intervalIdx: number;
+  cursor: number; // next free minute in current interval
+  remaining: number; // declared-budget cap for the day, in minutes
+};
+
 @Injectable()
 export class SchedulerService {
   plan(input: SchedulerInput): SchedulerOutput {
@@ -60,7 +71,7 @@ export class SchedulerService {
     const tz = input.availability.timezone;
     const now = input.now ?? new Date();
 
-    // 1. Chunk items
+    // 1. Chunk items into scheduler-sized pieces.
     const chunks: Array<{ itemId: string; minutes: number }> = [];
     for (const item of input.items) {
       let remaining = item.estimatedMinutes;
@@ -71,100 +82,150 @@ export class SchedulerService {
       }
     }
 
-    // 2. For each day 0..6, determine the effective start/end minute-of-day,
-    //    subtract busy blocks and declared budget, and derive a window that
-    //    respects "now" for partial days.
-    const windows: Array<{
-      startMinute: number;
-      endMinute: number;
-      remaining: number;
-    }> = DAY_MINUTES_KEYS.map((key, idx) => {
-      const declared = input.availability[key] as number;
-      if (declared <= 0) {
-        return { startMinute: DAY_START_MINUTE, endMinute: DAY_START_MINUTE, remaining: 0 };
-      }
+    // 2. Build per-day state: window, busy → free intervals, declared budget.
+    const days: DayState[] = DAY_MINUTES_KEYS.map((key, idx) =>
+      buildDayState(input, idx, key, tz, now),
+    );
 
-      // Local calendar date for this day: local Monday + idx.
-      const y = input.weekStart.getUTCFullYear();
-      const m = input.weekStart.getUTCMonth() + 1;
-      const d = input.weekStart.getUTCDate() + idx;
-
-      const dayStartUtc = localToUtc(y, m, d, 0, 0, tz);
-      const dayEndUtc = localToUtc(y, m, d + 1, 0, 0, tz);
-
-      // Fully past day → no capacity.
-      if (dayEndUtc.getTime() <= now.getTime()) {
-        return { startMinute: DAY_START_MINUTE, endMinute: DAY_START_MINUTE, remaining: 0 };
-      }
-
-      let startMinute = DAY_START_MINUTE;
-
-      // Today (partial): bump start to ceil(now + small buffer) in local minutes.
-      if (dayStartUtc.getTime() <= now.getTime() && now.getTime() < dayEndUtc.getTime()) {
-        const elapsed = Math.round((now.getTime() - dayStartUtc.getTime()) / 60000);
-        const rounded =
-          Math.ceil(elapsed / ROUND_TO_MINUTES) * ROUND_TO_MINUTES;
-        startMinute = Math.max(startMinute, rounded);
-      }
-
-      if (startMinute >= DAY_END_MINUTE) {
-        return { startMinute, endMinute: startMinute, remaining: 0 };
-      }
-
-      const endMinute = DAY_END_MINUTE;
-      const busy = (input.busyByDay[idx] ?? [])
-        .filter((b) => b.endMinute > startMinute && b.startMinute < endMinute)
-        .reduce(
-          (sum, b) =>
-            sum +
-            Math.max(
-              0,
-              Math.min(b.endMinute, endMinute) - Math.max(b.startMinute, startMinute),
-            ),
-          0,
-        );
-
-      const remaining = Math.max(0, declared - busy);
-      return { startMinute, endMinute, remaining };
-    });
-
-    // 3. Pack chunks into days
+    // 3. Walk chunks and greedily place into free intervals.
     const sessions: PlannedSession[] = [];
     const overflow: OverflowChunk[] = [];
-    let dayIdx = 0;
-    let cursorMinute = windows[0]!.startMinute;
 
     for (const chunk of chunks) {
-      while (dayIdx < 7) {
-        const w = windows[dayIdx]!;
-        const wallRemaining = w.endMinute - cursorMinute;
-        const available = Math.min(w.remaining, wallRemaining);
-        if (available >= chunk.minutes) break;
-        dayIdx += 1;
-        if (dayIdx < 7) cursorMinute = windows[dayIdx]!.startMinute;
+      let placed = false;
+      for (let dayIdx = 0; dayIdx < 7 && !placed; dayIdx++) {
+        const state = days[dayIdx]!;
+        while (state.intervalIdx < state.freeIntervals.length) {
+          const interval = state.freeIntervals[state.intervalIdx]!;
+          if (state.cursor < interval.start) state.cursor = interval.start;
+          const wallRemaining = interval.end - state.cursor;
+          // Budget is the day's declared-minute cap; a chunk can't use more
+          // than what's left for the day AND must fit in this interval.
+          if (wallRemaining < chunk.minutes || state.remaining < chunk.minutes) {
+            // Move to next interval (or next day if exhausted).
+            state.intervalIdx += 1;
+            state.cursor = state.freeIntervals[state.intervalIdx]?.start ?? 0;
+            continue;
+          }
+          const scheduledAt = localMinuteToUtc(
+            input.weekStart,
+            dayIdx,
+            state.cursor,
+            tz,
+          );
+          sessions.push({
+            itemId: chunk.itemId,
+            scheduledAt,
+            durationMinutes: chunk.minutes,
+          });
+          state.cursor += chunk.minutes + BUFFER_MINUTES;
+          state.remaining -= chunk.minutes;
+          placed = true;
+          break;
+        }
       }
-      if (dayIdx >= 7) {
+      if (!placed) {
         overflow.push({ itemId: chunk.itemId, minutesRequired: chunk.minutes });
-        continue;
       }
-      const w = windows[dayIdx]!;
-      const scheduledAt = localMinuteToUtc(
-        input.weekStart,
-        dayIdx,
-        cursorMinute,
-        tz,
-      );
-      sessions.push({
-        itemId: chunk.itemId,
-        scheduledAt,
-        durationMinutes: chunk.minutes,
-      });
-      w.remaining -= chunk.minutes;
-      cursorMinute += chunk.minutes + BUFFER_MINUTES;
     }
 
     return { sessions, overflow };
   }
+}
+
+function buildDayState(
+  input: SchedulerInput,
+  dayIdx: number,
+  key: keyof SchedulerInput['availability'],
+  tz: string,
+  now: Date,
+): DayState {
+  const declared = input.availability[key] as number;
+
+  // Local calendar date for this day: local Monday + idx.
+  const y = input.weekStart.getUTCFullYear();
+  const m = input.weekStart.getUTCMonth() + 1;
+  const d = input.weekStart.getUTCDate() + dayIdx;
+
+  const dayStartUtc = localToUtc(y, m, d, 0, 0, tz);
+  const dayEndUtc = localToUtc(y, m, d + 1, 0, 0, tz);
+
+  // Fully past day, or zero budget: return an empty state.
+  if (declared <= 0 || dayEndUtc.getTime() <= now.getTime()) {
+    return {
+      freeIntervals: [],
+      intervalIdx: 0,
+      cursor: 0,
+      remaining: 0,
+    };
+  }
+
+  let startMinute = DAY_START_MINUTE;
+
+  // Today (partial): bump start to ceil(now, 15min) in local minutes.
+  if (dayStartUtc.getTime() <= now.getTime() && now.getTime() < dayEndUtc.getTime()) {
+    const elapsed = Math.round((now.getTime() - dayStartUtc.getTime()) / 60_000);
+    const rounded = Math.ceil(elapsed / ROUND_TO_MINUTES) * ROUND_TO_MINUTES;
+    startMinute = Math.max(startMinute, rounded);
+  }
+
+  if (startMinute >= DAY_END_MINUTE) {
+    return {
+      freeIntervals: [],
+      intervalIdx: 0,
+      cursor: 0,
+      remaining: 0,
+    };
+  }
+
+  const endMinute = DAY_END_MINUTE;
+
+  // Project each busy block into this day's window as a minute-range.
+  const busyInWindow: Interval[] = [];
+  for (const block of input.busyBlocks) {
+    const bs = Math.max(block.start.getTime(), dayStartUtc.getTime());
+    const be = Math.min(block.end.getTime(), dayEndUtc.getTime());
+    if (be <= bs) continue;
+    const sMin = Math.floor((bs - dayStartUtc.getTime()) / 60_000);
+    const eMin = Math.ceil((be - dayStartUtc.getTime()) / 60_000);
+    const clampedStart = Math.max(sMin, startMinute);
+    const clampedEnd = Math.min(eMin, endMinute);
+    if (clampedEnd > clampedStart) {
+      busyInWindow.push({ start: clampedStart, end: clampedEnd });
+    }
+  }
+
+  // Merge overlapping busy ranges to simplify the subtraction step.
+  busyInWindow.sort((a, b) => a.start - b.start);
+  const mergedBusy: Interval[] = [];
+  for (const b of busyInWindow) {
+    const last = mergedBusy[mergedBusy.length - 1];
+    if (last && b.start <= last.end) {
+      last.end = Math.max(last.end, b.end);
+    } else {
+      mergedBusy.push({ ...b });
+    }
+  }
+
+  // Free intervals = [startMinute, endMinute] minus mergedBusy.
+  const freeIntervals: Interval[] = [];
+  let cursor = startMinute;
+  for (const b of mergedBusy) {
+    if (b.start > cursor) {
+      freeIntervals.push({ start: cursor, end: b.start });
+    }
+    cursor = Math.max(cursor, b.end);
+  }
+  if (cursor < endMinute) {
+    freeIntervals.push({ start: cursor, end: endMinute });
+  }
+
+  return {
+    freeIntervals,
+    intervalIdx: 0,
+    cursor: freeIntervals[0]?.start ?? 0,
+    remaining: declared,
+  };
 }
 
 function localMinuteToUtc(

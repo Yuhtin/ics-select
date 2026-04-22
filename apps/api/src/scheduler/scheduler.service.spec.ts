@@ -18,9 +18,7 @@ function input(overrides: Partial<SchedulerInput> = {}): SchedulerInput {
       preferredSessionMinutes: 60,
       timezone: 'America/Sao_Paulo',
     },
-    busyByDay: {
-      0: [], 1: [], 2: [], 3: [], 4: [], 5: [], 6: [],
-    },
+    busyBlocks: [],
     items: [],
     now: BEFORE_WEEK,
     ...overrides,
@@ -140,21 +138,86 @@ describe('SchedulerService.plan', () => {
     expect(first.scheduledAt.getUTCHours()).toBeGreaterThanOrEqual(14);
   });
 
-  it('respects busy time by reducing that day budget', () => {
+  it('skips busy intervals instead of overlapping them', () => {
+    // Busy 08:00-10:00 BRT on Monday (UTC 11:00-13:00). A 30-min item with
+    // preferredSessionMinutes=30 and mondayMinutes=60 must start AFTER 10:00
+    // BRT (13:00 UTC), not on top of the meeting.
+    const busyStart = new Date('2026-04-13T08:00:00-03:00'); // Mon 11:00 UTC
+    const busyEnd = new Date('2026-04-13T10:00:00-03:00'); // Mon 13:00 UTC
+    const result = svc.plan(
+      input({
+        items: [{ id: 'i1', estimatedMinutes: 30 }],
+        availability: { ...input().availability, preferredSessionMinutes: 30 },
+        busyBlocks: [{ start: busyStart, end: busyEnd }],
+      }),
+    );
+    expect(result.overflow).toEqual([]);
+    expect(result.sessions).toHaveLength(1);
+    const session = result.sessions[0]!;
+    // Monday, after 10:00 BRT = 13:00 UTC. Date is still Apr 13.
+    expect(session.scheduledAt.getUTCDate()).toBe(MONDAY.getUTCDate());
+    expect(session.scheduledAt.getTime()).toBeGreaterThanOrEqual(busyEnd.getTime());
+  });
+
+  it('declared budget caps study minutes per day regardless of free time', () => {
+    // Monday declared = 30min, Tuesday declared = 30min. No busy. Two 30-min
+    // chunks: one lands Monday, the second goes to Tuesday because Monday's
+    // 30-min daily cap is already spent.
     const result = svc.plan(
       input({
         items: [
           { id: 'i1', estimatedMinutes: 30 },
           { id: 'i2', estimatedMinutes: 30 },
         ],
-        busyByDay: {
-          0: [{ startMinute: 8 * 60, endMinute: 9 * 60 }], // busy 8-9 Monday
-          1: [], 2: [], 3: [], 4: [], 5: [], 6: [],
+        availability: {
+          ...input().availability,
+          mondayMinutes: 30,
+          tuesdayMinutes: 30,
+          preferredSessionMinutes: 30,
         },
       }),
     );
-    // Monday budget shrinks to 0 (60min - 60min busy), both items move to Tue
-    const monday = result.sessions.filter((s) => s.scheduledAt.getUTCDate() === MONDAY.getUTCDate());
-    expect(monday.length).toBe(0);
+    expect(result.sessions).toHaveLength(2);
+    const mondaySessions = result.sessions.filter(
+      (s) => s.scheduledAt.getUTCDate() === MONDAY.getUTCDate(),
+    );
+    expect(mondaySessions).toHaveLength(1);
+  });
+
+  it('splits chunks across free intervals when busy sits in the middle', () => {
+    // Busy 10:00-14:00 BRT Monday splits the day into two free windows.
+    // mondayMinutes=120 with a 30-min pref gives four chunks; the first two
+    // land before 10:00, the remainder after 14:00.
+    const busyStart = new Date('2026-04-13T10:00:00-03:00');
+    const busyEnd = new Date('2026-04-13T14:00:00-03:00');
+    const result = svc.plan(
+      input({
+        items: [{ id: 'i1', estimatedMinutes: 120 }],
+        availability: {
+          ...input().availability,
+          mondayMinutes: 120,
+          preferredSessionMinutes: 30,
+        },
+        busyBlocks: [{ start: busyStart, end: busyEnd }],
+      }),
+    );
+    expect(result.overflow).toEqual([]);
+    const mondaySessions = result.sessions.filter(
+      (s) => s.scheduledAt.getUTCDate() === MONDAY.getUTCDate(),
+    );
+    // At least one session before the meeting, at least one after.
+    const before = mondaySessions.filter((s) => s.scheduledAt < busyStart);
+    const after = mondaySessions.filter((s) => s.scheduledAt >= busyEnd);
+    expect(before.length).toBeGreaterThan(0);
+    expect(after.length).toBeGreaterThan(0);
+    // None overlap the busy window.
+    for (const s of mondaySessions) {
+      const sessionEnd = new Date(
+        s.scheduledAt.getTime() + s.durationMinutes * 60_000,
+      );
+      const overlaps =
+        s.scheduledAt < busyEnd && sessionEnd > busyStart;
+      expect(overlaps).toBe(false);
+    }
   });
 });

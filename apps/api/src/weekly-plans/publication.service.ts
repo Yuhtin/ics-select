@@ -93,26 +93,10 @@ export class PublicationService {
       .getFreeBusy(plan.userId, now, plan.weekEnd)
       .catch(() => [] as Array<{ start: Date; end: Date }>);
 
-    const busyByDay: Record<number, Array<{ startMinute: number; endMinute: number }>> = {
-      0: [], 1: [], 2: [], 3: [], 4: [], 5: [], 6: [],
-    };
-    for (const block of busyBlocks) {
-      const dayIdx = Math.floor(
-        (block.start.getTime() - plan.weekStart.getTime()) / (24 * 60 * 60 * 1000),
-      );
-      if (dayIdx < 0 || dayIdx > 6) continue;
-      const durationMinutes = Math.max(
-        0,
-        Math.round((block.end.getTime() - block.start.getTime()) / 60000),
-      );
-      if (durationMinutes === 0) continue;
-      busyByDay[dayIdx]!.push({ startMinute: 0, endMinute: durationMinutes });
-    }
-
     const result = this.scheduler.plan({
       weekStart: plan.weekStart,
       availability,
-      busyByDay,
+      busyBlocks,
       items: pending.map((i) => ({ id: i.id, estimatedMinutes: i.libraryItem.estimatedMinutes })),
       now,
     });
@@ -183,28 +167,12 @@ export class PublicationService {
       .getFreeBusy(plan.userId, plan.weekStart, plan.weekEnd)
       .catch(() => [] as Array<{ start: Date; end: Date }>);
 
-    const busyByDay: Record<number, Array<{ startMinute: number; endMinute: number }>> = {
-      0: [], 1: [], 2: [], 3: [], 4: [], 5: [], 6: [],
-    };
-    for (const block of busyBlocks) {
-      const dayIdx = Math.floor(
-        (block.start.getTime() - plan.weekStart.getTime()) / (24 * 60 * 60 * 1000),
-      );
-      if (dayIdx < 0 || dayIdx > 6) continue;
-      const durationMinutes = Math.max(
-        0,
-        Math.round((block.end.getTime() - block.start.getTime()) / 60000),
-      );
-      if (durationMinutes === 0) continue;
-      busyByDay[dayIdx]!.push({ startMinute: 0, endMinute: durationMinutes });
-    }
-
     const schedulableItems = plan.items.filter((i) => i.outcome !== 'SKIPPED');
 
     const input: SchedulerInput = {
       weekStart: plan.weekStart,
       availability,
-      busyByDay,
+      busyBlocks,
       items: schedulableItems.map((i) => ({
         id: i.id,
         estimatedMinutes: i.libraryItem.estimatedMinutes,

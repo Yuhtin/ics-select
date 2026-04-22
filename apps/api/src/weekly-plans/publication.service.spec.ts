@@ -195,7 +195,7 @@ describe('PublicationService.autoSchedule', () => {
     );
   });
 
-  it('passes busy blocks to scheduler grouped by day', async () => {
+  it('passes raw busy blocks straight through to the scheduler', async () => {
     const prisma = fakePrisma();
     const weekStart = new Date('2026-04-13T00:00:00-03:00');
     prisma.plans.set('p-1', {
@@ -209,32 +209,22 @@ describe('PublicationService.autoSchedule', () => {
         { id: 'wpi-1', libraryItemId: 'li-1', order: 0, libraryItem: { title: 'A', estimatedMinutes: 60 } },
       ],
     });
-    // Monday 09:00-10:00 (60 min) and Wednesday 14:00-14:30 (30 min)
-    calendar.getFreeBusy.mockResolvedValueOnce([
-      {
-        start: new Date('2026-04-13T09:00:00-03:00'),
-        end: new Date('2026-04-13T10:00:00-03:00'),
-      },
-      {
-        start: new Date('2026-04-15T14:00:00-03:00'),
-        end: new Date('2026-04-15T14:30:00-03:00'),
-      },
-    ]);
+    const monBusy = {
+      start: new Date('2026-04-13T09:00:00-03:00'),
+      end: new Date('2026-04-13T10:00:00-03:00'),
+    };
+    const wedBusy = {
+      start: new Date('2026-04-15T14:00:00-03:00'),
+      end: new Date('2026-04-15T14:30:00-03:00'),
+    };
+    calendar.getFreeBusy.mockResolvedValueOnce([monBusy, wedBusy]);
     scheduler.plan.mockReturnValue({ sessions: [], overflow: [] });
     const svc = new PublicationService(prisma as any, scheduler as any, calendar as any);
     await svc.autoSchedule('p-1', false);
 
     expect(scheduler.plan).toHaveBeenCalledTimes(1);
     const input = scheduler.plan.mock.calls[0]![0] as any;
-    expect(input.busyByDay[0]).toHaveLength(1);
-    expect(input.busyByDay[0][0].endMinute - input.busyByDay[0][0].startMinute).toBe(60);
-    expect(input.busyByDay[2]).toHaveLength(1);
-    expect(input.busyByDay[2][0].endMinute - input.busyByDay[2][0].startMinute).toBe(30);
-    expect(input.busyByDay[1]).toEqual([]);
-    expect(input.busyByDay[3]).toEqual([]);
-    expect(input.busyByDay[4]).toEqual([]);
-    expect(input.busyByDay[5]).toEqual([]);
-    expect(input.busyByDay[6]).toEqual([]);
+    expect(input.busyBlocks).toEqual([monBusy, wedBusy]);
   });
 
   it('skips scheduling and Calendar creation for items with outcome SKIPPED', async () => {
@@ -317,13 +307,7 @@ describe('PublicationService.autoSchedule', () => {
     expect(result.sessionsCreated).toBe(1);
     expect(scheduler.plan).toHaveBeenCalledTimes(1);
     const input = scheduler.plan.mock.calls[0]![0] as any;
-    expect(input.busyByDay[0]).toEqual([]);
-    expect(input.busyByDay[1]).toEqual([]);
-    expect(input.busyByDay[2]).toEqual([]);
-    expect(input.busyByDay[3]).toEqual([]);
-    expect(input.busyByDay[4]).toEqual([]);
-    expect(input.busyByDay[5]).toEqual([]);
-    expect(input.busyByDay[6]).toEqual([]);
+    expect(input.busyBlocks).toEqual([]);
   });
 });
 
