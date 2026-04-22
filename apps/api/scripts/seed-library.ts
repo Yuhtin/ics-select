@@ -64,6 +64,7 @@ const TOPICS: TopicSeed[] = [
   { slug: 'greedy', label: 'Greedy', order: 10 },
   { slug: 'bit-manipulation', label: 'Bit Manipulation', order: 11 },
   { slug: 'math', label: 'Math', order: 12 },
+  { slug: 'hashmap', label: 'Hash Map', order: 13 },
 
   // Fundamentos de Engenharia (order 20–27) — universais, tracks múltiplas
   { slug: 'databases', label: 'Databases', order: 20 },
@@ -680,7 +681,7 @@ const ITEMS: ItemSeed[] = [
     format: 'VIDEO',
     difficulty: 'EASY',
     estimatedMinutes: 14,
-    topicSlugs: ['sorting', 'array'],
+    topicSlugs: ['sorting', 'array', 'foundations'],
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'YouTube — Lucas Montano',
     tags: ['concept', 'big-o', 'complexity', 'prerequisite', 'pt-br'],
@@ -914,6 +915,78 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Arthur Takeda',
     tags: ['concept', 'design-patterns', 'gof', 'oop', 'pt-br'],
+  },
+
+  // ---------------------------------------------------------------------------
+  // FOUNDATIONS — onboarding universal da primeira semana.
+  // Ferramentas e plataformas que todo membro usa: LeetCode, Git/GitHub, Bash.
+  // Tracks vazias (universal) exceto quando o item é track-específico.
+  // ---------------------------------------------------------------------------
+  {
+    title: 'LeetCode vai te fazer melhorar como dev?',
+    url: 'https://www.youtube.com/watch?v=6FK5nCbrvYw',
+    description:
+      'Augusto Galego — o que é LeetCode, por que o mercado usa em entrevista e quando (de fato) vale grindar. 8min, sem resolver problema aqui, só o mapa.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 8,
+    topicSlugs: ['foundations'],
+    tracks: [],
+    source: 'YouTube — Augusto Galego',
+    tags: ['concept', 'leetcode', 'interview-prep', 'onboarding', 'pt-br'],
+  },
+  {
+    title: 'Git Explained in 100 Seconds',
+    url: 'https://www.youtube.com/watch?v=hwP7WQkmECE',
+    description: 'Fireship — init, add, commit, branch, merge em 2min.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 2,
+    topicSlugs: ['foundations'],
+    tracks: [],
+    source: 'YouTube — Fireship',
+    tags: ['practice', 'git', 'onboarding', 'fireship'],
+  },
+  {
+    title: 'GitHub Pull Request in 100 Seconds',
+    url: 'https://www.youtube.com/watch?v=8lGpZkjnkt4',
+    description: 'Fireship — fork, branch, commit, abrir PR. O fluxo de contribuir em repo alheio.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 2,
+    topicSlugs: ['foundations'],
+    tracks: [],
+    source: 'YouTube — Fireship',
+    tags: ['practice', 'github', 'pull-request', 'onboarding', 'fireship'],
+  },
+  {
+    title: 'Bash in 100 Seconds',
+    url: 'https://www.youtube.com/watch?v=I4EWvMFj37g',
+    description: 'Fireship — cd, ls, pipes, variáveis de ambiente.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 3,
+    topicSlugs: ['foundations'],
+    tracks: [],
+    source: 'YouTube — Fireship',
+    tags: ['practice', 'bash', 'terminal', 'cli', 'onboarding', 'fireship'],
+  },
+
+  // ---------------------------------------------------------------------------
+  // HASHMAP — ED canônica pra interview prep.
+  // ---------------------------------------------------------------------------
+  {
+    title: 'Two Sum - Leetcode 1 - HashMap - Python',
+    url: 'https://www.youtube.com/watch?v=KLlXCFG5TnA',
+    description:
+      'NeetCode — Two Sum no LeetCode: lê o enunciado, tenta bruteforce O(n²), otimiza com hashmap pra O(n).',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 9,
+    topicSlugs: ['hashmap'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — NeetCode',
+    tags: ['concept', 'hashmap', 'two-sum', 'leetcode', 'neetcode'],
   },
 ];
 
