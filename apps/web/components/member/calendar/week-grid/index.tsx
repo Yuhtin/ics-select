@@ -96,6 +96,17 @@ export function WeekGrid({
     return out;
   }, [events, timezone]);
 
+  const allDayByDayKey = useMemo(() => {
+    const m = new Map<string, CalendarEvent[]>();
+    for (const e of events.filter((ev) => ev.allDay)) {
+      const key = getLocalDateKey(e.start, timezone);
+      const list = m.get(key) ?? [];
+      list.push(e);
+      m.set(key, list);
+    }
+    return m;
+  }, [events, timezone]);
+
   return (
     <div className="rounded-[12px] border border-border-token bg-surface overflow-hidden">
       {/* Day header */}
@@ -138,12 +149,26 @@ export function WeekGrid({
         <div className="flex items-center justify-end pr-2 font-mono text-[9px] uppercase tracking-label text-fg-faint">
           all-day
         </div>
-        {days.map((d) => (
-          <div
-            key={d.toISOString()}
-            className="border-l border-border-token/60"
-          />
-        ))}
+        {days.map((d) => {
+          const list = allDayByDayKey.get(localDateKeyFromDate(d)) ?? [];
+          return (
+            <div
+              key={d.toISOString()}
+              className="flex flex-wrap items-center gap-1 border-l border-border-token/60 px-1 py-1"
+            >
+              {list.map((e) => (
+                <span
+                  key={e.id}
+                  className="truncate rounded-pill border border-border-token/60 bg-surface px-2 py-[1px] font-sans text-[10px] text-fg-soft"
+                  title={e.title}
+                  style={{ maxWidth: '100%' }}
+                >
+                  {e.title}
+                </span>
+              ))}
+            </div>
+          );
+        })}
       </div>
 
       {/* Scrollable body */}
