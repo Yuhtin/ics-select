@@ -3,13 +3,34 @@
 import { useLayoutEffect, useMemo, useRef } from 'react';
 import { clsx } from 'clsx';
 import type { CalendarEvent } from '../../../../lib/queries/me-calendar';
-import { localDateKeyFromDate } from './time';
+import { EventCardIcs } from '../event-card-ics';
+import { EventCardExternal } from '../event-card-external';
+import {
+  getLocalDateKey,
+  getMinuteOfLocalDay,
+  localDateKeyFromDate,
+} from './time';
+import { layoutEventsForDay, type LaidOutEvent } from './layout';
 
 export const WEEK_GRID_START_HOUR = 7;
 export const WEEK_GRID_END_HOUR = 24; // exclusive upper — axis shows 07..23 then 00 at the bottom edge
 export const HOUR_PX = 56;
 const HOURS_VISIBLE = WEEK_GRID_END_HOUR - WEEK_GRID_START_HOUR;
 const INITIAL_SCROLL_HOUR = 10;
+const MIN_EVENT_PX = 22;
+const START_MIN = WEEK_GRID_START_HOUR * 60;
+const END_MIN = WEEK_GRID_END_HOUR * 60;
+
+function formatTimeRange(start: string, end: string, timezone: string): string {
+  const fmt = (iso: string) =>
+    new Intl.DateTimeFormat('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+      timeZone: timezone,
+    }).format(new Date(iso));
+  return `${fmt(start)}–${fmt(end)}`;
+}
 
 interface WeekGridProps {
   weekStart: Date; // Sunday 00:00 local (as built in page.tsx)
@@ -32,9 +53,9 @@ function hourLabel(h: number): string {
 
 export function WeekGrid({
   weekStart,
-  timezone: _timezone,
-  events: _events,
-  onRescheduleClick: _onRescheduleClick,
+  timezone,
+  events,
+  onRescheduleClick,
 }: WeekGridProps) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const todayKey = useMemo(() => localDateKeyFromDate(new Date()), []);
@@ -49,6 +70,26 @@ export function WeekGrid({
     () => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)),
     [weekStart],
   );
+
+  const layoutByDayKey = useMemo(() => {
+    const timed = events.filter((e) => !e.allDay);
+    const byKey = new Map<
+      string,
+      Array<{ event: CalendarEvent; startMin: number; endMin: number }>
+    >();
+    for (const e of timed) {
+      const key = getLocalDateKey(e.start, timezone);
+      const startMin = getMinuteOfLocalDay(e.start, timezone);
+      let endMin = getMinuteOfLocalDay(e.end, timezone);
+      if (endMin <= startMin) endMin = startMin + 15;
+      const list = byKey.get(key) ?? [];
+      list.push({ event: e, startMin, endMin });
+      byKey.set(key, list);
+    }
+    const out = new Map<string, LaidOutEvent[]>();
+    for (const [k, list] of byKey) out.set(k, layoutEventsForDay(list));
+    return out;
+  }, [events, timezone]);
 
   return (
     <div className="rounded-[12px] border border-border-token bg-surface overflow-hidden">
@@ -147,7 +188,57 @@ export function WeekGrid({
                     style={{ top: `${i * HOUR_PX}px` }}
                   />
                 ))}
-                {/* Events and current-time line land here in later tasks. */}
+                {(layoutByDayKey.get(localDateKeyFromDate(d)) ?? []).map((le) => {
+                  const clamped = {
+                    startMin: Math.max(le.startMin, START_MIN),
+                    endMin: Math.min(le.endMin, END_MIN),
+                  };
+                  if (clamped.endMin <= clamped.startMin) return null;
+                  const topPx = ((clamped.startMin - START_MIN) * HOUR_PX) / 60;
+                  const heightPx = Math.max(
+                    ((clamped.endMin - clamped.startMin) * HOUR_PX) / 60,
+                    MIN_EVENT_PX,
+                  );
+                  const widthPct = 100 / le.clusterSize;
+                  const leftPct = le.lane * widthPct;
+                  const timeLabel = formatTimeRange(
+                    le.event.start,
+                    le.event.end,
+                    timezone,
+                  );
+                  const handleClick =
+                    le.event.kind === 'ICS'
+                      ? () => onRescheduleClick(le.event)
+                      : undefined;
+                  return (
+                    <div
+                      key={le.event.id}
+                      className={clsx(
+                        'absolute px-[2px]',
+                        handleClick && 'cursor-pointer',
+                      )}
+                      style={{
+                        top: `${topPx}px`,
+                        height: `${heightPx}px`,
+                        left: `${leftPct}%`,
+                        width: `calc(${widthPct}% - 2px)`,
+                      }}
+                      onClick={handleClick}
+                    >
+                      {le.event.kind === 'ICS' ? (
+                        <EventCardIcs
+                          event={le.event}
+                          timeLabel={timeLabel}
+                        />
+                      ) : (
+                        <EventCardExternal
+                          event={le.event}
+                          timeLabel={timeLabel}
+                        />
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             );
           })}
