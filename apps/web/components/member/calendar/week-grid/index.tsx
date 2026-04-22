@@ -1,6 +1,6 @@
 'use client';
 
-import { useLayoutEffect, useMemo, useRef } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { clsx } from 'clsx';
 import type { CalendarEvent } from '../../../../lib/queries/me-calendar';
 import { EventCardIcs } from '../event-card-ics';
@@ -58,7 +58,12 @@ export function WeekGrid({
   onRescheduleClick,
 }: WeekGridProps) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
-  const todayKey = useMemo(() => localDateKeyFromDate(new Date()), []);
+  const [now, setNow] = useState<Date>(() => new Date());
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(new Date()), 60_000);
+    return () => window.clearInterval(id);
+  }, []);
+  const todayKey = useMemo(() => localDateKeyFromDate(now), [now]);
 
   useLayoutEffect(() => {
     const el = scrollRef.current;
@@ -173,6 +178,10 @@ export function WeekGrid({
           {/* Day columns */}
           {days.map((d) => {
             const isToday = localDateKeyFromDate(d) === todayKey;
+            const nowMin = now.getHours() * 60 + now.getMinutes();
+            const showNowLine =
+              isToday && nowMin >= START_MIN && nowMin <= END_MIN;
+            const nowTopPx = ((nowMin - START_MIN) * HOUR_PX) / 60;
             return (
               <div
                 key={d.toISOString()}
@@ -188,6 +197,16 @@ export function WeekGrid({
                     style={{ top: `${i * HOUR_PX}px` }}
                   />
                 ))}
+                {showNowLine && (
+                  <div
+                    className="pointer-events-none absolute left-0 right-0 z-10"
+                    style={{ top: `${nowTopPx}px` }}
+                  >
+                    <div className="relative h-0 border-t-2 border-danger">
+                      <span className="absolute -left-[5px] -top-[5px] h-[10px] w-[10px] rounded-full bg-danger" />
+                    </div>
+                  </div>
+                )}
                 {(layoutByDayKey.get(localDateKeyFromDate(d)) ?? []).map((le) => {
                   const clamped = {
                     startMin: Math.max(le.startMin, START_MIN),
