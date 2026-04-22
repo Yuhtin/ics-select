@@ -13,7 +13,7 @@ import { Eyebrow } from '../../../components/ui/eyebrow';
 import { SectionLabel } from '../../../components/ui/section-label';
 import { OutcomePicker } from '../../../components/ui/outcome-picker';
 import { Button } from '../../../components/ui/button';
-import { formatTimeUtc } from '../../../lib/format/time';
+import { formatTimeLocal } from '../../../lib/format/time';
 import { detectPlatform, platformLabel, type PlatformKey } from '../../../lib/format/platform';
 
 const PLATFORM_STRIPE_DEV: Record<PlatformKey, string> = {
@@ -220,12 +220,12 @@ function ItemFocusReadonly({ item, outcomeMode }: { item: ItemResponse; outcomeM
 
   const eyebrowText = (() => {
     if (isDone && item.completedAt)
-      return `Marked · ${new Intl.DateTimeFormat('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' }).format(new Date(item.completedAt))}`;
+      return `Marked · ${new Intl.DateTimeFormat('en-US', { weekday: 'short', month: 'short', day: 'numeric' }).format(new Date(item.completedAt))}`;
     if (item.scheduledAt) {
       const sched = new Date(item.scheduledAt);
       if (sched > now)
-        return `Scheduled · ${new Intl.DateTimeFormat('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' }).format(sched)} ${formatTimeUtc(item.scheduledAt)}`;
-      return `Running late · was at ${formatTimeUtc(item.scheduledAt)}`;
+        return `Scheduled · ${new Intl.DateTimeFormat('en-US', { weekday: 'short', month: 'short', day: 'numeric' }).format(sched)} ${formatTimeLocal(item.scheduledAt)}`;
+      return `Running late · was at ${formatTimeLocal(item.scheduledAt)}`;
     }
     return 'Pending';
   })();

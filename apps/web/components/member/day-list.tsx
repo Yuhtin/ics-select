@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import type { HomeItem } from '../../lib/queries/me-home';
 import { ListRow, type PlatformKey } from '../ui/list-row';
 import { DayHeader } from '../ui/day-header';
-import { formatTimeUtc, formatMinutes } from '../../lib/format/time';
+import { formatTimeLocal, formatMinutes } from '../../lib/format/time';
 import { platformLabel, detectPlatform } from '../../lib/format/platform';
 
 interface DayListProps {
@@ -52,7 +52,7 @@ export function DayList({ label, hint, items, activeItemId, now }: DayListProps)
           return (
             <ListRow
               key={item.id}
-              time={formatTimeUtc(item.scheduledAt) ?? undefined}
+              time={formatTimeLocal(item.scheduledAt) ?? undefined}
               outcome={item.outcome}
               active={activeItemId === item.id}
               intent={intent}

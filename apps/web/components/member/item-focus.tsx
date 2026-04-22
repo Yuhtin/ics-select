@@ -12,7 +12,7 @@ import { Pill } from '../ui/pill';
 import { Button } from '../ui/button';
 import { OutcomePicker } from '../ui/outcome-picker';
 import { OutcomeDot } from '../ui/outcome-dot';
-import { formatTimeUtc, formatDateShort } from '../../lib/format/time';
+import { formatTimeLocal, formatDateLocal } from '../../lib/format/time';
 import { platformLabel, detectPlatform, type PlatformKey } from '../../lib/format/platform';
 
 const PLATFORM_STRIPE: Record<PlatformKey, string> = {
@@ -43,11 +43,11 @@ export function ItemFocus({ item }: ItemFocusProps) {
     !isDone && item.scheduledAt !== null && new Date(item.scheduledAt) < now;
 
   const eyebrowText = (() => {
-    if (isDone && item.completedAt) return `Marked · ${formatDateShort(item.completedAt)}`;
+    if (isDone && item.completedAt) return `Marked · ${formatDateLocal(item.completedAt)}`;
     if (item.scheduledAt) {
       const sched = new Date(item.scheduledAt);
-      if (sched > now) return `Scheduled · ${formatDateShort(item.scheduledAt)} ${formatTimeUtc(item.scheduledAt)}`;
-      return `Running late · was at ${formatTimeUtc(item.scheduledAt)}`;
+      if (sched > now) return `Scheduled · ${formatDateLocal(item.scheduledAt)} ${formatTimeLocal(item.scheduledAt)}`;
+      return `Running late · was at ${formatTimeLocal(item.scheduledAt)}`;
     }
     return 'Pending';
   })();

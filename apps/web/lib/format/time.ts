@@ -1,21 +1,20 @@
-/** "19:00" in UTC. */
-export function formatTimeUtc(iso: string | null | undefined): string | null {
+/** "HH:mm" in the viewer's local timezone. */
+export function formatTimeLocal(iso: string | null | undefined): string | null {
   if (!iso) return null;
   const d = new Date(iso);
-  const hh = String(d.getUTCHours()).padStart(2, '0');
-  const mm = String(d.getUTCMinutes()).padStart(2, '0');
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mm = String(d.getMinutes()).padStart(2, '0');
   return `${hh}:${mm}`;
 }
 
-/** "Wed, Apr 16" — English abbreviated. */
-export function formatDateShort(iso: string | null | undefined): string | null {
+/** "Wed, Apr 16" — English abbreviated, in the viewer's local timezone. */
+export function formatDateLocal(iso: string | null | undefined): string | null {
   if (!iso) return null;
   const d = new Date(iso);
   return new Intl.DateTimeFormat('en-US', {
     weekday: 'short',
     month: 'short',
     day: 'numeric',
-    timeZone: 'UTC',
   }).format(d);
 }
 

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { clsx } from 'clsx';
 import type { HomeResponse, HomeItem } from '../../lib/queries/me-home';
-import { formatTimeUtc, formatRelative, formatDateShort } from '../../lib/format/time';
+import { formatTimeLocal, formatRelative, formatDateLocal } from '../../lib/format/time';
 import { platformLabel, detectPlatform } from '../../lib/format/platform';
 
 interface HeroSceneProps {
@@ -124,7 +124,7 @@ export function HeroScene({ hero }: HeroSceneProps) {
     return (
       <ItemHero
         item={hero.item}
-        eyebrow={`Now · scheduled ${formatTimeUtc(hero.item.scheduledAt) ?? ''} · ${platformLabel(detectPlatform(hero.item.url, hero.item.format))}`}
+        eyebrow={`Now · scheduled ${formatTimeLocal(hero.item.scheduledAt) ?? ''} · ${platformLabel(detectPlatform(hero.item.url, hero.item.format))}`}
         eyebrowStyle="now"
         ctaHref={`/me/item/${hero.item.id}`}
         ctaLabel="Start study"
@@ -147,7 +147,7 @@ export function HeroScene({ hero }: HeroSceneProps) {
     return (
       <ItemHero
         item={hero.item}
-        eyebrow={`Running late · was at ${formatTimeUtc(hero.item.scheduledAt) ?? ''}`}
+        eyebrow={`Running late · was at ${formatTimeLocal(hero.item.scheduledAt) ?? ''}`}
         eyebrowStyle="late"
         ctaHref={`/me/item/${hero.item.id}`}
         ctaLabel="Catch up"
@@ -166,7 +166,7 @@ export function HeroScene({ hero }: HeroSceneProps) {
         </h1>
         <p className="mt-3 font-sans text-sm text-fg-soft">
           {hero.nextAt
-            ? `Next up: ${formatDateShort(hero.nextAt)} at ${formatTimeUtc(hero.nextAt)}.`
+            ? `Next up: ${formatDateLocal(hero.nextAt)} at ${formatTimeLocal(hero.nextAt)}.`
             : 'See you soon.'}
         </p>
       </article>
@@ -183,7 +183,7 @@ export function HeroScene({ hero }: HeroSceneProps) {
       </h1>
       <p className="mt-3 font-sans text-sm text-fg-soft">
         {hero.nextAt
-          ? `Next up: ${formatDateShort(hero.nextAt)} at ${formatTimeUtc(hero.nextAt)}.`
+          ? `Next up: ${formatDateLocal(hero.nextAt)} at ${formatTimeLocal(hero.nextAt)}.`
           : 'Rest up.'}
       </p>
     </article>

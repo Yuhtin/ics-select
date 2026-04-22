@@ -7,7 +7,7 @@ import { Eyebrow } from '../ui/eyebrow';
 import { Pill } from '../ui/pill';
 import { Button } from '../ui/button';
 import { OutcomeDot } from '../ui/outcome-dot';
-import { formatTimeUtc, formatRelative, formatDateShort } from '../../lib/format/time';
+import { formatTimeLocal, formatRelative, formatDateLocal } from '../../lib/format/time';
 import { platformLabel, detectPlatform } from '../../lib/format/platform';
 
 interface HomeHeroProps {
@@ -88,7 +88,7 @@ export function HomeHero({ hero }: HomeHeroProps) {
     return (
       <HeroItemLayout
         accent="now"
-        eyebrow={`Now · ${formatTimeUtc(hero.item.scheduledAt) ?? ''}`}
+        eyebrow={`Now · ${formatTimeLocal(hero.item.scheduledAt) ?? ''}`}
         item={hero.item}
         ctaHref={`/me/item/${hero.item.id}`}
         ctaLabel="Start study"
@@ -110,7 +110,7 @@ export function HomeHero({ hero }: HomeHeroProps) {
     return (
       <HeroItemLayout
         accent="late"
-        eyebrow={`Running late · was at ${formatTimeUtc(hero.item.scheduledAt) ?? ''}`}
+        eyebrow={`Running late · was at ${formatTimeLocal(hero.item.scheduledAt) ?? ''}`}
         item={hero.item}
         ctaHref={`/me/item/${hero.item.id}`}
         ctaLabel="Catch up"
@@ -128,7 +128,7 @@ export function HomeHero({ hero }: HomeHeroProps) {
           Nothing more scheduled today.
         </h1>
         <p className="mt-3 font-sans text-sm text-ink-soft">
-          {hero.nextAt ? `Next up: ${formatDateShort(hero.nextAt)} at ${formatTimeUtc(hero.nextAt)}.` : 'See you soon.'}
+          {hero.nextAt ? `Next up: ${formatDateLocal(hero.nextAt)} at ${formatTimeLocal(hero.nextAt)}.` : 'See you soon.'}
         </p>
       </section>
     );
@@ -141,7 +141,7 @@ export function HomeHero({ hero }: HomeHeroProps) {
         No study scheduled today.
       </h1>
       <p className="mt-3 font-sans text-sm text-ink-soft">
-        {hero.nextAt ? `Next up: ${formatDateShort(hero.nextAt)} at ${formatTimeUtc(hero.nextAt)}.` : 'Rest up.'}
+        {hero.nextAt ? `Next up: ${formatDateLocal(hero.nextAt)} at ${formatTimeLocal(hero.nextAt)}.` : 'Rest up.'}
       </p>
     </section>
   );
