@@ -170,9 +170,9 @@ export function ItemFocus({ item }: ItemFocusProps) {
             </Button>
           </div>
         ) : item.outcome === 'SKIPPED' ? (
-          <div className="mt-3 flex items-center gap-2 text-ink-mute">
+          <div className="mt-3 flex items-center gap-2 text-outcome-skipped">
             <OutcomeDot outcome="SKIPPED" size="sm" />
-            <span className="text-sm">Already known</span>
+            <span className="text-sm font-semibold">Already known</span>
             <button
               type="button"
               onClick={async () => {

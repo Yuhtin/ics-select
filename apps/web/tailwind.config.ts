@@ -56,6 +56,7 @@ const config: Config = {
         'outcome-done-hard': 'hsl(var(--outcome-done-hard) / <alpha-value>)',
         'outcome-doubts': 'hsl(var(--outcome-doubts) / <alpha-value>)',
         'outcome-stuck': 'hsl(var(--outcome-stuck) / <alpha-value>)',
+        'outcome-skipped': 'hsl(var(--outcome-skipped) / <alpha-value>)',
 
         // Platform (study material borders)
         platform: {

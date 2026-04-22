@@ -52,6 +52,7 @@
   --outcome-done-hard: 32 90% 48%;
   --outcome-doubts: 271 70% 55%;
   --outcome-stuck: 0 72% 50%;
+  --outcome-skipped: 160 65% 20%;
 
   /* Platform colors */
   --platform-youtube: 0 100% 50%;
@@ -110,6 +111,7 @@
   --outcome-done-hard: 32 95% 58%;
   --outcome-doubts: 271 75% 68%;
   --outcome-stuck: 0 85% 62%;
+  --outcome-skipped: 160 55% 38%;
 }
 
 html,

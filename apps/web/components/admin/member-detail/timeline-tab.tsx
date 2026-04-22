@@ -12,7 +12,7 @@ const DOT_BY_OUTCOME: Record<Plan['items'][number]['outcome'], string> = {
   DONE_HARD: 'bg-outcome-done-hard',
   DOUBTS: 'bg-outcome-doubts',
   STUCK: 'bg-outcome-stuck',
-  SKIPPED: 'bg-ink-mute',
+  SKIPPED: 'bg-outcome-skipped',
 };
 
 function formatDate(iso: string): string {
