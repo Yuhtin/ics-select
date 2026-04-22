@@ -1,12 +1,14 @@
 'use client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { ItemOutcome } from '@ics-select/shared';
 import { apiFetch } from '../api/client';
 
 export type WeeklyPlanItem = {
   id: string;
   libraryItemId: string;
   order: number;
-  outcome: 'PENDING' | 'DONE_EASY' | 'DONE_HARD' | 'DOUBTS' | 'STUCK';
+  outcome: ItemOutcome;
+  skippable: boolean;
   libraryItem: {
     id: string;
     title: string;

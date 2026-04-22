@@ -188,6 +188,7 @@ export default function PlanEditorPage({
       libraryItemId: libItem.id,
       order: plan.items.length,
       outcome: 'PENDING',
+      skippable: false,
       libraryItem: {
         id: libItem.id,
         title: libItem.title,
