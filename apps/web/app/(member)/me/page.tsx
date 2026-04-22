@@ -5,7 +5,6 @@ import { HeroScene } from '../../../components/member/hero-scene';
 import { DayList } from '../../../components/member/day-list';
 import { DayRingCard } from '../../../components/member/day-ring-card';
 import { CarryOverReflectionCard } from '../../../components/member/carry-over-reflection-card';
-import { PhaseProgressCard } from '../../../components/member/phase-progress-card';
 import { TopicCoverageHeatmap } from '../../../components/member/topic-coverage-heatmap';
 import { StreakCard } from '../../../components/ui/streak-card';
 import { formatMinutes } from '../../../lib/format/time';
@@ -85,9 +84,6 @@ export default function MeHomePage() {
               />
             </div>
           </section>
-        )}
-        {data.topicCoverage.length > 0 && (
-          <PhaseProgressCard topics={data.topicCoverage} />
         )}
       </aside>
     </div>
