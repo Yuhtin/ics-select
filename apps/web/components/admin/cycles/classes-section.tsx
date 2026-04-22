@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { Plus, Users } from 'lucide-react';
+import { clsx } from 'clsx';
 import {
   useCycleClasses,
   type ClassSession,
@@ -15,11 +16,11 @@ type Member = {
   pictureUrl: string | null;
 };
 
-function formatDateTime(iso: string): string {
+function formatShort(iso: string): string {
   return new Date(iso).toLocaleString('en-US', {
     month: 'short',
     day: 'numeric',
-    hour: '2-digit',
+    hour: 'numeric',
     minute: '2-digit',
   });
 }
@@ -43,58 +44,55 @@ export function ClassesSection({
   return (
     <>
       <section>
-        <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-3">
           <SectionLabel>Classes · {sorted.length}</SectionLabel>
           <button
             onClick={() => setScheduleOpen(true)}
-            className="inline-flex items-center gap-1.5 font-mono text-xs uppercase tracking-label px-3 py-1.5 bg-paper-warm text-ink-soft rounded-pill hover:bg-rule"
+            className="ml-auto inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-label px-2.5 py-1 text-ink-soft hover:text-ink"
           >
-            <Plus className="h-3.5 w-3.5" strokeWidth={1.5} />
-            Schedule class
+            <Plus className="h-3 w-3" strokeWidth={1.75} />
+            Schedule
           </button>
         </div>
 
         {sorted.length === 0 ? (
-          <p className="mt-4 font-mono text-xs text-ink-mute py-8 text-center border border-dashed border-rule rounded-card">
+          <p className="mt-2 font-mono text-[11px] text-ink-mute py-4 text-center border border-dashed border-rule rounded-card">
             No classes scheduled yet.
           </p>
         ) : (
-          <ul className="mt-3 divide-y divide-rule border border-rule rounded-card bg-surface">
+          <ul className="mt-2 divide-y divide-rule border border-rule rounded-card bg-surface">
             {sorted.map((c) => {
               const past = new Date(c.scheduledAt) < new Date();
               return (
                 <li
                   key={c.id}
-                  className="flex items-center gap-4 px-4 py-3 hover:bg-paper-warm/60 transition-colors"
+                  className={clsx(
+                    'flex items-center gap-3 px-3 py-2 hover:bg-paper-warm/60 transition-colors',
+                    past && 'text-ink-soft',
+                  )}
                 >
-                  <div className="flex-1 min-w-0">
-                    <p className="font-serif-tool text-base font-semibold text-ink truncate">
-                      {c.title}
-                    </p>
-                    <div className="mt-1 flex items-center gap-2 flex-wrap font-mono text-[10px] uppercase tracking-label text-ink-mute">
-                      <span>{formatDateTime(c.scheduledAt)}</span>
-                      <span>·</span>
-                      <span>{c.durationMin}m</span>
-                      {c.topic && (
-                        <>
-                          <span>·</span>
-                          <span>{c.topic}</span>
-                        </>
-                      )}
-                      {past && (
-                        <>
-                          <span>·</span>
-                          <span className="text-ink-soft">past</span>
-                        </>
-                      )}
-                    </div>
-                  </div>
+                  <span className="font-mono text-[10px] uppercase tracking-label text-ink-mute w-28 flex-none truncate">
+                    {formatShort(c.scheduledAt)}
+                  </span>
+                  <span className="font-sans text-sm font-medium text-ink truncate flex-1 min-w-0">
+                    {c.title}
+                    {c.topic && (
+                      <span className="ml-2 font-mono text-[10px] uppercase tracking-label text-ink-mute">
+                        · {c.topic}
+                      </span>
+                    )}
+                  </span>
+                  <span className="font-mono text-[10px] text-ink-mute w-10 flex-none text-right">
+                    {c.durationMin}m
+                  </span>
                   <button
                     onClick={() => setAttendanceFor(c)}
-                    className="inline-flex items-center gap-1.5 font-mono text-[11px] text-focus hover:underline"
+                    className="inline-flex items-center gap-1 font-mono text-[10px] uppercase tracking-label text-focus hover:underline flex-none"
+                    aria-label={`Attendance for ${c.title}`}
+                    title="Take attendance"
                   >
-                    <Users className="h-3 w-3" strokeWidth={1.5} />
-                    Take attendance →
+                    <Users className="h-3 w-3" strokeWidth={1.75} />
+                    Attendance
                   </button>
                 </li>
               );
