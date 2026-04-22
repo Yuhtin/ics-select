@@ -9,6 +9,7 @@ import { Eyebrow } from '../ui/eyebrow';
 import { Pill } from '../ui/pill';
 import { Button } from '../ui/button';
 import { OutcomePicker } from '../ui/outcome-picker';
+import { OutcomeDot } from '../ui/outcome-dot';
 import { formatTimeUtc, formatDateShort } from '../../lib/format/time';
 import { platformLabel, detectPlatform } from '../../lib/format/platform';
 
@@ -54,6 +55,10 @@ export function ItemFocus({ item }: ItemFocusProps) {
       reflection: reflection.trim() === '' ? undefined : reflection,
     });
     setEditing(false);
+  }
+
+  async function applyOutcome(o: ItemOutcome) {
+    await mutation.mutateAsync({ planId: item.planId, itemId: item.id, outcome: o });
   }
 
   return (
@@ -124,8 +129,9 @@ export function ItemFocus({ item }: ItemFocusProps) {
                   ? `Available at ${formatTimeUtc(item.scheduledAt)} · don't mark before you start.`
                   : undefined
               }
+              showSkip={item.skippable && item.outcome === 'PENDING'}
             />
-            {outcome && outcome !== 'PENDING' && (
+            {outcome && outcome !== 'PENDING' && outcome !== 'SKIPPED' && (
               <textarea
                 value={reflection}
                 onChange={(e) => setReflection(e.target.value)}
@@ -139,6 +145,34 @@ export function ItemFocus({ item }: ItemFocusProps) {
             >
               {mutation.isPending ? 'Saving…' : 'Save outcome'}
             </Button>
+            {item.skippable && item.outcome === 'PENDING' && (
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!confirm('Marcar como já sabido? Você pode desfazer depois.')) return;
+                  await applyOutcome('SKIPPED');
+                }}
+                className="text-sm text-ink-mute underline-offset-4 hover:underline"
+              >
+                I already know this
+              </button>
+            )}
+          </div>
+        ) : item.outcome === 'SKIPPED' ? (
+          <div className="mt-3 flex items-center gap-2 text-ink-mute">
+            <OutcomeDot outcome="SKIPPED" size="sm" />
+            <span className="text-sm">Already known</span>
+            <button
+              type="button"
+              onClick={async () => {
+                await applyOutcome('PENDING');
+                setOutcome(null);
+                setEditing(true);
+              }}
+              className="text-xs underline"
+            >
+              Undo
+            </button>
           </div>
         ) : (
           <div className="mt-3 space-y-3">

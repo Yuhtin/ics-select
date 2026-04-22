@@ -14,6 +14,7 @@ export type HomeItem = {
   url: string | null;
   topic: { slug: string; label: string } | null;
   outcome: ItemOutcome;
+  skippable: boolean;
   scheduledAt: string | null;
   scheduledMinutes: number | null;
   carriedFromItemId: string | null;
