@@ -18,8 +18,21 @@ export const HOUR_PX = 56;
 const HOURS_VISIBLE = WEEK_GRID_END_HOUR - WEEK_GRID_START_HOUR;
 const INITIAL_SCROLL_HOUR = 10;
 const MIN_EVENT_PX = 22;
+const COMPACT_HEIGHT_PX = 32; // below this, render a pill instead of a full card
+const CASCADE_MIN_CLUSTER = 3; // clusterSize >= this switches equal-split to cascade
+const CASCADE_OFFSET_PCT = 14; // how much each subsequent lane is pushed right
+const CASCADE_WIDTH_PCT = 70; // width of every lane in cascade mode
 const START_MIN = WEEK_GRID_START_HOUR * 60;
 const END_MIN = WEEK_GRID_END_HOUR * 60;
+
+const OUTCOME_DOT_CLASS: Record<string, string> = {
+  PENDING: 'bg-outcome-pending',
+  DONE_EASY: 'bg-outcome-done-easy',
+  DONE_HARD: 'bg-outcome-done-hard',
+  DOUBTS: 'bg-outcome-doubts',
+  STUCK: 'bg-outcome-stuck',
+  SKIPPED: 'bg-fg-faint',
+};
 
 function formatTimeRange(start: string, end: string, timezone: string): string {
   const fmt = (iso: string) =>
@@ -30,6 +43,41 @@ function formatTimeRange(start: string, end: string, timezone: string): string {
       timeZone: timezone,
     }).format(new Date(iso));
   return `${fmt(start)}–${fmt(end)}`;
+}
+
+function CompactEventPill({
+  event,
+  timeLabel,
+}: {
+  event: CalendarEvent;
+  timeLabel: string;
+}) {
+  const startLabel = timeLabel.split('–')[0] ?? '';
+  const isIcs = event.kind === 'ICS';
+  const outcome = event.ics?.outcome ?? 'PENDING';
+  return (
+    <div
+      className={clsx(
+        'flex h-full w-full items-center gap-1 overflow-hidden rounded-[6px] px-1.5',
+        isIcs
+          ? 'border border-border-token bg-surface'
+          : 'border border-dashed border-border-token',
+      )}
+      title={event.title}
+    >
+      {isIcs ? (
+        <span
+          className={clsx(
+            'h-1.5 w-1.5 flex-shrink-0 rounded-full',
+            OUTCOME_DOT_CLASS[outcome],
+          )}
+        />
+      ) : null}
+      <span className="truncate font-mono text-[9px] tabular-nums text-fg-mute">
+        {startLabel}
+      </span>
+    </div>
+  );
 }
 
 interface WeekGridProps {
@@ -138,38 +186,41 @@ export function WeekGrid({
         })}
       </div>
 
-      {/* All-day row placeholder — filled in Task 6. */}
-      <div
-        className="grid border-b border-border-token bg-bg-subtle"
-        style={{
-          gridTemplateColumns: '56px repeat(7, minmax(0, 1fr))',
-          minHeight: '32px',
-        }}
-      >
-        <div className="flex items-center justify-end pr-2 font-mono text-[9px] uppercase tracking-label text-fg-faint">
-          all-day
+      {/* All-day row — rendered only when the visible week has at least one
+          all-day event. Hiding it when empty buys 32px of vertical space. */}
+      {allDayByDayKey.size > 0 && (
+        <div
+          className="grid border-b border-border-token bg-bg-subtle"
+          style={{
+            gridTemplateColumns: '56px repeat(7, minmax(0, 1fr))',
+            minHeight: '32px',
+          }}
+        >
+          <div className="flex items-center justify-end pr-2 font-mono text-[9px] uppercase tracking-label text-fg-faint">
+            all-day
+          </div>
+          {days.map((d) => {
+            const list = allDayByDayKey.get(localDateKeyFromDate(d)) ?? [];
+            return (
+              <div
+                key={d.toISOString()}
+                className="flex flex-wrap items-center gap-1 border-l border-border-token/60 px-1 py-1"
+              >
+                {list.map((e) => (
+                  <span
+                    key={e.id}
+                    className="truncate rounded-pill border border-border-token/60 bg-surface px-2 py-[1px] font-sans text-[10px] text-fg-soft"
+                    title={e.title}
+                    style={{ maxWidth: '100%' }}
+                  >
+                    {e.title}
+                  </span>
+                ))}
+              </div>
+            );
+          })}
         </div>
-        {days.map((d) => {
-          const list = allDayByDayKey.get(localDateKeyFromDate(d)) ?? [];
-          return (
-            <div
-              key={d.toISOString()}
-              className="flex flex-wrap items-center gap-1 border-l border-border-token/60 px-1 py-1"
-            >
-              {list.map((e) => (
-                <span
-                  key={e.id}
-                  className="truncate rounded-pill border border-border-token/60 bg-surface px-2 py-[1px] font-sans text-[10px] text-fg-soft"
-                  title={e.title}
-                  style={{ maxWidth: '100%' }}
-                >
-                  {e.title}
-                </span>
-              ))}
-            </div>
-          );
-        })}
-      </div>
+      )}
 
       {/* Scrollable body */}
       <div
@@ -243,8 +294,21 @@ export function WeekGrid({
                     ((clamped.endMin - clamped.startMin) * HOUR_PX) / 60,
                     MIN_EVENT_PX,
                   );
-                  const widthPct = 100 / le.clusterSize;
-                  const leftPct = le.lane * widthPct;
+
+                  // Dense clusters (3+ overlapping events) cascade right instead
+                  // of equal-splitting into unreadable slivers. Each subsequent
+                  // lane peeks out a bit on the right edge; z-index rises so the
+                  // latest-starting event is on top but the earlier ones are
+                  // still clickable via their exposed strip.
+                  const cascade = le.clusterSize >= CASCADE_MIN_CLUSTER;
+                  const widthPct = cascade
+                    ? CASCADE_WIDTH_PCT
+                    : 100 / le.clusterSize;
+                  const leftPct = cascade
+                    ? CASCADE_OFFSET_PCT * le.lane
+                    : le.lane * (100 / le.clusterSize);
+                  const zIndex = cascade ? 5 + le.lane : 1;
+
                   const timeLabel = formatTimeRange(
                     le.event.start,
                     le.event.end,
@@ -254,6 +318,8 @@ export function WeekGrid({
                     le.event.kind === 'ICS'
                       ? () => onRescheduleClick(le.event)
                       : undefined;
+                  const compact = heightPx < COMPACT_HEIGHT_PX;
+
                   return (
                     <div
                       key={le.event.id}
@@ -266,10 +332,13 @@ export function WeekGrid({
                         height: `${heightPx}px`,
                         left: `${leftPct}%`,
                         width: `calc(${widthPct}% - 2px)`,
+                        zIndex,
                       }}
                       onClick={handleClick}
                     >
-                      {le.event.kind === 'ICS' ? (
+                      {compact ? (
+                        <CompactEventPill event={le.event} timeLabel={timeLabel} />
+                      ) : le.event.kind === 'ICS' ? (
                         <EventCardIcs
                           event={le.event}
                           timeLabel={timeLabel}
