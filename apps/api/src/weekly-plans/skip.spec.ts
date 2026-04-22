@@ -111,3 +111,52 @@ describe('WeeklyPlansService.setItemOutcome — SKIPPED', () => {
     expect(calendar.deleteEvent).not.toHaveBeenCalled();
   });
 });
+
+describe('SKIPPED counts as completed across weekly-plans helpers', () => {
+  it('weekly-plans cohortProgress done-count includes SKIPPED', async () => {
+    // Arrange: stub prisma so cohortProgress returns a plan with
+    // outcomes [DONE_EASY, SKIPPED, PENDING] — expected done = 2.
+    const cycleId = 'cycle-1';
+    const userId = 'u1';
+    const prisma = {
+      cycleMembership: {
+        findMany: jest.fn().mockResolvedValue([
+          { userId, cycleId, user: { id: userId, name: 'Alice', pictureUrl: null } },
+        ]),
+      },
+      weeklyPlan: {
+        findMany: jest.fn().mockResolvedValue([
+          {
+            id: 'plan-1',
+            userId,
+            cycleId,
+            weekStart: new Date('2026-04-20'),
+            items: [
+              { id: 'i1', outcome: 'DONE_EASY' },
+              { id: 'i2', outcome: 'SKIPPED' },
+              { id: 'i3', outcome: 'PENDING' },
+            ],
+          },
+        ]),
+      },
+    };
+    // resolveActiveMembership needs cycleMembership.findFirst
+    (prisma as any).cycleMembership.findFirst = jest.fn().mockResolvedValue({
+      cycleId,
+      userId,
+      cycle: { startsAt: new Date('2026-04-01'), endsAt: new Date('2026-06-30'), status: 'ACTIVE' },
+    });
+
+    const calendar = {
+      findEventIdByIcsId: jest.fn(),
+      deleteEvent: jest.fn(),
+    };
+
+    const service = new WeeklyPlansService(prisma as any, calendar as any);
+    const result = await service.cohortProgress(userId);
+
+    expect(result).toHaveLength(1);
+    expect(result[0].done).toBe(2);
+    expect(result[0].total).toBe(3);
+  });
+});

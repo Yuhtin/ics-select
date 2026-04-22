@@ -2,7 +2,9 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service.js';
 import { computeWeekPosition } from '../../common/cycle/active-cycle.js';
 
-const POSITIVE = new Set(['DONE_EASY', 'DONE_HARD']);
+import type { ItemOutcome } from '@ics-select/shared';
+
+const POSITIVE = new Set<ItemOutcome>(['DONE_EASY', 'DONE_HARD', 'SKIPPED']);
 
 export type PlansOverviewStatus = 'all' | 'draft' | 'published';
 

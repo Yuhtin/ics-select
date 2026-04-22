@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service.js';
+import { isPositiveOutcome } from '@ics-select/shared';
 
 type MemberCard = {
   id: string;
@@ -25,7 +26,7 @@ export class AdminDashboardService {
       const [plansCount, doneItems, stuckItems] = await Promise.all([
         this.prisma.weeklyPlan.count({ where: { userId: u.id, status: 'PUBLISHED' } }),
         this.prisma.weeklyPlanItem.count({
-          where: { weeklyPlan: { userId: u.id }, outcome: { in: ['DONE_EASY', 'DONE_HARD'] } },
+          where: { weeklyPlan: { userId: u.id }, outcome: { in: ['DONE_EASY', 'DONE_HARD', 'SKIPPED'] } },
         }),
         this.prisma.weeklyPlanItem.count({
           where: { weeklyPlan: { userId: u.id }, outcome: 'STUCK' },
@@ -62,7 +63,7 @@ export class AdminDashboardService {
         for (const tag of item.libraryItem.tags) {
           const cur = topicCoverage.get(tag) ?? { done: 0, total: 0 };
           cur.total += 1;
-          if (item.outcome === 'DONE_EASY' || item.outcome === 'DONE_HARD') cur.done += 1;
+          if (isPositiveOutcome(item.outcome)) cur.done += 1;
           topicCoverage.set(tag, cur);
         }
       }
@@ -79,7 +80,7 @@ export class AdminDashboardService {
         weekStart: p.weekStart,
         weekEnd: p.weekEnd,
         status: p.status,
-        doneCount: p.items.filter((i) => i.outcome === 'DONE_EASY' || i.outcome === 'DONE_HARD').length,
+        doneCount: p.items.filter((i) => isPositiveOutcome(i.outcome)).length,
         totalCount: p.items.length,
       })),
       topicCoverage: Array.from(topicCoverage.entries()).map(([tag, stats]) => ({

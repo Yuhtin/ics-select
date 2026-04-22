@@ -5,6 +5,7 @@ import { PrismaService } from '../common/prisma/prisma.service.js';
 import { resolveActiveMembership } from '../common/cycle/active-cycle.js';
 import { UsageLoggerService } from './usage-logger.service.js';
 import { searchLibraryTool, makeLibraryToolExecutor } from './library-tool.js';
+import { isPositiveOutcome } from '@ics-select/shared';
 
 type DraftInput = {
   memberId: string;
@@ -147,8 +148,7 @@ export class DraftPlanService {
             .map((t: any) => t.topic?.label)
             .filter((l: unknown): l is string => typeof l === 'string');
         const labels = topicLabels.length > 0 ? topicLabels : ['sem tópico'];
-        const done =
-          item.outcome === 'DONE_EASY' || item.outcome === 'DONE_HARD';
+        const done = isPositiveOutcome(item.outcome);
         for (const label of labels) {
           const cur = topicCoverage.get(label) ?? { planned: 0, done: 0 };
           cur.planned += 1;

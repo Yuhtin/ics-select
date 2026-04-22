@@ -2,7 +2,7 @@ import { ConflictException, ForbiddenException, Injectable, NotFoundException } 
 import { PrismaService } from '../common/prisma/prisma.service.js';
 import { resolveActiveMembership } from '../common/cycle/active-cycle.js';
 import { GoogleCalendarService } from '../google-calendar/google-calendar.service.js';
-import type { ItemOutcome } from '@ics-select/shared';
+import { type ItemOutcome, isPositiveOutcome } from '@ics-select/shared';
 
 type CreateInput = {
   userId: string;
@@ -134,7 +134,7 @@ export class WeeklyPlansService {
       .map((m) => {
         const userPlans = plans.filter((p) => p.userId === m.userId);
         const currentPlan = userPlans[0];
-        const done = currentPlan?.items.filter((i) => i.outcome === 'DONE_EASY' || i.outcome === 'DONE_HARD').length ?? 0;
+        const done = currentPlan?.items.filter((i) => isPositiveOutcome(i.outcome)).length ?? 0;
         const total = currentPlan?.items.length ?? 0;
         return {
           userId: m.user.id,
