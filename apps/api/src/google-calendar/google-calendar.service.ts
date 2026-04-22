@@ -164,6 +164,27 @@ export class GoogleCalendarService {
     await client.events.delete({ calendarId: 'primary', eventId });
   }
 
+  async findEventIdByIcsId(
+    userId: string,
+    planId: string,
+    itemId: string,
+    range: { start: Date; end: Date },
+  ): Promise<string | null> {
+    const client = await this.clientFor(userId);
+    const res = await client.events.list({
+      calendarId: 'primary',
+      timeMin: range.start.toISOString(),
+      timeMax: range.end.toISOString(),
+      singleEvents: true,
+      maxResults: 250,
+    });
+    const marker = `ICS ID: ${planId}/${itemId}`;
+    const hit = (res.data.items ?? []).find(
+      (e) => typeof e.description === 'string' && e.description.includes(marker),
+    );
+    return hit?.id ?? null;
+  }
+
   private async clientFor(userId: string): Promise<calendar_v3.Calendar> {
     const cached = this.authCache.get(userId);
     if (cached && cached.expiresAt > Date.now() + AUTH_TTL_SAFETY_MS) {
