@@ -37,7 +37,7 @@ type PlanRow = {
   weekEnd: Date;
   publishedAt: Date | null;
   createdAt: Date;
-  items: Array<{ outcome: string }>;
+  items: Array<{ outcome: ItemOutcome }>;
   user: { id: string; name: string; pictureUrl: string | null };
 };
 

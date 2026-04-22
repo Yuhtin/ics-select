@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { resolveActiveMembership } from '../../common/cycle/active-cycle';
+import { type ItemOutcome, isPositiveOutcome } from '@ics-select/shared';
 
 type CohortEvent = {
   id: string;
@@ -38,7 +39,7 @@ export type CohortResponse = {
   ranking?: MemberRank[];
 };
 
-const POSITIVE = new Set(['DONE_EASY', 'DONE_HARD']);
+const POSITIVE = new Set<ItemOutcome>(['DONE_EASY', 'DONE_HARD', 'SKIPPED']);
 
 @Injectable()
 export class CohortService {
@@ -125,7 +126,7 @@ export class CohortService {
     for (const item of recentItems) {
       if (!item.completedAt) continue;
       let kind: CohortEvent['kind'] | null = null;
-      if (item.outcome === 'DONE_EASY' || item.outcome === 'DONE_HARD') kind = 'finished';
+      if (isPositiveOutcome(item.outcome as ItemOutcome)) kind = 'finished';
       else if (item.outcome === 'STUCK') kind = 'got_stuck';
       else if (item.outcome === 'DOUBTS') kind = 'had_doubts';
       if (!kind) continue;
