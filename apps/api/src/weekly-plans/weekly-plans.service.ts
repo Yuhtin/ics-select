@@ -26,8 +26,28 @@ export class WeeklyPlansService {
   ) {}
 
   async remove(id: string) {
-    const plan = await this.prisma.weeklyPlan.findUnique({ where: { id } });
+    const plan = await this.prisma.weeklyPlan.findUnique({
+      where: { id },
+      include: { items: true },
+    });
     if (!plan) throw new NotFoundException('plan not found');
+
+    if (plan.status === 'PUBLISHED') {
+      for (const item of plan.items) {
+        try {
+          const eventId = await this.calendar.findEventIdByIcsId(
+            plan.userId,
+            plan.id,
+            item.id,
+            { start: plan.weekStart, end: plan.weekEnd },
+          );
+          if (eventId) await this.calendar.deleteEvent(plan.userId, eventId);
+        } catch {
+          // swallow — per-item Calendar failures shouldn't block delete
+        }
+      }
+    }
+
     await this.prisma.weeklyPlan.delete({ where: { id } });
   }
 

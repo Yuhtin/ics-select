@@ -12,6 +12,7 @@ import {
   useDraftAiPlan,
   usePublishPlan,
   useAutoSchedulePlan,
+  useDeletePlan,
   type WeeklyPlan,
   type WeeklyPlanItem,
   type AiDraft,
@@ -132,6 +133,7 @@ export default function PlanEditorPage({
   const updatePlan = useUpdatePlan();
   const publishPlan = usePublishPlan();
   const autoSchedule = useAutoSchedulePlan();
+  const deletePlan = useDeletePlan();
 
   const fetchMissingLibraryItems = async (ids: string[]): Promise<void> => {
     const unique = Array.from(new Set(ids));
@@ -309,6 +311,24 @@ export default function PlanEditorPage({
     }
   }
 
+  async function handleDeletePlan() {
+    if (!plan) return;
+    const confirmed = window.confirm(
+      'Apagar este plano permanentemente? Essa ação não pode ser desfeita. Todos os eventos do Google Calendar também serão removidos.',
+    );
+    if (!confirmed) return;
+    try {
+      await deletePlan.mutateAsync(plan.id);
+      router.push(`/admin/member/${memberId}`);
+    } catch (err) {
+      addToast({
+        title: 'Delete failed',
+        description: err instanceof Error ? err.message : 'Unknown error',
+        color: 'danger',
+      });
+    }
+  }
+
   // ----- Render -----
 
   return (
@@ -326,6 +346,16 @@ export default function PlanEditorPage({
             <span className="font-mono text-xs text-ink-mute">
               {plan.status} · plan {plan.id.slice(0, 6)}
             </span>
+          )}
+          {plan && (
+            <button
+              type="button"
+              onClick={() => { void handleDeletePlan(); }}
+              disabled={deletePlan.isPending}
+              className="ml-auto inline-flex items-center gap-1.5 rounded-pill border border-outcome-stuck/40 px-3 py-1 font-mono text-[10px] uppercase tracking-label text-outcome-stuck hover:border-outcome-stuck hover:bg-outcome-stuck/5 disabled:opacity-50"
+            >
+              {deletePlan.isPending ? 'Deleting…' : 'Delete plan'}
+            </button>
           )}
         </header>
 

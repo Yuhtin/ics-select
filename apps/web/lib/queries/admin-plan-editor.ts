@@ -123,3 +123,16 @@ export function useAutoSchedulePlan() {
       ),
   });
 }
+
+export function useDeletePlan() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (planId: string) => {
+      await apiFetch<void>(`/plans/${planId}`, { method: 'DELETE' });
+    },
+    onSuccess: (_data, planId) => {
+      qc.removeQueries({ queryKey: ['plan', planId] });
+      qc.invalidateQueries({ queryKey: ['admin', 'plans-overview'] });
+    },
+  });
+}

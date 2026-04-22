@@ -174,6 +174,79 @@ describe('plan read — skippable flag', () => {
   });
 });
 
+describe('WeeklyPlansService.remove (deletePlan)', () => {
+  const calendar = { findEventIdByIcsId: jest.fn(), deleteEvent: jest.fn() };
+
+  beforeEach(() => {
+    calendar.findEventIdByIcsId.mockReset();
+    calendar.deleteEvent.mockReset();
+  });
+
+  it('deletes a DRAFT plan without calling Calendar', async () => {
+    const prisma: any = {
+      weeklyPlan: {
+        findUnique: jest.fn().mockResolvedValue({
+          id: 'p1', userId: 'u1', status: 'DRAFT',
+          weekStart: new Date(), weekEnd: new Date(),
+          items: [{ id: 'i1' }, { id: 'i2' }],
+        }),
+        delete: jest.fn().mockResolvedValue({}),
+      },
+    };
+    const service = new WeeklyPlansService(prisma, calendar as any);
+    await service.remove('p1');
+    expect(calendar.findEventIdByIcsId).not.toHaveBeenCalled();
+    expect(prisma.weeklyPlan.delete).toHaveBeenCalledWith({ where: { id: 'p1' } });
+  });
+
+  it('deletes a PUBLISHED plan and cleans up each item Calendar event', async () => {
+    const prisma: any = {
+      weeklyPlan: {
+        findUnique: jest.fn().mockResolvedValue({
+          id: 'p1', userId: 'u1', status: 'PUBLISHED',
+          weekStart: new Date('2026-04-20'), weekEnd: new Date('2026-04-27'),
+          items: [{ id: 'i1' }, { id: 'i2' }],
+        }),
+        delete: jest.fn().mockResolvedValue({}),
+      },
+    };
+    calendar.findEventIdByIcsId
+      .mockResolvedValueOnce('evt-1')
+      .mockResolvedValueOnce(null);
+    const service = new WeeklyPlansService(prisma, calendar as any);
+    await service.remove('p1');
+    expect(calendar.findEventIdByIcsId).toHaveBeenCalledTimes(2);
+    expect(calendar.deleteEvent).toHaveBeenCalledWith('u1', 'evt-1');
+    expect(calendar.deleteEvent).toHaveBeenCalledTimes(1);
+    expect(prisma.weeklyPlan.delete).toHaveBeenCalled();
+  });
+
+  it('throws NotFoundException when plan does not exist', async () => {
+    const prisma: any = {
+      weeklyPlan: { findUnique: jest.fn().mockResolvedValue(null) },
+    };
+    const service = new WeeklyPlansService(prisma, calendar as any);
+    await expect(service.remove('p1')).rejects.toThrow(/not found/i);
+  });
+
+  it('tolerates Calendar errors during cleanup', async () => {
+    const prisma: any = {
+      weeklyPlan: {
+        findUnique: jest.fn().mockResolvedValue({
+          id: 'p1', userId: 'u1', status: 'PUBLISHED',
+          weekStart: new Date(), weekEnd: new Date(),
+          items: [{ id: 'i1' }],
+        }),
+        delete: jest.fn().mockResolvedValue({}),
+      },
+    };
+    calendar.findEventIdByIcsId.mockRejectedValue(new Error('boom'));
+    const service = new WeeklyPlansService(prisma, calendar as any);
+    await expect(service.remove('p1')).resolves.toBeUndefined();
+    expect(prisma.weeklyPlan.delete).toHaveBeenCalled();
+  });
+});
+
 describe('SKIPPED counts as completed across weekly-plans helpers', () => {
   it('weekly-plans cohortProgress done-count includes SKIPPED', async () => {
     // Arrange: stub prisma so cohortProgress returns a plan with
