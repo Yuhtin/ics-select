@@ -10,6 +10,7 @@ interface OutcomePickerProps {
   disabled?: boolean;
   disabledReason?: string;
   className?: string;
+  showSkip?: boolean;
 }
 
 const OPTIONS: Array<{ outcome: ItemOutcome; label: string }> = [
@@ -26,6 +27,7 @@ export function OutcomePicker({
   disabled,
   disabledReason,
   className,
+  showSkip = false,
 }: OutcomePickerProps) {
   return (
     <div className={clsx('space-y-2', className)}>
@@ -52,6 +54,24 @@ export function OutcomePicker({
             </button>
           );
         })}
+        {showSkip && (
+          <button
+            type="button"
+            disabled={disabled}
+            onClick={() => onChange('SKIPPED')}
+            className={clsx(
+              'inline-flex items-center gap-2 rounded-pill border px-3 py-2 text-xs font-semibold transition-colors',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 focus-visible:ring-offset-paper',
+              value === 'SKIPPED'
+                ? 'bg-ink text-paper border-ink'
+                : 'bg-paper text-ink-soft border-rule hover:bg-paper-warm',
+              disabled && 'opacity-50 cursor-not-allowed hover:bg-paper',
+            )}
+          >
+            <OutcomeDot outcome="SKIPPED" size="sm" className={clsx(value === 'SKIPPED' && 'ring-paper')} />
+            <span>Already known</span>
+          </button>
+        )}
       </div>
       {disabled && disabledReason && (
         <p className="text-xs text-ink-mute">{disabledReason}</p>
