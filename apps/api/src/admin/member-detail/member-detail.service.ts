@@ -30,6 +30,7 @@ type Track =
   | 'OTHER';
 type PlanStatus = 'DRAFT' | 'PUBLISHED';
 type Role = 'ADMIN' | 'MEMBER';
+type AttendanceStatus = 'PRESENT' | 'ABSENT' | 'LATE';
 
 export type MemberDetailResponse = {
   member: {
@@ -49,6 +50,14 @@ export type MemberDetailResponse = {
     startsAt: string;
     endsAt: string;
   } | null;
+  memberships: Array<{
+    cycleId: string;
+    cycleName: string;
+    cycleStartsAt: string;
+    cycleEndsAt: string;
+    status: 'ACTIVE' | 'ARCHIVED';
+    isCurrent: boolean;
+  }>;
   topicCoverage: Array<{
     topicId: string;
     topicSlug: string;
@@ -80,6 +89,14 @@ export type MemberDetailResponse = {
     whatStuck: string | null;
     nextWeekWish: string | null;
     submittedAt: string;
+  }>;
+  attendance: Array<{
+    classId: string;
+    classTitle: string;
+    scheduledAt: string;
+    durationMin: number;
+    topic: string | null;
+    status: AttendanceStatus | null;
   }>;
   planWeeks: {
     current: PlanWeekSlot;
@@ -115,6 +132,28 @@ type MembershipRow = {
     endsAt: Date;
     status: 'ACTIVE' | 'ARCHIVED';
   };
+};
+
+type AllMembershipsRow = {
+  cycleId: string;
+  cycle: {
+    id: string;
+    name: string;
+    startsAt: Date;
+    endsAt: Date;
+    status: 'ACTIVE' | 'ARCHIVED';
+  };
+};
+
+type ClassSessionRow = {
+  id: string;
+  title: string;
+  scheduledAt: Date;
+  durationMin: number;
+  topic: string | null;
+  attendance: Array<{
+    status: AttendanceStatus;
+  }>;
 };
 
 type TimelinePlanItem = {
@@ -162,7 +201,11 @@ type CyclePlan = {
 export class MemberDetailService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getDetail(memberId: string, now: Date = new Date()): Promise<MemberDetailResponse> {
+  async getDetail(
+    memberId: string,
+    cycleIdParam: string | null = null,
+    now: Date = new Date(),
+  ): Promise<MemberDetailResponse> {
     const member = (await this.prisma.user.findUnique({
       where: { id: memberId },
       select: {
@@ -176,61 +219,87 @@ export class MemberDetailService {
     })) as MemberRow | null;
     if (!member) throw new NotFoundException('member not found');
 
-    const membership = (await resolveActiveMembership(
-      this.prisma,
-      memberId,
-      now,
-    )) as MembershipRow | null;
+    // Resolve the membership for the selected cycle (or active cycle).
+    let membership: MembershipRow | null;
+    if (cycleIdParam) {
+      const explicit = (await this.prisma.cycleMembership.findFirst({
+        where: { userId: memberId, cycleId: cycleIdParam },
+        include: { cycle: true },
+      })) as MembershipRow | null;
+      if (!explicit) throw new NotFoundException('member is not in that cycle');
+      membership = explicit;
+    } else {
+      membership = (await resolveActiveMembership(
+        this.prisma,
+        memberId,
+        now,
+      )) as MembershipRow | null;
+    }
 
-    const cycleId = membership?.cycleId ?? null;
+    const resolvedCycleId = membership?.cycleId ?? null;
 
-    const [timelinePlans, retros, topics, cyclePlans] = await Promise.all([
-      this.prisma.weeklyPlan.findMany({
-        where: { userId: memberId, status: 'PUBLISHED' },
-        orderBy: { weekStart: 'desc' },
-        take: 6,
-        include: {
-          items: {
-            include: {
-              libraryItem: {
-                select: {
-                  title: true,
-                  topics: {
-                    select: {
-                      isPrimary: true,
-                      topic: { select: { label: true } },
+    const [timelinePlans, retros, topics, cyclePlans, allMemberships, classes] =
+      await Promise.all([
+        this.prisma.weeklyPlan.findMany({
+          where: { userId: memberId, status: 'PUBLISHED' },
+          orderBy: { weekStart: 'desc' },
+          take: 6,
+          include: {
+            items: {
+              include: {
+                libraryItem: {
+                  select: {
+                    title: true,
+                    topics: {
+                      select: {
+                        isPrimary: true,
+                        topic: { select: { label: true } },
+                      },
                     },
                   },
                 },
               },
+              orderBy: { order: 'asc' },
             },
-            orderBy: { order: 'asc' },
           },
-        },
-      }) as Promise<TimelinePlan[]>,
-      this.prisma.weeklyRetro.findMany({
-        where: { userId: memberId },
-        orderBy: { submittedAt: 'desc' },
-        take: 8,
-      }) as Promise<RetroRow[]>,
-      this.prisma.topic.findMany({ orderBy: { order: 'asc' } }) as Promise<TopicRow[]>,
-      cycleId
-        ? (this.prisma.weeklyPlan.findMany({
-            where: { cycleId, userId: memberId },
-            include: {
-              items: {
-                include: {
-                  libraryItem: {
-                    select: {
-                      topics: { select: { topicId: true } },
+        }) as Promise<TimelinePlan[]>,
+        this.prisma.weeklyRetro.findMany({
+          where: { userId: memberId },
+          orderBy: { submittedAt: 'desc' },
+          take: 8,
+        }) as Promise<RetroRow[]>,
+        this.prisma.topic.findMany({ orderBy: { order: 'asc' } }) as Promise<TopicRow[]>,
+        resolvedCycleId
+          ? (this.prisma.weeklyPlan.findMany({
+              where: { cycleId: resolvedCycleId, userId: memberId },
+              include: {
+                items: {
+                  include: {
+                    libraryItem: {
+                      select: {
+                        topics: { select: { topicId: true } },
+                      },
                     },
                   },
                 },
               },
-            },
-          }) as Promise<CyclePlan[]>)
-        : Promise.resolve([] as CyclePlan[]),
-    ]);
+            }) as Promise<CyclePlan[]>)
+          : Promise.resolve([] as CyclePlan[]),
+        this.prisma.cycleMembership.findMany({
+          where: { userId: memberId },
+          include: { cycle: true },
+          orderBy: { cycle: { startsAt: 'desc' } },
+        }) as Promise<AllMembershipsRow[]>,
+        resolvedCycleId
+          ? (this.prisma.classSession.findMany({
+              where: { cycleId: resolvedCycleId },
+              orderBy: { scheduledAt: 'desc' },
+              include: {
+                attendance: { where: { userId: memberId }, take: 1 },
+              },
+            }) as Promise<ClassSessionRow[]>)
+          : Promise.resolve([] as ClassSessionRow[]),
+      ]);
 
     const cycle = membership
       ? this.buildCycle(membership.cycle, now)
@@ -257,6 +326,14 @@ export class MemberDetailService {
         role: member.role,
       },
       cycle,
+      memberships: allMemberships.map((m) => ({
+        cycleId: m.cycle.id,
+        cycleName: m.cycle.name,
+        cycleStartsAt: m.cycle.startsAt.toISOString(),
+        cycleEndsAt: m.cycle.endsAt.toISOString(),
+        status: m.cycle.status,
+        isCurrent: m.cycle.id === resolvedCycleId,
+      })),
       topicCoverage,
       timeline: timelinePlans.map((plan) => ({
         planId: plan.id,
@@ -282,6 +359,14 @@ export class MemberDetailService {
         whatStuck: r.whatStuck,
         nextWeekWish: r.nextWeekWish,
         submittedAt: r.submittedAt.toISOString(),
+      })),
+      attendance: classes.map((cls) => ({
+        classId: cls.id,
+        classTitle: cls.title,
+        scheduledAt: cls.scheduledAt.toISOString(),
+        durationMin: cls.durationMin,
+        topic: cls.topic,
+        status: cls.attendance[0]?.status ?? null,
       })),
       planWeeks,
     };

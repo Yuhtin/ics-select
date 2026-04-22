@@ -4,19 +4,24 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 
 type PrismaMock = {
   user: { findUnique: jest.Mock };
-  cycleMembership: { findFirst: jest.Mock };
+  cycleMembership: { findFirst: jest.Mock; findMany: jest.Mock };
   weeklyPlan: { findMany: jest.Mock };
   weeklyRetro: { findMany: jest.Mock };
   topic: { findMany: jest.Mock };
+  classSession: { findMany: jest.Mock };
 };
 
 function makePrisma(overrides: Partial<any> = {}): PrismaMock {
   const base: PrismaMock = {
     user: { findUnique: jest.fn(async () => null) },
-    cycleMembership: { findFirst: jest.fn(async () => null) },
+    cycleMembership: {
+      findFirst: jest.fn(async () => null),
+      findMany: jest.fn(async () => []),
+    },
     weeklyPlan: { findMany: jest.fn(async () => []) },
     weeklyRetro: { findMany: jest.fn(async () => []) },
     topic: { findMany: jest.fn(async () => []) },
+    classSession: { findMany: jest.fn(async () => []) },
   };
   for (const key of Object.keys(overrides) as (keyof PrismaMock)[]) {
     base[key] = { ...base[key], ...(overrides[key] as any) };
@@ -59,8 +64,8 @@ describe('MemberDetailService', () => {
   it('throws NotFoundException when user not found', async () => {
     const prisma = makePrisma();
     const service = makeService(prisma);
-    await expect(service.getDetail('missing', NOW)).rejects.toBeInstanceOf(NotFoundException);
-    await expect(service.getDetail('missing', NOW)).rejects.toThrow('member not found');
+    await expect(service.getDetail('missing', null, NOW)).rejects.toBeInstanceOf(NotFoundException);
+    await expect(service.getDetail('missing', null, NOW)).rejects.toThrow('member not found');
   });
 
   it('returns cycle = null and empty topicCoverage when no active-cycle membership', async () => {
@@ -69,7 +74,7 @@ describe('MemberDetailService', () => {
       cycleMembership: { findFirst: jest.fn(async () => null) },
     });
     const service = makeService(prisma);
-    const result = await service.getDetail('user-a', NOW);
+    const result = await service.getDetail('user-a', null, NOW);
     expect(result.cycle).toBeNull();
     expect(result.topicCoverage).toEqual([]);
     // Other basics still populated.
@@ -90,7 +95,7 @@ describe('MemberDetailService', () => {
       cycleMembership: { findFirst: jest.fn(async () => defaultMembership) },
     });
     const service = makeService(prisma);
-    const result = await service.getDetail('user-a', NOW);
+    const result = await service.getDetail('user-a', null, NOW);
     expect(result.member.track).toBe('BIG_TECH');
     expect(result.cycle).not.toBeNull();
     expect(result.cycle!.id).toBe('cycle-1');
@@ -162,7 +167,7 @@ describe('MemberDetailService', () => {
       weeklyPlan: { findMany: jest.fn(async () => plans) },
     });
     const service = makeService(prisma);
-    const result = await service.getDetail('user-a', NOW);
+    const result = await service.getDetail('user-a', null, NOW);
 
     expect(result.timeline).toHaveLength(2);
     expect(result.timeline[0]!.planId).toBe('plan-new');
@@ -212,7 +217,7 @@ describe('MemberDetailService', () => {
       weeklyRetro: { findMany: jest.fn(async () => retros) },
     });
     const service = makeService(prisma);
-    const result = await service.getDetail('user-a', NOW);
+    const result = await service.getDetail('user-a', null, NOW);
 
     expect(result.retros).toHaveLength(8);
     expect(result.retros[0]!.id).toBe('retro-0');
@@ -261,7 +266,7 @@ describe('MemberDetailService', () => {
       topic: { findMany: jest.fn(async () => [topicA, topicB]) },
     });
     const service = makeService(prisma);
-    const result = await service.getDetail('user-a', NOW);
+    const result = await service.getDetail('user-a', null, NOW);
 
     expect(result.topicCoverage).toHaveLength(2);
     const arrays = result.topicCoverage.find((t) => t.topicId === 'topic-a')!;
@@ -276,5 +281,122 @@ describe('MemberDetailService', () => {
     expect(dp.itemsPlanned).toBe(0);
     expect(dp.itemsDone).toBe(0);
     expect(dp.coveragePct).toBe(0);
+  });
+
+  it('getDetail with explicit cycleId loads that specific cycle data (not active cycle)', async () => {
+    const archivedCycle = {
+      id: 'cycle-archived',
+      name: '2025.2',
+      startsAt: new Date('2025-10-01T00:00:00Z'),
+      endsAt: new Date('2025-12-31T00:00:00Z'),
+      status: 'ARCHIVED' as const,
+    };
+    const archivedMembership = {
+      userId: 'user-a',
+      cycleId: 'cycle-archived',
+      track: 'STARTUP' as const,
+      cycle: archivedCycle,
+    };
+
+    // cycleMembership.findFirst is called with the explicit cycleId lookup
+    const findFirst = jest.fn(async (args: any) => {
+      if (args?.where?.cycleId === 'cycle-archived') return archivedMembership;
+      return null;
+    });
+
+    const prisma = makePrisma({
+      user: { findUnique: jest.fn(async () => defaultMember) },
+      cycleMembership: { findFirst, findMany: jest.fn(async () => [archivedMembership]) },
+    });
+    const service = makeService(prisma);
+    const result = await service.getDetail('user-a', 'cycle-archived', NOW);
+
+    expect(result.cycle).not.toBeNull();
+    expect(result.cycle!.id).toBe('cycle-archived');
+    expect(result.cycle!.name).toBe('2025.2');
+    expect(result.member.track).toBe('STARTUP');
+
+    // findFirst called with the explicit cycleId where clause
+    expect(findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ userId: 'user-a', cycleId: 'cycle-archived' }),
+      }),
+    );
+  });
+
+  it('throws NotFoundException when explicit cycleId is not a membership of this user', async () => {
+    const prisma = makePrisma({
+      user: { findUnique: jest.fn(async () => defaultMember) },
+      cycleMembership: { findFirst: jest.fn(async () => null), findMany: jest.fn(async () => []) },
+    });
+    const service = makeService(prisma);
+    await expect(
+      service.getDetail('user-a', 'cycle-nonexistent', NOW),
+    ).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('response includes memberships and attendance arrays', async () => {
+    const classRows = [
+      {
+        id: 'class-1',
+        title: 'Arrays & Hashing',
+        scheduledAt: new Date('2026-04-10T18:00:00Z'),
+        durationMin: 90,
+        topic: 'Arrays',
+        attendance: [{ status: 'PRESENT' as const }],
+      },
+      {
+        id: 'class-2',
+        title: 'Two Pointers',
+        scheduledAt: new Date('2026-04-03T18:00:00Z'),
+        durationMin: 90,
+        topic: null,
+        attendance: [],
+      },
+    ];
+
+    const allMemberships = [
+      {
+        cycleId: 'cycle-1',
+        cycle: {
+          ...defaultCycle,
+          id: 'cycle-1',
+        },
+      },
+    ];
+
+    const prisma = makePrisma({
+      user: { findUnique: jest.fn(async () => defaultMember) },
+      cycleMembership: {
+        findFirst: jest.fn(async () => defaultMembership),
+        findMany: jest.fn(async () => allMemberships),
+      },
+      classSession: { findMany: jest.fn(async () => classRows) },
+    });
+    const service = makeService(prisma);
+    const result = await service.getDetail('user-a', null, NOW);
+
+    // memberships
+    expect(result.memberships).toHaveLength(1);
+    expect(result.memberships[0]!.cycleId).toBe('cycle-1');
+    expect(result.memberships[0]!.cycleName).toBe('2026.1');
+    expect(result.memberships[0]!.isCurrent).toBe(true);
+    expect(result.memberships[0]!.status).toBe('ACTIVE');
+
+    // attendance
+    expect(result.attendance).toHaveLength(2);
+
+    const first = result.attendance[0]!;
+    expect(first.classId).toBe('class-1');
+    expect(first.classTitle).toBe('Arrays & Hashing');
+    expect(first.topic).toBe('Arrays');
+    expect(first.status).toBe('PRESENT');
+    expect(first.scheduledAt).toBe('2026-04-10T18:00:00.000Z');
+    expect(first.durationMin).toBe(90);
+
+    const second = result.attendance[1]!;
+    expect(second.classId).toBe('class-2');
+    expect(second.status).toBeNull();
+    expect(second.topic).toBeNull();
   });
 });

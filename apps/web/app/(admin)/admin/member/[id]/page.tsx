@@ -9,11 +9,12 @@ import { TimelineTab } from '../../../../../components/admin/member-detail/timel
 import { RetrosTab } from '../../../../../components/admin/member-detail/retros-tab';
 import { DiagnoseTab } from '../../../../../components/admin/member-detail/diagnose-tab';
 import { NotesTab } from '../../../../../components/admin/member-detail/notes-tab';
+import { AttendanceTab } from '../../../../../components/admin/member-detail/attendance-tab';
 import { PlanWeekModal } from '../../../../../components/admin/member-detail/plan-week-modal';
 import { Eyebrow } from '../../../../../components/ui/eyebrow';
 import { clsx } from 'clsx';
 
-type Tab = 'timeline' | 'retros' | 'diagnose' | 'notes';
+type Tab = 'timeline' | 'retros' | 'diagnose' | 'notes' | 'attendance';
 
 const TRACK_LABEL: Record<string, string> = {
   BIG_TECH: 'Big Tech',
@@ -36,10 +37,21 @@ function Initials({ name, pictureUrl, size = 48 }: { name: string; pictureUrl: s
   );
 }
 
+function formatCycleRange(startsAt: string, endsAt: string): string {
+  const fmt = (iso: string) =>
+    new Date(iso).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      timeZone: 'UTC',
+    });
+  return `${fmt(startsAt)} → ${fmt(endsAt)}`;
+}
+
 export default function AdminMemberPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: memberId } = use(params);
   const router = useRouter();
-  const { data, isLoading, error } = useAdminMember(memberId);
+  const [selectedCycleId, setSelectedCycleId] = useState<string | null>(null);
+  const { data, isLoading, error } = useAdminMember(memberId, selectedCycleId);
   const [tab, setTab] = useState<Tab>('timeline');
   const [planWeekOpen, setPlanWeekOpen] = useState(false);
 
@@ -65,8 +77,12 @@ export default function AdminMemberPage({ params }: { params: Promise<{ id: stri
     );
   }
 
-  const { member, cycle, topicCoverage } = data;
+  const { member, cycle, topicCoverage, memberships, attendance } = data;
   const waLink = member.whatsappPhone ? `https://wa.me/${member.whatsappPhone.replace(/[^0-9]/g, '')}` : null;
+
+  // Determine the currently-viewed cycle for display in the meta line.
+  const currentMembership = memberships.find((m) => m.isCurrent) ?? null;
+  const isArchivedView = currentMembership?.status === 'ARCHIVED';
 
   return (
     <div className="max-w-5xl space-y-10">
@@ -83,9 +99,30 @@ export default function AdminMemberPage({ params }: { params: Promise<{ id: stri
           <h1 className="mt-1 font-serif-tool text-3xl font-semibold tracking-tight text-ink">{member.name}</h1>
           <p className="mt-1 font-mono text-xs text-ink-mute">
             {member.track ? TRACK_LABEL[member.track] ?? member.track : 'No track'}
-            {cycle && (<> · {cycle.name} · week {cycle.weekNumber} of {cycle.weeksTotal}</>)}
+            {cycle && !isArchivedView && (
+              <> · {cycle.name} · week {cycle.weekNumber} of {cycle.weeksTotal}</>
+            )}
+            {cycle && isArchivedView && (
+              <> · {cycle.name} · ARCHIVED · {cycle.weeksTotal} weeks</>
+            )}
             {' · '}{member.email}
           </p>
+          {memberships.length > 1 && (
+            <div className="mt-2">
+              <select
+                value={selectedCycleId ?? (currentMembership?.cycleId ?? '')}
+                onChange={(e) => setSelectedCycleId(e.target.value || null)}
+                className="font-mono text-xs text-ink bg-paper border border-rule rounded-md px-2 py-1 focus:outline-none focus:border-ink-soft"
+                aria-label="Select cycle"
+              >
+                {memberships.map((m) => (
+                  <option key={m.cycleId} value={m.cycleId}>
+                    {m.cycleName} ({formatCycleRange(m.cycleStartsAt, m.cycleEndsAt)}){m.status === 'ARCHIVED' ? ' · archived' : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <button
@@ -137,7 +174,7 @@ export default function AdminMemberPage({ params }: { params: Promise<{ id: stri
       </section>
 
       <nav className="border-b border-rule flex gap-6">
-        {(['timeline', 'retros', 'diagnose', 'notes'] as Tab[]).map((t) => (
+        {(['timeline', 'retros', 'diagnose', 'notes', 'attendance'] as Tab[]).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -158,6 +195,7 @@ export default function AdminMemberPage({ params }: { params: Promise<{ id: stri
         {tab === 'retros' && <RetrosTab retros={data.retros} />}
         {tab === 'diagnose' && <DiagnoseTab memberId={memberId} />}
         {tab === 'notes' && <NotesTab memberId={memberId} />}
+        {tab === 'attendance' && <AttendanceTab attendance={attendance} />}
       </div>
 
       <PlanWeekModal

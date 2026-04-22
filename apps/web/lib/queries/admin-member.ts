@@ -26,6 +26,14 @@ export type MemberDetailResponse = {
     startsAt: string;
     endsAt: string;
   } | null;
+  memberships: Array<{
+    cycleId: string;
+    cycleName: string;
+    cycleStartsAt: string;
+    cycleEndsAt: string;
+    status: 'ACTIVE' | 'ARCHIVED';
+    isCurrent: boolean;
+  }>;
   topicCoverage: Array<{
     topicId: string;
     topicSlug: string;
@@ -58,6 +66,14 @@ export type MemberDetailResponse = {
     nextWeekWish: string | null;
     submittedAt: string;
   }>;
+  attendance: Array<{
+    classId: string;
+    classTitle: string;
+    scheduledAt: string;
+    durationMin: number;
+    topic: string | null;
+    status: 'PRESENT' | 'ABSENT' | 'LATE' | null;
+  }>;
   planWeeks: {
     current: PlanWeekSlot;
     next: PlanWeekSlot;
@@ -72,10 +88,13 @@ export type PlanWeekSlot = {
   status: 'DRAFT' | 'PUBLISHED' | null;
 };
 
-export function useAdminMember(memberId: string) {
+export function useAdminMember(memberId: string, cycleId?: string | null) {
+  const url = cycleId
+    ? `/admin/member/${memberId}?cycleId=${encodeURIComponent(cycleId)}`
+    : `/admin/member/${memberId}`;
   return useQuery({
-    queryKey: ['admin', 'member', memberId],
-    queryFn: () => apiFetch<MemberDetailResponse>(`/admin/member/${memberId}`),
+    queryKey: ['admin', 'member', memberId, cycleId ?? null],
+    queryFn: () => apiFetch<MemberDetailResponse>(url),
   });
 }
 
