@@ -235,6 +235,60 @@ describe('PublicationService.autoSchedule', () => {
     expect(input.busyByDay[6]).toEqual([]);
   });
 
+  it('skips scheduling and Calendar creation for items with outcome SKIPPED', async () => {
+    const prisma = fakePrisma();
+    prisma.plans.set('p-1', {
+      id: 'p-1',
+      userId: 'u-1',
+      cycleId: 'c-1',
+      weekStart: new Date('2026-04-13T00:00:00-03:00'),
+      weekEnd: new Date('2026-04-20T00:00:00-03:00'),
+      status: 'PUBLISHED',
+      items: [
+        {
+          id: 'wpi-pending',
+          libraryItemId: 'li-1',
+          order: 0,
+          outcome: 'PENDING',
+          libraryItem: { title: 'A', estimatedMinutes: 60, url: 'https://example.com/a' },
+        },
+        {
+          id: 'wpi-skipped',
+          libraryItemId: 'li-2',
+          order: 1,
+          outcome: 'SKIPPED',
+          libraryItem: { title: 'B', estimatedMinutes: 60, url: 'https://example.com/b' },
+        },
+      ],
+    });
+    scheduler.plan.mockReturnValue({
+      sessions: [
+        { itemId: 'wpi-pending', scheduledAt: new Date('2026-04-13T11:00:00Z'), durationMinutes: 60 },
+      ],
+      overflow: [],
+    });
+    const svc = new PublicationService(prisma as any, scheduler as any, calendar as any);
+    await svc.autoSchedule('p-1', false);
+
+    // Scheduler must only receive the PENDING item — not the SKIPPED one
+    expect(scheduler.plan).toHaveBeenCalledTimes(1);
+    const input = scheduler.plan.mock.calls[0]![0] as any;
+    expect(input.items).toHaveLength(1);
+    expect(input.items[0].id).toBe('wpi-pending');
+    expect(input.items.find((i: any) => i.id === 'wpi-skipped')).toBeUndefined();
+
+    // createEvent must never be called for the SKIPPED item
+    expect(calendar.createEvent).not.toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ icsId: expect.objectContaining({ itemId: 'wpi-skipped' }) }),
+    );
+    // createEvent IS called for the PENDING item
+    expect(calendar.createEvent).toHaveBeenCalledWith(
+      'u-1',
+      expect.objectContaining({ icsId: { planId: 'p-1', itemId: 'wpi-pending' } }),
+    );
+  });
+
   it('swallows getFreeBusy errors and treats week as empty', async () => {
     const prisma = fakePrisma();
     prisma.plans.set('p-1', {

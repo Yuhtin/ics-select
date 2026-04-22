@@ -84,11 +84,13 @@ export class PublicationService {
       busyByDay[dayIdx]!.push({ startMinute: 0, endMinute: durationMinutes });
     }
 
+    const schedulableItems = plan.items.filter((i) => i.outcome !== 'SKIPPED');
+
     const input: SchedulerInput = {
       weekStart: plan.weekStart,
       availability,
       busyByDay,
-      items: plan.items.map((i) => ({
+      items: schedulableItems.map((i) => ({
         id: i.id,
         estimatedMinutes: i.libraryItem.estimatedMinutes,
       })),
