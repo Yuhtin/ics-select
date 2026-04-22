@@ -48,17 +48,18 @@ function relative(iso: string, now: Date = new Date()): string {
 }
 
 interface CohortFeedProps {
-  feed: CohortEvent[];
+  feed: CohortEvent[] | undefined;
   className?: string;
 }
 
 export function CohortFeed({ feed, className }: CohortFeedProps) {
-  if (feed.length === 0) {
+  const events = feed ?? [];
+  if (events.length === 0) {
     return <p className={clsx('font-sans text-sm text-ink-mute', className)}>No activity in the last 7 days.</p>;
   }
   return (
     <ul className={clsx('divide-y divide-rule', className)}>
-      {feed.map((event) => (
+      {events.map((event) => (
         <li key={event.id} className="flex items-start gap-3 py-3">
           <Avatar name={event.member.name} pictureUrl={event.member.pictureUrl} />
           <div className="min-w-0 flex-1">
