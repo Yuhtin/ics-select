@@ -1,10 +1,12 @@
-type Platform =
+export type PlatformKey =
   | 'leetcode'
   | 'youtube'
   | 'medium'
   | 'github'
   | 'article'
   | 'book';
+
+type Platform = PlatformKey;
 
 export function detectPlatform(url: string | null | undefined, format: string | undefined): Platform {
   if (url) {

@@ -2,6 +2,8 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import { ArrowLeft, ExternalLink } from 'lucide-react';
+import clsx from 'clsx';
 import type { ItemResponse } from '../../lib/queries/me-item';
 import { useSetItemOutcome } from '../../lib/queries/me-item';
 import type { ItemOutcome } from '@ics-select/shared';
@@ -11,7 +13,16 @@ import { Button } from '../ui/button';
 import { OutcomePicker } from '../ui/outcome-picker';
 import { OutcomeDot } from '../ui/outcome-dot';
 import { formatTimeUtc, formatDateShort } from '../../lib/format/time';
-import { platformLabel, detectPlatform } from '../../lib/format/platform';
+import { platformLabel, detectPlatform, type PlatformKey } from '../../lib/format/platform';
+
+const PLATFORM_STRIPE: Record<PlatformKey, string> = {
+  leetcode: 'bg-platform-leetcode',
+  youtube: 'bg-platform-youtube',
+  medium: 'bg-platform-medium',
+  github: 'bg-platform-github',
+  article: 'bg-platform-article',
+  book: 'bg-platform-book',
+};
 
 interface ItemFocusProps {
   item: ItemResponse;
@@ -26,9 +37,6 @@ export function ItemFocus({ item }: ItemFocusProps) {
   const mutation = useSetItemOutcome();
 
   const now = new Date();
-  const scheduledFuture =
-    item.scheduledAt !== null && new Date(item.scheduledAt) > now && item.outcome === 'PENDING';
-
   const platform = detectPlatform(item.libraryItem.url, item.libraryItem.format);
 
   const isRunningLate =
@@ -65,20 +73,40 @@ export function ItemFocus({ item }: ItemFocusProps) {
     <div className="max-w-3xl space-y-8">
       <Link
         href="/me"
-        className="font-mono text-xs uppercase tracking-label text-ink-mute hover:text-ink"
+        className="inline-flex items-center gap-1.5 font-mono text-xs uppercase tracking-label text-ink-mute hover:text-ink"
       >
-        ← Back
+        <ArrowLeft className="h-3.5 w-3.5" strokeWidth={1.5} /> Back
       </Link>
 
-      <header className={isRunningLate ? 'border-l-4 border-outcome-stuck pl-5 md:pl-6' : ''}>
+      <header
+        className={clsx(
+          'relative pl-4 md:pl-5',
+          isRunningLate && 'border-l-[3px] border-outcome-stuck',
+        )}
+      >
+        {!isRunningLate && (
+          <span
+            aria-hidden
+            className={clsx(
+              'absolute left-0 top-1 bottom-1 w-[3px] rounded-[2px]',
+              PLATFORM_STRIPE[platform],
+            )}
+          />
+        )}
         <Eyebrow className={eyebrowClass}>{eyebrowText}</Eyebrow>
-        <h1 className="mt-3 font-serif text-[40px] font-medium leading-[1.05] tracking-tight">
+        <h1 className="mt-3 font-serif text-[40px] font-medium leading-[1.05] tracking-tight md:text-[48px]">
           {item.libraryItem.title}
         </h1>
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <Pill>{platformLabel(platform)}</Pill>
-          <span className="font-mono text-xs text-ink-mute">{item.libraryItem.estimatedMinutes} MIN</span>
-          {item.libraryItem.topic && <Pill variant="soft">{item.libraryItem.topic.label}</Pill>}
+        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 font-mono text-xs text-ink-mute">
+          <span className="uppercase tracking-label text-ink-soft">{platformLabel(platform)}</span>
+          <span aria-hidden>·</span>
+          <span>{item.libraryItem.estimatedMinutes} min</span>
+          {item.libraryItem.topic && (
+            <>
+              <span aria-hidden>·</span>
+              <span className="uppercase tracking-label">{item.libraryItem.topic.label}</span>
+            </>
+          )}
         </div>
       </header>
 
@@ -87,9 +115,10 @@ export function ItemFocus({ item }: ItemFocusProps) {
           href={item.libraryItem.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex h-12 w-full items-center justify-center rounded-pill bg-ink px-6 text-sm font-semibold text-paper hover:bg-ink-soft md:w-auto"
+          className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-pill bg-ink px-6 text-sm font-semibold text-paper hover:bg-ink-soft md:w-auto"
         >
-          Open on {platformLabel(platform)} ↗
+          Open on {platformLabel(platform)}
+          <ExternalLink className="h-4 w-4" strokeWidth={1.75} />
         </a>
       )}
 
@@ -123,12 +152,6 @@ export function ItemFocus({ item }: ItemFocusProps) {
             <OutcomePicker
               value={outcome}
               onChange={setOutcome}
-              disabled={scheduledFuture}
-              disabledReason={
-                scheduledFuture
-                  ? `Available at ${formatTimeUtc(item.scheduledAt)} · don't mark before you start.`
-                  : undefined
-              }
               showSkip={item.skippable && item.outcome === 'PENDING'}
             />
             {outcome && outcome !== 'PENDING' && outcome !== 'SKIPPED' && (
@@ -145,18 +168,6 @@ export function ItemFocus({ item }: ItemFocusProps) {
             >
               {mutation.isPending ? 'Saving…' : 'Save outcome'}
             </Button>
-            {item.skippable && item.outcome === 'PENDING' && (
-              <button
-                type="button"
-                onClick={async () => {
-                  if (!confirm('Marcar como já sabido? Você pode desfazer depois.')) return;
-                  await applyOutcome('SKIPPED');
-                }}
-                className="text-sm text-ink-mute underline-offset-4 hover:underline"
-              >
-                I already know this
-              </button>
-            )}
           </div>
         ) : item.outcome === 'SKIPPED' ? (
           <div className="mt-3 flex items-center gap-2 text-ink-mute">

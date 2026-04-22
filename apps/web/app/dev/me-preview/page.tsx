@@ -2,6 +2,8 @@
 
 import type { ItemOutcome } from '@ics-select/shared';
 import { useState } from 'react';
+import clsx from 'clsx';
+import { ExternalLink } from 'lucide-react';
 import type { HomeResponse, HomeItem } from '../../../lib/queries/me-home';
 import type { ItemResponse } from '../../../lib/queries/me-item';
 import { HomeHero } from '../../../components/member/home-hero';
@@ -11,9 +13,17 @@ import { Eyebrow } from '../../../components/ui/eyebrow';
 import { SectionLabel } from '../../../components/ui/section-label';
 import { OutcomePicker } from '../../../components/ui/outcome-picker';
 import { Button } from '../../../components/ui/button';
-import { Pill } from '../../../components/ui/pill';
 import { formatTimeUtc } from '../../../lib/format/time';
-import { detectPlatform, platformLabel } from '../../../lib/format/platform';
+import { detectPlatform, platformLabel, type PlatformKey } from '../../../lib/format/platform';
+
+const PLATFORM_STRIPE_DEV: Record<PlatformKey, string> = {
+  leetcode: 'bg-platform-leetcode',
+  youtube: 'bg-platform-youtube',
+  medium: 'bg-platform-medium',
+  github: 'bg-platform-github',
+  article: 'bg-platform-article',
+  book: 'bg-platform-book',
+};
 
 // Fake "now" so scheduledAt comparisons produce the intended intents.
 const NOW = new Date('2026-04-17T19:00:00Z');
@@ -223,15 +233,35 @@ function ItemFocusReadonly({ item, outcomeMode }: { item: ItemResponse; outcomeM
 
   return (
     <div className="max-w-3xl space-y-8">
-      <header className={isRunningLate ? 'border-l-4 border-outcome-stuck pl-5 md:pl-6' : ''}>
+      <header
+        className={clsx(
+          'relative pl-4 md:pl-5',
+          isRunningLate && 'border-l-[3px] border-outcome-stuck',
+        )}
+      >
+        {!isRunningLate && (
+          <span
+            aria-hidden
+            className={clsx(
+              'absolute left-0 top-1 bottom-1 w-[3px] rounded-[2px]',
+              PLATFORM_STRIPE_DEV[platform],
+            )}
+          />
+        )}
         <Eyebrow className={eyebrowClass}>{eyebrowText}</Eyebrow>
-        <h1 className="mt-3 font-serif text-[40px] font-medium leading-[1.05] tracking-tight">
+        <h1 className="mt-3 font-serif text-[40px] font-medium leading-[1.05] tracking-tight md:text-[48px]">
           {item.libraryItem.title}
         </h1>
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <Pill>{platformLabel(platform)}</Pill>
-          <span className="font-mono text-xs text-ink-mute">{item.libraryItem.estimatedMinutes} MIN</span>
-          {item.libraryItem.topic && <Pill variant="soft">{item.libraryItem.topic.label}</Pill>}
+        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 font-mono text-xs text-ink-mute">
+          <span className="uppercase tracking-label text-ink-soft">{platformLabel(platform)}</span>
+          <span aria-hidden>·</span>
+          <span>{item.libraryItem.estimatedMinutes} min</span>
+          {item.libraryItem.topic && (
+            <>
+              <span aria-hidden>·</span>
+              <span className="uppercase tracking-label">{item.libraryItem.topic.label}</span>
+            </>
+          )}
         </div>
       </header>
 
@@ -240,9 +270,10 @@ function ItemFocusReadonly({ item, outcomeMode }: { item: ItemResponse; outcomeM
           href={item.libraryItem.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex h-12 w-full items-center justify-center rounded-pill bg-ink px-6 text-sm font-semibold text-paper hover:bg-ink-soft md:w-auto"
+          className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-pill bg-ink px-6 text-sm font-semibold text-paper hover:bg-ink-soft md:w-auto"
         >
-          Open on {platformLabel(platform)} ↗
+          Open on {platformLabel(platform)}
+          <ExternalLink className="h-4 w-4" strokeWidth={1.75} />
         </a>
       )}
 
