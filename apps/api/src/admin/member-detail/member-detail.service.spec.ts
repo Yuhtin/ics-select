@@ -245,10 +245,12 @@ describe('MemberDetailService', () => {
       },
     ];
 
-    // weeklyPlan.findMany is called twice: once for timeline (PUBLISHED) and once
-    // for coverage (active cycle). Return plans only for the coverage query.
+    // weeklyPlan.findMany is called thrice: timeline (PUBLISHED), coverage
+    // (active cycle, no status filter), and planWeeks lookup (weekStart: { in }).
+    // Return plans only for the coverage query.
     const findMany = jest.fn(async (args: any) => {
       if (args?.where?.status === 'PUBLISHED') return [];
+      if (args?.where?.weekStart?.in) return [];
       return cyclePlans;
     });
 

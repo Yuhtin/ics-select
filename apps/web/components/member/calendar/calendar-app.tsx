@@ -12,7 +12,7 @@ import '@schedule-x/theme-default/dist/index.css';
 import 'temporal-polyfill/global';
 
 import type { CalendarEvent } from '../../../lib/queries/me-calendar';
-import { isoToSxLocal } from '../../../lib/calendar/sx-time';
+import { isoToZonedDateTime } from '../../../lib/calendar/sx-time';
 import { EventCardIcs } from './event-card-ics';
 import { EventCardExternal } from './event-card-external';
 
@@ -74,11 +74,8 @@ export function CalendarApp({
         .map((e) => ({
           id: e.id,
           title: e.title,
-          // Schedule-X accepts 'YYYY-MM-DD HH:mm' strings at runtime even though
-          // the TS types declare Temporal.ZonedDateTime | Temporal.PlainDate.
-          // We cast here; the library coerces these strings internally.
-          start: isoToSxLocal(e.start, timezone) as unknown as Temporal.ZonedDateTime,
-          end: isoToSxLocal(e.end, timezone) as unknown as Temporal.ZonedDateTime,
+          start: isoToZonedDateTime(e.start, timezone),
+          end: isoToZonedDateTime(e.end, timezone),
           calendarId: (e.kind === 'ICS' ? 'ics' : 'external') as 'ics' | 'external',
           _ics: e,
         })),

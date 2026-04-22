@@ -1,13 +1,15 @@
 'use client';
 import { use, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, MessageCircle } from 'lucide-react';
-import { useAdminMember } from '../../../../../lib/queries/admin-member';
+import { useRouter } from 'next/navigation';
+import { ArrowLeft, ChevronDown, MessageCircle } from 'lucide-react';
+import { useAdminMember, type PlanWeekSlot } from '../../../../../lib/queries/admin-member';
 import { TopicCoverageMatrix } from '../../../../../components/admin/member-detail/topic-coverage-matrix';
 import { TimelineTab } from '../../../../../components/admin/member-detail/timeline-tab';
 import { RetrosTab } from '../../../../../components/admin/member-detail/retros-tab';
 import { DiagnoseTab } from '../../../../../components/admin/member-detail/diagnose-tab';
 import { NotesTab } from '../../../../../components/admin/member-detail/notes-tab';
+import { PlanWeekModal } from '../../../../../components/admin/member-detail/plan-week-modal';
 import { Eyebrow } from '../../../../../components/ui/eyebrow';
 import { clsx } from 'clsx';
 
@@ -36,8 +38,20 @@ function Initials({ name, pictureUrl, size = 48 }: { name: string; pictureUrl: s
 
 export default function AdminMemberPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: memberId } = use(params);
+  const router = useRouter();
   const { data, isLoading, error } = useAdminMember(memberId);
   const [tab, setTab] = useState<Tab>('timeline');
+  const [planWeekOpen, setPlanWeekOpen] = useState(false);
+
+  function handlePickWeek(slot: PlanWeekSlot) {
+    setPlanWeekOpen(false);
+    if (slot.planId) {
+      router.push(`/admin/member/${memberId}/plan/${slot.planId}`);
+    } else {
+      const isoDate = slot.weekStart.slice(0, 10);
+      router.push(`/admin/member/${memberId}/plan/new?weekStart=${isoDate}`);
+    }
+  }
 
   if (isLoading) return <p className="font-mono text-xs uppercase tracking-label text-ink-mute">Loading…</p>;
   if (error || !data) {
@@ -74,12 +88,14 @@ export default function AdminMemberPage({ params }: { params: Promise<{ id: stri
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <Link
-            href={`/admin/member/${memberId}/plan/new`}
+          <button
+            type="button"
+            onClick={() => setPlanWeekOpen(true)}
             className="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-label px-4 py-2 bg-ink text-paper rounded-pill hover:opacity-90"
           >
-            Plan next week →
-          </Link>
+            Plan week
+            <ChevronDown className="h-3.5 w-3.5" strokeWidth={1.5} />
+          </button>
           {waLink ? (
             <a
               href={waLink}
@@ -143,6 +159,14 @@ export default function AdminMemberPage({ params }: { params: Promise<{ id: stri
         {tab === 'diagnose' && <DiagnoseTab memberId={memberId} />}
         {tab === 'notes' && <NotesTab memberId={memberId} />}
       </div>
+
+      <PlanWeekModal
+        isOpen={planWeekOpen}
+        onClose={() => setPlanWeekOpen(false)}
+        current={data.planWeeks.current}
+        next={data.planWeeks.next}
+        onPick={handlePickWeek}
+      />
     </div>
   );
 }

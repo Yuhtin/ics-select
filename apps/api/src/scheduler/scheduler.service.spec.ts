@@ -1,6 +1,8 @@
 import { SchedulerService, type SchedulerInput } from './scheduler.service';
 
 const MONDAY = new Date('2026-04-13T00:00:00-03:00');
+// Pin `now` to just before the week starts so all 7 days are future.
+const BEFORE_WEEK = new Date('2026-04-12T12:00:00-03:00');
 
 function input(overrides: Partial<SchedulerInput> = {}): SchedulerInput {
   return {
@@ -20,6 +22,7 @@ function input(overrides: Partial<SchedulerInput> = {}): SchedulerInput {
       0: [], 1: [], 2: [], 3: [], 4: [], 5: [], 6: [],
     },
     items: [],
+    now: BEFORE_WEEK,
     ...overrides,
   };
 }
@@ -98,6 +101,43 @@ describe('SchedulerService.plan', () => {
     expect(result.sessions.length).toBe(5);
     expect(result.overflow.length).toBeGreaterThan(0);
     expect(result.overflow[0]?.itemId).toBe('i6');
+  });
+
+  it('skips days that have already ended (now-aware)', () => {
+    // Week starts Monday 2026-04-13 (BRT). Set now to Wednesday 2026-04-15 10:00 BRT.
+    // Monday and Tuesday should be fully skipped.
+    const wednesday10 = new Date('2026-04-15T10:00:00-03:00');
+    const result = svc.plan(
+      input({
+        items: [
+          { id: 'i1', estimatedMinutes: 60 },
+          { id: 'i2', estimatedMinutes: 60 },
+          { id: 'i3', estimatedMinutes: 60 },
+        ],
+        now: wednesday10,
+      }),
+    );
+    expect(result.overflow).toEqual([]);
+    expect(result.sessions).toHaveLength(3);
+    const utcDates = result.sessions.map((s) => s.scheduledAt.getUTCDate());
+    // All sessions should land on Wed (15) or later — never on Mon (13) / Tue (14).
+    for (const d of utcDates) expect(d).toBeGreaterThanOrEqual(15);
+  });
+
+  it('on today, bumps first session past current local time', () => {
+    // Monday 2026-04-13 11:00 BRT — DAY_START is 08:00 but it's already 11:00,
+    // so the first Monday session must start ≥ 11:00 BRT = 14:00 UTC.
+    const monday11 = new Date('2026-04-13T11:00:00-03:00');
+    const result = svc.plan(
+      input({
+        items: [{ id: 'i1', estimatedMinutes: 60 }],
+        now: monday11,
+      }),
+    );
+    expect(result.sessions).toHaveLength(1);
+    const first = result.sessions[0]!;
+    // 11:00 BRT = 14:00 UTC, rounded up to nearest 15 min.
+    expect(first.scheduledAt.getUTCHours()).toBeGreaterThanOrEqual(14);
   });
 
   it('respects busy time by reducing that day budget', () => {

@@ -14,6 +14,13 @@ export function isoToSxLocal(iso: string, timezone: string): string {
   return `${zoned.year}-${pad(zoned.month)}-${pad(zoned.day)} ${pad(zoned.hour)}:${pad(zoned.minute)}`;
 }
 
+export function isoToZonedDateTime(
+  iso: string,
+  timezone: string,
+): Temporal.ZonedDateTime {
+  return Temporal.Instant.from(iso).toZonedDateTimeISO(timezone);
+}
+
 export function sxLocalToIso(local: string, timezone: string): string {
   const [date, time] = local.split(' ');
   if (!date || !time) throw new Error(`invalid sx local string: ${local}`);

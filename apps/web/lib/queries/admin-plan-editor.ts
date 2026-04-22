@@ -39,6 +39,7 @@ export type AiDraft = {
 
 export type AutoScheduleResponse = {
   sessionsCreated: number;
+  sessionsFailed: number;
   overflow: Array<{ itemId: string; minutesRequired: number }>;
 };
 

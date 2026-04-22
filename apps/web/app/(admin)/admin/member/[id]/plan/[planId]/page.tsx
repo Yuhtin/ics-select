@@ -1,8 +1,9 @@
 'use client';
 import { use, useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
+import { addToast } from '@heroui/react';
 import { useAdminPlanContext } from '../../../../../../../lib/queries/admin-plan-context';
 import {
   useGetOrCreateDraft,
@@ -34,6 +35,8 @@ export default function PlanEditorPage({
 }) {
   const { id: memberId, planId: initialPlanId } = use(params);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const weekStartParam = searchParams.get('weekStart');
 
   const [plan, setPlan] = useState<WeeklyPlan | null>(null);
   const [libraryItems, setLibraryItems] = useState<Map<string, LibraryItem>>(
@@ -58,10 +61,10 @@ export default function PlanEditorPage({
     if (plan) return;
     if (initialPlanId === 'new') {
       if (getOrCreate.isPending || getOrCreate.isSuccess) return;
-      // Omit weekStart so the backend picks the next plannable week
-      // (first week inside cycle bounds that doesn't already have a plan).
+      // When weekStart is provided (from the Plan-week modal), create/return
+      // that specific week's plan. Omit it to let the backend auto-pick.
       getOrCreate.mutate(
-        { memberId },
+        weekStartParam ? { memberId, weekStart: weekStartParam } : { memberId },
         {
           onSuccess: (created) => {
             setPlan(created);
@@ -222,6 +225,14 @@ export default function PlanEditorPage({
     setPlan(saved);
   }
 
+  function navigateAfterPublish() {
+    if (context) {
+      router.push(`/admin/cycle/${context.cycle.id}`);
+    } else {
+      router.push(`/admin/member/${memberId}`);
+    }
+  }
+
   async function handlePublish() {
     if (!plan || plan.items.length === 0) return;
     try {
@@ -241,7 +252,18 @@ export default function PlanEditorPage({
       });
       if (res.overflow && res.overflow.length > 0) {
         setOverflowState({ open: true, overflow: res.overflow });
+        return;
       }
+      const failed = res.sessionsFailed ?? 0;
+      addToast({
+        title: failed > 0 ? 'Plan published with calendar errors' : 'Plan published',
+        description:
+          failed > 0
+            ? `${res.sessionsCreated} session${res.sessionsCreated === 1 ? '' : 's'} on calendar · ${failed} failed (check Google connection).`
+            : `${res.sessionsCreated} session${res.sessionsCreated === 1 ? '' : 's'} scheduled.`,
+        color: failed > 0 ? 'warning' : 'success',
+      });
+      navigateAfterPublish();
     } catch (err) {
       if (
         err instanceof ApiErrorResponse &&
@@ -252,6 +274,11 @@ export default function PlanEditorPage({
             ?.overflow ?? [];
         setOverflowState({ open: true, overflow });
       } else {
+        addToast({
+          title: 'Publish failed',
+          description: err instanceof Error ? err.message : 'Unknown error',
+          color: 'danger',
+        });
         throw err;
       }
     }
@@ -259,8 +286,26 @@ export default function PlanEditorPage({
 
   async function handleForcePublish() {
     if (!plan) return;
-    await autoSchedule.mutateAsync({ planId: plan.id, force: true });
-    setOverflowState({ open: false, overflow: [] });
+    try {
+      const res = await autoSchedule.mutateAsync({ planId: plan.id, force: true });
+      setOverflowState({ open: false, overflow: [] });
+      const failed = res.sessionsFailed ?? 0;
+      addToast({
+        title: failed > 0 ? 'Plan published with calendar errors' : 'Plan published',
+        description:
+          failed > 0
+            ? `${res.sessionsCreated} session${res.sessionsCreated === 1 ? '' : 's'} on calendar · ${failed} failed (check Google connection).`
+            : `${res.sessionsCreated} session${res.sessionsCreated === 1 ? '' : 's'} scheduled (overflow forced).`,
+        color: failed > 0 ? 'warning' : 'success',
+      });
+      navigateAfterPublish();
+    } catch (err) {
+      addToast({
+        title: 'Publish failed',
+        description: err instanceof Error ? err.message : 'Unknown error',
+        color: 'danger',
+      });
+    }
   }
 
   // ----- Render -----

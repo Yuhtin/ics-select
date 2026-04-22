@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service.js';
 import { SchedulerService, type SchedulerInput } from '../scheduler/scheduler.service.js';
 import { GoogleCalendarService } from '../google-calendar/google-calendar.service.js';
@@ -29,6 +29,8 @@ const DEFAULT_AVAILABILITY = {
 
 @Injectable()
 export class PublicationService {
+  private readonly logger = new Logger(PublicationService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly scheduler: SchedulerService,
@@ -90,6 +92,7 @@ export class PublicationService {
         id: i.id,
         estimatedMinutes: i.libraryItem.estimatedMinutes,
       })),
+      now: new Date(),
     };
 
     const result = this.scheduler.plan(input);
@@ -97,6 +100,7 @@ export class PublicationService {
       throw new PlanOverflowError(result.overflow);
     }
 
+    let sessionsFailed = 0;
     for (const session of result.sessions) {
       const item = plan.items.find((i) => i.id === session.itemId)!;
       const eventEnd = new Date(session.scheduledAt.getTime() + session.durationMinutes * 60 * 1000);
@@ -110,8 +114,12 @@ export class PublicationService {
           end: eventEnd,
           icsId: { planId: plan.id, itemId: item.id },
         });
-      } catch {
-        // Calendar failure is non-fatal
+      } catch (err) {
+        sessionsFailed += 1;
+        const msg = err instanceof Error ? err.message : String(err);
+        this.logger.warn(
+          `calendar.createEvent failed · user=${plan.userId} plan=${plan.id} item=${item.id} · ${msg}`,
+        );
       }
     }
 
@@ -150,7 +158,8 @@ export class PublicationService {
     }
 
     return {
-      sessionsCreated: result.sessions.length,
+      sessionsCreated: result.sessions.length - sessionsFailed,
+      sessionsFailed,
       overflow: result.overflow,
     };
   }

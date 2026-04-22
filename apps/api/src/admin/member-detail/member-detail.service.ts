@@ -6,6 +6,18 @@ import {
 } from '../../common/cycle/active-cycle.js';
 
 const POSITIVE = new Set(['DONE_EASY', 'DONE_HARD']);
+const DAY_MS = 24 * 60 * 60 * 1000;
+const WEEK_MS = 7 * DAY_MS;
+
+function mondayUTC(d: Date): Date {
+  const out = new Date(
+    Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()),
+  );
+  const day = out.getUTCDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  out.setUTCDate(out.getUTCDate() + diff);
+  return out;
+}
 
 type Outcome = 'PENDING' | 'DONE_EASY' | 'DONE_HARD' | 'DOUBTS' | 'STUCK';
 type Track =
@@ -67,6 +79,18 @@ export type MemberDetailResponse = {
     nextWeekWish: string | null;
     submittedAt: string;
   }>;
+  planWeeks: {
+    current: PlanWeekSlot;
+    next: PlanWeekSlot;
+  };
+};
+
+export type PlanWeekSlot = {
+  weekStart: string;
+  weekEnd: string;
+  inCycle: boolean;
+  planId: string | null;
+  status: PlanStatus | null;
 };
 
 type MemberRow = {
@@ -214,6 +238,12 @@ export class MemberDetailService {
       ? this.computeTopicCoverage(topics, cyclePlans)
       : [];
 
+    const planWeeks = await this.buildPlanWeeks(
+      memberId,
+      membership?.cycle ?? null,
+      now,
+    );
+
     return {
       member: {
         id: member.id,
@@ -251,7 +281,45 @@ export class MemberDetailService {
         nextWeekWish: r.nextWeekWish,
         submittedAt: r.submittedAt.toISOString(),
       })),
+      planWeeks,
     };
+  }
+
+  private async buildPlanWeeks(
+    memberId: string,
+    cycle: { startsAt: Date; endsAt: Date } | null,
+    now: Date,
+  ): Promise<MemberDetailResponse['planWeeks']> {
+    const currentStart = mondayUTC(now);
+    const nextStart = new Date(currentStart.getTime() + WEEK_MS);
+
+    const existing = (await this.prisma.weeklyPlan.findMany({
+      where: {
+        userId: memberId,
+        weekStart: { in: [currentStart, nextStart] },
+      },
+      select: { id: true, weekStart: true, status: true },
+    })) as Array<{ id: string; weekStart: Date; status: PlanStatus }>;
+
+    const byStart = new Map(
+      existing.map((p) => [p.weekStart.getTime(), p] as const),
+    );
+
+    const slot = (start: Date): PlanWeekSlot => {
+      const end = new Date(start.getTime() + WEEK_MS - 1);
+      const match = byStart.get(start.getTime());
+      const inCycle =
+        !!cycle && start >= cycle.startsAt && end <= cycle.endsAt;
+      return {
+        weekStart: start.toISOString(),
+        weekEnd: end.toISOString(),
+        inCycle,
+        planId: match?.id ?? null,
+        status: match?.status ?? null,
+      };
+    };
+
+    return { current: slot(currentStart), next: slot(nextStart) };
   }
 
   private buildCycle(

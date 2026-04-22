@@ -58,6 +58,18 @@ export type MemberDetailResponse = {
     nextWeekWish: string | null;
     submittedAt: string;
   }>;
+  planWeeks: {
+    current: PlanWeekSlot;
+    next: PlanWeekSlot;
+  };
+};
+
+export type PlanWeekSlot = {
+  weekStart: string;
+  weekEnd: string;
+  inCycle: boolean;
+  planId: string | null;
+  status: 'DRAFT' | 'PUBLISHED' | null;
 };
 
 export function useAdminMember(memberId: string) {
