@@ -1,4 +1,5 @@
-import { Injectable, NotFoundException, Optional } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, Optional } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { google, type calendar_v3 } from 'googleapis';
 import { PrismaService } from '../common/prisma/prisma.service.js';
 import { AesGcmService } from '../common/crypto/aes-gcm.service.js';
@@ -20,11 +21,13 @@ const AUTH_TTL_SAFETY_MS = 60_000; // rebuild 60s before Google thinks the token
 
 @Injectable()
 export class GoogleCalendarService {
+  private readonly logger = new Logger(GoogleCalendarService.name);
   private readonly authCache = new Map<string, CachedAuth>();
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly aes: AesGcmService,
+    private readonly config: ConfigService,
     @Optional() private readonly clientFactory: ClientFactory = defaultClientFactory,
   ) {}
 
@@ -195,15 +198,73 @@ export class GoogleCalendarService {
     if (!row) throw new NotFoundException('GoogleAccount for user not found');
     const accessToken = this.aes.decrypt(row.accessTokenEnc);
     const refreshToken = row.refreshTokenEnc ? this.aes.decrypt(row.refreshTokenEnc) : null;
-    const oauth2 = new google.auth.OAuth2();
+
+    // OAuth2 must be built with client credentials so googleapis can call
+    // the token endpoint when the access_token expires. Without clientId +
+    // clientSecret, every refresh returns `invalid_request` and the whole
+    // Calendar surface goes dark for that member.
+    const oauth2 = new google.auth.OAuth2({
+      clientId: this.config.getOrThrow<string>('GOOGLE_OAUTH_CLIENT_ID'),
+      clientSecret: this.config.getOrThrow<string>('GOOGLE_OAUTH_CLIENT_SECRET'),
+    });
     oauth2.setCredentials({
       access_token: accessToken,
       refresh_token: refreshToken ?? undefined,
       expiry_date: row.expiresAt.getTime(),
     });
+
+    // Persist refreshed tokens back to the DB. googleapis fires this event
+    // whenever it rotates the access_token (or mints a new refresh_token).
+    oauth2.on('tokens', (tokens) => {
+      void this.persistRefreshedTokens(userId, tokens).catch((err) => {
+        this.logger.warn(
+          `persistRefreshedTokens failed · user=${userId} · ${
+            err instanceof Error ? err.message : String(err)
+          }`,
+        );
+      });
+    });
+
     const client = this.clientFactory(oauth2);
     this.authCache.set(userId, { client, expiresAt: row.expiresAt.getTime() });
     return client;
+  }
+
+  private async persistRefreshedTokens(
+    userId: string,
+    tokens: { access_token?: string | null; refresh_token?: string | null; expiry_date?: number | null },
+  ): Promise<void> {
+    if (!tokens.access_token && !tokens.refresh_token) return;
+
+    const data: {
+      accessTokenEnc?: string;
+      refreshTokenEnc?: string;
+      expiresAt?: Date;
+    } = {};
+
+    if (tokens.access_token) {
+      data.accessTokenEnc = this.aes.encrypt(tokens.access_token);
+    }
+    if (tokens.refresh_token) {
+      data.refreshTokenEnc = this.aes.encrypt(tokens.refresh_token);
+    }
+    if (tokens.expiry_date) {
+      data.expiresAt = new Date(tokens.expiry_date);
+    }
+
+    if (Object.keys(data).length === 0) return;
+
+    await this.prisma.googleAccount.update({ where: { userId }, data });
+
+    // Keep the auth cache in sync with the new expiry so cached clients
+    // are considered fresh for the full lifetime of the rotated token.
+    const cached = this.authCache.get(userId);
+    if (cached && data.expiresAt) {
+      this.authCache.set(userId, {
+        client: cached.client,
+        expiresAt: data.expiresAt.getTime(),
+      });
+    }
   }
 }
 

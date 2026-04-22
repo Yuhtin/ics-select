@@ -24,6 +24,14 @@ const aes = {
   decrypt: jest.fn((s: string) => s.replace(/^enc\(|\)$/g, '')),
 };
 
+const fakeConfig = {
+  getOrThrow: jest.fn((key: string) => {
+    if (key === 'GOOGLE_OAUTH_CLIENT_ID') return 'test-client-id';
+    if (key === 'GOOGLE_OAUTH_CLIENT_SECRET') return 'test-client-secret';
+    throw new Error(`Unknown config key: ${key}`);
+  }),
+};
+
 type MockCalendar = {
   freebusy: { query: jest.Mock };
   events: { insert: jest.Mock; patch: jest.Mock; delete: jest.Mock; list: jest.Mock };
@@ -56,7 +64,7 @@ describe('GoogleCalendarService', () => {
     };
     const prisma = fakePrisma(row);
     const client = mockClient();
-    const svc = new GoogleCalendarService(prisma as any, aes as any, () => client as any);
+    const svc = new GoogleCalendarService(prisma as any, aes as any, fakeConfig as any, () => client as any);
     const result = await svc.getFreeBusy('user-1', new Date('2026-04-14'), new Date('2026-04-21'));
     expect(result).toEqual([]);
     expect(client.freebusy.query).toHaveBeenCalled();
@@ -71,7 +79,7 @@ describe('GoogleCalendarService', () => {
     };
     const prisma = fakePrisma(row);
     const client = mockClient();
-    const svc = new GoogleCalendarService(prisma as any, aes as any, () => client as any);
+    const svc = new GoogleCalendarService(prisma as any, aes as any, fakeConfig as any, () => client as any);
     const id = await svc.createEvent('user-1', {
       summary: 'Test',
       description: 'desc',
@@ -91,7 +99,7 @@ describe('GoogleCalendarService', () => {
     };
     const prisma = fakePrisma(row);
     const client = mockClient();
-    const svc = new GoogleCalendarService(prisma as any, aes as any, () => client as any);
+    const svc = new GoogleCalendarService(prisma as any, aes as any, fakeConfig as any, () => client as any);
     await svc.createEvent('user-1', {
       summary: 'Test',
       description: 'Link: https://example.com',
@@ -109,7 +117,7 @@ describe('GoogleCalendarService', () => {
   it('throws if the user has no GoogleAccount row', async () => {
     const prisma = fakePrisma(null);
     const client = mockClient();
-    const svc = new GoogleCalendarService(prisma as any, aes as any, () => client as any);
+    const svc = new GoogleCalendarService(prisma as any, aes as any, fakeConfig as any, () => client as any);
     await expect(svc.getFreeBusy('u', new Date(), new Date())).rejects.toThrow(/GoogleAccount/);
   });
 
@@ -148,7 +156,7 @@ describe('GoogleCalendarService', () => {
         ],
       },
     });
-    const svc = new GoogleCalendarService(prisma as any, aes as any, () => client as any);
+    const svc = new GoogleCalendarService(prisma as any, aes as any, fakeConfig as any, () => client as any);
     const result = await svc.listEventsInRange(
       'user-1',
       new Date('2026-04-17T12:00:00Z'),
@@ -208,7 +216,7 @@ describe('GoogleCalendarService', () => {
           ],
         },
       });
-      const svc = new GoogleCalendarService(prisma as any, aes as any, () => client as any);
+      const svc = new GoogleCalendarService(prisma as any, aes as any, fakeConfig as any, () => client as any);
       const out = await svc.listEventsInRange(
         'user-1',
         new Date('2026-04-20T00:00:00Z'),
@@ -246,7 +254,7 @@ describe('GoogleCalendarService', () => {
           ],
         },
       });
-      const svc = new GoogleCalendarService(prisma as any, aes as any, () => client as any);
+      const svc = new GoogleCalendarService(prisma as any, aes as any, fakeConfig as any, () => client as any);
       const out = await svc.listEventsInRange(
         'user-1',
         new Date('2026-04-20T00:00:00Z'),
@@ -278,7 +286,7 @@ describe('GoogleCalendarService', () => {
           ],
         },
       });
-      const svc = new GoogleCalendarService(prisma as any, aes as any, () => client as any);
+      const svc = new GoogleCalendarService(prisma as any, aes as any, fakeConfig as any, () => client as any);
       const out = await svc.listEventsInRange(
         'user-1',
         new Date('2026-04-20T00:00:00Z'),
@@ -298,7 +306,7 @@ describe('GoogleCalendarService', () => {
       };
       const prisma = fakePrisma(row);
       const client = mockClient();
-      const svc = new GoogleCalendarService(prisma as any, aes as any, () => client as any);
+      const svc = new GoogleCalendarService(prisma as any, aes as any, fakeConfig as any, () => client as any);
       await svc.rescheduleEvent(
         'user-1',
         'event-1',
@@ -336,7 +344,7 @@ describe('GoogleCalendarService', () => {
           ],
         },
       });
-      const svc = new GoogleCalendarService(prisma as any, aes as any, () => client as any);
+      const svc = new GoogleCalendarService(prisma as any, aes as any, fakeConfig as any, () => client as any);
 
       const id = await svc.findEventIdByIcsId('user-1', 'plan-1', 'item-42', {
         start: new Date('2026-04-20'),
@@ -350,7 +358,7 @@ describe('GoogleCalendarService', () => {
       const prisma = fakePrisma({ ...row });
       const client = mockClient();
       client.events.list.mockResolvedValueOnce({ data: { items: [] } });
-      const svc = new GoogleCalendarService(prisma as any, aes as any, () => client as any);
+      const svc = new GoogleCalendarService(prisma as any, aes as any, fakeConfig as any, () => client as any);
 
       const id = await svc.findEventIdByIcsId('user-1', 'plan-1', 'item-42', {
         start: new Date('2026-04-20'),
@@ -373,7 +381,7 @@ describe('GoogleCalendarService', () => {
       const prisma = fakePrisma({ ...row });
       const client = mockClient();
       const factory = jest.fn(() => client as any);
-      const svc = new GoogleCalendarService(prisma as any, aes as any, factory);
+      const svc = new GoogleCalendarService(prisma as any, aes as any, fakeConfig as any, factory);
 
       await svc.getFreeBusy('user-1', new Date(), new Date());
       await svc.getFreeBusy('user-1', new Date(), new Date());
@@ -386,7 +394,7 @@ describe('GoogleCalendarService', () => {
       const prisma = fakePrisma({ ...row, expiresAt: new Date(Date.now() + 30_000) });
       const client = mockClient();
       const factory = jest.fn(() => client as any);
-      const svc = new GoogleCalendarService(prisma as any, aes as any, factory);
+      const svc = new GoogleCalendarService(prisma as any, aes as any, fakeConfig as any, factory);
 
       await svc.getFreeBusy('user-1', new Date(), new Date());
       await svc.getFreeBusy('user-1', new Date(), new Date());
@@ -399,7 +407,7 @@ describe('GoogleCalendarService', () => {
       const prisma = fakePrisma({ ...row });
       const client = mockClient();
       const factory = jest.fn(() => client as any);
-      const svc = new GoogleCalendarService(prisma as any, aes as any, factory);
+      const svc = new GoogleCalendarService(prisma as any, aes as any, fakeConfig as any, factory);
 
       await svc.getFreeBusy('user-1', new Date(), new Date());
       svc.invalidateAuth('user-1');
@@ -420,7 +428,7 @@ describe('GoogleCalendarService', () => {
       };
       const client = mockClient();
       const factory = jest.fn(() => client as any);
-      const svc = new GoogleCalendarService(prisma as any, aes as any, factory);
+      const svc = new GoogleCalendarService(prisma as any, aes as any, fakeConfig as any, factory);
 
       await svc.getFreeBusy('user-a', new Date(), new Date());
       await svc.getFreeBusy('user-b', new Date(), new Date());
