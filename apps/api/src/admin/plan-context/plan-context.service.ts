@@ -4,9 +4,10 @@ import {
   computeWeekPosition,
   resolveActiveMembership,
 } from '../../common/cycle/active-cycle.js';
+import type { ItemOutcome } from '@ics-select/shared';
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
-const POSITIVE = new Set(['DONE_EASY', 'DONE_HARD']);
+const POSITIVE = new Set<ItemOutcome>(['DONE_EASY', 'DONE_HARD', 'SKIPPED']);
 const CARRY_OUTCOMES = new Set(['PENDING', 'DOUBTS', 'STUCK']);
 
 const DEFAULT_AVAILABILITY = {

@@ -1,12 +1,14 @@
 'use client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { ItemOutcome } from '@ics-select/shared';
 import { apiFetch } from '../api/client';
 
 export type WeeklyPlanItem = {
   id: string;
   libraryItemId: string;
   order: number;
-  outcome: 'PENDING' | 'DONE_EASY' | 'DONE_HARD' | 'DOUBTS' | 'STUCK';
+  outcome: ItemOutcome;
+  skippable: boolean;
   libraryItem: {
     id: string;
     title: string;
@@ -119,5 +121,30 @@ export function useAutoSchedulePlan() {
         `/plans/${input.planId}/auto-schedule${input.force ? '?force=true' : ''}`,
         { method: 'POST' },
       ),
+  });
+}
+
+export function useDeletePlan() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (planId: string) => {
+      await apiFetch<void>(`/plans/${planId}`, { method: 'DELETE' });
+    },
+    onSuccess: (_data, planId) => {
+      qc.removeQueries({ queryKey: ['plan', planId] });
+      qc.invalidateQueries({ queryKey: ['admin', 'plans-overview'] });
+    },
+  });
+}
+
+export function useReschedulePending() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (planId: string) => {
+      await apiFetch<void>(`/plans/${planId}/reschedule-pending`, { method: 'POST' });
+    },
+    onSuccess: (_data, planId) => {
+      qc.invalidateQueries({ queryKey: ['plan', planId] });
+    },
   });
 }

@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service.js';
+import { isPositiveOutcome, type ItemOutcome } from '@ics-select/shared';
 
 @Injectable()
 export class ReportsService {
@@ -32,7 +33,7 @@ export class ReportsService {
     lines.push('');
     lines.push('## Cobertura geral');
     const totalItems = plans.flatMap((p) => p.items).length;
-    const doneItems = plans.flatMap((p) => p.items).filter((i) => i.outcome === 'DONE_EASY' || i.outcome === 'DONE_HARD').length;
+    const doneItems = plans.flatMap((p) => p.items).filter((i) => isPositiveOutcome(i.outcome as ItemOutcome)).length;
     lines.push(`- Planos publicados: ${plans.filter((p) => p.status !== 'DRAFT').length}`);
     lines.push(`- Itens totais: ${totalItems}`);
     lines.push(
@@ -49,7 +50,7 @@ export class ReportsService {
     lines.push('## Membros');
     for (const m of cycle.memberships) {
       const memberPlans = plans.filter((p) => p.userId === m.user.id);
-      const mDone = memberPlans.flatMap((p) => p.items).filter((i) => i.outcome === 'DONE_EASY' || i.outcome === 'DONE_HARD').length;
+      const mDone = memberPlans.flatMap((p) => p.items).filter((i) => isPositiveOutcome(i.outcome as ItemOutcome)).length;
       const mTotal = memberPlans.flatMap((p) => p.items).length;
       lines.push(`- **${m.user.name}** (${m.user.email}): ${mDone}/${mTotal} itens`);
     }

@@ -1,4 +1,10 @@
+import { GoogleCalendarService } from '../google-calendar/google-calendar.service';
 import { WeeklyPlansService } from './weekly-plans.service';
+
+const stubCalendar = {
+  findEventIdByIcsId: jest.fn(),
+  deleteEvent: jest.fn(),
+} as unknown as GoogleCalendarService;
 
 function fakePrisma() {
   const plans = new Map<string, any>();
@@ -68,7 +74,7 @@ function fakePrisma() {
 describe('WeeklyPlansService', () => {
   it('createDraft creates a DRAFT plan with ordered items', async () => {
     const prisma = fakePrisma();
-    const svc = new WeeklyPlansService(prisma as any);
+    const svc = new WeeklyPlansService(prisma as any, stubCalendar);
     const plan = await svc.createDraft({
       userId: 'u-1',
       cycleId: 'c-1',
@@ -86,7 +92,7 @@ describe('WeeklyPlansService', () => {
   describe('setItemOutcome', () => {
     it('sets outcome DONE_EASY and reflection, stamps completedAt', async () => {
       const prisma = fakePrisma();
-      const svc = new WeeklyPlansService(prisma as any);
+      const svc = new WeeklyPlansService(prisma as any, stubCalendar);
       const plan = await svc.createDraft({
         userId: 'u-1',
         cycleId: 'c-1',
@@ -116,7 +122,7 @@ describe('WeeklyPlansService', () => {
 
     it('leaves completedAt null when outcome is PENDING', async () => {
       const prisma = fakePrisma();
-      const svc = new WeeklyPlansService(prisma as any);
+      const svc = new WeeklyPlansService(prisma as any, stubCalendar);
       const plan = await svc.createDraft({
         userId: 'u-1',
         cycleId: 'c-1',
@@ -140,7 +146,7 @@ describe('WeeklyPlansService', () => {
 
     it('throws ForbiddenException when the caller does not own the item', async () => {
       const prisma = fakePrisma();
-      const svc = new WeeklyPlansService(prisma as any);
+      const svc = new WeeklyPlansService(prisma as any, stubCalendar);
       // Create plan owned by 'u-1'
       const plan = await svc.createDraft({
         userId: 'u-1',

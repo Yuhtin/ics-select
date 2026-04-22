@@ -1,7 +1,8 @@
 import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service.js';
 import { resolveActiveMembership } from '../common/cycle/active-cycle.js';
-import type { ItemOutcome } from '@ics-select/shared';
+import { GoogleCalendarService } from '../google-calendar/google-calendar.service.js';
+import { type ItemOutcome, isPositiveOutcome } from '@ics-select/shared';
 
 type CreateInput = {
   userId: string;
@@ -19,11 +20,34 @@ type UpdateInput = {
 
 @Injectable()
 export class WeeklyPlansService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly calendar: GoogleCalendarService,
+  ) {}
 
   async remove(id: string) {
-    const plan = await this.prisma.weeklyPlan.findUnique({ where: { id } });
+    const plan = await this.prisma.weeklyPlan.findUnique({
+      where: { id },
+      include: { items: true },
+    });
     if (!plan) throw new NotFoundException('plan not found');
+
+    if (plan.status === 'PUBLISHED') {
+      for (const item of plan.items) {
+        try {
+          const eventId = await this.calendar.findEventIdByIcsId(
+            plan.userId,
+            plan.id,
+            item.id,
+            { start: plan.weekStart, end: plan.weekEnd },
+          );
+          if (eventId) await this.calendar.deleteEvent(plan.userId, eventId);
+        } catch {
+          // swallow — per-item Calendar failures shouldn't block delete
+        }
+      }
+    }
+
     await this.prisma.weeklyPlan.delete({ where: { id } });
   }
 
@@ -91,16 +115,28 @@ export class WeeklyPlansService {
     });
   }
 
-  getById(id: string) {
-    return this.prisma.weeklyPlan.findUnique({
+  async getById(id: string) {
+    const plan = await this.prisma.weeklyPlan.findUnique({
       where: { id },
       include: {
         items: {
-          include: { libraryItem: true },
+          include: {
+            libraryItem: {
+              include: { topics: { include: { topic: { select: { slug: true } } } } },
+            },
+          },
           orderBy: { order: 'asc' },
         },
       },
     });
+    if (!plan) return null;
+    return {
+      ...plan,
+      items: plan.items.map((i) => ({
+        ...i,
+        skippable: i.libraryItem.topics.some((t) => t.topic.slug === 'foundations'),
+      })),
+    };
   }
 
   async getByIdOrThrow(id: string) {
@@ -130,7 +166,7 @@ export class WeeklyPlansService {
       .map((m) => {
         const userPlans = plans.filter((p) => p.userId === m.userId);
         const currentPlan = userPlans[0];
-        const done = currentPlan?.items.filter((i) => i.outcome === 'DONE_EASY' || i.outcome === 'DONE_HARD').length ?? 0;
+        const done = currentPlan?.items.filter((i) => isPositiveOutcome(i.outcome)).length ?? 0;
         const total = currentPlan?.items.length ?? 0;
         return {
           userId: m.user.id,
@@ -162,14 +198,28 @@ export class WeeklyPlansService {
     });
   }
 
-  listForMember(userId: string) {
-    return this.prisma.weeklyPlan.findMany({
+  async listForMember(userId: string) {
+    const plans = await this.prisma.weeklyPlan.findMany({
       where: { userId },
       orderBy: { weekStart: 'desc' },
       include: {
-        items: { include: { libraryItem: true }, orderBy: { order: 'asc' } },
+        items: {
+          include: {
+            libraryItem: {
+              include: { topics: { include: { topic: { select: { slug: true } } } } },
+            },
+          },
+          orderBy: { order: 'asc' },
+        },
       },
     });
+    return plans.map((plan) => ({
+      ...plan,
+      items: plan.items.map((i) => ({
+        ...i,
+        skippable: i.libraryItem.topics.some((t) => t.topic.slug === 'foundations'),
+      })),
+    }));
   }
 
   async setItemOutcome(
@@ -179,11 +229,36 @@ export class WeeklyPlansService {
   ) {
     const item = await this.prisma.weeklyPlanItem.findUnique({
       where: { id: itemId },
-      include: { weeklyPlan: { select: { userId: true } } },
+      include: {
+        weeklyPlan: { select: { id: true, userId: true, status: true, weekStart: true, weekEnd: true } },
+        libraryItem: { include: { topics: { include: { topic: { select: { slug: true } } } } } },
+      },
     });
     if (!item) throw new NotFoundException('Item not found');
     if (item.weeklyPlan.userId !== userId) {
-      throw new ForbiddenException('Forbidden: cannot change someone else\'s item');
+      throw new ForbiddenException("Forbidden: cannot change someone else's item");
+    }
+
+    if (input.outcome === 'SKIPPED') {
+      const slugs = item.libraryItem.topics.map((t) => t.topic.slug);
+      if (!slugs.includes('foundations')) {
+        throw new ForbiddenException('Only foundations items can be skipped');
+      }
+      if (item.weeklyPlan.status === 'PUBLISHED') {
+        const eventId = await this.calendar.findEventIdByIcsId(
+          userId,
+          item.weeklyPlan.id,
+          item.id,
+          { start: item.weeklyPlan.weekStart, end: item.weeklyPlan.weekEnd },
+        );
+        if (eventId) {
+          try {
+            await this.calendar.deleteEvent(userId, eventId);
+          } catch {
+            // swallow — matches PublicationService style
+          }
+        }
+      }
     }
 
     const completed = input.outcome !== 'PENDING';

@@ -47,6 +47,11 @@ export function ItemCard({
               carried over
             </span>
           )}
+          {item.skippable && (
+            <span className="rounded-full border border-rule bg-paper-warm px-2 py-0.5 text-xs font-mono uppercase tracking-label text-ink-mute">
+              skippable
+            </span>
+          )}
         </div>
         <div className="mt-1 flex items-center gap-2 font-mono text-[10px] uppercase tracking-label text-ink-mute">
           <span>{item.libraryItem.format}</span>

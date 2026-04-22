@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import type { AlertType } from '@ics-select/shared';
+import type { AlertType, ItemOutcome } from '@ics-select/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import {
   computeWeekPosition,
@@ -47,7 +47,7 @@ export type TriageResponse = {
 };
 
 const DAY_MS = 24 * 60 * 60 * 1000;
-const POSITIVE = new Set(['DONE_EASY', 'DONE_HARD']);
+const POSITIVE = new Set<ItemOutcome>(['DONE_EASY', 'DONE_HARD', 'SKIPPED']);
 
 type Member = {
   userId: string;

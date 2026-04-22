@@ -9,6 +9,7 @@ export type ItemResponse = {
   planId: string;
   order: number;
   outcome: ItemOutcome;
+  skippable: boolean;
   reflection: string | null;
   completedAt: string | null;
   scheduledAt: string | null;

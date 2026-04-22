@@ -118,7 +118,12 @@ export default function AdminMembersPage() {
                 </span>
                 <div className="hidden md:flex items-center gap-4 font-mono text-[11px] text-ink-mute tabular-nums">
                   <span>{m.stats.plansCount} plans</span>
-                  <span className="text-outcome-done-easy">{m.stats.doneItems} done</span>
+                  <span className="text-outcome-done-easy">
+                    {m.stats.doneItems} done
+                    {m.stats.skippedItems > 0 && (
+                      <span className="ml-1 text-xs text-ink-mute">({m.stats.skippedItems} skipped)</span>
+                    )}
+                  </span>
                   {m.stats.stuckItems > 0 && (
                     <span className="text-outcome-stuck">
                       {m.stats.stuckItems} stuck

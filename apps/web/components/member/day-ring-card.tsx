@@ -1,6 +1,7 @@
 'use client';
 
 import type { HomeItem } from '../../lib/queries/me-home';
+import { isPositiveOutcome } from '@ics-select/shared';
 import { ProgressRing } from '../ui/progress-ring';
 import { SegmentedProgress, type SegmentState } from '../ui/segmented-progress';
 import { formatMinutes } from '../../lib/format/time';
@@ -15,15 +16,14 @@ function segmentFor(item: HomeItem, nowId?: string | null): SegmentState {
   if (item.outcome === 'DONE_HARD') return 'hard';
   if (item.outcome === 'STUCK') return 'stuck';
   if (item.outcome === 'DOUBTS') return 'doubts';
+  if (item.outcome === 'SKIPPED') return 'done';
   if (item.id === nowId) return 'now';
   return 'pending';
 }
 
 export function DayRingCard({ items, nowItemId }: DayRingCardProps) {
   const total = items.length;
-  const done = items.filter(
-    (i) => i.outcome === 'DONE_EASY' || i.outcome === 'DONE_HARD',
-  ).length;
+  const done = items.filter((i) => isPositiveOutcome(i.outcome)).length;
   const pct = total === 0 ? 0 : done / total;
   const remainingMinutes = items
     .filter((i) => i.outcome === 'PENDING')

@@ -37,6 +37,7 @@ export class ItemService {
       planId: row.weeklyPlanId,
       order: row.order,
       outcome: row.outcome,
+      skippable: row.libraryItem.topics.some((t) => t.topic.slug === 'foundations'),
       reflection: row.reflection ?? null,
       completedAt: row.completedAt ? row.completedAt.toISOString() : null,
       scheduledAt: row.scheduledAt ? row.scheduledAt.toISOString() : null,

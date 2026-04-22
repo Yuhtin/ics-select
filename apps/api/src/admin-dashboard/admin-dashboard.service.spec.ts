@@ -12,7 +12,8 @@ function fakePrisma() {
       status: 'PUBLISHED',
       items: [
         { id: 'i-1', outcome: 'DONE_EASY', libraryItem: { tags: ['arrays'] } },
-        { id: 'i-2', outcome: 'PENDING', libraryItem: { tags: ['dp'] } },
+        { id: 'i-2', outcome: 'SKIPPED', libraryItem: { tags: ['dp'] } },
+        { id: 'i-3', outcome: 'PENDING', libraryItem: { tags: ['graphs'] } },
       ],
     },
     {
@@ -43,7 +44,7 @@ function fakePrisma() {
         const rel = plans.filter((p) => p.userId === where.weeklyPlan.userId);
         const items = rel.flatMap((p) => p.items);
         if (where.outcome?.in) return items.filter((i) => where.outcome.in.includes(i.outcome)).length;
-        if (where.outcome === 'STUCK') return items.filter((i) => i.outcome === 'STUCK').length;
+        if (typeof where.outcome === 'string') return items.filter((i) => i.outcome === where.outcome).length;
         return items.length;
       }),
     },
@@ -59,7 +60,10 @@ describe('AdminDashboardService', () => {
     const first = cohort.find((c) => c.id === 'u-1');
     expect(first?.stats.plansCount).toBe(1);
     // The DRAFT for u-1 should NOT be counted.
-    expect(first?.stats.doneItems).toBe(1);
+    // doneItems = positive outcomes (DONE_EASY + DONE_HARD + SKIPPED) = 2
+    expect(first?.stats.doneItems).toBe(2);
+    // skippedItems is a sub-breakdown of doneItems
+    expect(first?.stats.skippedItems).toBe(1);
     expect(first?.stats.stuckItems).toBe(0);
   });
 });

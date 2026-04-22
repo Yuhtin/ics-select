@@ -88,6 +88,7 @@ export function ListRow({
             className={clsx(
               'font-sans text-[15px] font-semibold leading-snug tracking-tight text-ink',
               outcome === 'DONE_EASY' && 'text-ink-mute line-through font-medium',
+              outcome === 'SKIPPED' && 'text-ink-mute line-through font-medium',
               'group-hover:text-ink',
             )}
           >

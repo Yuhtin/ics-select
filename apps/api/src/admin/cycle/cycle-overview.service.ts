@@ -2,7 +2,9 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service.js';
 import { computeWeekPosition } from '../../common/cycle/active-cycle.js';
 
-const POSITIVE = new Set(['DONE_EASY', 'DONE_HARD']);
+import type { ItemOutcome } from '@ics-select/shared';
+
+const POSITIVE = new Set<ItemOutcome>(['DONE_EASY', 'DONE_HARD', 'SKIPPED']);
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 const HEATMAP_WEEKS = 6;
 const STUCK_PROXY_WINDOW_MS = 72 * 60 * 60 * 1000;

@@ -55,6 +55,7 @@ enum ItemOutcome {
   DONE_HARD
   DOUBTS
   STUCK
+  SKIPPED
 }
 
 enum AttendanceStatus {

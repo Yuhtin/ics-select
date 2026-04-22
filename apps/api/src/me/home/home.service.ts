@@ -12,6 +12,7 @@ type HomeItem = {
   url: string | null;
   topic: { slug: string; label: string } | null;
   outcome: ItemOutcome;
+  skippable: boolean;
   scheduledAt: string | null;
   scheduledMinutes: number | null;
   carriedFromItemId: string | null;
@@ -89,6 +90,9 @@ function toHomeItem(row: any): HomeItem {
       ? { slug: primaryTopic.topic.slug, label: primaryTopic.topic.label }
       : null,
     outcome: row.outcome,
+    skippable: (row.libraryItem.topics ?? []).some(
+      (t: any) => t.topic.slug === 'foundations',
+    ),
     scheduledAt: row.scheduledAt ? row.scheduledAt.toISOString() : null,
     scheduledMinutes: row.scheduledMinutes ?? null,
     carriedFromItemId: row.carriedFromItemId ?? null,

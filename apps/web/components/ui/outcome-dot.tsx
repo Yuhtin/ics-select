@@ -21,6 +21,7 @@ const OUTCOME_CLASS: Record<ItemOutcome, string> = {
   DONE_HARD: 'bg-outcome-done-hard',
   DOUBTS: 'bg-outcome-doubts',
   STUCK: 'bg-outcome-stuck',
+  SKIPPED: 'bg-ink-mute',
 };
 
 export function OutcomeDot({ outcome, size = 'md', active, className }: OutcomeDotProps) {
