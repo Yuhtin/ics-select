@@ -6,6 +6,7 @@ type PrismaMock = {
   cycle: { findUnique: jest.Mock };
   weeklyPlan: { findMany: jest.Mock };
   weeklyPlanItem: { findMany: jest.Mock };
+  weeklyRetro: { findMany: jest.Mock };
 };
 
 function makePrisma(overrides: Partial<any> = {}): PrismaMock {
@@ -13,6 +14,7 @@ function makePrisma(overrides: Partial<any> = {}): PrismaMock {
     cycle: { findUnique: jest.fn(async () => null) },
     weeklyPlan: { findMany: jest.fn(async () => []) },
     weeklyPlanItem: { findMany: jest.fn(async () => []) },
+    weeklyRetro: { findMany: jest.fn(async () => []) },
   };
   for (const key of Object.keys(overrides) as (keyof PrismaMock)[]) {
     base[key] = { ...base[key], ...(overrides[key] as any) };
@@ -67,13 +69,16 @@ describe('CycleOverviewService', () => {
 
     expect(result.members).toEqual([]);
     expect(result.heatmap.rows).toEqual([]);
-    expect(result.heatmap.weeks).toHaveLength(6);
+    // baseCycle = 2026-04-06 (Mon) → 2026-06-29 (Mon): 12 full weeks + 1 inclusive = 13.
+    expect(result.heatmap.weeks).toHaveLength(13);
     expect(result.cycle.id).toBe('cycle-1');
     expect(result.cycle.status).toBe('ACTIVE');
     expect(result.cycle.rankingVisibleToMembers).toBe(true);
-    // When memberships are empty we do not bother issuing plan/item queries.
+    // When memberships are empty we do not bother issuing plan/item/retro queries.
     expect(prisma.weeklyPlan.findMany).not.toHaveBeenCalled();
     expect(prisma.weeklyPlanItem.findMany).not.toHaveBeenCalled();
+    expect(prisma.weeklyRetro.findMany).not.toHaveBeenCalled();
+    expect(result.feed).toEqual([]);
   });
 
   it('computes percentThisWeek from current week PUBLISHED plan (2 of 4 → 50%)', async () => {
@@ -113,10 +118,12 @@ describe('CycleOverviewService', () => {
     expect(alice.hasAlert).toBe(false);
   });
 
-  it('builds a 6-week heatmap: oldest week first, cells 0..100, most recent holds positive%', async () => {
+  it('builds an all-cycle-weeks heatmap: index 0 = cycle week 0, cells hold positive%', async () => {
+    // baseCycle: 2026-04-06 Mon (week 0) → 2026-06-29 Mon (week 12). 13 weeks total.
+    // THIS_MONDAY (NOW's week) = 2026-04-13 → week index 1 of the cycle.
     const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
-    // Plan in oldest week (index 0) and current week (index 5).
-    const oldestStart = new Date(THIS_MONDAY.getTime() - 5 * WEEK_MS);
+    const week0Start = new Date('2026-04-06T00:00:00.000Z');
+    const week1Start = new Date(week0Start.getTime() + 1 * WEEK_MS); // 2026-04-13
     const prisma = makePrisma({
       cycle: {
         findUnique: jest.fn(async () => ({
@@ -127,23 +134,23 @@ describe('CycleOverviewService', () => {
       weeklyPlan: {
         findMany: jest.fn(async () => [
           {
-            id: 'plan-oldest',
+            id: 'plan-w0',
             userId: 'user-a',
-            weekStart: oldestStart,
+            weekStart: week0Start,
             items: [
-              { outcome: 'DONE_EASY', completedAt: oldestStart, weeklyPlanId: 'plan-oldest' },
-              { outcome: 'PENDING', completedAt: null, weeklyPlanId: 'plan-oldest' },
+              { outcome: 'DONE_EASY', completedAt: week0Start, weeklyPlanId: 'plan-w0' },
+              { outcome: 'PENDING', completedAt: null, weeklyPlanId: 'plan-w0' },
             ],
           },
           {
-            id: 'plan-current',
+            id: 'plan-w1',
             userId: 'user-a',
-            weekStart: THIS_MONDAY,
+            weekStart: week1Start,
             items: [
-              { outcome: 'DONE_HARD', completedAt: new Date('2026-04-15T10:00:00Z'), weeklyPlanId: 'plan-current' },
-              { outcome: 'DONE_EASY', completedAt: new Date('2026-04-16T10:00:00Z'), weeklyPlanId: 'plan-current' },
-              { outcome: 'DONE_EASY', completedAt: new Date('2026-04-17T10:00:00Z'), weeklyPlanId: 'plan-current' },
-              { outcome: 'PENDING', completedAt: null, weeklyPlanId: 'plan-current' },
+              { outcome: 'DONE_HARD', completedAt: new Date('2026-04-15T10:00:00Z'), weeklyPlanId: 'plan-w1' },
+              { outcome: 'DONE_EASY', completedAt: new Date('2026-04-16T10:00:00Z'), weeklyPlanId: 'plan-w1' },
+              { outcome: 'DONE_EASY', completedAt: new Date('2026-04-17T10:00:00Z'), weeklyPlanId: 'plan-w1' },
+              { outcome: 'PENDING', completedAt: null, weeklyPlanId: 'plan-w1' },
             ],
           },
         ]),
@@ -152,25 +159,21 @@ describe('CycleOverviewService', () => {
     const service = makeService(prisma);
     const result = await service.getOverview('cycle-1', NOW);
 
-    expect(result.heatmap.weeks).toHaveLength(6);
+    expect(result.heatmap.weeks).toHaveLength(13);
     expect(result.heatmap.weeks[0]!.index).toBe(0);
-    expect(result.heatmap.weeks[5]!.index).toBe(5);
-    // Oldest week Monday is 5 weeks before THIS_MONDAY (2026-03-09).
-    expect(result.heatmap.weeks[0]!.startsAt).toBe(oldestStart.toISOString());
-    expect(result.heatmap.weeks[5]!.startsAt).toBe(THIS_MONDAY.toISOString());
-    // Label is "Mon D" UTC — e.g. "Mar 9" for oldest, "Apr 13" for current.
-    expect(result.heatmap.weeks[0]!.label).toMatch(/Mar/);
-    expect(result.heatmap.weeks[5]!.label).toMatch(/Apr/);
+    expect(result.heatmap.weeks[12]!.index).toBe(12);
+    expect(result.heatmap.weeks[0]!.startsAt).toBe(week0Start.toISOString());
+    expect(result.heatmap.weeks[1]!.startsAt).toBe(week1Start.toISOString());
 
     expect(result.heatmap.rows).toHaveLength(1);
     const row = result.heatmap.rows[0]!;
-    expect(row.cells).toHaveLength(6);
-    // Index 0: 1 of 2 positive → 50.
+    expect(row.cells).toHaveLength(13);
+    // Week 0: 1 of 2 positive → 50.
     expect(row.cells[0]).toBe(50);
-    // Indexes 1..4: no plan → 0.
-    expect(row.cells.slice(1, 5)).toEqual([0, 0, 0, 0]);
-    // Index 5: 3 of 4 positive → 75.
-    expect(row.cells[5]).toBe(75);
+    // Week 1 (current): 3 of 4 positive → 75.
+    expect(row.cells[1]).toBe(75);
+    // All other weeks: no plan → 0.
+    expect(row.cells.slice(2)).toEqual([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
     for (const cell of row.cells) {
       expect(cell).toBeGreaterThanOrEqual(0);
       expect(cell).toBeLessThanOrEqual(100);

@@ -2,12 +2,12 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service.js';
 import { computeWeekPosition } from '../../common/cycle/active-cycle.js';
 
-import type { ItemOutcome } from '@ics-select/shared';
+import { type ItemOutcome, isPositiveOutcome } from '@ics-select/shared';
 
 const POSITIVE = new Set<ItemOutcome>(['DONE_EASY', 'DONE_HARD', 'SKIPPED']);
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
-const HEATMAP_WEEKS = 6;
 const STUCK_PROXY_WINDOW_MS = 72 * 60 * 60 * 1000;
+const FEED_WINDOW_DAYS = 7;
 
 export type CycleOverviewResponse = {
   cycle: {
@@ -42,6 +42,14 @@ export type CycleOverviewResponse = {
       cells: number[];
     }>;
   };
+  feed: Array<{
+    id: string;
+    kind: 'finished' | 'got_stuck' | 'had_doubts' | 'posted_retro';
+    at: string;
+    member: { id: string; name: string; pictureUrl: string | null };
+    itemTitle: string | null;
+    itemId: string | null;
+  }>;
 };
 
 type MembershipRow = {
@@ -83,13 +91,18 @@ export class CycleOverviewService {
     const memberships = (cycle.memberships ?? []) as MembershipRow[];
     const userIds = memberships.map((m) => m.userId);
 
-    // Build 6-week window ending at the current week (inclusive). Index 0 = oldest.
-    const thisMonday = this.mondayUTC(now);
+    // Build every week of the cycle. Week 0 starts on the Monday on or
+    // before cycle.startsAt (matches the Plan Week modal's notion of a week).
+    const cycleFirstMonday = this.mondayUTC(cycle.startsAt);
+    const cycleLastMonday = this.mondayUTC(cycle.endsAt);
+    const weekCount = Math.floor(
+      (cycleLastMonday.getTime() - cycleFirstMonday.getTime()) / WEEK_MS,
+    ) + 1;
     const weeksWindow: Array<{ index: number; label: string; startsAt: Date }> = [];
-    for (let i = HEATMAP_WEEKS - 1; i >= 0; i -= 1) {
-      const start = new Date(thisMonday.getTime() - i * WEEK_MS);
+    for (let i = 0; i < weekCount; i += 1) {
+      const start = new Date(cycleFirstMonday.getTime() + i * WEEK_MS);
       weeksWindow.push({
-        index: HEATMAP_WEEKS - 1 - i,
+        index: i,
         label: start.toLocaleDateString('en-US', {
           month: 'short',
           day: 'numeric',
@@ -99,9 +112,9 @@ export class CycleOverviewService {
       });
     }
     const windowStart = weeksWindow[0]!.startsAt;
-    const windowEnd = new Date(thisMonday.getTime() + WEEK_MS - 1);
+    const windowEnd = new Date(cycleLastMonday.getTime() + WEEK_MS - 1);
 
-    const currentWeekStart = thisMonday;
+    const currentWeekStart = this.mondayUTC(now);
 
     // Fetch PUBLISHED plans in the 6-week window for all cycle members.
     const plans =
@@ -176,6 +189,73 @@ export class CycleOverviewService {
       };
     });
 
+    // Feed: last 7 days of cohort activity (completed items + submitted retros).
+    const feedSince = new Date(now);
+    feedSince.setUTCDate(feedSince.getUTCDate() - FEED_WINDOW_DAYS);
+
+    const recentItems =
+      userIds.length === 0
+        ? []
+        : await this.prisma.weeklyPlanItem.findMany({
+            where: {
+              weeklyPlan: { userId: { in: userIds }, cycleId },
+              completedAt: { gte: feedSince, lte: now },
+            },
+            include: {
+              libraryItem: { select: { title: true } },
+              weeklyPlan: {
+                select: {
+                  userId: true,
+                  user: { select: { id: true, name: true, pictureUrl: true } },
+                },
+              },
+            },
+            orderBy: { completedAt: 'desc' },
+            take: 60,
+          });
+
+    const recentRetros =
+      userIds.length === 0
+        ? []
+        : await this.prisma.weeklyRetro.findMany({
+            where: {
+              userId: { in: userIds },
+              submittedAt: { gte: feedSince, lte: now },
+            },
+            include: { user: { select: { id: true, name: true, pictureUrl: true } } },
+            orderBy: { submittedAt: 'desc' },
+            take: 60,
+          });
+
+    const feed: CycleOverviewResponse['feed'] = [];
+    for (const item of recentItems as any[]) {
+      if (!item.completedAt) continue;
+      let kind: CycleOverviewResponse['feed'][number]['kind'] | null = null;
+      if (isPositiveOutcome(item.outcome as ItemOutcome)) kind = 'finished';
+      else if (item.outcome === 'STUCK') kind = 'got_stuck';
+      else if (item.outcome === 'DOUBTS') kind = 'had_doubts';
+      if (!kind) continue;
+      feed.push({
+        id: `${item.weeklyPlan.userId}:${kind}:${item.id}`,
+        kind,
+        at: item.completedAt.toISOString(),
+        member: item.weeklyPlan.user,
+        itemTitle: item.libraryItem.title,
+        itemId: item.id,
+      });
+    }
+    for (const retro of recentRetros as any[]) {
+      feed.push({
+        id: `${retro.userId}:posted_retro:${retro.id}`,
+        kind: 'posted_retro',
+        at: retro.submittedAt.toISOString(),
+        member: retro.user,
+        itemTitle: null,
+        itemId: null,
+      });
+    }
+    feed.sort((a, b) => (a.at < b.at ? 1 : -1));
+
     const pos = computeWeekPosition(cycle, now);
 
     return {
@@ -198,6 +278,7 @@ export class CycleOverviewService {
         })),
         rows: heatmapRows,
       },
+      feed,
     };
   }
 

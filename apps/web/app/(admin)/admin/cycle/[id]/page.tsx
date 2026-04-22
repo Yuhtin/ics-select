@@ -5,6 +5,7 @@ import { useAdminCycleOverview } from '../../../../../lib/queries/admin-cycle';
 import { RankingToggle } from '../../../../../components/admin/ranking-toggle';
 import { CycleMembersGrid } from '../../../../../components/admin/cycle-members-grid';
 import { CohortHeatmap } from '../../../../../components/admin/cohort-heatmap';
+import { CohortFeed } from '../../../../../components/member/cohort-feed';
 import { ClassesSection } from '../../../../../components/admin/cycles/classes-section';
 import { Eyebrow } from '../../../../../components/ui/eyebrow';
 import { SectionLabel } from '../../../../../components/ui/section-label';
@@ -70,9 +71,15 @@ export default function AdminCyclePage({
         <CycleMembersGrid members={data.members} />
       </section>
 
-      <section>
-        <SectionLabel>Cohort heatmap · last 6 weeks</SectionLabel>
-        <CohortHeatmap weeks={data.heatmap.weeks} rows={data.heatmap.rows} />
+      <section className="grid gap-8 md:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="min-w-0 space-y-3">
+          <SectionLabel>Cohort heatmap · all weeks</SectionLabel>
+          <CohortHeatmap weeks={data.heatmap.weeks} rows={data.heatmap.rows} />
+        </div>
+        <aside className="space-y-3">
+          <SectionLabel>Activity · last 7d</SectionLabel>
+          <CohortFeed feed={data.feed} />
+        </aside>
       </section>
 
       <ClassesSection

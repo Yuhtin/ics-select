@@ -25,6 +25,15 @@ export type CycleOverviewHeatmapRow = {
   cells: number[];
 };
 
+export type CycleOverviewFeedEvent = {
+  id: string;
+  kind: 'finished' | 'got_stuck' | 'had_doubts' | 'posted_retro';
+  at: string;
+  member: { id: string; name: string; pictureUrl: string | null };
+  itemTitle: string | null;
+  itemId: string | null;
+};
+
 export type CycleOverviewResponse = {
   cycle: {
     id: string;
@@ -41,6 +50,7 @@ export type CycleOverviewResponse = {
     weeks: CycleOverviewHeatmapWeek[];
     rows: CycleOverviewHeatmapRow[];
   };
+  feed: CycleOverviewFeedEvent[];
 };
 
 export function useAdminCycleOverview(cycleId: string | null | undefined) {
