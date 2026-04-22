@@ -156,7 +156,8 @@ describe('SKIPPED counts as completed across weekly-plans helpers', () => {
     const result = await service.cohortProgress(userId);
 
     expect(result).toHaveLength(1);
-    expect(result[0].done).toBe(2);
-    expect(result[0].total).toBe(3);
+    const row = result[0]!;
+    expect(row.done).toBe(2);
+    expect(row.total).toBe(3);
   });
 });
