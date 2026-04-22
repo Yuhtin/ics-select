@@ -13,6 +13,7 @@ import {
   usePublishPlan,
   useAutoSchedulePlan,
   useDeletePlan,
+  useReschedulePending,
   type WeeklyPlan,
   type WeeklyPlanItem,
   type AiDraft,
@@ -134,6 +135,7 @@ export default function PlanEditorPage({
   const publishPlan = usePublishPlan();
   const autoSchedule = useAutoSchedulePlan();
   const deletePlan = useDeletePlan();
+  const reschedulePending = useReschedulePending();
 
   const fetchMissingLibraryItems = async (ids: string[]): Promise<void> => {
     const unique = Array.from(new Set(ids));
@@ -311,6 +313,38 @@ export default function PlanEditorPage({
     }
   }
 
+  async function handleReschedulePending() {
+    if (!plan) return;
+    const confirmed = window.confirm(
+      'Realocar os itens pendentes no calendário da pessoa?',
+    );
+    if (!confirmed) return;
+    try {
+      await reschedulePending.mutateAsync(plan.id);
+      addToast({
+        title: 'Items rescheduled',
+        description: 'Pending items have been redistributed in the calendar.',
+        color: 'success',
+      });
+    } catch (err) {
+      if (
+        err instanceof ApiErrorResponse &&
+        err.apiError?.code === 'PLAN_OVERFLOW'
+      ) {
+        const overflow =
+          (err.apiError.details as { overflow?: OverflowItem[] } | undefined)
+            ?.overflow ?? [];
+        setOverflowState({ open: true, overflow });
+      } else {
+        addToast({
+          title: 'Reschedule failed',
+          description: err instanceof Error ? err.message : 'Unknown error',
+          color: 'danger',
+        });
+      }
+    }
+  }
+
   async function handleDeletePlan() {
     if (!plan) return;
     const confirmed = window.confirm(
@@ -347,12 +381,22 @@ export default function PlanEditorPage({
               {plan.status} · plan {plan.id.slice(0, 6)}
             </span>
           )}
+          {plan && plan.status === 'PUBLISHED' && (
+            <button
+              type="button"
+              onClick={() => { void handleReschedulePending(); }}
+              disabled={reschedulePending.isPending}
+              className="ml-auto inline-flex items-center gap-1.5 rounded-pill border border-rule px-3 py-1 font-mono text-[10px] uppercase tracking-label text-ink-soft hover:border-ink-soft hover:bg-paper-warm disabled:opacity-50"
+            >
+              {reschedulePending.isPending ? 'Rescheduling…' : 'Reschedule pending'}
+            </button>
+          )}
           {plan && (
             <button
               type="button"
               onClick={() => { void handleDeletePlan(); }}
               disabled={deletePlan.isPending}
-              className="ml-auto inline-flex items-center gap-1.5 rounded-pill border border-outcome-stuck/40 px-3 py-1 font-mono text-[10px] uppercase tracking-label text-outcome-stuck hover:border-outcome-stuck hover:bg-outcome-stuck/5 disabled:opacity-50"
+              className={`${plan.status === 'PUBLISHED' ? '' : 'ml-auto '}inline-flex items-center gap-1.5 rounded-pill border border-outcome-stuck/40 px-3 py-1 font-mono text-[10px] uppercase tracking-label text-outcome-stuck hover:border-outcome-stuck hover:bg-outcome-stuck/5 disabled:opacity-50`}
             >
               {deletePlan.isPending ? 'Deleting…' : 'Delete plan'}
             </button>

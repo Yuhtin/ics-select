@@ -1,3 +1,4 @@
+import { ConflictException } from '@nestjs/common';
 import { PublicationService, PlanOverflowError } from './publication.service';
 
 function fakePrisma() {
@@ -38,6 +39,7 @@ const calendar = {
   getFreeBusy: jest.fn(async (): Promise<Array<{ start: Date; end: Date }>> => []),
   createEvent: jest.fn(async () => 'evt-1'),
   deleteEvent: jest.fn(async () => undefined),
+  findEventIdByIcsId: jest.fn(async () => 'gcal-evt-1'),
 };
 
 const scheduler = {
@@ -322,5 +324,152 @@ describe('PublicationService.autoSchedule', () => {
     expect(input.busyByDay[4]).toEqual([]);
     expect(input.busyByDay[5]).toEqual([]);
     expect(input.busyByDay[6]).toEqual([]);
+  });
+});
+
+describe('PublicationService.reschedulePending', () => {
+  const weekStart = new Date('2026-04-13T00:00:00-03:00');
+  const weekEnd = new Date('2026-04-20T00:00:00-03:00');
+
+  function makePlan(overrides: Record<string, any> = {}) {
+    return {
+      id: 'p-1',
+      userId: 'u-1',
+      cycleId: 'c-1',
+      weekStart,
+      weekEnd,
+      status: 'PUBLISHED',
+      items: [
+        {
+          id: 'wpi-pending',
+          libraryItemId: 'li-1',
+          order: 0,
+          outcome: 'PENDING',
+          libraryItem: { title: 'A', estimatedMinutes: 60, url: 'https://example.com/a' },
+        },
+        {
+          id: 'wpi-done',
+          libraryItemId: 'li-2',
+          order: 1,
+          outcome: 'DONE_EASY',
+          libraryItem: { title: 'B', estimatedMinutes: 60, url: 'https://example.com/b' },
+        },
+      ],
+      ...overrides,
+    };
+  }
+
+  beforeEach(() => {
+    calendar.createEvent.mockClear();
+    calendar.deleteEvent.mockClear();
+    calendar.findEventIdByIcsId.mockClear();
+    calendar.getFreeBusy.mockReset();
+    calendar.getFreeBusy.mockResolvedValue([]);
+    calendar.findEventIdByIcsId.mockResolvedValue('gcal-evt-1');
+    scheduler.plan.mockReset();
+    scheduler.plan.mockReturnValue({
+      sessions: [
+        { itemId: 'wpi-pending', scheduledAt: new Date('2026-04-17T11:00:00Z'), durationMinutes: 60 },
+      ],
+      overflow: [],
+    });
+  });
+
+  it('rejects non-PUBLISHED plans with ConflictException', async () => {
+    const prisma = fakePrisma();
+    prisma.plans.set('p-1', makePlan({ status: 'DRAFT' }));
+    const svc = new PublicationService(prisma as any, scheduler as any, calendar as any);
+    await expect(svc.reschedulePending('p-1')).rejects.toBeInstanceOf(ConflictException);
+  });
+
+  it('no-op when no PENDING items', async () => {
+    const prisma = fakePrisma();
+    prisma.plans.set('p-1', makePlan({
+      items: [
+        {
+          id: 'wpi-done',
+          libraryItemId: 'li-2',
+          order: 0,
+          outcome: 'DONE_EASY',
+          libraryItem: { title: 'B', estimatedMinutes: 60, url: 'https://example.com/b' },
+        },
+      ],
+    }));
+    const svc = new PublicationService(prisma as any, scheduler as any, calendar as any);
+    await svc.reschedulePending('p-1');
+    expect(calendar.findEventIdByIcsId).not.toHaveBeenCalled();
+    expect(scheduler.plan).not.toHaveBeenCalled();
+  });
+
+  it('cleans up existing events then schedules only PENDING items', async () => {
+    const prisma = fakePrisma();
+    prisma.plans.set('p-1', makePlan());
+    const svc = new PublicationService(prisma as any, scheduler as any, calendar as any);
+    await svc.reschedulePending('p-1');
+
+    // findEventIdByIcsId only called for the PENDING item
+    expect(calendar.findEventIdByIcsId).toHaveBeenCalledTimes(1);
+    expect(calendar.findEventIdByIcsId).toHaveBeenCalledWith(
+      'u-1', 'p-1', 'wpi-pending', expect.objectContaining({ start: weekStart, end: weekEnd }),
+    );
+
+    // deleteEvent called with the returned id
+    expect(calendar.deleteEvent).toHaveBeenCalledTimes(1);
+    expect(calendar.deleteEvent).toHaveBeenCalledWith('u-1', 'gcal-evt-1');
+
+    // scheduler receives only the PENDING item
+    expect(scheduler.plan).toHaveBeenCalledTimes(1);
+    const input = scheduler.plan.mock.calls[0]![0] as any;
+    expect(input.items).toHaveLength(1);
+    expect(input.items[0].id).toBe('wpi-pending');
+
+    // createEvent called for the new session
+    expect(calendar.createEvent).toHaveBeenCalledTimes(1);
+    expect(calendar.createEvent).toHaveBeenCalledWith(
+      'u-1',
+      expect.objectContaining({ icsId: { planId: 'p-1', itemId: 'wpi-pending' } }),
+    );
+  });
+
+  it('clamps scheduling window to max(now, plan.weekStart) via now param', async () => {
+    const prisma = fakePrisma();
+    prisma.plans.set('p-1', makePlan());
+    const svc = new PublicationService(prisma as any, scheduler as any, calendar as any);
+    const midWeek = new Date('2026-04-16T10:00:00-03:00'); // Thursday
+    await svc.reschedulePending('p-1', { now: midWeek });
+
+    expect(scheduler.plan).toHaveBeenCalledTimes(1);
+    const input = scheduler.plan.mock.calls[0]![0] as any;
+    // now passed to scheduler should be the provided mid-week date
+    expect(input.now).toEqual(midWeek);
+  });
+
+  it('throws PlanOverflowError when scheduler returns overflow', async () => {
+    const prisma = fakePrisma();
+    prisma.plans.set('p-1', makePlan());
+    scheduler.plan.mockReturnValue({
+      sessions: [],
+      overflow: [{ itemId: 'wpi-pending', minutesRequired: 60 }],
+    });
+    const svc = new PublicationService(prisma as any, scheduler as any, calendar as any);
+    await expect(svc.reschedulePending('p-1')).rejects.toBeInstanceOf(PlanOverflowError);
+  });
+
+  it('tolerates Calendar errors during cleanup and still creates new events', async () => {
+    const prisma = fakePrisma();
+    prisma.plans.set('p-1', makePlan());
+    // Simulate findEventIdByIcsId throwing
+    calendar.findEventIdByIcsId.mockRejectedValueOnce(new Error('calendar down'));
+    const svc = new PublicationService(prisma as any, scheduler as any, calendar as any);
+    await svc.reschedulePending('p-1');
+
+    // deleteEvent should NOT have been called (threw before reaching it)
+    expect(calendar.deleteEvent).not.toHaveBeenCalled();
+    // But createEvent IS still called for the new session
+    expect(calendar.createEvent).toHaveBeenCalledTimes(1);
+    expect(calendar.createEvent).toHaveBeenCalledWith(
+      'u-1',
+      expect.objectContaining({ icsId: { planId: 'p-1', itemId: 'wpi-pending' } }),
+    );
   });
 });

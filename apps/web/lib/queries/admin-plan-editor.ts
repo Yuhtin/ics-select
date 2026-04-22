@@ -136,3 +136,15 @@ export function useDeletePlan() {
     },
   });
 }
+
+export function useReschedulePending() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (planId: string) => {
+      await apiFetch<void>(`/plans/${planId}/reschedule-pending`, { method: 'POST' });
+    },
+    onSuccess: (_data, planId) => {
+      qc.invalidateQueries({ queryKey: ['plan', planId] });
+    },
+  });
+}

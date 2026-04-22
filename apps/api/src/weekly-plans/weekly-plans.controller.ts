@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, HttpCode, NotFoundException, Param, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, NotFoundException, Param, Patch, Post, Query } from '@nestjs/common';
 import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
 import { Roles } from '../auth/decorators/roles.decorator.js';
 import type { JwtStrategyPayload } from '../auth/strategies/jwt.strategy.js';
@@ -38,6 +38,13 @@ export class WeeklyPlansController {
   @Post('plans/:id/publish')
   publish(@Param('id') id: string) {
     return this.publication.publish(id);
+  }
+
+  @Roles('ADMIN')
+  @Post('plans/:id/reschedule-pending')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async reschedulePending(@Param('id') id: string) {
+    await this.publication.reschedulePending(id);
   }
 
   @Post('plans/:id/auto-schedule')

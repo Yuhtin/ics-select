@@ -49,6 +49,121 @@ export class PublicationService {
     return { plan: updated };
   }
 
+  // Admin-initiated: delete existing Calendar events for PENDING items and
+  // re-schedule them into the remaining days of the week.
+  async reschedulePending(planId: string, options: { now?: Date } = {}): Promise<void> {
+    const now = options.now ?? new Date();
+
+    const plan = await this.prisma.weeklyPlan.findUnique({
+      where: { id: planId },
+      include: { items: { include: { libraryItem: true }, orderBy: { order: 'asc' } } },
+    });
+    if (!plan) throw new NotFoundException('plan not found');
+    if (plan.status !== 'PUBLISHED') {
+      throw new ConflictException('Only PUBLISHED plans can be rescheduled');
+    }
+
+    const pending = plan.items.filter((i) => i.outcome === 'PENDING');
+    if (pending.length === 0) return;
+
+    // 1. Delete existing Calendar events for the PENDING items
+    for (const item of pending) {
+      try {
+        const eventId = await this.calendar.findEventIdByIcsId(
+          plan.userId,
+          plan.id,
+          item.id,
+          { start: plan.weekStart, end: plan.weekEnd },
+        );
+        if (eventId) await this.calendar.deleteEvent(plan.userId, eventId);
+      } catch {
+        // swallow — one flaky event should not block the reschedule
+      }
+    }
+
+    // 2. Re-schedule PENDING items into remaining window.
+    // The scheduler already skips past days when `now` is provided; passing
+    // `now` here is sufficient to clamp to the remaining window.
+    const existing = await this.prisma.memberAvailability.findUnique({
+      where: { userId: plan.userId },
+    });
+    const availability = existing ?? DEFAULT_AVAILABILITY;
+
+    const busyBlocks = await this.calendar
+      .getFreeBusy(plan.userId, now, plan.weekEnd)
+      .catch(() => [] as Array<{ start: Date; end: Date }>);
+
+    const busyByDay: Record<number, Array<{ startMinute: number; endMinute: number }>> = {
+      0: [], 1: [], 2: [], 3: [], 4: [], 5: [], 6: [],
+    };
+    for (const block of busyBlocks) {
+      const dayIdx = Math.floor(
+        (block.start.getTime() - plan.weekStart.getTime()) / (24 * 60 * 60 * 1000),
+      );
+      if (dayIdx < 0 || dayIdx > 6) continue;
+      const durationMinutes = Math.max(
+        0,
+        Math.round((block.end.getTime() - block.start.getTime()) / 60000),
+      );
+      if (durationMinutes === 0) continue;
+      busyByDay[dayIdx]!.push({ startMinute: 0, endMinute: durationMinutes });
+    }
+
+    const result = this.scheduler.plan({
+      weekStart: plan.weekStart,
+      availability,
+      busyByDay,
+      items: pending.map((i) => ({ id: i.id, estimatedMinutes: i.libraryItem.estimatedMinutes })),
+      now,
+    });
+
+    if (result.overflow.length > 0) {
+      throw new PlanOverflowError(result.overflow);
+    }
+
+    // 3. Create new Calendar events and update DB-side scheduling fields
+    for (const session of result.sessions) {
+      const item = pending.find((p) => p.id === session.itemId)!;
+      const eventEnd = new Date(session.scheduledAt.getTime() + session.durationMinutes * 60 * 1000);
+      try {
+        await this.calendar.createEvent(plan.userId, {
+          summary: `ICS Select — ${item.libraryItem.title}`,
+          description: item.libraryItem.url
+            ? `Link: ${item.libraryItem.url}`
+            : 'ICS Select study session',
+          start: session.scheduledAt,
+          end: eventEnd,
+          icsId: { planId: plan.id, itemId: item.id },
+        });
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        this.logger.warn(
+          `calendar.createEvent failed · user=${plan.userId} plan=${plan.id} item=${item.id} · ${msg}`,
+        );
+      }
+    }
+
+    // Persist updated scheduling fields on each rescheduled item
+    const byItem = new Map<string, { startAt: Date; minutes: number }[]>();
+    for (const session of result.sessions) {
+      const list = byItem.get(session.itemId) ?? [];
+      list.push({ startAt: session.scheduledAt, minutes: session.durationMinutes });
+      byItem.set(session.itemId, list);
+    }
+
+    for (const [itemId, chunks] of byItem) {
+      chunks.sort((a, b) => a.startAt.getTime() - b.startAt.getTime());
+      const earliest = chunks[0]!;
+      await this.prisma.weeklyPlanItem.update({
+        where: { id: itemId },
+        data: {
+          scheduledAt: earliest.startAt,
+          scheduledMinutes: chunks.reduce((s, c) => s + c.minutes, 0),
+        },
+      });
+    }
+  }
+
   // Member-initiated: allocate study sessions into their Google Calendar.
   async autoSchedule(planId: string, force: boolean) {
     const plan = await this.prisma.weeklyPlan.findUnique({
