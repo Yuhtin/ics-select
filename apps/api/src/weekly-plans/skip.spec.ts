@@ -112,6 +112,68 @@ describe('WeeklyPlansService.setItemOutcome — SKIPPED', () => {
   });
 });
 
+describe('plan read — skippable flag', () => {
+  it('sets skippable=true when foundations is in item topics (primary OR cover), false otherwise', async () => {
+    const stubCalendar = { findEventIdByIcsId: jest.fn(), deleteEvent: jest.fn() };
+
+    const prisma = {
+      weeklyPlan: {
+        findUnique: jest.fn().mockResolvedValue({
+          id: 'p1',
+          userId: 'u1',
+          items: [
+            {
+              id: 'i1',
+              libraryItem: { topics: [{ topic: { slug: 'sorting' } }] },
+            },
+            {
+              id: 'i2',
+              libraryItem: {
+                topics: [{ topic: { slug: 'array' } }, { topic: { slug: 'foundations' } }],
+              },
+            },
+          ],
+        }),
+      },
+    };
+
+    const service = new WeeklyPlansService(prisma as any, stubCalendar as any);
+    const plan = await service.getById('p1');
+    expect(plan!.items[0]!.skippable).toBe(false);
+    expect(plan!.items[1]!.skippable).toBe(true);
+  });
+
+  it('listForMember sets skippable on each item', async () => {
+    const stubCalendar = { findEventIdByIcsId: jest.fn(), deleteEvent: jest.fn() };
+
+    const prisma = {
+      weeklyPlan: {
+        findMany: jest.fn().mockResolvedValue([
+          {
+            id: 'p1',
+            userId: 'u1',
+            items: [
+              {
+                id: 'i1',
+                libraryItem: { topics: [{ topic: { slug: 'foundations' } }] },
+              },
+              {
+                id: 'i2',
+                libraryItem: { topics: [{ topic: { slug: 'graph' } }] },
+              },
+            ],
+          },
+        ]),
+      },
+    };
+
+    const service = new WeeklyPlansService(prisma as any, stubCalendar as any);
+    const plans = await service.listForMember('u1');
+    expect(plans[0]!.items[0]!.skippable).toBe(true);
+    expect(plans[0]!.items[1]!.skippable).toBe(false);
+  });
+});
+
 describe('SKIPPED counts as completed across weekly-plans helpers', () => {
   it('weekly-plans cohortProgress done-count includes SKIPPED', async () => {
     // Arrange: stub prisma so cohortProgress returns a plan with

@@ -95,16 +95,28 @@ export class WeeklyPlansService {
     });
   }
 
-  getById(id: string) {
-    return this.prisma.weeklyPlan.findUnique({
+  async getById(id: string) {
+    const plan = await this.prisma.weeklyPlan.findUnique({
       where: { id },
       include: {
         items: {
-          include: { libraryItem: true },
+          include: {
+            libraryItem: {
+              include: { topics: { include: { topic: { select: { slug: true } } } } },
+            },
+          },
           orderBy: { order: 'asc' },
         },
       },
     });
+    if (!plan) return null;
+    return {
+      ...plan,
+      items: plan.items.map((i) => ({
+        ...i,
+        skippable: i.libraryItem.topics.some((t) => t.topic.slug === 'foundations'),
+      })),
+    };
   }
 
   async getByIdOrThrow(id: string) {
@@ -166,14 +178,28 @@ export class WeeklyPlansService {
     });
   }
 
-  listForMember(userId: string) {
-    return this.prisma.weeklyPlan.findMany({
+  async listForMember(userId: string) {
+    const plans = await this.prisma.weeklyPlan.findMany({
       where: { userId },
       orderBy: { weekStart: 'desc' },
       include: {
-        items: { include: { libraryItem: true }, orderBy: { order: 'asc' } },
+        items: {
+          include: {
+            libraryItem: {
+              include: { topics: { include: { topic: { select: { slug: true } } } } },
+            },
+          },
+          orderBy: { order: 'asc' },
+        },
       },
     });
+    return plans.map((plan) => ({
+      ...plan,
+      items: plan.items.map((i) => ({
+        ...i,
+        skippable: i.libraryItem.topics.some((t) => t.topic.slug === 'foundations'),
+      })),
+    }));
   }
 
   async setItemOutcome(
