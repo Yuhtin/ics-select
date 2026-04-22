@@ -42,7 +42,7 @@ function SlotRow({
 }) {
   const hasPlan = slot.planId !== null;
   const action = hasPlan ? 'Edit' : 'Create';
-  const disabled = !slot.inCycle;
+  const disabled = !slot.inCycle && !hasPlan;
 
   return (
     <button
