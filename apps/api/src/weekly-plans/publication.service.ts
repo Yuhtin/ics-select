@@ -27,6 +27,27 @@ const DEFAULT_AVAILABILITY = {
   timezone: 'America/Sao_Paulo',
 };
 
+/**
+ * Convert a library item's raw `estimatedMinutes` (the intrinsic length of
+ * the material) into the calendar block we actually reserve for it. Two
+ * adjustments stack:
+ *
+ *   1. 2× padding — people pause videos, take notes, re-watch confusing parts.
+ *   2. Round UP to the nearest 15 minutes, minimum 30. Study slots feel
+ *      cleaner in quarter-hour increments; sub-30-min blocks are too granular.
+ *
+ * Examples:
+ *   13 min  → 2× = 26 → round ↑ 15 = 30
+ *   25 min  → 2× = 50 → round ↑ 15 = 60
+ *   17 min  → 2× = 34 → round ↑ 15 = 45
+ *   5 min   → 2× = 10 → min 30    = 30
+ */
+export function allocatedMinutes(estimated: number): number {
+  const padded = Math.max(0, estimated) * 2;
+  const rounded = Math.ceil(padded / 15) * 15;
+  return Math.max(30, rounded);
+}
+
 @Injectable()
 export class PublicationService {
   private readonly logger = new Logger(PublicationService.name);
@@ -97,7 +118,10 @@ export class PublicationService {
       weekStart: plan.weekStart,
       availability,
       busyBlocks,
-      items: pending.map((i) => ({ id: i.id, estimatedMinutes: i.libraryItem.estimatedMinutes })),
+      items: pending.map((i) => ({
+        id: i.id,
+        estimatedMinutes: allocatedMinutes(i.libraryItem.estimatedMinutes),
+      })),
       now,
     });
 
@@ -175,7 +199,7 @@ export class PublicationService {
       busyBlocks,
       items: schedulableItems.map((i) => ({
         id: i.id,
-        estimatedMinutes: i.libraryItem.estimatedMinutes,
+        estimatedMinutes: allocatedMinutes(i.libraryItem.estimatedMinutes),
       })),
       now: new Date(),
     };

@@ -1,5 +1,25 @@
 import { ConflictException } from '@nestjs/common';
-import { PublicationService, PlanOverflowError } from './publication.service';
+import {
+  PublicationService,
+  PlanOverflowError,
+  allocatedMinutes,
+} from './publication.service';
+
+describe('allocatedMinutes', () => {
+  it('pads by 2× and rounds up to the next 15-min slot', () => {
+    expect(allocatedMinutes(13)).toBe(30); // 2× = 26 → ↑15 = 30
+    expect(allocatedMinutes(25)).toBe(60); // 2× = 50 → ↑15 = 60
+    expect(allocatedMinutes(17)).toBe(45); // 2× = 34 → ↑15 = 45
+    expect(allocatedMinutes(30)).toBe(60); // 2× = 60 → already on slot
+    expect(allocatedMinutes(45)).toBe(90); // 2× = 90 → already on slot
+  });
+
+  it('enforces a 30-minute minimum for very short items', () => {
+    expect(allocatedMinutes(5)).toBe(30);
+    expect(allocatedMinutes(1)).toBe(30);
+    expect(allocatedMinutes(0)).toBe(30);
+  });
+});
 
 function fakePrisma() {
   const plans = new Map<string, any>();

@@ -267,21 +267,30 @@ export class HomeService {
   ): HeroState | null {
     const nowMs = now.getTime();
 
-    // 1) "now" — a pending item scheduled within NOW_WINDOW_MINUTES
+    // 1) "now" — a pending item whose scheduled window (minus a 15-min lead-in,
+    //    plus its scheduledMinutes block) contains the current time.
     const nowItem = today.find((i) => {
       if (i.outcome !== 'PENDING' || !i.scheduledAt) return false;
-      const diffMin = (new Date(i.scheduledAt).getTime() - nowMs) / 60_000;
-      return Math.abs(diffMin) <= NOW_WINDOW_MINUTES;
+      const startMs = new Date(i.scheduledAt).getTime();
+      const durationMs = (i.scheduledMinutes ?? 0) * 60_000;
+      const windowStart = startMs - NOW_WINDOW_MINUTES * 60_000;
+      const windowEnd = startMs + durationMs;
+      return nowMs >= windowStart && nowMs <= windowEnd;
     });
     if (nowItem) return { state: 'now', item: nowItem };
 
-    // 2) "running_late" — pending item scheduled earlier today
+    // 2) "running_late" — pending item whose scheduled window has fully ended.
     const lateItem = today.find((i) => {
       if (i.outcome !== 'PENDING' || !i.scheduledAt) return false;
-      return new Date(i.scheduledAt).getTime() < nowMs;
+      const startMs = new Date(i.scheduledAt).getTime();
+      const durationMs = (i.scheduledMinutes ?? 0) * 60_000;
+      return startMs + durationMs < nowMs;
     });
     if (lateItem) {
-      const minutesLate = Math.round((nowMs - new Date(lateItem.scheduledAt!).getTime()) / 60_000);
+      const endMs =
+        new Date(lateItem.scheduledAt!).getTime() +
+        (lateItem.scheduledMinutes ?? 0) * 60_000;
+      const minutesLate = Math.round((nowMs - endMs) / 60_000);
       return { state: 'running_late', item: lateItem, minutesLate };
     }
 

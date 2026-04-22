@@ -103,9 +103,10 @@ describe('HomeService', () => {
         libraryItem: { title: 'X', format: 'PROBLEM', estimatedMinutes: 45, url: null, topics: [] },
       },
     ]);
+    // Session 19:00 + 45min = ends 19:45. Now = 20:00 → 15 min past end.
     const result = await service.getHome('user-1', new Date('2026-04-17T20:00:00Z'));
     expect(result.hero?.state).toBe('running_late');
-    expect((result.hero as any).minutesLate).toBeGreaterThanOrEqual(60);
+    expect((result.hero as any).minutesLate).toBe(15);
   });
 
   it('groups days chronologically and keeps done items in today', async () => {

@@ -39,14 +39,22 @@ export function ItemFocus({ item }: ItemFocusProps) {
   const now = new Date();
   const platform = detectPlatform(item.libraryItem.url, item.libraryItem.format);
 
-  const isRunningLate =
-    !isDone && item.scheduledAt !== null && new Date(item.scheduledAt) < now;
+  // "Running late" means the scheduled window has ENDED and the member hasn't
+  // marked the item yet — not that the session just started.
+  const scheduledEnd =
+    item.scheduledAt && item.scheduledMinutes
+      ? new Date(
+          new Date(item.scheduledAt).getTime() + item.scheduledMinutes * 60_000,
+        )
+      : item.scheduledAt
+        ? new Date(item.scheduledAt)
+        : null;
+  const isRunningLate = !isDone && scheduledEnd !== null && scheduledEnd < now;
 
   const eyebrowText = (() => {
     if (isDone && item.completedAt) return `Marked · ${formatDateLocal(item.completedAt)}`;
     if (item.scheduledAt) {
-      const sched = new Date(item.scheduledAt);
-      if (sched > now) return `Scheduled · ${formatDateLocal(item.scheduledAt)} ${formatTimeLocal(item.scheduledAt)}`;
+      if (!isRunningLate) return `Scheduled · ${formatDateLocal(item.scheduledAt)} ${formatTimeLocal(item.scheduledAt)}`;
       return `Running late · was at ${formatTimeLocal(item.scheduledAt)}`;
     }
     return 'Pending';

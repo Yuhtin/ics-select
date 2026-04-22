@@ -19,12 +19,10 @@ interface DayListProps {
 
 function intentFor(item: HomeItem, now: Date): 'default' | 'late' | 'carried' {
   if (item.carriedFromItemId) return 'carried';
-  if (
-    item.outcome === 'PENDING' &&
-    item.scheduledAt &&
-    new Date(item.scheduledAt).getTime() < now.getTime()
-  ) {
-    return 'late';
+  if (item.outcome === 'PENDING' && item.scheduledAt) {
+    const startMs = new Date(item.scheduledAt).getTime();
+    const durationMs = (item.scheduledMinutes ?? 0) * 60_000;
+    if (startMs + durationMs < now.getTime()) return 'late';
   }
   return 'default';
 }
