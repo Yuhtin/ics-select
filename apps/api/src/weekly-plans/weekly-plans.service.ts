@@ -1,6 +1,7 @@
 import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service.js';
 import { resolveActiveMembership } from '../common/cycle/active-cycle.js';
+import { GoogleCalendarService } from '../google-calendar/google-calendar.service.js';
 import type { ItemOutcome } from '@ics-select/shared';
 
 type CreateInput = {
@@ -19,7 +20,10 @@ type UpdateInput = {
 
 @Injectable()
 export class WeeklyPlansService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly calendar: GoogleCalendarService,
+  ) {}
 
   async remove(id: string) {
     const plan = await this.prisma.weeklyPlan.findUnique({ where: { id } });
@@ -179,11 +183,36 @@ export class WeeklyPlansService {
   ) {
     const item = await this.prisma.weeklyPlanItem.findUnique({
       where: { id: itemId },
-      include: { weeklyPlan: { select: { userId: true } } },
+      include: {
+        weeklyPlan: { select: { id: true, userId: true, status: true, weekStart: true, weekEnd: true } },
+        libraryItem: { include: { topics: { include: { topic: { select: { slug: true } } } } } },
+      },
     });
     if (!item) throw new NotFoundException('Item not found');
     if (item.weeklyPlan.userId !== userId) {
-      throw new ForbiddenException('Forbidden: cannot change someone else\'s item');
+      throw new ForbiddenException("Forbidden: cannot change someone else's item");
+    }
+
+    if (input.outcome === 'SKIPPED') {
+      const slugs = item.libraryItem.topics.map((t) => t.topic.slug);
+      if (!slugs.includes('foundations')) {
+        throw new ForbiddenException('Only foundations items can be skipped');
+      }
+      if (item.weeklyPlan.status === 'PUBLISHED') {
+        const eventId = await this.calendar.findEventIdByIcsId(
+          userId,
+          item.weeklyPlan.id,
+          item.id,
+          { start: item.weeklyPlan.weekStart, end: item.weeklyPlan.weekEnd },
+        );
+        if (eventId) {
+          try {
+            await this.calendar.deleteEvent(userId, eventId);
+          } catch {
+            // swallow — matches PublicationService style
+          }
+        }
+      }
     }
 
     const completed = input.outcome !== 'PENDING';
