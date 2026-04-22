@@ -14,8 +14,8 @@ import { RescheduleModal } from '../../../../components/member/calendar/reschedu
 
 const CalendarApp = dynamic(
   () =>
-    import('../../../../components/member/calendar/calendar-app').then(
-      (m) => m.CalendarApp,
+    import('../../../../components/member/calendar/week-grid').then(
+      (m) => m.WeekGrid,
     ),
   { ssr: false, loading: () => <CalendarGridSkeleton /> },
 );
