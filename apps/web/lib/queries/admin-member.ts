@@ -44,7 +44,7 @@ export type MemberDetailResponse = {
       id: string;
       libraryItemId: string;
       title: string;
-      outcome: 'PENDING' | 'DONE_EASY' | 'DONE_HARD' | 'DOUBTS' | 'STUCK';
+      outcome: 'PENDING' | 'DONE_EASY' | 'DONE_HARD' | 'DOUBTS' | 'STUCK' | 'SKIPPED';
       reflection: string | null;
       completedAt: string | null;
       topicLabel: string | null;

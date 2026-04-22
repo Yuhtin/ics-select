@@ -11,6 +11,7 @@ type MemberCard = {
   stats: {
     plansCount: number;
     doneItems: number;
+    skippedItems: number;
     stuckItems: number;
   };
 };
@@ -23,10 +24,13 @@ export class AdminDashboardService {
     const users = await this.prisma.user.findMany();
     const cards: MemberCard[] = [];
     for (const u of users) {
-      const [plansCount, doneItems, stuckItems] = await Promise.all([
+      const [plansCount, doneItems, skippedItems, stuckItems] = await Promise.all([
         this.prisma.weeklyPlan.count({ where: { userId: u.id, status: 'PUBLISHED' } }),
         this.prisma.weeklyPlanItem.count({
           where: { weeklyPlan: { userId: u.id }, outcome: { in: ['DONE_EASY', 'DONE_HARD', 'SKIPPED'] } },
+        }),
+        this.prisma.weeklyPlanItem.count({
+          where: { weeklyPlan: { userId: u.id }, outcome: 'SKIPPED' },
         }),
         this.prisma.weeklyPlanItem.count({
           where: { weeklyPlan: { userId: u.id }, outcome: 'STUCK' },
@@ -38,7 +42,7 @@ export class AdminDashboardService {
         email: u.email,
         pictureUrl: u.pictureUrl,
         role: u.role,
-        stats: { plansCount, doneItems, stuckItems },
+        stats: { plansCount, doneItems, skippedItems, stuckItems },
       });
     }
     return cards;
@@ -81,6 +85,7 @@ export class AdminDashboardService {
         weekEnd: p.weekEnd,
         status: p.status,
         doneCount: p.items.filter((i) => isPositiveOutcome(i.outcome)).length,
+        skippedCount: p.items.filter((i) => i.outcome === 'SKIPPED').length,
         totalCount: p.items.length,
       })),
       topicCoverage: Array.from(topicCoverage.entries()).map(([tag, stats]) => ({

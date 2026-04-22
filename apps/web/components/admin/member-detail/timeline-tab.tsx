@@ -12,6 +12,7 @@ const DOT_BY_OUTCOME: Record<Plan['items'][number]['outcome'], string> = {
   DONE_HARD: 'bg-outcome-done-hard',
   DOUBTS: 'bg-outcome-doubts',
   STUCK: 'bg-outcome-stuck',
+  SKIPPED: 'bg-ink-mute',
 };
 
 function formatDate(iso: string): string {
@@ -34,8 +35,9 @@ export function TimelineTab({
     <div className="space-y-8">
       {plans.map((plan) => {
         const doneCount = plan.items.filter(
-          (i) => i.outcome === 'DONE_EASY' || i.outcome === 'DONE_HARD',
+          (i) => i.outcome === 'DONE_EASY' || i.outcome === 'DONE_HARD' || i.outcome === 'SKIPPED',
         ).length;
+        const skippedCount = plan.items.filter((i) => i.outcome === 'SKIPPED').length;
         const href = `/admin/member/${memberId}/plan/${plan.planId}`;
         return (
           <article key={plan.planId} className="space-y-3">
@@ -51,6 +53,9 @@ export function TimelineTab({
               </Link>
               <span className="font-mono text-[10px] uppercase tracking-label text-ink-mute">
                 {plan.status} · {doneCount}/{plan.items.length}
+                {skippedCount > 0 && (
+                  <span className="ml-1 normal-case text-xs text-ink-mute">({skippedCount} skipped)</span>
+                )}
               </span>
               <Link
                 href={href}

@@ -11,6 +11,7 @@ export type AdminMemberCard = {
   stats: {
     plansCount: number;
     doneItems: number;
+    skippedItems: number;
     stuckItems: number;
   };
 };
