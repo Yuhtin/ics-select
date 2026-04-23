@@ -4,7 +4,12 @@ import { Roles } from '../auth/decorators/roles.decorator.js';
 import type { JwtStrategyPayload } from '../auth/strategies/jwt.strategy.js';
 import { WeeklyPlansService } from './weekly-plans.service.js';
 import { PublicationService } from './publication.service.js';
-import { CreatePlanSchema, SetItemOutcomeSchema, UpdatePlanSchema } from './dto.js';
+import {
+  CreatePlanSchema,
+  PublishPlanSchema,
+  SetItemOutcomeSchema,
+  UpdatePlanSchema,
+} from './dto.js';
 
 @Controller()
 export class WeeklyPlansController {
@@ -36,8 +41,13 @@ export class WeeklyPlansController {
 
   @Roles('ADMIN')
   @Post('plans/:id/publish')
-  publish(@Param('id') id: string) {
-    return this.publication.publish(id);
+  publish(@Param('id') id: string, @Body() body: unknown) {
+    const parsed = PublishPlanSchema.parse(body ?? {});
+    return this.publication.publish(id, {
+      publishAt: parsed.publishAt ?? null,
+      sendWhatsapp: parsed.sendWhatsapp,
+      autoSchedule: parsed.autoSchedule,
+    });
   }
 
   @Roles('ADMIN')

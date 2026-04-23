@@ -89,8 +89,10 @@ export class WeeklyPlansService {
 
   async update(id: string, input: UpdateInput) {
     const existing = await this.getByIdOrThrow(id);
-    if (existing.status !== 'DRAFT') {
-      throw new ConflictException('only DRAFT plans can be edited');
+    // SCHEDULED plans are still editable — admin can tweak before the cron
+    // flips them to PUBLISHED. PUBLISHED/COMPLETED/ARCHIVED are frozen.
+    if (existing.status !== 'DRAFT' && existing.status !== 'SCHEDULED') {
+      throw new ConflictException('only DRAFT/SCHEDULED plans can be edited');
     }
     if (input.items) {
       // Delete and recreate items for simplicity

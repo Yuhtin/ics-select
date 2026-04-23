@@ -238,7 +238,11 @@ export default function PlanEditorPage({
     }
   }
 
-  async function handlePublish() {
+  async function handlePublish(options: {
+    publishAt: string | null;
+    sendWhatsapp: boolean;
+    autoSchedule: boolean;
+  }) {
     if (!plan || plan.items.length === 0) return;
     try {
       const saved = await updatePlan.mutateAsync({
@@ -250,7 +254,30 @@ export default function PlanEditorPage({
         })),
       });
       setPlan(saved);
-      await publishPlan.mutateAsync({ planId: plan.id });
+      const publishRes = await publishPlan.mutateAsync({
+        planId: plan.id,
+        publishAt: options.publishAt,
+        sendWhatsapp: options.sendWhatsapp,
+        autoSchedule: options.autoSchedule,
+      });
+      // Scheduled-publish path: cron handles autoSchedule + WhatsApp later.
+      if (publishRes.deferred) {
+        addToast({
+          title: 'Plan scheduled',
+          description: options.publishAt
+            ? `Goes live at ${new Date(options.publishAt).toLocaleString('pt-BR')}.`
+            : 'Scheduled for the future.',
+          color: 'success',
+        });
+        navigateAfterPublish();
+        return;
+      }
+      // Immediate publish path: only auto-schedule if admin opted in.
+      if (!options.autoSchedule) {
+        addToast({ title: 'Plan published', color: 'success' });
+        navigateAfterPublish();
+        return;
+      }
       const res = await autoSchedule.mutateAsync({
         planId: plan.id,
         force: false,
@@ -468,8 +495,8 @@ export default function PlanEditorPage({
                 onSaveDraft={() => {
                   void handleSaveDraft();
                 }}
-                onPublish={() => {
-                  void handlePublish();
+                onPublish={(options) => {
+                  void handlePublish(options);
                 }}
                 saving={updatePlan.isPending}
                 publishing={

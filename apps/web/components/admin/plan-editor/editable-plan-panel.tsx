@@ -4,10 +4,17 @@ import { Plus } from 'lucide-react';
 import { BudgetBadge } from './budget-badge';
 import { ItemCard } from './item-card';
 import { LibraryPickerModal } from './library-picker-modal';
+import { PublishModal } from './publish-modal';
 import type { WeeklyPlan, WeeklyPlanItem } from '../../../lib/queries/admin-plan-editor';
 import type { PlanContextResponse } from '../../../lib/queries/admin-plan-context';
 import { Eyebrow } from '../../ui/eyebrow';
 import { SectionLabel } from '../../ui/section-label';
+
+export interface PublishOptions {
+  publishAt: string | null;
+  sendWhatsapp: boolean;
+  autoSchedule: boolean;
+}
 
 export interface EditablePlanPanelProps {
   plan: WeeklyPlan;
@@ -18,7 +25,7 @@ export interface EditablePlanPanelProps {
   onAdminNotesChange: (notes: string) => void;
   onAddLibraryItem: (libraryItemId: string) => void;
   onSaveDraft: () => void;
-  onPublish: () => void;
+  onPublish: (options: PublishOptions) => void;
   saving: boolean;
   publishing: boolean;
 }
@@ -47,9 +54,8 @@ export function EditablePlanPanel({
   saving,
   publishing,
 }: EditablePlanPanelProps) {
-  const [createCalendarEvents, setCreateCalendarEvents] = useState(true);
-  const [sendWhatsapp, setSendWhatsapp] = useState(true);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [publishOpen, setPublishOpen] = useState(false);
 
   const plannedMinutes = useMemo(
     () => plan.items.reduce((s, i) => s + i.libraryItem.estimatedMinutes, 0),
@@ -144,30 +150,6 @@ export function EditablePlanPanel({
         />
       </section>
 
-      <section>
-        <SectionLabel>Publication</SectionLabel>
-        <div className="mt-2 space-y-2">
-          <label className="flex items-center gap-3 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={createCalendarEvents}
-              onChange={(e) => setCreateCalendarEvents(e.target.checked)}
-              className="accent-ink"
-            />
-            <span className="font-sans text-sm text-ink">Create Google Calendar events (with ICS ID)</span>
-          </label>
-          <label className="flex items-center gap-3 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={sendWhatsapp}
-              onChange={(e) => setSendWhatsapp(e.target.checked)}
-              className="accent-ink"
-            />
-            <span className="font-sans text-sm text-ink">Send WhatsApp notification to member</span>
-          </label>
-        </div>
-      </section>
-
       <footer className="flex justify-end gap-3 pt-6 border-t border-rule">
         <button
           type="button"
@@ -179,13 +161,27 @@ export function EditablePlanPanel({
         </button>
         <button
           type="button"
-          onClick={onPublish}
+          onClick={() => setPublishOpen(true)}
           disabled={publishing || plan.items.length === 0}
           className="font-mono text-xs uppercase tracking-label px-4 py-2 bg-ink text-paper rounded-pill hover:opacity-90 disabled:opacity-40"
         >
-          {publishing ? 'Publishing…' : 'Publish & schedule'}
+          {publishing ? 'Publishing…' : 'Publish…'}
         </button>
       </footer>
+
+      <PublishModal
+        open={publishOpen}
+        onClose={() => setPublishOpen(false)}
+        planWeekStart={plan.weekStart}
+        memberTimezone={context.availability.timezone}
+        publishing={publishing}
+        defaultSendWhatsapp={plan.sendWhatsapp ?? true}
+        defaultAutoSchedule={plan.autoSchedule ?? true}
+        onSubmit={(opts) => {
+          setPublishOpen(false);
+          onPublish(opts);
+        }}
+      />
     </div>
   );
 }

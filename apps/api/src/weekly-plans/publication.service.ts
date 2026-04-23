@@ -2,6 +2,7 @@ import { Injectable, Logger, NotFoundException, ConflictException } from '@nestj
 import { PrismaService } from '../common/prisma/prisma.service.js';
 import { SchedulerService, type SchedulerInput } from '../scheduler/scheduler.service.js';
 import { GoogleCalendarService } from '../google-calendar/google-calendar.service.js';
+import { WhatsappService } from '../whatsapp/whatsapp.service.js';
 
 export class PlanOverflowError extends ConflictException {
   constructor(public readonly overflow: Array<{ itemId: string; minutesRequired: number }>) {
@@ -56,18 +57,108 @@ export class PublicationService {
     private readonly prisma: PrismaService,
     private readonly scheduler: SchedulerService,
     private readonly calendar: GoogleCalendarService,
+    private readonly whatsapp: WhatsappService,
   ) {}
 
-  // Publishing a plan only flips status → PUBLISHED so the member sees it on the map.
-  // It does NOT touch Google Calendar. The member later opts-in via autoSchedule().
-  async publish(planId: string) {
+  /**
+   * Publish a plan — either immediately (publishAt absent or past) or on a
+   * schedule (publishAt in the future). The SCHEDULED case only persists
+   * flags; the side-effects (calendar events, WhatsApp) fire later via
+   * executeScheduledPublish() when the cron catches up to publishAt.
+   *
+   * When publishing immediately, this method only flips status → PUBLISHED.
+   * The admin flow also calls autoSchedule() right after to create Calendar
+   * events; that split exists because the admin may want to publish without
+   * touching the member's Calendar (e.g. when only whatsapp is desired).
+   */
+  async publish(
+    planId: string,
+    options: {
+      publishAt?: Date | null;
+      sendWhatsapp?: boolean;
+      autoSchedule?: boolean;
+      now?: Date;
+    } = {},
+  ) {
+    const now = options.now ?? new Date();
     const plan = await this.prisma.weeklyPlan.findUnique({ where: { id: planId } });
     if (!plan) throw new NotFoundException('plan not found');
+    if (plan.status !== 'DRAFT' && plan.status !== 'SCHEDULED') {
+      throw new ConflictException('only DRAFT/SCHEDULED plans can be published');
+    }
+
+    const sendWhatsapp = options.sendWhatsapp ?? true;
+    const autoSchedule = options.autoSchedule ?? true;
+    const publishAt = options.publishAt ?? null;
+
+    if (publishAt && publishAt.getTime() > now.getTime()) {
+      const updated = await this.prisma.weeklyPlan.update({
+        where: { id: planId },
+        data: {
+          status: 'SCHEDULED',
+          publishAt,
+          sendWhatsapp,
+          autoSchedule,
+        },
+      });
+      return { plan: updated, deferred: true as const };
+    }
+
     const updated = await this.prisma.weeklyPlan.update({
       where: { id: planId },
-      data: { status: 'PUBLISHED', publishedAt: new Date() },
+      data: {
+        status: 'PUBLISHED',
+        publishedAt: now,
+        publishAt: null,
+        sendWhatsapp,
+        autoSchedule,
+      },
     });
-    return { plan: updated };
+    return { plan: updated, deferred: false as const };
+  }
+
+  /**
+   * Cron-invoked flip from SCHEDULED → PUBLISHED + the side-effects the admin
+   * picked at publish time. Runs autoSchedule (if flag) and sends the
+   * plan_published WhatsApp (if flag). Calendar/WhatsApp failures are
+   * swallowed — the status flip sticks even if side-effects miss, so the
+   * cron doesn't keep retrying the same plan.
+   */
+  async executeScheduledPublish(planId: string, now: Date = new Date()): Promise<void> {
+    const plan = await this.prisma.weeklyPlan.findUnique({
+      where: { id: planId },
+      include: { user: { select: { name: true, whatsappPhone: true } } },
+    });
+    if (!plan) return;
+    if (plan.status !== 'SCHEDULED') return;
+
+    await this.prisma.weeklyPlan.update({
+      where: { id: planId },
+      data: { status: 'PUBLISHED', publishedAt: now },
+    });
+
+    if (plan.autoSchedule) {
+      try {
+        await this.autoSchedule(planId, false);
+      } catch (err) {
+        this.logger.warn(`scheduled publish: autoSchedule failed for ${planId}: ${String(err)}`);
+      }
+    }
+
+    if (plan.sendWhatsapp && plan.user.whatsappPhone) {
+      const firstName = plan.user.name?.split(' ')[0] ?? '';
+      const text = `teu plano da semana tá no ar${firstName ? `, ${firstName}` : ''}. bons estudos.`;
+      await this.whatsapp
+        .send({
+          userId: plan.userId,
+          kind: 'plan_published',
+          to: plan.user.whatsappPhone,
+          text,
+        })
+        .catch((err) => {
+          this.logger.warn(`scheduled publish: whatsapp failed for ${planId}: ${String(err)}`);
+        });
+    }
   }
 
   // Admin-initiated: delete existing Calendar events for PENDING items and

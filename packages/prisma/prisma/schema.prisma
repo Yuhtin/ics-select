@@ -44,6 +44,7 @@ enum ItemDifficulty {
 
 enum WeeklyPlanStatus {
   DRAFT
+  SCHEDULED
   PUBLISHED
   COMPLETED
   ARCHIVED
@@ -271,12 +272,16 @@ model WeeklyPlan {
   adminNotes  String?
   createdAt   DateTime         @default(now())
   publishedAt DateTime?
+  publishAt   DateTime?
+  sendWhatsapp Boolean         @default(true)
+  autoSchedule Boolean         @default(true)
 
   user  User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   cycle Cycle            @relation(fields: [cycleId], references: [id])
   items WeeklyPlanItem[]
 
   @@unique([userId, weekStart])
+  @@index([status, publishAt])
 }
 
 model WeeklyPlanItem {

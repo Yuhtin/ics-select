@@ -28,6 +28,13 @@ export const UpdatePlanSchema = z.object({
     .optional(),
 });
 
+export const PublishPlanSchema = z.object({
+  publishAt: z.coerce.date().nullable().optional(),
+  sendWhatsapp: z.boolean().optional(),
+  autoSchedule: z.boolean().optional(),
+});
+export type PublishPlanInput = z.infer<typeof PublishPlanSchema>;
+
 export const SetItemOutcomeSchema = z.object({
   outcome: z.enum(ITEM_OUTCOMES),
   reflection: z.string().max(2000).optional(),

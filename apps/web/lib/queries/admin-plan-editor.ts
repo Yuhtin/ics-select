@@ -27,8 +27,11 @@ export type WeeklyPlan = {
   cycleId: string;
   weekStart: string;
   weekEnd: string;
-  status: 'DRAFT' | 'PUBLISHED';
+  status: 'DRAFT' | 'SCHEDULED' | 'PUBLISHED' | 'COMPLETED' | 'ARCHIVED';
   adminNotes: string | null;
+  publishAt: string | null;
+  sendWhatsapp: boolean;
+  autoSchedule: boolean;
   items: WeeklyPlanItem[];
 };
 
@@ -105,9 +108,24 @@ export function useDraftAiPlan() {
 export function usePublishPlan() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: { planId: string }) =>
-      apiFetch<{ plan: WeeklyPlan }>(`/plans/${input.planId}/publish`, { method: 'POST' }),
-    onSuccess: (res, variables) => {
+    mutationFn: (input: {
+      planId: string;
+      publishAt?: string | null;
+      sendWhatsapp?: boolean;
+      autoSchedule?: boolean;
+    }) =>
+      apiFetch<{ plan: WeeklyPlan; deferred: boolean }>(
+        `/plans/${input.planId}/publish`,
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            publishAt: input.publishAt ?? null,
+            sendWhatsapp: input.sendWhatsapp,
+            autoSchedule: input.autoSchedule,
+          }),
+        },
+      ),
+    onSuccess: (_res, variables) => {
       qc.invalidateQueries({ queryKey: ['plan', variables.planId] });
       qc.invalidateQueries({ queryKey: ['admin', 'plans-overview'] });
     },
