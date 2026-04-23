@@ -1,8 +1,9 @@
 'use client';
 import { useMemo, useState } from 'react';
+import { Plus } from 'lucide-react';
 import { BudgetBadge } from './budget-badge';
 import { ItemCard } from './item-card';
-import { AddItemTypeahead } from './add-item-typeahead';
+import { LibraryPickerModal } from './library-picker-modal';
 import type { WeeklyPlan, WeeklyPlanItem } from '../../../lib/queries/admin-plan-editor';
 import type { PlanContextResponse } from '../../../lib/queries/admin-plan-context';
 import { Eyebrow } from '../../ui/eyebrow';
@@ -41,6 +42,7 @@ export function EditablePlanPanel({
 }: EditablePlanPanelProps) {
   const [createCalendarEvents, setCreateCalendarEvents] = useState(true);
   const [sendWhatsapp, setSendWhatsapp] = useState(true);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   const plannedMinutes = useMemo(
     () => plan.items.reduce((s, i) => s + i.libraryItem.estimatedMinutes, 0),
@@ -103,12 +105,26 @@ export function EditablePlanPanel({
             />
           ))
         )}
-        <AddItemTypeahead
-          memberTrack={context.member.track}
-          onAdd={onAddLibraryItem}
-          excludeIds={excludeIds}
-        />
+        <button
+          type="button"
+          onClick={() => setPickerOpen(true)}
+          className="w-full inline-flex items-center justify-center gap-2 rounded-input border border-dashed border-rule bg-paper px-3 py-3 font-mono text-xs uppercase tracking-label text-ink-soft hover:border-ink/30 hover:bg-paper-warm"
+        >
+          <Plus className="h-4 w-4" strokeWidth={1.5} />
+          Add from library
+        </button>
       </section>
+
+      <LibraryPickerModal
+        open={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        memberTrack={context.member.track}
+        itemsCount={plan.items.length}
+        plannedMinutes={plannedMinutes}
+        budgetMinutes={budgetMinutes}
+        selectedLibraryItemIds={excludeIds}
+        onAdd={onAddLibraryItem}
+      />
 
       <section>
         <SectionLabel>Admin notes · private</SectionLabel>
