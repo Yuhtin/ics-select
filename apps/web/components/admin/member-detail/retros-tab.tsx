@@ -4,8 +4,12 @@ import type { MemberDetailResponse } from '../../../lib/queries/admin-member';
 
 type Retro = MemberDetailResponse['retros'][number];
 
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+function formatDate(iso: string, inUtc = false): string {
+  return new Date(iso).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    ...(inUtc ? { timeZone: 'UTC' } : {}),
+  });
 }
 
 function RetroBlock({ label, text }: { label: string; text: string }) {
@@ -31,7 +35,7 @@ export function RetrosTab({ retros }: { retros: Retro[] }) {
               onClick={() => setOpenId(open ? null : r.id)}
               className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-paper-warm/40 transition-colors"
             >
-              <span className="font-serif-tool text-base font-semibold text-ink">Week of {formatDate(r.weekStart)}</span>
+              <span className="font-serif-tool text-base font-semibold text-ink">Week of {formatDate(r.weekStart, true)}</span>
               <span className="font-mono text-[10px] uppercase tracking-label text-ink-mute">
                 submitted {formatDate(r.submittedAt)} {open ? '−' : '+'}
               </span>

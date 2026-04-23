@@ -158,7 +158,13 @@ export function computeWeekPosition(
   }
 
   const elapsedMs = now.getTime() - startMs;
-  const weekNumber = Math.min(weeksTotal, Math.max(1, Math.ceil(elapsedMs / WEEK_MS) || 1));
+  // floor+1 is correct at week boundaries: elapsed=0 → week 1, elapsed=WEEK_MS
+  // (start of second 7-day window) → week 2. ceil used to round WEEK_MS down
+  // to 1, which is wrong when the plan editor queries by plan.weekStart.
+  const weekNumber = Math.min(
+    weeksTotal,
+    Math.max(1, Math.floor(elapsedMs / WEEK_MS) + 1),
+  );
   // Day-of-cycle mod 7; "days until this week ends" is how many days remain
   // in the member's current 7-day window within the cycle.
   const dayOfCycle = Math.floor(elapsedMs / DAY_MS);

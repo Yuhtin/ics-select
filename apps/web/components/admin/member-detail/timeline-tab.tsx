@@ -16,7 +16,13 @@ const DOT_BY_OUTCOME: Record<Plan['items'][number]['outcome'], string> = {
 };
 
 function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  // plan.weekStart is UTC midnight Monday — render in UTC so viewers west of
+  // UTC don't see Sunday night instead of Monday.
+  return new Date(iso).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    timeZone: 'UTC',
+  });
 }
 
 export function TimelineTab({

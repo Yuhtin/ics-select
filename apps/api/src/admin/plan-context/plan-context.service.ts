@@ -222,7 +222,15 @@ export class PlanContextService {
 
     const topicById = new Map(topics.map((t) => [t.id, t]));
 
-    const { weekNumber, weeksTotal } = this.computeWeekNumber(cycle.startsAt, cycle.endsAt, now);
+    // weekNumber here answers "which week of the cycle is THIS PLAN for",
+    // not "which week of the cycle is happening right now". Using now would
+    // return 0 whenever the admin edits a plan before the cycle starts —
+    // we want week 1 to render as week 1 even if the cycle kicks off Monday.
+    const { weekNumber, weeksTotal } = this.computeWeekNumber(
+      cycle.startsAt,
+      cycle.endsAt,
+      input.weekStart,
+    );
 
     const lastWeek = this.buildLastWeek(lastWeekPlan);
     const carryOverCandidates = this.buildCarryOver(lastWeekPlan, topicById);

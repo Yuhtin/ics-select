@@ -24,7 +24,14 @@ export interface EditablePlanPanelProps {
 }
 
 function formatShort(iso: string): string {
-  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  // Force UTC — plan.weekStart is stored as UTC midnight Monday; rendering in
+  // the viewer's local tz shifts it back a day for anyone west of UTC, so
+  // "2026-04-27T00:00:00Z" would render as "Apr 26" in UTC-3.
+  return new Date(iso).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    timeZone: 'UTC',
+  });
 }
 
 export function EditablePlanPanel({
