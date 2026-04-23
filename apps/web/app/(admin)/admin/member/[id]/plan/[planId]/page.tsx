@@ -192,7 +192,7 @@ export default function PlanEditorPage({
       libraryItemId: libItem.id,
       order: plan.items.length,
       outcome: 'PENDING',
-      skippable: false,
+      skippable: (libItem.topics ?? []).some((t) => t.slug === 'foundations'),
       libraryItem: {
         id: libItem.id,
         title: libItem.title,

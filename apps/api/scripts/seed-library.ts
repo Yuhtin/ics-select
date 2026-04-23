@@ -318,21 +318,8 @@ const ITEMS: ItemSeed[] = [
   },
 
   // ---------------------------------------------------------------------------
-  // array (9 items) — 2026-04-19
+  // array (7 items) — 2026-04-19
   // ---------------------------------------------------------------------------
-  {
-    title: 'Big-O Notation in 100 Seconds',
-    url: 'https://www.youtube.com/watch?v=g2o22C3CRfU',
-    description:
-      'Fireship — notação Big-O em 100s. O vocabulário pra comparar algoritmos em array e hashmap.',
-    format: 'VIDEO',
-    difficulty: 'EASY',
-    estimatedMinutes: 2,
-    topicSlugs: ['array'],
-    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
-    source: 'YouTube — Fireship',
-    tags: ['concept', 'big-o', 'complexity', 'fireship'],
-  },
   {
     title: 'Array Map in 100 Seconds',
     url: 'https://www.youtube.com/watch?v=DC471a9qrU4',
@@ -384,19 +371,6 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'YouTube — Augusto Galego',
     tags: ['concept', 'hashmap', 'hash-function', 'collisions', 'python'],
-  },
-  {
-    title: 'Asymptotic Notations 101: Big O, Big Omega, & Theta',
-    url: 'https://www.youtube.com/watch?v=0oDAlMwTrLo',
-    description:
-      'Back To Back SWE — Big O, Big Omega e Theta com a matemática por trás, não só a intuição.',
-    format: 'VIDEO',
-    difficulty: 'HARD',
-    estimatedMinutes: 23,
-    topicSlugs: ['array'],
-    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
-    source: 'YouTube — Back To Back SWE',
-    tags: ['concept', 'big-o', 'big-omega', 'theta', 'asymptotic'],
   },
   {
     title: 'NeetCode 150 Ep.1: Arrays & Hashing Explained',
@@ -665,27 +639,13 @@ const ITEMS: ItemSeed[] = [
   },
 
   // ---------------------------------------------------------------------------
-  // sorting (7 items) — 2026-04-19
-  // Diversified beyond the default mycodeschool anchor: Lucas Montano (BR) sets
-  // up Big-O as prerequisite (cross-topic sorting+array, complements the
-  // Fireship 100s Big-O in array), Augusto Galego (BR) carries the Python
-  // implementation angle for merge+quick, mycodeschool covers the canonical
-  // whiteboard intro/selection/quicksort-analysis, and Grokking Algorithms
-  // (Bhargava) provides the illustrated book chapter.
+  // sorting (6 items) — 2026-04-19
+  // Diversified beyond the default mycodeschool anchor: Augusto Galego (BR)
+  // carries the Python implementation angle for merge+quick, mycodeschool
+  // covers the canonical whiteboard intro/selection/quicksort-analysis, and
+  // Grokking Algorithms (Bhargava) provides the illustrated book chapter.
+  // Big-O como prerequisito vive em foundations (Lucas Montano), não aqui.
   // ---------------------------------------------------------------------------
-  {
-    title: 'Big O Notation: O Pesadelo do Programador Iniciante',
-    url: 'https://www.youtube.com/watch?v=GLKDo13920k',
-    description:
-      'Lucas Montano — Big-O em 14min. Sem esse vocabulário não dá pra comparar O(n²) vs O(n log n) nos algoritmos de sort.',
-    format: 'VIDEO',
-    difficulty: 'EASY',
-    estimatedMinutes: 14,
-    topicSlugs: ['sorting', 'array', 'foundations'],
-    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
-    source: 'YouTube — Lucas Montano',
-    tags: ['concept', 'big-o', 'complexity', 'prerequisite', 'pt-br'],
-  },
   {
     title: 'Introduction to sorting algorithms',
     url: 'https://www.youtube.com/watch?v=pkkFqlG0Hds',
@@ -934,6 +894,19 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'YouTube — Augusto Galego',
     tags: ['concept', 'leetcode', 'interview-prep', 'onboarding', 'pt-br'],
+  },
+  {
+    title: 'Big O Notation: O Pesadelo do Programador Iniciante',
+    url: 'https://www.youtube.com/watch?v=GLKDo13920k',
+    description:
+      'Lucas Montano — Big-O em 14min. O vocabulário universal pra comparar O(n²) vs O(n log n). Skippable pra quem já tem a intuição.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 14,
+    topicSlugs: ['foundations'],
+    tracks: [],
+    source: 'YouTube — Lucas Montano',
+    tags: ['concept', 'big-o', 'complexity', 'prerequisite', 'onboarding', 'pt-br'],
   },
   {
     title: 'Git Explained in 100 Seconds',

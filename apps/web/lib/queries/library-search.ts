@@ -12,6 +12,7 @@ export type LibraryItem = {
   tags?: string[];
   tracks?: string[];
   topicId: string | null;
+  topics?: { id: string; slug: string; label: string; isPrimary: boolean }[];
 };
 
 export function useLibrarySearch(

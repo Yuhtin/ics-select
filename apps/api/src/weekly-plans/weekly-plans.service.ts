@@ -122,7 +122,13 @@ export class WeeklyPlansService {
         items: {
           include: {
             libraryItem: {
-              include: { topics: { include: { topic: { select: { slug: true } } } } },
+              include: {
+                topics: {
+                  include: {
+                    topic: { select: { id: true, slug: true, label: true } },
+                  },
+                },
+              },
             },
           },
           orderBy: { order: 'asc' },
@@ -132,10 +138,24 @@ export class WeeklyPlansService {
     if (!plan) return null;
     return {
       ...plan,
-      items: plan.items.map((i) => ({
-        ...i,
-        skippable: i.libraryItem.topics.some((t) => t.topic.slug === 'foundations'),
-      })),
+      items: plan.items.map((i) => {
+        const primary = i.libraryItem.topics.find((t) => t.isPrimary)?.topic ?? null;
+        return {
+          ...i,
+          skippable: i.libraryItem.topics.some((t) => t.topic.slug === 'foundations'),
+          libraryItem: {
+            ...i.libraryItem,
+            topicId: primary?.id ?? null,
+            topic: primary ? { id: primary.id, slug: primary.slug, label: primary.label } : null,
+            topics: i.libraryItem.topics.map((tr) => ({
+              id: tr.topic.id,
+              slug: tr.topic.slug,
+              label: tr.topic.label,
+              isPrimary: tr.isPrimary,
+            })),
+          },
+        };
+      }),
     };
   }
 
@@ -206,7 +226,13 @@ export class WeeklyPlansService {
         items: {
           include: {
             libraryItem: {
-              include: { topics: { include: { topic: { select: { slug: true } } } } },
+              include: {
+                topics: {
+                  include: {
+                    topic: { select: { id: true, slug: true, label: true } },
+                  },
+                },
+              },
             },
           },
           orderBy: { order: 'asc' },
@@ -215,10 +241,24 @@ export class WeeklyPlansService {
     });
     return plans.map((plan) => ({
       ...plan,
-      items: plan.items.map((i) => ({
-        ...i,
-        skippable: i.libraryItem.topics.some((t) => t.topic.slug === 'foundations'),
-      })),
+      items: plan.items.map((i) => {
+        const primary = i.libraryItem.topics.find((t) => t.isPrimary)?.topic ?? null;
+        return {
+          ...i,
+          skippable: i.libraryItem.topics.some((t) => t.topic.slug === 'foundations'),
+          libraryItem: {
+            ...i.libraryItem,
+            topicId: primary?.id ?? null,
+            topic: primary ? { id: primary.id, slug: primary.slug, label: primary.label } : null,
+            topics: i.libraryItem.topics.map((tr) => ({
+              id: tr.topic.id,
+              slug: tr.topic.slug,
+              label: tr.topic.label,
+              isPrimary: tr.isPrimary,
+            })),
+          },
+        };
+      }),
     }));
   }
 
