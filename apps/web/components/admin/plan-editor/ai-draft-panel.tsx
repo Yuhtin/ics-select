@@ -1,4 +1,5 @@
 'use client';
+import { useState } from 'react';
 import { Sparkles, Zap } from 'lucide-react';
 import { clsx } from 'clsx';
 import type { AiDraft } from '../../../lib/queries/admin-plan-editor';
@@ -13,7 +14,7 @@ export interface AiDraftPanelProps {
   carryOverLibraryItemIds: Set<string>;
   addedLibraryItemIds: Set<string>;
   loading: boolean;
-  onGenerate: () => void;
+  onGenerate: (brief?: string) => void;
   onOpenBrief: () => void;
   onAddItem: (libraryItemId: string) => void;
 }
@@ -30,27 +31,7 @@ export function AiDraftPanel({
   onAddItem,
 }: AiDraftPanelProps) {
   if (!draft && !loading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-6">
-        <Eyebrow>AI Draft · GPT-5.4-mini</Eyebrow>
-        <div className="space-y-2">
-          <h2 className="font-serif-tool text-2xl font-semibold text-ink">
-            Let AI suggest a plan
-          </h2>
-          <p className="font-sans text-sm text-ink-soft max-w-sm">
-            Uses last 4 weeks of outcomes, the retro, topic coverage, carry-overs, and the track.
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={onGenerate}
-          className="inline-flex items-center gap-2 bg-ink text-paper rounded-pill px-5 py-2.5 font-mono text-xs uppercase tracking-label hover:opacity-90"
-        >
-          <Zap className="h-4 w-4" strokeWidth={1.5} />
-          Generate AI draft
-        </button>
-      </div>
-    );
+    return <EmptyState onGenerate={onGenerate} />;
   }
 
   if (loading) {
@@ -188,6 +169,45 @@ export function AiDraftPanel({
           </details>
         </section>
       )}
+    </div>
+  );
+}
+
+function EmptyState({ onGenerate }: { onGenerate: (brief?: string) => void }) {
+  const [brief, setBrief] = useState('');
+  const trimmed = brief.trim();
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-6">
+      <Eyebrow>AI Draft · GPT-5.4-mini</Eyebrow>
+      <div className="space-y-2">
+        <h2 className="font-serif-tool text-2xl font-semibold text-ink">
+          Let AI suggest a plan
+        </h2>
+        <p className="font-sans text-sm text-ink-soft max-w-sm">
+          Uses last 4 weeks of outcomes, the retro, topic coverage, carry-overs, and the track.
+        </p>
+      </div>
+      <div className="w-full max-w-sm space-y-1 text-left">
+        <label className="font-mono text-[10px] uppercase tracking-eyebrow text-ink-mute">
+          Direção (opcional)
+        </label>
+        <textarea
+          value={brief}
+          onChange={(e) => setBrief(e.target.value.slice(0, 200))}
+          rows={3}
+          placeholder="Ex: quero todos os vídeos de foundations."
+          className="w-full rounded-input border border-rule bg-paper p-3 font-sans text-sm resize-none focus:outline-none focus:ring-2 focus:ring-focus/40"
+        />
+        <p className="font-mono text-[10px] text-ink-mute text-right">{brief.length} / 200</p>
+      </div>
+      <button
+        type="button"
+        onClick={() => onGenerate(trimmed.length > 0 ? trimmed : undefined)}
+        className="inline-flex items-center gap-2 bg-ink text-paper rounded-pill px-5 py-2.5 font-mono text-xs uppercase tracking-label hover:opacity-90"
+      >
+        <Zap className="h-4 w-4" strokeWidth={1.5} />
+        Generate AI draft
+      </button>
     </div>
   );
 }

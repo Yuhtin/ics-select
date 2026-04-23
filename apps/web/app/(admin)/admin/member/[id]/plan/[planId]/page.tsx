@@ -445,8 +445,8 @@ export default function PlanEditorPage({
                   new Set(plan.items.map((i) => i.libraryItemId))
                 }
                 loading={draftMutation.isPending}
-                onGenerate={() => {
-                  void generateDraft();
+                onGenerate={(brief) => {
+                  void generateDraft(brief);
                 }}
                 onOpenBrief={() => setBriefOpen(true)}
                 onAddItem={(id) => {
