@@ -96,7 +96,7 @@ export class WeeklyPlansService {
       // Delete and recreate items for simplicity
       await this.prisma.weeklyPlanItem.deleteMany({ where: { weeklyPlanId: id } });
     }
-    return this.prisma.weeklyPlan.update({
+    await this.prisma.weeklyPlan.update({
       where: { id },
       data: {
         adminNotes: input.adminNotes,
@@ -111,8 +111,12 @@ export class WeeklyPlansService {
             }
           : {}),
       },
-      include: { items: { include: { libraryItem: true } } },
     });
+    // Re-read via getByIdOrThrow so the response carries the hydrated
+    // topicId/topic/topics/skippable shape — a bare Prisma update returns raw
+    // libraryItem rows, which drops the topic label + skippable pill in the
+    // admin plan editor after "Save draft".
+    return this.getByIdOrThrow(id);
   }
 
   async getById(id: string) {
