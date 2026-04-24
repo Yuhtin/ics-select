@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../common/prisma/prisma.service.js';
 import { WhatsappService } from '../whatsapp/whatsapp.service.js';
+import { WhatsappTemplateService } from '../whatsapp/whatsapp-template.service.js';
 import { GoogleCalendarService } from '../google-calendar/google-calendar.service.js';
 import { extractIcsId } from '../common/ics-id/ics-id.js';
 
@@ -12,6 +13,7 @@ export class RemindersCron {
   constructor(
     private readonly prisma: PrismaService,
     private readonly whatsapp: WhatsappService,
+    private readonly templates: WhatsappTemplateService,
     private readonly calendar: GoogleCalendarService,
   ) {}
 
@@ -36,13 +38,18 @@ export class RemindersCron {
             Math.round((event.start.getTime() - now.getTime()) / 60_000),
           );
           const firstName = member.name?.split(' ')[0] ?? '';
-          const text = `${event.summary} começa em ${minutesAway} min. bom estudo ${firstName}.`;
+          const rendered = await this.templates.render('session_reminder', {
+            firstName,
+            minutesAway,
+            summary: event.summary,
+          });
+          if (!rendered.enabled) continue;
           await this.whatsapp
             .send({
               userId: member.id,
               kind: 'session_reminder',
               to: member.whatsappPhone!,
-              text,
+              text: rendered.text,
             })
             .catch(() => undefined);
         }

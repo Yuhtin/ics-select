@@ -16,8 +16,14 @@ describe('RemindersCron', () => {
   ) {
     const prisma = { user: { findMany: jest.fn(async () => users) } } as any;
     const whatsapp = { send: whatsappSendSpy } as any;
+    const templates = {
+      render: jest.fn(async (_kind: string, vars: Record<string, string | number>) => ({
+        text: `${vars.summary} começa em ${vars.minutesAway} min. bom estudo ${vars.firstName}.`,
+        enabled: true,
+      })),
+    };
     const calendar = (calendarFactory ?? { listEventsInRange: jest.fn(async () => []) }) as any;
-    return { cron: new RemindersCron(prisma, whatsapp, calendar), prisma, whatsapp, calendar };
+    return { cron: new RemindersCron(prisma, whatsapp as any, templates as any, calendar), prisma, whatsapp, calendar };
   }
 
   it('sends a WhatsApp reminder when an event has a valid ICS ID', async () => {

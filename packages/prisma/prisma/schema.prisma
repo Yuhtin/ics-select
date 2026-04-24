@@ -408,3 +408,15 @@ model WaitlistEntry {
   @@index([cycleTarget, createdAt])
   @@index([course])
 }
+
+
+model WhatsappTemplate {
+  id          String   @id @default(cuid())
+  kind        String   @unique
+  template    String
+  enabled     Boolean  @default(true)
+  description String?
+  variables   String[] @default([])
+  updatedAt   DateTime @updatedAt
+  updatedBy   String?
+}

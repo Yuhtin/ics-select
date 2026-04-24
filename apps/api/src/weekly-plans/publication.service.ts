@@ -3,6 +3,7 @@ import { PrismaService } from '../common/prisma/prisma.service.js';
 import { SchedulerService, type SchedulerInput } from '../scheduler/scheduler.service.js';
 import { GoogleCalendarService } from '../google-calendar/google-calendar.service.js';
 import { WhatsappService } from '../whatsapp/whatsapp.service.js';
+import { WhatsappTemplateService } from '../whatsapp/whatsapp-template.service.js';
 
 export class PlanOverflowError extends ConflictException {
   constructor(public readonly overflow: Array<{ itemId: string; minutesRequired: number }>) {
@@ -58,7 +59,35 @@ export class PublicationService {
     private readonly scheduler: SchedulerService,
     private readonly calendar: GoogleCalendarService,
     private readonly whatsapp: WhatsappService,
+    private readonly templates: WhatsappTemplateService,
   ) {}
+
+  /**
+   * Send the plan_published WhatsApp to the member if their phone is wired
+   * and the template is enabled. Used by both immediate and scheduled
+   * publish flows. Errors are logged but never thrown — a flaky WhatsApp
+   * shouldn't block the publish.
+   */
+  private async sendPlanPublishedNotification(plan: {
+    id: string;
+    userId: string;
+    user: { name: string | null; whatsappPhone: string | null } | null;
+  }): Promise<void> {
+    if (!plan.user?.whatsappPhone) return;
+    const firstName = plan.user.name?.split(' ')[0] ?? '';
+    const rendered = await this.templates.render('plan_published', { firstName });
+    if (!rendered.enabled) return;
+    await this.whatsapp
+      .send({
+        userId: plan.userId,
+        kind: 'plan_published',
+        to: plan.user.whatsappPhone,
+        text: rendered.text,
+      })
+      .catch((err) => {
+        this.logger.warn(`plan_published whatsapp failed for ${plan.id}: ${String(err)}`);
+      });
+  }
 
   /**
    * Publish a plan — either immediately (publishAt absent or past) or on a
@@ -114,6 +143,23 @@ export class PublicationService {
         autoSchedule,
       },
     });
+
+    // Replicate the WhatsApp send done by the cron in the scheduled-publish
+    // path: same template, same gating, so "Publish now" feels equivalent.
+    if (sendWhatsapp) {
+      const planForNotify = await this.prisma.weeklyPlan.findUnique({
+        where: { id: planId },
+        select: {
+          id: true,
+          userId: true,
+          user: { select: { name: true, whatsappPhone: true } },
+        },
+      });
+      if (planForNotify) {
+        await this.sendPlanPublishedNotification(planForNotify);
+      }
+    }
+
     return { plan: updated, deferred: false as const };
   }
 
@@ -145,19 +191,8 @@ export class PublicationService {
       }
     }
 
-    if (plan.sendWhatsapp && plan.user.whatsappPhone) {
-      const firstName = plan.user.name?.split(' ')[0] ?? '';
-      const text = `teu plano da semana tá no ar${firstName ? `, ${firstName}` : ''}. bons estudos.`;
-      await this.whatsapp
-        .send({
-          userId: plan.userId,
-          kind: 'plan_published',
-          to: plan.user.whatsappPhone,
-          text,
-        })
-        .catch((err) => {
-          this.logger.warn(`scheduled publish: whatsapp failed for ${planId}: ${String(err)}`);
-        });
+    if (plan.sendWhatsapp) {
+      await this.sendPlanPublishedNotification(plan);
     }
   }
 

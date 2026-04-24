@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../common/prisma/prisma.service.js';
 import { WhatsappService } from '../whatsapp/whatsapp.service.js';
+import { WhatsappTemplateService } from '../whatsapp/whatsapp-template.service.js';
 
 @Injectable()
 export class RetroCron {
@@ -10,6 +11,7 @@ export class RetroCron {
   constructor(
     private readonly prisma: PrismaService,
     private readonly whatsapp: WhatsappService,
+    private readonly templates: WhatsappTemplateService,
   ) {}
 
   @Cron(CronExpression.EVERY_10_MINUTES)
@@ -49,13 +51,14 @@ export class RetroCron {
         if (existing) continue;
 
         const firstName = member.name?.split(' ')[0] ?? '';
-        const text = `Oi ${firstName}, seu retrô da semana abriu. 3 perguntas rápidas, leva 5 min.`;
+        const rendered = await this.templates.render('retro_reminder', { firstName });
+        if (!rendered.enabled) continue;
         await this.whatsapp
           .send({
             userId: member.id,
-            kind: 'plan_published',
+            kind: 'retro_reminder',
             to: member.whatsappPhone!,
-            text,
+            text: rendered.text,
           })
           .catch((err) => {
             this.logger.warn(`retro reminder send failed for ${member.id}: ${String(err)}`);

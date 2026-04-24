@@ -23,8 +23,14 @@ describe('RetroCron', () => {
       },
     };
     const whatsapp: { send: jest.Mock } = { send: jest.fn(async () => ({ ok: true })) };
+    const templates = {
+      render: jest.fn(async (_kind: string, vars: Record<string, string>) => ({
+        text: `Oi ${vars.firstName ?? ''}, retro aberto.`,
+        enabled: true,
+      })),
+    };
     return {
-      cron: new RetroCron(prisma as any, whatsapp as any),
+      cron: new RetroCron(prisma as any, whatsapp as any, templates as any),
       prisma,
       whatsapp,
       sentRows,
@@ -49,7 +55,7 @@ describe('RetroCron', () => {
       expect.objectContaining({
         userId: 'u1',
         to: '5511999',
-        kind: 'plan_published',
+        kind: 'retro_reminder',
         text: expect.stringContaining('Davi'),
       }),
     );

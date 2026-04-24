@@ -2,9 +2,16 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service.js';
 import { EvolutionApiClient } from './evolution.client.js';
 
+export type WhatsappKind =
+  | 'session_reminder'
+  | 'stuck_alert'
+  | 'plan_published'
+  | 'retro_reminder'
+  | 'test';
+
 type SendInput = {
   userId: string;
-  kind: 'session_reminder' | 'stuck_alert' | 'plan_published' | 'test';
+  kind: WhatsappKind;
   to: string;
   text: string;
 };

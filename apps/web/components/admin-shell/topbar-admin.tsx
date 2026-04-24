@@ -10,6 +10,7 @@ import {
   ClipboardList,
   ListChecks,
   LogOut,
+  Settings,
   Sparkles,
   Users,
 } from 'lucide-react';
@@ -32,6 +33,7 @@ const NAV: readonly NavItem[] = [
   { href: '/admin/library', label: 'Library', icon: BookOpen },
   { href: '/admin/waitlist', label: 'Waitlist', icon: ClipboardList },
   { href: '/admin/ai-usage', label: 'AI usage', icon: Sparkles },
+  { href: '/admin/config', label: 'Config', icon: Settings },
 ];
 
 function initialsOf(name: string): string {
