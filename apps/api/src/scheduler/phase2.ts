@@ -45,7 +45,8 @@ export function phase2(
   let timedOut = false;
 
   type State = {
-    cursors: number[];
+    cursors: number[];     // next session start offset within each interval (includes buffers)
+    used: number[];        // pure study content placed per interval (excludes buffers) — for capacity
     dayLoad: number[];
     placements: Placement[];
     unplaced: Chunk[];
@@ -53,6 +54,7 @@ export function phase2(
 
   const state: State = {
     cursors: intervals.map(() => 0),
+    used: intervals.map(() => 0),
     dayLoad: [0, 0, 0, 0, 0, 0, 0],
     placements: [],
     unplaced: [],
@@ -96,7 +98,7 @@ export function phase2(
       const iv = intervals[idx]!;
       if (iv.endMinute - iv.startMinute < pref && iv.slotSize >= pref) continue;
       const size = iv.endMinute - iv.startMinute;
-      const remainingInInterval = size - state.cursors[idx]!;
+      const remainingInInterval = size - state.used[idx]!;
       if (remainingInInterval < chunk.minutes) continue;
       const cap = caps[iv.dayIdx];
       if (cap !== null && cap !== undefined && state.dayLoad[iv.dayIdx]! + chunk.minutes > cap) continue;
@@ -115,13 +117,16 @@ export function phase2(
       const offset = state.cursors[cand.idx]!;
       state.placements.push({ chunk, intervalIdx: cand.idx, offsetInInterval: offset });
       const prevCursor = state.cursors[cand.idx]!;
+      const prevUsed = state.used[cand.idx]!;
       state.cursors[cand.idx] = Math.min(prevCursor + chunk.minutes + BUFFER_MINUTES, iv.endMinute - iv.startMinute);
+      state.used[cand.idx] = prevUsed + chunk.minutes;
       state.dayLoad[iv.dayIdx]! += chunk.minutes;
 
       recurse(chunkIdx + 1);
 
       state.placements.pop();
       state.cursors[cand.idx] = prevCursor;
+      state.used[cand.idx] = prevUsed;
       state.dayLoad[iv.dayIdx]! -= chunk.minutes;
 
       if (timedOut) return;

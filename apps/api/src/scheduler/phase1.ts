@@ -9,8 +9,8 @@ const BUFFER_MINUTES = 10;
 
 type IntervalState = {
   idx: number;
-  cursor: number;
-  capacityLeft: number;
+  cursor: number;      // next session start offset within interval (includes inter-session buffers)
+  usedMinutes: number; // pure study content placed (excludes buffers) — used for capacity check
 };
 
 /**
@@ -36,7 +36,7 @@ export function phase1(
   const states: IntervalState[] = intervals.map((iv, idx) => ({
     idx,
     cursor: 0,
-    capacityLeft: iv.endMinute - iv.startMinute,
+    usedMinutes: 0,
   }));
   const dayLoad = [0, 0, 0, 0, 0, 0, 0];
 
@@ -50,7 +50,7 @@ export function phase1(
       const iv = intervals[st.idx]!;
       // Usability (rule iii)
       if (iv.endMinute - iv.startMinute < pref && iv.slotSize >= pref) continue;
-      if (st.capacityLeft < chunk.minutes) continue;
+      if (iv.endMinute - iv.startMinute - st.usedMinutes < chunk.minutes) continue;
       const cap = caps[iv.dayIdx];
       if (cap !== null && cap !== undefined && dayLoad[iv.dayIdx]! + chunk.minutes > cap) continue;
       const intervalSize = iv.endMinute - iv.startMinute;
@@ -75,9 +75,9 @@ export function phase1(
       intervalIdx: pick.idx,
       offsetInInterval: st.cursor,
     });
-    const advance = chunk.minutes + BUFFER_MINUTES;
-    st.cursor = Math.min(st.cursor + advance, iv.endMinute - iv.startMinute);
-    st.capacityLeft = iv.endMinute - iv.startMinute - st.cursor;
+    st.usedMinutes += chunk.minutes;
+    // cursor advances by content + buffer so the next session starts after a gap
+    st.cursor = Math.min(st.cursor + chunk.minutes + BUFFER_MINUTES, iv.endMinute - iv.startMinute);
     dayLoad[iv.dayIdx]! += chunk.minutes;
   }
 
