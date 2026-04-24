@@ -34,7 +34,7 @@ const DEFAULT_AVAILABILITY: Availability = {
   thursdayMinutes: 60,
   fridayMinutes: 30,
   saturdayMinutes: 90,
-  sundayMinutes: 0,
+  sundayMinutes: null,
 };
 
 type StepId = 0 | 1 | 2 | 3;
@@ -60,7 +60,7 @@ export default function MemberOnboardingPage() {
   const phoneOk = PHONE_REGEX.test(phone);
   const trackOk = TRACKS.includes(track as (typeof TRACKS)[number]);
   const availabilityOk = useMemo(
-    () => Object.values(availability).reduce((sum, v) => sum + v, 0) > 0,
+    () => Object.values(availability).reduce<number>((sum, v) => sum + (v ?? 0), 0) > 0,
     [availability],
   );
 
@@ -89,7 +89,13 @@ export default function MemberOnboardingPage() {
         targetTrack: track as (typeof TRACKS)[number],
       });
       await updateAvailability.mutateAsync({
-        ...availability,
+        mondayMinutes: availability.mondayMinutes ?? 0,
+        tuesdayMinutes: availability.tuesdayMinutes ?? 0,
+        wednesdayMinutes: availability.wednesdayMinutes ?? 0,
+        thursdayMinutes: availability.thursdayMinutes ?? 0,
+        fridayMinutes: availability.fridayMinutes ?? 0,
+        saturdayMinutes: availability.saturdayMinutes ?? 0,
+        sundayMinutes: availability.sundayMinutes ?? 0,
         preferredSessionMinutes: sessionMin,
         timezone:
           Intl.DateTimeFormat().resolvedOptions().timeZone ?? 'America/Sao_Paulo',

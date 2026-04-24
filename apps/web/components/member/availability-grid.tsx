@@ -11,17 +11,20 @@ import {
   type AvailabilityMinutes,
 } from './availability-presets';
 import { SessionLengthPresets } from './session-length-presets';
+import { AvailabilitySlotEditor, hasAnyOverlap } from './availability-slot-editor';
+import { AvailabilitySlotPresets } from './availability-slot-presets';
 
 const DEFAULTS: AvailabilityResponse = {
-  mondayMinutes: 0,
-  tuesdayMinutes: 0,
-  wednesdayMinutes: 0,
-  thursdayMinutes: 0,
-  fridayMinutes: 0,
-  saturdayMinutes: 0,
-  sundayMinutes: 0,
+  mondayMinutes: null,
+  tuesdayMinutes: null,
+  wednesdayMinutes: null,
+  thursdayMinutes: null,
+  fridayMinutes: null,
+  saturdayMinutes: null,
+  sundayMinutes: null,
   preferredSessionMinutes: 30,
   timezone: 'America/Sao_Paulo',
+  slots: [],
 };
 
 interface Props {
@@ -29,8 +32,8 @@ interface Props {
 }
 
 export function AvailabilityGrid({ initial }: Props) {
-  const data = initial ?? DEFAULTS;
-  const [form, setForm] = useState<AvailabilityResponse>({ ...DEFAULTS, ...data });
+  const data: AvailabilityResponse = { ...DEFAULTS, ...(initial ?? {}) };
+  const [form, setForm] = useState<AvailabilityResponse>(data);
   const update = useUpdateAvailability();
 
   const dayMinutes: AvailabilityMinutes = {
@@ -43,17 +46,55 @@ export function AvailabilityGrid({ initial }: Props) {
     sundayMinutes: form.sundayMinutes,
   };
 
+  const overlap = hasAnyOverlap(form.slots);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    await update.mutateAsync(form);
+    if (overlap) return;
+    await update.mutateAsync({
+      mondayMinutes: form.mondayMinutes,
+      tuesdayMinutes: form.tuesdayMinutes,
+      wednesdayMinutes: form.wednesdayMinutes,
+      thursdayMinutes: form.thursdayMinutes,
+      fridayMinutes: form.fridayMinutes,
+      saturdayMinutes: form.saturdayMinutes,
+      sundayMinutes: form.sundayMinutes,
+      preferredSessionMinutes: form.preferredSessionMinutes,
+      timezone: form.timezone,
+      slots: form.slots.map((s) => ({
+        dayOfWeek: s.dayOfWeek,
+        startMinute: s.startMinute,
+        endMinute: s.endMinute,
+      })),
+      clearDays: [0, 1, 2, 3, 4, 5, 6],
+    });
   }
 
   return (
     <form className="space-y-8" onSubmit={handleSubmit}>
       <div>
-        <SectionLabel>Daily availability</SectionLabel>
+        <SectionLabel>Available time slots</SectionLabel>
         <p className="mt-1 font-sans text-sm text-fg-soft">
-          How many minutes per day you can study. Used to build your weekly plan.
+          When you can study each day of the week. Empty day = no study scheduled.
+        </p>
+        <div className="mt-3">
+          <AvailabilitySlotPresets
+            slots={form.slots}
+            onChange={(slots) => setForm((prev) => ({ ...prev, slots }))}
+          />
+        </div>
+        <div className="mt-3">
+          <AvailabilitySlotEditor
+            slots={form.slots}
+            onChange={(slots) => setForm((prev) => ({ ...prev, slots }))}
+          />
+        </div>
+      </div>
+
+      <div>
+        <SectionLabel>Daily cap (optional)</SectionLabel>
+        <p className="mt-1 font-sans text-sm text-fg-soft">
+          Upper bound on study minutes per day. Pick <span className="font-mono">—</span> to use all of the day's declared slots.
         </p>
         <div className="mt-4">
           <AvailabilityPresets
@@ -89,6 +130,11 @@ export function AvailabilityGrid({ initial }: Props) {
         />
       </div>
 
+      {overlap && (
+        <p className="font-mono text-xs text-outcome-stuck">
+          Ajuste as faixas sobrepostas antes de salvar.
+        </p>
+      )}
       {update.isError && (
         <motion.p
           initial={{ opacity: 0 }}
@@ -110,7 +156,7 @@ export function AvailabilityGrid({ initial }: Props) {
         </motion.p>
       )}
 
-      <Button type="submit" disabled={update.isPending}>
+      <Button type="submit" disabled={update.isPending || overlap}>
         {update.isPending ? 'Saving…' : 'Save availability'}
       </Button>
     </form>

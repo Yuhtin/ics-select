@@ -10,7 +10,7 @@ export type DayKey =
   | 'saturdayMinutes'
   | 'sundayMinutes';
 
-export type AvailabilityMinutes = Record<DayKey, number>;
+export type AvailabilityMinutes = Record<DayKey, number | null>;
 
 const DAYS: Array<{ key: DayKey; short: string }> = [
   { key: 'mondayMinutes', short: 'Mon' },
@@ -22,7 +22,8 @@ const DAYS: Array<{ key: DayKey; short: string }> = [
   { key: 'sundayMinutes', short: 'Sun' },
 ];
 
-const MINUTE_PRESETS = [0, 30, 60, 90, 120, 180];
+// `null` = no cap (use full slot time).
+const MINUTE_PRESETS: Array<number | null> = [null, 30, 60, 90, 120, 180];
 
 interface Props {
   value: AvailabilityMinutes;
@@ -43,9 +44,10 @@ export function AvailabilityPresets({ value, onChange }: Props) {
           <div className="flex flex-1 flex-wrap gap-1.5">
             {MINUTE_PRESETS.map((mins) => {
               const active = value[d.key] === mins;
+              const label = mins === null ? '—' : `${mins}m`;
               return (
                 <button
-                  key={mins}
+                  key={label}
                   type="button"
                   onClick={() => onChange({ ...value, [d.key]: mins })}
                   className={clsx(
@@ -54,8 +56,9 @@ export function AvailabilityPresets({ value, onChange }: Props) {
                       ? 'border-primary bg-primary text-primary-fg'
                       : 'border-border-token bg-surface text-fg-soft hover:border-border-strong hover:text-fg',
                   )}
+                  aria-label={mins === null ? `${d.short}: no cap` : `${d.short}: ${mins} minutes cap`}
                 >
-                  {mins === 0 ? 'off' : `${mins}m`}
+                  {label}
                 </button>
               );
             })}
