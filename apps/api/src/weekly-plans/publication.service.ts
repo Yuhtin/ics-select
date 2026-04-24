@@ -17,16 +17,20 @@ export class PlanOverflowError extends ConflictException {
   }
 }
 
-const DEFAULT_AVAILABILITY = {
-  mondayMinutes: 60,
-  tuesdayMinutes: 60,
-  wednesdayMinutes: 60,
-  thursdayMinutes: 60,
-  fridayMinutes: 60,
-  saturdayMinutes: 0,
-  sundayMinutes: 0,
-  preferredSessionMinutes: 60,
-  timezone: 'America/Sao_Paulo',
+const DEFAULT_PREFERRED_SESSION_MINUTES = 60;
+const DEFAULT_TIMEZONE = 'America/Sao_Paulo';
+
+// If a member has no availability row at all, treat the week as unavailable.
+// Legacy members have been backfilled (08:00-22:00 slots per day with minutes >
+// 0) in the p_availability_slots migration, so reaching here means a fresh
+// user who has not yet declared slots.
+const EMPTY_CAPS: (number | null)[] = [null, null, null, null, null, null, null];
+
+type SchedulerAvailability = {
+  slots: Array<{ dayOfWeek: number; startMinute: number; endMinute: number }>;
+  caps: (number | null)[];
+  preferredSessionMinutes: number;
+  timezone: string;
 };
 
 /**
@@ -48,6 +52,37 @@ export function allocatedMinutes(estimated: number): number {
   const padded = Math.max(0, estimated) * 2;
   const rounded = Math.ceil(padded / 15) * 15;
   return Math.max(30, rounded);
+}
+
+async function loadSchedulerAvailability(
+  prisma: { memberAvailability: any; availabilitySlot: any },
+  userId: string,
+): Promise<SchedulerAvailability> {
+  const [row, slotRows] = await Promise.all([
+    prisma.memberAvailability.findUnique({ where: { userId } }),
+    prisma.availabilitySlot.findMany({ where: { userId } }),
+  ]);
+  const caps: (number | null)[] = row
+    ? [
+        row.mondayMinutes ?? null,
+        row.tuesdayMinutes ?? null,
+        row.wednesdayMinutes ?? null,
+        row.thursdayMinutes ?? null,
+        row.fridayMinutes ?? null,
+        row.saturdayMinutes ?? null,
+        row.sundayMinutes ?? null,
+      ]
+    : EMPTY_CAPS;
+  return {
+    slots: slotRows.map((s: any) => ({
+      dayOfWeek: s.dayOfWeek,
+      startMinute: s.startMinute,
+      endMinute: s.endMinute,
+    })),
+    caps,
+    preferredSessionMinutes: row?.preferredSessionMinutes ?? DEFAULT_PREFERRED_SESSION_MINUTES,
+    timezone: row?.timezone ?? DEFAULT_TIMEZONE,
+  };
 }
 
 @Injectable()
@@ -254,22 +289,18 @@ export class PublicationService {
     // 2. Re-schedule PENDING items into remaining window.
     // The scheduler already skips past days when `now` is provided; passing
     // `now` here is sufficient to clamp to the remaining window.
-    const existing = await this.prisma.memberAvailability.findUnique({
-      where: { userId: plan.userId },
-    });
-    const availability = existing ?? DEFAULT_AVAILABILITY;
-
     const busyBlocks = await this.calendar
       .getFreeBusy(plan.userId, now, plan.weekEnd)
       .catch(() => [] as Array<{ start: Date; end: Date }>);
 
     const result = this.scheduler.plan({
       weekStart: plan.weekStart,
-      availability,
+      availability: await loadSchedulerAvailability(this.prisma, plan.userId),
       busyBlocks,
       items: pending.map((i) => ({
         id: i.id,
         estimatedMinutes: allocatedMinutes(i.libraryItem.estimatedMinutes),
+        order: i.order,
       })),
       now,
     });
@@ -331,11 +362,6 @@ export class PublicationService {
     });
     if (!plan) throw new NotFoundException('plan not found');
 
-    const existing = await this.prisma.memberAvailability.findUnique({
-      where: { userId: plan.userId },
-    });
-    const availability = existing ?? DEFAULT_AVAILABILITY;
-
     const busyBlocks = await this.calendar
       .getFreeBusy(plan.userId, plan.weekStart, plan.weekEnd)
       .catch(() => [] as Array<{ start: Date; end: Date }>);
@@ -344,11 +370,12 @@ export class PublicationService {
 
     const input: SchedulerInput = {
       weekStart: plan.weekStart,
-      availability,
+      availability: await loadSchedulerAvailability(this.prisma, plan.userId),
       busyBlocks,
       items: schedulableItems.map((i) => ({
         id: i.id,
         estimatedMinutes: allocatedMinutes(i.libraryItem.estimatedMinutes),
+        order: i.order,
       })),
       now: new Date(),
     };

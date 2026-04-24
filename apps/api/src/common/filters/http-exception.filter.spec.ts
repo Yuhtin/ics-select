@@ -36,6 +36,14 @@ describe('HttpExceptionFilter', () => {
     });
   });
 
+  it('passes through structured BadRequestException payloads', () => {
+    const { host, captured } = mockHost();
+    const structured = { error: { code: 'BAD_REQUEST', message: 'overlap: ...', details: { reason: 'overlap', dayOfWeek: 0 } } };
+    filter.catch(new BadRequestException(structured), host);
+    expect(captured.status).toBe(400);
+    expect(captured.body).toEqual(structured);
+  });
+
   it('maps InternalServerErrorException to 500 INTERNAL', () => {
     const { host, captured } = mockHost();
     filter.catch(new InternalServerErrorException('kapow'), host);

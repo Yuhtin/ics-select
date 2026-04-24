@@ -5,16 +5,36 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
 import type { JwtStrategyPayload } from '../auth/strategies/jwt.strategy.js';
 import { AvailabilityService } from './availability.service.js';
 
-const AvailabilitySchema = z.object({
-  mondayMinutes: z.number().int().min(0).max(24 * 60),
-  tuesdayMinutes: z.number().int().min(0).max(24 * 60),
-  wednesdayMinutes: z.number().int().min(0).max(24 * 60),
-  thursdayMinutes: z.number().int().min(0).max(24 * 60),
-  fridayMinutes: z.number().int().min(0).max(24 * 60),
-  saturdayMinutes: z.number().int().min(0).max(24 * 60),
-  sundayMinutes: z.number().int().min(0).max(24 * 60),
-  preferredSessionMinutes: z.number().int().min(15).max(240),
-  timezone: z.string().default('America/Sao_Paulo'),
+const SlotSchema = z
+  .object({
+    dayOfWeek: z.number().int().min(0).max(6),
+    startMinute: z.number().int().min(0).max(1410),
+    endMinute: z.number().int().min(30).max(1440),
+  })
+  .refine((s) => s.endMinute > s.startMinute, {
+    message: 'endMinute must be greater than startMinute',
+  });
+
+const nullableDayCap = z
+  .number()
+  .int()
+  .min(0)
+  .max(24 * 60)
+  .nullable()
+  .optional();
+
+const AvailabilityPatchSchema = z.object({
+  mondayMinutes: nullableDayCap,
+  tuesdayMinutes: nullableDayCap,
+  wednesdayMinutes: nullableDayCap,
+  thursdayMinutes: nullableDayCap,
+  fridayMinutes: nullableDayCap,
+  saturdayMinutes: nullableDayCap,
+  sundayMinutes: nullableDayCap,
+  preferredSessionMinutes: z.number().int().min(15).max(240).optional(),
+  timezone: z.string().optional(),
+  slots: z.array(SlotSchema).optional(),
+  clearDays: z.array(z.number().int().min(0).max(6)).optional(),
 });
 
 const UpdateProfileSchema = z.object({
@@ -37,7 +57,7 @@ export class AvailabilityController {
 
   @Patch('availability')
   upsert(@CurrentUser() user: JwtStrategyPayload, @Body() body: unknown) {
-    const parsed = AvailabilitySchema.parse(body);
+    const parsed = AvailabilityPatchSchema.parse(body);
     return this.availability.upsert(user.sub, parsed);
   }
 

@@ -1,286 +1,89 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+import { buildEffectiveIntervals, chunkItems, localMinuteToUtc } from './intervals.js';
+import { computeCost } from './objective.js';
+import { phase1 } from './phase1.js';
+import { phase2 } from './phase2.js';
+import type {
+  SchedulerInput,
+  SchedulerOutput,
+  PlannedSession,
+  OverflowChunk,
+} from './scheduler.types.js';
 
-export type ItemInput = { id: string; estimatedMinutes: number };
+export type {
+  SchedulerInput,
+  SchedulerOutput,
+  ItemInput,
+  AvailabilitySlotInput,
+  BusyBlock,
+} from './scheduler.types.js';
 
-export type BusyBlock = { start: Date; end: Date };
-
-export type SchedulerInput = {
-  weekStart: Date;
-  availability: {
-    mondayMinutes: number;
-    tuesdayMinutes: number;
-    wednesdayMinutes: number;
-    thursdayMinutes: number;
-    fridayMinutes: number;
-    saturdayMinutes: number;
-    sundayMinutes: number;
-    preferredSessionMinutes: number;
-    timezone: string;
-  };
-  // Raw busy intervals straight from Google Calendar freebusy (UTC instants).
-  // The scheduler slices these into per-day minute-of-local-day ranges using
-  // the availability.timezone and avoids packing any chunk over a busy range.
-  busyBlocks: BusyBlock[];
-  items: ItemInput[];
-  // Current time, used to skip past days and start today at/after "now".
-  // Defaults to new Date() for safety; tests override this.
-  now?: Date;
-};
-
-export type PlannedSession = {
-  itemId: string;
-  scheduledAt: Date;
-  durationMinutes: number;
-};
-
-export type OverflowChunk = { itemId: string; minutesRequired: number };
-
-export type SchedulerOutput = {
-  sessions: PlannedSession[];
-  overflow: OverflowChunk[];
-};
-
-const DAY_MINUTES_KEYS: (keyof SchedulerInput['availability'])[] = [
-  'mondayMinutes',
-  'tuesdayMinutes',
-  'wednesdayMinutes',
-  'thursdayMinutes',
-  'fridayMinutes',
-  'saturdayMinutes',
-  'sundayMinutes',
-];
-
-const DAY_START_MINUTE = 8 * 60; // 08:00 local
-const DAY_END_MINUTE = 22 * 60; // 22:00 local — don't schedule into the night
-const BUFFER_MINUTES = 10;
-const ROUND_TO_MINUTES = 15;
-
-type Interval = { start: number; end: number }; // minute-of-local-day
-
-type DayState = {
-  freeIntervals: Interval[];
-  intervalIdx: number;
-  cursor: number; // next free minute in current interval
-  remaining: number; // declared-budget cap for the day, in minutes
-};
+const TIME_BUDGET_MS = 500;
+const NODE_BUDGET = 50_000;
 
 @Injectable()
 export class SchedulerService {
+  private readonly logger = new Logger(SchedulerService.name);
+
   plan(input: SchedulerInput): SchedulerOutput {
+    const startedAt = Date.now();
     const pref = input.availability.preferredSessionMinutes;
     const tz = input.availability.timezone;
     const now = input.now ?? new Date();
 
-    // 1. Chunk items into scheduler-sized pieces.
-    const chunks: Array<{ itemId: string; minutes: number }> = [];
-    for (const item of input.items) {
-      let remaining = item.estimatedMinutes;
-      while (remaining > 0) {
-        const size = Math.min(remaining, pref);
-        chunks.push({ itemId: item.id, minutes: size });
-        remaining -= size;
-      }
-    }
+    const intervals = buildEffectiveIntervals(
+      input.availability.slots,
+      input.busyBlocks,
+      input.weekStart,
+      tz,
+      now,
+    );
+    const chunks = chunkItems(input.items, pref);
 
-    // 2. Build per-day state: window, busy → free intervals, declared budget.
-    const days: DayState[] = DAY_MINUTES_KEYS.map((key, idx) =>
-      buildDayState(input, idx, key, tz, now),
+    const s1 = phase1(chunks, intervals, input.availability.caps, pref);
+    const phase1Cost = computeCost(s1, intervals, pref);
+
+    const p2 = phase2(chunks, intervals, input.availability.caps, pref, s1, {
+      timeBudgetMs: TIME_BUDGET_MS,
+      nodeBudget: NODE_BUDGET,
+    });
+
+    const sessions: PlannedSession[] = p2.solution.placements.map((pl) => {
+      const iv = intervals[pl.intervalIdx]!;
+      const scheduledAt = localMinuteToUtc(
+        input.weekStart,
+        iv.dayIdx,
+        iv.startMinute + pl.offsetInInterval,
+        tz,
+      );
+      return {
+        itemId: pl.chunk.itemId,
+        scheduledAt,
+        durationMinutes: pl.chunk.minutes,
+      };
+    });
+
+    const overflow: OverflowChunk[] = p2.solution.unplaced.map((c) => ({
+      itemId: c.itemId,
+      minutesRequired: c.minutes,
+    }));
+
+    const durationMs = Date.now() - startedAt;
+    const diagnostics = {
+      phase1Cost,
+      finalCost: p2.cost,
+      nodesExplored: p2.nodesExplored,
+      timedOut: p2.timedOut,
+      durationMs,
+    };
+
+    this.logger.debug(
+      `plan computed · chunks=${chunks.length} intervals=${intervals.length} ` +
+      `sessions=${sessions.length} overflow=${overflow.length} ` +
+      `phase1=${phase1Cost} final=${p2.cost} nodes=${p2.nodesExplored} ` +
+      `timedOut=${p2.timedOut} ${durationMs}ms`,
     );
 
-    // 3. Walk chunks and greedily place into free intervals.
-    const sessions: PlannedSession[] = [];
-    const overflow: OverflowChunk[] = [];
-
-    for (const chunk of chunks) {
-      let placed = false;
-      for (let dayIdx = 0; dayIdx < 7 && !placed; dayIdx++) {
-        const state = days[dayIdx]!;
-        while (state.intervalIdx < state.freeIntervals.length) {
-          const interval = state.freeIntervals[state.intervalIdx]!;
-          if (state.cursor < interval.start) state.cursor = interval.start;
-          const wallRemaining = interval.end - state.cursor;
-          // Budget is the day's declared-minute cap; a chunk can't use more
-          // than what's left for the day AND must fit in this interval.
-          if (wallRemaining < chunk.minutes || state.remaining < chunk.minutes) {
-            // Move to next interval (or next day if exhausted).
-            state.intervalIdx += 1;
-            state.cursor = state.freeIntervals[state.intervalIdx]?.start ?? 0;
-            continue;
-          }
-          const scheduledAt = localMinuteToUtc(
-            input.weekStart,
-            dayIdx,
-            state.cursor,
-            tz,
-          );
-          sessions.push({
-            itemId: chunk.itemId,
-            scheduledAt,
-            durationMinutes: chunk.minutes,
-          });
-          state.cursor += chunk.minutes + BUFFER_MINUTES;
-          state.remaining -= chunk.minutes;
-          placed = true;
-          break;
-        }
-      }
-      if (!placed) {
-        overflow.push({ itemId: chunk.itemId, minutesRequired: chunk.minutes });
-      }
-    }
-
-    return { sessions, overflow };
+    return { sessions, overflow, diagnostics };
   }
-}
-
-function buildDayState(
-  input: SchedulerInput,
-  dayIdx: number,
-  key: keyof SchedulerInput['availability'],
-  tz: string,
-  now: Date,
-): DayState {
-  const declared = input.availability[key] as number;
-
-  // Local calendar date for this day: local Monday + idx.
-  const y = input.weekStart.getUTCFullYear();
-  const m = input.weekStart.getUTCMonth() + 1;
-  const d = input.weekStart.getUTCDate() + dayIdx;
-
-  const dayStartUtc = localToUtc(y, m, d, 0, 0, tz);
-  const dayEndUtc = localToUtc(y, m, d + 1, 0, 0, tz);
-
-  // Fully past day, or zero budget: return an empty state.
-  if (declared <= 0 || dayEndUtc.getTime() <= now.getTime()) {
-    return {
-      freeIntervals: [],
-      intervalIdx: 0,
-      cursor: 0,
-      remaining: 0,
-    };
-  }
-
-  let startMinute = DAY_START_MINUTE;
-
-  // Today (partial): bump start to ceil(now, 15min) in local minutes.
-  if (dayStartUtc.getTime() <= now.getTime() && now.getTime() < dayEndUtc.getTime()) {
-    const elapsed = Math.round((now.getTime() - dayStartUtc.getTime()) / 60_000);
-    const rounded = Math.ceil(elapsed / ROUND_TO_MINUTES) * ROUND_TO_MINUTES;
-    startMinute = Math.max(startMinute, rounded);
-  }
-
-  if (startMinute >= DAY_END_MINUTE) {
-    return {
-      freeIntervals: [],
-      intervalIdx: 0,
-      cursor: 0,
-      remaining: 0,
-    };
-  }
-
-  const endMinute = DAY_END_MINUTE;
-
-  // Project each busy block into this day's window as a minute-range.
-  const busyInWindow: Interval[] = [];
-  for (const block of input.busyBlocks) {
-    const bs = Math.max(block.start.getTime(), dayStartUtc.getTime());
-    const be = Math.min(block.end.getTime(), dayEndUtc.getTime());
-    if (be <= bs) continue;
-    const sMin = Math.floor((bs - dayStartUtc.getTime()) / 60_000);
-    const eMin = Math.ceil((be - dayStartUtc.getTime()) / 60_000);
-    const clampedStart = Math.max(sMin, startMinute);
-    const clampedEnd = Math.min(eMin, endMinute);
-    if (clampedEnd > clampedStart) {
-      busyInWindow.push({ start: clampedStart, end: clampedEnd });
-    }
-  }
-
-  // Merge overlapping busy ranges to simplify the subtraction step.
-  busyInWindow.sort((a, b) => a.start - b.start);
-  const mergedBusy: Interval[] = [];
-  for (const b of busyInWindow) {
-    const last = mergedBusy[mergedBusy.length - 1];
-    if (last && b.start <= last.end) {
-      last.end = Math.max(last.end, b.end);
-    } else {
-      mergedBusy.push({ ...b });
-    }
-  }
-
-  // Free intervals = [startMinute, endMinute] minus mergedBusy.
-  const freeIntervals: Interval[] = [];
-  let cursor = startMinute;
-  for (const b of mergedBusy) {
-    if (b.start > cursor) {
-      freeIntervals.push({ start: cursor, end: b.start });
-    }
-    cursor = Math.max(cursor, b.end);
-  }
-  if (cursor < endMinute) {
-    freeIntervals.push({ start: cursor, end: endMinute });
-  }
-
-  return {
-    freeIntervals,
-    intervalIdx: 0,
-    cursor: freeIntervals[0]?.start ?? 0,
-    remaining: declared,
-  };
-}
-
-function localMinuteToUtc(
-  weekStart: Date,
-  dayIdx: number,
-  minuteOfDay: number,
-  tz: string,
-): Date {
-  const y = weekStart.getUTCFullYear();
-  const m = weekStart.getUTCMonth() + 1;
-  const d = weekStart.getUTCDate() + dayIdx;
-  const hh = Math.floor(minuteOfDay / 60);
-  const mm = minuteOfDay % 60;
-  return localToUtc(y, m, d, hh, mm, tz);
-}
-
-/**
- * Convert wall-clock components in the given IANA timezone to a UTC Date.
- * Uses Intl.DateTimeFormat to resolve the tz offset at that instant, handling
- * DST correctly. Ambiguous times at DST transitions fall back to the first
- * matching instant.
- */
-function localToUtc(
-  year: number,
-  month: number,
-  day: number,
-  hour: number,
-  minute: number,
-  tz: string,
-): Date {
-  const naiveUtc = Date.UTC(year, month - 1, day, hour, minute);
-  const offsetMin = getTzOffsetMinutes(new Date(naiveUtc), tz);
-  return new Date(naiveUtc - offsetMin * 60_000);
-}
-
-function getTzOffsetMinutes(date: Date, tz: string): number {
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone: tz,
-    hourCycle: 'h23',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  }).formatToParts(date);
-  const map: Record<string, string> = {};
-  for (const p of parts) if (p.type !== 'literal') map[p.type] = p.value;
-  const asUtcMs = Date.UTC(
-    Number(map.year),
-    Number(map.month) - 1,
-    Number(map.day),
-    Number(map.hour),
-    Number(map.minute),
-    Number(map.second),
-  );
-  return Math.round((asUtcMs - date.getTime()) / 60_000);
 }

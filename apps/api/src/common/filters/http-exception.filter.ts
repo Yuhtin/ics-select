@@ -37,6 +37,15 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
   private map(exception: unknown): { status: number; payload: ErrorPayload } {
     if (exception instanceof BadRequestException) {
+      const res = exception.getResponse();
+      if (
+        typeof res === 'object' &&
+        res !== null &&
+        'error' in res &&
+        typeof (res as Record<string, unknown>).error === 'object'
+      ) {
+        return { status: 400, payload: res as ErrorPayload };
+      }
       return {
         status: 400,
         payload: {
