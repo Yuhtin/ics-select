@@ -23,7 +23,7 @@ export function OverflowModal({
   if (!open) return null;
   const total = overflow.reduce((s, o) => s + o.minutesRequired, 0);
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/60 p-4">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4">
       <div className="w-full max-w-md rounded-card bg-surface border border-rule p-6 shadow-modal">
         <h3 className="font-serif-tool text-xl font-semibold text-outcome-stuck">
           Plan doesn&rsquo;t fit {memberName}&rsquo;s availability.

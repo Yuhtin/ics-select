@@ -122,7 +122,7 @@ export function LibraryPickerModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-stretch justify-center bg-ink/60 p-4 sm:p-8"
+      className="fixed inset-0 z-[100] flex items-stretch justify-center bg-black/60 p-4 sm:p-8"
       onClick={onClose}
     >
       <div

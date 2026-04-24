@@ -33,7 +33,7 @@ export function NewCycleModal({
     'w-full rounded-input border border-rule bg-paper px-3 py-2 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-focus/40';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/60 p-4">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4">
       <div className="w-full max-w-md rounded-card bg-surface border border-rule p-6 shadow-modal">
         <h3 className="font-serif-tool text-xl font-semibold text-ink">New cycle</h3>
         <div className="mt-4 space-y-3">

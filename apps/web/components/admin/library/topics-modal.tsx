@@ -35,7 +35,7 @@ export function TopicsModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/60 p-4">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4">
       <div className="w-full max-w-lg rounded-card bg-surface border border-rule p-6 shadow-modal max-h-[80vh] overflow-y-auto">
         <h3 className="font-serif-tool text-xl font-semibold text-ink">
           Manage topics
