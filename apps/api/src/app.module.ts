@@ -2,7 +2,6 @@ import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
-import { LoggerModule } from 'nestjs-pino';
 import { PrismaModule } from './common/prisma/prisma.module.js';
 import { HealthModule } from './health/health.module.js';
 import { CryptoModule } from './common/crypto/crypto.module.js';
@@ -48,40 +47,6 @@ import { loadEnv } from './config/env.js';
         limit: 5,
       },
     ]),
-    LoggerModule.forRoot({
-      pinoHttp: {
-        level: process.env.LOG_LEVEL ?? 'info',
-        transport: {
-          target: 'pino-pretty',
-          options: {
-            singleLine: true,
-            colorize: true,
-            translateTime: 'HH:MM:ss',
-            // Hide the big req/res/responseTime blobs — their info is already
-            // baked into customSuccessMessage/customErrorMessage below.
-            ignore: 'pid,hostname,req,res,responseTime,context,reqId',
-            messageFormat: '[{context}] {msg}',
-          },
-        },
-        // Compact, NestJS-style one-liner for HTTP logs.
-        customSuccessMessage: (req, res, responseTime) =>
-          `${req.method} ${req.url} ${res.statusCode} ${responseTime}ms`,
-        customErrorMessage: (req, res, err) =>
-          `${req.method} ${req.url} ${res.statusCode} · ${err?.message ?? 'error'}`,
-        customLogLevel: (_req, res, err) => {
-          if (err || res.statusCode >= 500) return 'error';
-          if (res.statusCode >= 400) return 'warn';
-          return 'info';
-        },
-        // Drop the full serialized objects — ignore above hides them from the
-        // formatter, but removing them from the record keeps prod logs small.
-        serializers: {
-          req: () => undefined,
-          res: () => undefined,
-        },
-        redact: ['req.headers.authorization', 'req.headers.cookie'],
-      },
-    }),
     PrismaModule,
     CryptoModule,
     OpenAiModule,
