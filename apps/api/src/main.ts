@@ -5,6 +5,7 @@ import { Logger } from '@nestjs/common';
 import { AppModule } from './app.module.js';
 import { loadEnv } from './config/env.js';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter.js';
+import { requestTiming } from './common/middleware/request-timing.middleware.js';
 
 async function bootstrap() {
   const env = loadEnv();
@@ -18,6 +19,7 @@ async function bootstrap() {
 
   app.useGlobalFilters(new HttpExceptionFilter());
   app.use(cookieParser());
+  app.use(requestTiming);
 
   app.enableCors({
     origin: env.CORS_ALLOWED_ORIGINS,
