@@ -23,6 +23,11 @@ const AUTH_TTL_SAFETY_MS = 60_000; // rebuild 60s before Google thinks the token
 export class GoogleCalendarService {
   private readonly logger = new Logger(GoogleCalendarService.name);
   private readonly authCache = new Map<string, CachedAuth>();
+  // Deduplicates concurrent clientFor(userId) calls so N parallel Calendar
+  // requests don't each run `findUnique` + AES decrypt + spawn a distinct
+  // OAuth2Client (each of which would then race to refresh the same token
+  // against Google's OAuth endpoint).
+  private readonly inflightAuth = new Map<string, Promise<calendar_v3.Calendar>>();
 
   constructor(
     private readonly prisma: PrismaService,
@@ -219,6 +224,17 @@ export class GoogleCalendarService {
       return cached.client;
     }
 
+    const inflight = this.inflightAuth.get(userId);
+    if (inflight) return inflight;
+
+    const promise = this.buildClient(userId).finally(() => {
+      this.inflightAuth.delete(userId);
+    });
+    this.inflightAuth.set(userId, promise);
+    return promise;
+  }
+
+  private async buildClient(userId: string): Promise<calendar_v3.Calendar> {
     const row = await this.prisma.googleAccount.findUnique({ where: { userId } });
     if (!row) throw new NotFoundException('GoogleAccount for user not found');
     const accessToken = this.aes.decrypt(row.accessTokenEnc);
