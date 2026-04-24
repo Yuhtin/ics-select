@@ -1,7 +1,6 @@
 import type {
   Chunk,
   EffectiveInterval,
-  Placement,
   Solution,
 } from './scheduler.types.js';
 
@@ -101,7 +100,7 @@ export function computeCost(
 }
 
 export function minCostRemaining(
-  remainingChunks: Chunk[],
+  _remainingChunks: Chunk[],
   _intervals: EffectiveInterval[],
   _pref: number,
 ): number {

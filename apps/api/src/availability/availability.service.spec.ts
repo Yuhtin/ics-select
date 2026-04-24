@@ -106,7 +106,7 @@ function fakePrisma() {
       }),
     },
     availabilitySlot: {
-      findMany: jest.fn(async ({ where, orderBy }: any) => {
+      findMany: jest.fn(async ({ where, orderBy: _orderBy }: any) => {
         const out: any[] = [];
         for (const s of slotRows.values()) {
           if (where?.userId && s.userId !== where.userId) continue;
