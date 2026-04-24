@@ -24,11 +24,17 @@ export class EvolutionApiClient {
     if (!this.isConfigured) {
       return { ok: false, error: 'Evolution API not configured' };
     }
-    const baseUrl = this.config.getOrThrow<string>('EVOLUTION_API_BASE_URL');
+    // Strip trailing slash — EVOLUTION_API_BASE_URL is often configured with
+    // one (https://host/), and concat with /message/... produces //message/...
+    // which some reverse proxies (Traefik on EasyPanel) treat as a 404.
+    const baseUrl = this.config
+      .getOrThrow<string>('EVOLUTION_API_BASE_URL')
+      .replace(/\/+$/, '');
     const apiKey = this.config.getOrThrow<string>('EVOLUTION_API_KEY');
     const instance = this.config.getOrThrow<string>('EVOLUTION_INSTANCE');
+    const url = `${baseUrl}/message/sendText/${instance}`;
     try {
-      const res = await this.fetcher(`${baseUrl}/message/sendText/${instance}`, {
+      const res = await this.fetcher(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -36,13 +42,17 @@ export class EvolutionApiClient {
         },
         body: JSON.stringify({
           number: input.to,
+          // Both the legacy (textMessage.text) and v2 (text) shape — Evolution
+          // accepts the legacy form on v1 and v2.x ignores the extra key.
+          text: input.text,
           textMessage: { text: input.text },
         }),
       });
       if (!res.ok) {
         const body = await res.text();
-        this.logger.warn(`Evolution API returned ${res.status}: ${body}`);
-        return { ok: false, error: `HTTP ${res.status}` };
+        const trimmed = body.length > 300 ? `${body.slice(0, 300)}…` : body;
+        this.logger.warn(`Evolution API ${res.status} for ${url}: ${trimmed}`);
+        return { ok: false, error: `HTTP ${res.status}: ${trimmed}` };
       }
       return { ok: true };
     } catch (err) {

@@ -23,11 +23,18 @@ export function LandingPage() {
   // survives navigation to the rest of the app.
   useEffect(() => {
     const html = document.documentElement;
-    const previous = html.getAttribute('data-theme');
+    const previousTheme = html.getAttribute('data-theme');
+    const previousClasses = Array.from(html.classList).filter(
+      (c) => c === 'light' || c === 'dark',
+    );
     html.setAttribute('data-theme', 'light');
+    html.classList.remove('dark');
+    html.classList.add('light');
     return () => {
-      if (previous) html.setAttribute('data-theme', previous);
+      if (previousTheme) html.setAttribute('data-theme', previousTheme);
       else html.removeAttribute('data-theme');
+      html.classList.remove('light', 'dark');
+      for (const c of previousClasses) html.classList.add(c);
     };
   }, []);
 

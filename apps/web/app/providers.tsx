@@ -18,7 +18,10 @@ export function Providers({ children }: { children: ReactNode }) {
           toastProps={{ timeout: 4000, variant: 'flat', radius: 'lg' }}
         />
         <NextThemesProvider
-          attribute="data-theme"
+          // Set BOTH data-theme (used by our CSS tokens) and class (used by
+          // HeroUI tokens — Modal/Toast/etc. render in body portals and rely
+          // on .light/.dark classes inherited from <html>).
+          attribute={['data-theme', 'class']}
           defaultTheme="light"
           enableSystem={false}
           themes={['light', 'dark']}
