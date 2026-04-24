@@ -1,4 +1,5 @@
 import { AvailabilityService } from './availability.service';
+import type { AvailabilityPatchInput } from './availability.types';
 
 type A = {
   id: string;
@@ -23,12 +24,17 @@ function fakePrisma() {
   const users = new Map<string, UserRow>();
   const memberships = new Map<string, MembershipRow>();
   const cycles = new Map<string, CycleRow>();
+  const slotRows = new Map<string, {
+    id: string; userId: string; dayOfWeek: number;
+    startMinute: number; endMinute: number;
+  }>();
 
-  return {
+  const api: any = {
     rows,
     users,
     memberships,
     cycles,
+    slotRows,
     memberAvailability: {
       findUnique: jest.fn(async ({ where }: { where: { userId: string } }) =>
         rows.get(where.userId) ?? null,
@@ -99,7 +105,41 @@ function fakePrisma() {
         return next;
       }),
     },
+    availabilitySlot: {
+      findMany: jest.fn(async ({ where, orderBy }: any) => {
+        const out: any[] = [];
+        for (const s of slotRows.values()) {
+          if (where?.userId && s.userId !== where.userId) continue;
+          out.push(s);
+        }
+        // Support orderBy [{ dayOfWeek: 'asc' }, { startMinute: 'asc' }] if passed
+        out.sort((a, b) => a.dayOfWeek - b.dayOfWeek || a.startMinute - b.startMinute);
+        return out;
+      }),
+      deleteMany: jest.fn(async ({ where }: any) => {
+        let n = 0;
+        for (const [id, s] of slotRows) {
+          if (where?.userId && s.userId !== where.userId) continue;
+          if (where?.dayOfWeek !== undefined) {
+            const target = where.dayOfWeek.in ?? [where.dayOfWeek];
+            if (!target.includes(s.dayOfWeek)) continue;
+          }
+          slotRows.delete(id);
+          n += 1;
+        }
+        return { count: n };
+      }),
+      createMany: jest.fn(async ({ data }: any) => {
+        for (const d of data) {
+          const id = `slot-${slotRows.size + 1}`;
+          slotRows.set(id, { id, ...d });
+        }
+        return { count: data.length };
+      }),
+    },
+    $transaction: jest.fn(async (cb: any) => cb(api)),
   };
+  return api;
 }
 
 describe('AvailabilityService', () => {
@@ -235,5 +275,84 @@ describe('AvailabilityService.updateProfile', () => {
       data: { userId: 'user-1', cycleId: 'cycle-1', track: 'BIG_TECH' },
     });
     expect(result.membership?.track).toBe('BIG_TECH');
+  });
+});
+
+describe('AvailabilityService.upsert with slots', () => {
+  it('replaces slots for the days present in payload, leaves others untouched', async () => {
+    const prisma = fakePrisma();
+    prisma.slotRows.set('pre-1', {
+      id: 'pre-1', userId: 'user-1', dayOfWeek: 1, startMinute: 0, endMinute: 60,
+    });
+    prisma.slotRows.set('pre-2', {
+      id: 'pre-2', userId: 'user-1', dayOfWeek: 2, startMinute: 600, endMinute: 720,
+    });
+    const svc = new AvailabilityService(prisma as any);
+    const patch: AvailabilityPatchInput = {
+      preferredSessionMinutes: 60,
+      timezone: 'America/Sao_Paulo',
+      slots: [
+        { dayOfWeek: 0, startMinute: 480, endMinute: 600 },
+        { dayOfWeek: 0, startMinute: 1140, endMinute: 1320 },
+        { dayOfWeek: 1, startMinute: 0, endMinute: 30 },
+      ],
+    };
+    const out = await svc.upsert('user-1', patch);
+    const monday = out.slots.filter((s) => s.dayOfWeek === 0);
+    expect(monday).toHaveLength(2);
+    const tuesday = out.slots.filter((s) => s.dayOfWeek === 1);
+    expect(tuesday).toHaveLength(1);
+    expect(tuesday[0]!.startMinute).toBe(0);
+    expect(tuesday[0]!.endMinute).toBe(30);
+    const wednesday = out.slots.filter((s) => s.dayOfWeek === 2);
+    expect(wednesday).toHaveLength(1);
+    expect(wednesday[0]!.startMinute).toBe(600);
+  });
+
+  it('clearDays wipes slots for those days without introducing new ones', async () => {
+    const prisma = fakePrisma();
+    prisma.slotRows.set('pre-1', {
+      id: 'pre-1', userId: 'user-1', dayOfWeek: 0, startMinute: 480, endMinute: 600,
+    });
+    prisma.slotRows.set('pre-2', {
+      id: 'pre-2', userId: 'user-1', dayOfWeek: 1, startMinute: 480, endMinute: 600,
+    });
+    const svc = new AvailabilityService(prisma as any);
+    const out = await svc.upsert('user-1', {
+      preferredSessionMinutes: 60,
+      timezone: 'America/Sao_Paulo',
+      clearDays: [0],
+    });
+    expect(out.slots.filter((s) => s.dayOfWeek === 0)).toHaveLength(0);
+    expect(out.slots.filter((s) => s.dayOfWeek === 1)).toHaveLength(1);
+  });
+
+  it('rejects overlapping slots with BadRequestException', async () => {
+    const prisma = fakePrisma();
+    const svc = new AvailabilityService(prisma as any);
+    await expect(
+      svc.upsert('user-1', {
+        preferredSessionMinutes: 60,
+        timezone: 'America/Sao_Paulo',
+        slots: [
+          { dayOfWeek: 0, startMinute: 480, endMinute: 720 },
+          { dayOfWeek: 0, startMinute: 600, endMinute: 900 },
+        ],
+      }),
+    ).rejects.toThrow(/overlap/);
+  });
+
+  it('allows null day caps (no cap)', async () => {
+    const prisma = fakePrisma();
+    const svc = new AvailabilityService(prisma as any);
+    const out = await svc.upsert('user-1', {
+      mondayMinutes: null,
+      tuesdayMinutes: 120,
+      preferredSessionMinutes: 60,
+      timezone: 'America/Sao_Paulo',
+      slots: [{ dayOfWeek: 0, startMinute: 480, endMinute: 1320 }],
+    });
+    expect(out.mondayMinutes).toBeNull();
+    expect(out.tuesdayMinutes).toBe(120);
   });
 });

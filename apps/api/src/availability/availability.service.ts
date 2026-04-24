@@ -1,42 +1,135 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import type { Track } from '@ics-select/shared';
 import { PrismaService } from '../common/prisma/prisma.service.js';
 import {
   resolveActiveCycle,
   resolveActiveMembership,
 } from '../common/cycle/active-cycle.js';
-
-export type AvailabilityInput = {
-  mondayMinutes: number;
-  tuesdayMinutes: number;
-  wednesdayMinutes: number;
-  thursdayMinutes: number;
-  fridayMinutes: number;
-  saturdayMinutes: number;
-  sundayMinutes: number;
-  preferredSessionMinutes: number;
-  timezone: string;
-};
+import {
+  SlotValidationError,
+  validateSlots,
+} from './slot-validation.js';
+import type {
+  AvailabilityFullResponse,
+  AvailabilityPatchInput,
+} from './availability.types.js';
 
 export type ProfileInput = {
   whatsappPhone?: string | null;
   targetTrack?: Track | null;
 };
 
+const CAP_KEYS = [
+  'mondayMinutes',
+  'tuesdayMinutes',
+  'wednesdayMinutes',
+  'thursdayMinutes',
+  'fridayMinutes',
+  'saturdayMinutes',
+  'sundayMinutes',
+] as const;
+
 @Injectable()
 export class AvailabilityService {
   constructor(private readonly prisma: PrismaService) {}
 
-  get(userId: string) {
-    return this.prisma.memberAvailability.findUnique({ where: { userId } });
+  async get(userId: string): Promise<AvailabilityFullResponse | null> {
+    const availability = await this.prisma.memberAvailability.findUnique({
+      where: { userId },
+    });
+    const slots = await this.prisma.availabilitySlot.findMany({
+      where: { userId },
+      orderBy: [{ dayOfWeek: 'asc' }, { startMinute: 'asc' }],
+    });
+    if (!availability) return null;
+    return {
+      mondayMinutes: availability.mondayMinutes ?? null,
+      tuesdayMinutes: availability.tuesdayMinutes ?? null,
+      wednesdayMinutes: availability.wednesdayMinutes ?? null,
+      thursdayMinutes: availability.thursdayMinutes ?? null,
+      fridayMinutes: availability.fridayMinutes ?? null,
+      saturdayMinutes: availability.saturdayMinutes ?? null,
+      sundayMinutes: availability.sundayMinutes ?? null,
+      preferredSessionMinutes: availability.preferredSessionMinutes,
+      timezone: availability.timezone,
+      slots: slots.map((s) => ({
+        id: s.id,
+        dayOfWeek: s.dayOfWeek,
+        startMinute: s.startMinute,
+        endMinute: s.endMinute,
+      })),
+    };
   }
 
-  upsert(userId: string, input: AvailabilityInput) {
-    return this.prisma.memberAvailability.upsert({
-      where: { userId },
-      create: { userId, ...input },
-      update: { ...input },
+  async upsert(
+    userId: string,
+    input: AvailabilityPatchInput,
+  ): Promise<AvailabilityFullResponse> {
+    if (input.slots && input.slots.length > 0) {
+      try {
+        validateSlots(input.slots);
+      } catch (err) {
+        if (err instanceof SlotValidationError) {
+          throw new BadRequestException(err.message, {
+            description: JSON.stringify({
+              error: {
+                code: 'BAD_REQUEST',
+                message: err.message,
+                details: { field: 'slots', reason: err.reason, dayOfWeek: err.dayOfWeek },
+              },
+            }),
+          });
+        }
+        throw err;
+      }
+    }
+
+    const capsData: Record<string, number | null | undefined> = {};
+    for (const key of CAP_KEYS) {
+      if (input[key] !== undefined) capsData[key] = input[key]!;
+    }
+
+    const daysWithSlots = new Set<number>();
+    for (const s of input.slots ?? []) daysWithSlots.add(s.dayOfWeek);
+    const clearDays = new Set<number>([...(input.clearDays ?? []), ...daysWithSlots]);
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.memberAvailability.upsert({
+        where: { userId },
+        create: {
+          userId,
+          ...capsData,
+          preferredSessionMinutes: input.preferredSessionMinutes ?? 60,
+          timezone: input.timezone ?? 'America/Sao_Paulo',
+        },
+        update: {
+          ...capsData,
+          ...(input.preferredSessionMinutes !== undefined && {
+            preferredSessionMinutes: input.preferredSessionMinutes,
+          }),
+          ...(input.timezone !== undefined && { timezone: input.timezone }),
+        },
+      });
+
+      if (clearDays.size > 0) {
+        await tx.availabilitySlot.deleteMany({
+          where: { userId, dayOfWeek: { in: Array.from(clearDays) } },
+        });
+      }
+
+      if (input.slots && input.slots.length > 0) {
+        await tx.availabilitySlot.createMany({
+          data: input.slots.map((s) => ({
+            userId,
+            dayOfWeek: s.dayOfWeek,
+            startMinute: s.startMinute,
+            endMinute: s.endMinute,
+          })),
+        });
+      }
     });
+
+    return (await this.get(userId))!;
   }
 
   async updateProfile(userId: string, input: ProfileInput) {
@@ -58,13 +151,6 @@ export class AvailabilityService {
           data: { track: input.targetTrack },
         });
       } else {
-        // No membership yet — e.g. member just finished first login and the
-        // admin hasn't enrolled them manually. Auto-enroll in THE active
-        // cycle (resolveActiveCycle is the canonical picker) so the
-        // onboarding form can actually persist the chosen track. If there's
-        // no active cycle at all we leave track unset; the onboarding gate
-        // will keep the member stuck, which is the correct signal (they
-        // shouldn't be in the app until there's a cycle to belong to).
         const active = await resolveActiveCycle(this.prisma);
         if (active) {
           membership = await this.prisma.cycleMembership.create({
@@ -74,9 +160,6 @@ export class AvailabilityService {
               track: input.targetTrack,
             },
           });
-          // First cycle enrollment — the pending InvitedEmail (if any) has
-          // served its purpose. Drop it so the admin UI stops showing a
-          // ghost "pending" row for someone who's now a real member.
           if (user?.email) {
             await this.prisma.invitedEmail.deleteMany({
               where: { email: user.email },
