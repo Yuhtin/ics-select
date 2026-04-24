@@ -70,14 +70,12 @@ export class AvailabilityService {
         validateSlots(input.slots);
       } catch (err) {
         if (err instanceof SlotValidationError) {
-          throw new BadRequestException(err.message, {
-            description: JSON.stringify({
-              error: {
-                code: 'BAD_REQUEST',
-                message: err.message,
-                details: { field: 'slots', reason: err.reason, dayOfWeek: err.dayOfWeek },
-              },
-            }),
+          throw new BadRequestException({
+            error: {
+              code: 'BAD_REQUEST',
+              message: err.message,
+              details: { field: 'slots', reason: err.reason, dayOfWeek: err.dayOfWeek },
+            },
           });
         }
         throw err;

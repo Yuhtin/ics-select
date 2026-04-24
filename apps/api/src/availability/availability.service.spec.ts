@@ -339,7 +339,14 @@ describe('AvailabilityService.upsert with slots', () => {
           { dayOfWeek: 0, startMinute: 600, endMinute: 900 },
         ],
       }),
-    ).rejects.toThrow(/overlap/);
+    ).rejects.toMatchObject({
+      response: {
+        error: {
+          code: 'BAD_REQUEST',
+          details: { reason: 'overlap' },
+        },
+      },
+    });
   });
 
   it('allows null day caps (no cap)', async () => {
