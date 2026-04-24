@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { useEffect, useState } from 'react';
 import type { AvailabilityResponse } from '../../lib/queries/me-settings';
 import { useUpdateAvailability } from '../../lib/queries/me-settings';
+import { useAutoSaveField } from '../../lib/forms/use-auto-save-field';
+import { useSettingsError } from './settings-error-context';
 import { SectionLabel } from '../ui/section-label';
-import { Button } from '../ui/button';
 import {
   AvailabilityPresets,
   type AvailabilityMinutes,
@@ -35,6 +35,72 @@ export function AvailabilityGrid({ initial }: Props) {
   const data: AvailabilityResponse = { ...DEFAULTS, ...(initial ?? {}) };
   const [form, setForm] = useState<AvailabilityResponse>(data);
   const update = useUpdateAvailability();
+  const { setError } = useSettingsError();
+
+  const overlap = hasAnyOverlap(form.slots);
+
+  useEffect(() => {
+    setError({ hasOverlap: overlap });
+    return () => setError({ hasOverlap: false });
+  }, [overlap, setError]);
+
+  function commit(nextForm: AvailabilityResponse) {
+    if (hasAnyOverlap(nextForm.slots)) return;
+    void update.mutateAsync({
+      mondayMinutes: nextForm.mondayMinutes,
+      tuesdayMinutes: nextForm.tuesdayMinutes,
+      wednesdayMinutes: nextForm.wednesdayMinutes,
+      thursdayMinutes: nextForm.thursdayMinutes,
+      fridayMinutes: nextForm.fridayMinutes,
+      saturdayMinutes: nextForm.saturdayMinutes,
+      sundayMinutes: nextForm.sundayMinutes,
+      preferredSessionMinutes: nextForm.preferredSessionMinutes,
+      timezone: nextForm.timezone,
+      slots: nextForm.slots.map((s) => ({
+        dayOfWeek: s.dayOfWeek,
+        startMinute: s.startMinute,
+        endMinute: s.endMinute,
+      })),
+      clearDays: [0, 1, 2, 3, 4, 5, 6],
+    });
+  }
+
+  function setAndCommit<K extends keyof AvailabilityResponse>(key: K, value: AvailabilityResponse[K]) {
+    setForm((prev) => {
+      const next = { ...prev, [key]: value };
+      commit(next);
+      return next;
+    });
+  }
+
+  function setSlotsAndCommit(next: AvailabilityResponse['slots']) {
+    setForm((prev) => {
+      const nextForm = { ...prev, slots: next };
+      commit(nextForm);
+      return nextForm;
+    });
+  }
+
+  function setCapsAndCommit(next: Partial<AvailabilityResponse>) {
+    setForm((prev) => {
+      const nextForm = { ...prev, ...next };
+      commit(nextForm);
+      return nextForm;
+    });
+  }
+
+  const timezoneField = useAutoSaveField<string>({
+    initial: data.timezone,
+    debounceMs: 800,
+    validate: (v) => v.trim().length > 0,
+    save: (v) => {
+      setForm((prev) => {
+        const nextForm = { ...prev, timezone: v };
+        commit(nextForm);
+        return nextForm;
+      });
+    },
+  });
 
   const dayMinutes: AvailabilityMinutes = {
     mondayMinutes: form.mondayMinutes,
@@ -46,32 +112,8 @@ export function AvailabilityGrid({ initial }: Props) {
     sundayMinutes: form.sundayMinutes,
   };
 
-  const overlap = hasAnyOverlap(form.slots);
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (overlap) return;
-    await update.mutateAsync({
-      mondayMinutes: form.mondayMinutes,
-      tuesdayMinutes: form.tuesdayMinutes,
-      wednesdayMinutes: form.wednesdayMinutes,
-      thursdayMinutes: form.thursdayMinutes,
-      fridayMinutes: form.fridayMinutes,
-      saturdayMinutes: form.saturdayMinutes,
-      sundayMinutes: form.sundayMinutes,
-      preferredSessionMinutes: form.preferredSessionMinutes,
-      timezone: form.timezone,
-      slots: form.slots.map((s) => ({
-        dayOfWeek: s.dayOfWeek,
-        startMinute: s.startMinute,
-        endMinute: s.endMinute,
-      })),
-      clearDays: [0, 1, 2, 3, 4, 5, 6],
-    });
-  }
-
   return (
-    <form className="space-y-8" onSubmit={handleSubmit}>
+    <div className="space-y-8">
       <div>
         <SectionLabel>Available time slots</SectionLabel>
         <p className="mt-1 font-sans text-sm text-fg-soft">
@@ -80,13 +122,13 @@ export function AvailabilityGrid({ initial }: Props) {
         <div className="mt-3">
           <AvailabilitySlotPresets
             slots={form.slots}
-            onChange={(slots) => setForm((prev) => ({ ...prev, slots }))}
+            onChange={setSlotsAndCommit}
           />
         </div>
         <div className="mt-3">
           <AvailabilitySlotEditor
             slots={form.slots}
-            onChange={(slots) => setForm((prev) => ({ ...prev, slots }))}
+            onChange={setSlotsAndCommit}
           />
         </div>
       </div>
@@ -99,7 +141,7 @@ export function AvailabilityGrid({ initial }: Props) {
         <div className="mt-4">
           <AvailabilityPresets
             value={dayMinutes}
-            onChange={(next) => setForm((prev) => ({ ...prev, ...next }))}
+            onChange={(next) => setCapsAndCommit(next)}
           />
         </div>
       </div>
@@ -112,9 +154,7 @@ export function AvailabilityGrid({ initial }: Props) {
         <div className="mt-3">
           <SessionLengthPresets
             value={form.preferredSessionMinutes}
-            onChange={(next) =>
-              setForm((prev) => ({ ...prev, preferredSessionMinutes: next }))
-            }
+            onChange={(next) => setAndCommit('preferredSessionMinutes', next)}
           />
         </div>
       </div>
@@ -123,42 +163,13 @@ export function AvailabilityGrid({ initial }: Props) {
         <SectionLabel>Timezone</SectionLabel>
         <input
           type="text"
-          value={form.timezone}
-          onChange={(e) => setForm((prev) => ({ ...prev, timezone: e.target.value }))}
+          value={timezoneField.value}
+          onChange={(e) => timezoneField.onChange(e.target.value)}
+          onBlur={timezoneField.onBlur}
           placeholder="America/Sao_Paulo"
           className="mt-2 w-full max-w-xs rounded-input border border-border-token bg-surface px-3 py-1.5 font-sans text-sm text-fg placeholder:text-fg-faint focus:outline-none focus:ring-2 focus:ring-primary"
         />
       </div>
-
-      {overlap && (
-        <p className="font-mono text-xs text-outcome-stuck">
-          Ajuste as faixas sobrepostas antes de salvar.
-        </p>
-      )}
-      {update.isError && (
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.2 }}
-          className="font-mono text-xs text-danger"
-        >
-          Failed to save. Please try again.
-        </motion.p>
-      )}
-      {update.isSuccess && (
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.2 }}
-          className="font-mono text-xs text-success"
-        >
-          Saved.
-        </motion.p>
-      )}
-
-      <Button type="submit" disabled={update.isPending || overlap}>
-        {update.isPending ? 'Saving…' : 'Save availability'}
-      </Button>
-    </form>
+    </div>
   );
 }
