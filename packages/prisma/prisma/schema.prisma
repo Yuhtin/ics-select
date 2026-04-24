@@ -199,6 +199,7 @@ model AvailabilitySlot {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@unique([userId, dayOfWeek, startMinute])
   @@index([userId, dayOfWeek])
 }
 
