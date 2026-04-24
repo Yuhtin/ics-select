@@ -7,7 +7,9 @@
     "build": "next build --turbopack",
     "start": "next start -p 3000",
     "lint": "echo \"(web) lint deferred; next lint is deprecated — configure eslint flat config in a future phase\"",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "playwright test",
+    "test:update": "playwright test --update-snapshots"
   },
   "dependencies": {
     "@heroui/react": "^2.4.0",
@@ -24,6 +26,7 @@
     "temporal-polyfill": "^0.3.2"
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "@types/node": "^20.16.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
