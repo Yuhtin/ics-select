@@ -97,6 +97,7 @@ model User {
   memberships        CycleMembership[]
   googleAccount      GoogleAccount?
   availability       MemberAvailability?
+  availabilitySlots  AvailabilitySlot[]
   weeklyPlans        WeeklyPlan[]
   attendance         ClassAttendance[]
   retros             WeeklyRetro[]
@@ -174,17 +175,31 @@ model CycleMembership {
 model MemberAvailability {
   id                      String   @id @default(cuid())
   userId                  String   @unique
-  mondayMinutes           Int      @default(0)
-  tuesdayMinutes          Int      @default(0)
-  wednesdayMinutes        Int      @default(0)
-  thursdayMinutes         Int      @default(0)
-  fridayMinutes           Int      @default(0)
-  saturdayMinutes         Int      @default(0)
-  sundayMinutes           Int      @default(0)
+  mondayMinutes           Int?
+  tuesdayMinutes          Int?
+  wednesdayMinutes        Int?
+  thursdayMinutes         Int?
+  fridayMinutes           Int?
+  saturdayMinutes         Int?
+  sundayMinutes           Int?
   preferredSessionMinutes Int      @default(60)
   timezone                String   @default("America/Sao_Paulo")
   updatedAt               DateTime @updatedAt
   user                    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AvailabilitySlot {
+  id          String   @id @default(cuid())
+  userId      String
+  dayOfWeek   Int
+  startMinute Int
+  endMinute   Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, dayOfWeek])
 }
 
 model ClassSession {
