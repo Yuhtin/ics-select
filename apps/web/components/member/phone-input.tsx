@@ -37,23 +37,28 @@ export function toE164(input: string): string {
 interface PhoneInputProps {
   value: string;
   onChange: (e164: string) => void;
+  onBlur?: () => void;
   label?: string;
   placeholder?: string;
   autoFocus?: boolean;
   error?: boolean;
+  invalid?: boolean;
   className?: string;
 }
 
 export function PhoneInput({
   value,
   onChange,
+  onBlur,
   label,
   placeholder = '+55 (11) 98765-4321',
   autoFocus,
   error,
+  invalid,
   className,
 }: PhoneInputProps) {
   const id = useId();
+  const hasError = error || invalid;
   return (
     <div className={clsx('flex flex-col gap-1.5', className)}>
       {label && (
@@ -72,10 +77,11 @@ export function PhoneInput({
         autoFocus={autoFocus}
         value={formatPhoneDisplay(value)}
         onChange={(e) => onChange(toE164(e.target.value))}
+        onBlur={onBlur}
         placeholder={placeholder}
         className={clsx(
           'w-full rounded-input border bg-surface px-4 py-3 font-sans text-base text-fg transition-colors placeholder:text-fg-faint focus:outline-none focus:ring-2',
-          error
+          hasError
             ? 'border-danger focus:border-danger focus:ring-danger/15'
             : value.length === 0
               ? 'border-border-strong focus:border-primary focus:ring-primary/15'
