@@ -1,11 +1,10 @@
 'use client';
 
-import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { useMemo } from 'react';
 import { TRACKS } from '@ics-select/shared';
 import { useUpdateProfile } from '../../lib/queries/me-settings';
+import { useAutoSaveField } from '../../lib/forms/use-auto-save-field';
 import { SectionLabel } from '../ui/section-label';
-import { Button } from '../ui/button';
 import { PhoneInput } from './phone-input';
 import { TrackPicker } from './track-picker';
 
@@ -14,29 +13,51 @@ interface ProfileFieldsProps {
   initialTrack: string | null;
 }
 
+const PHONE_REGEX = /^\+\d{8,15}$/;
+
 export function ProfileFields({ initialPhone, initialTrack }: ProfileFieldsProps) {
-  const [phone, setPhone] = useState(initialPhone ?? '');
-  const [track, setTrack] = useState<string>(initialTrack ?? '');
   const update = useUpdateProfile();
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    await update.mutateAsync({
-      whatsappPhone: phone.trim() || null,
-      targetTrack: (track as (typeof TRACKS)[number]) || null,
+  const phoneField = useAutoSaveField<string>({
+    initial: initialPhone ?? '',
+    debounceMs: 800,
+    validate: (v) => v === '' || PHONE_REGEX.test(v),
+    save: (v) => update.mutateAsync({ whatsappPhone: v.trim() || null }),
+  });
+
+  const track = initialTrack ?? '';
+  const handleTrackChange = (next: string) => {
+    if (next === track) return;
+    void update.mutateAsync({
+      targetTrack: (next as (typeof TRACKS)[number]) || null,
     });
-  }
+  };
+
+  const phoneInvalidDisplay = useMemo(
+    () => phoneField.invalid && phoneField.value.length > 0,
+    [phoneField.invalid, phoneField.value],
+  );
 
   return (
-    <form className="space-y-8" onSubmit={handleSubmit}>
+    <div className="space-y-8">
       <div>
         <SectionLabel>WhatsApp phone</SectionLabel>
         <p className="mt-1 font-sans text-sm text-fg-soft">
           Used for program notifications. Include country code (e.g. +5511999999999).
         </p>
         <div className="mt-3 max-w-xs">
-          <PhoneInput value={phone} onChange={setPhone} />
+          <PhoneInput
+            value={phoneField.value}
+            onChange={phoneField.onChange}
+            onBlur={phoneField.onBlur}
+            invalid={phoneInvalidDisplay}
+          />
         </div>
+        {phoneInvalidDisplay && (
+          <p className="mt-2 font-mono text-[11px] text-danger">
+            Formato inválido. Inclua o código do país (ex: +5511999999999).
+          </p>
+        )}
       </div>
 
       <div>
@@ -45,34 +66,9 @@ export function ProfileFields({ initialPhone, initialTrack }: ProfileFieldsProps
           Informs the study plan focus for this cycle.
         </p>
         <div className="mt-3">
-          <TrackPicker value={track} onChange={setTrack} />
+          <TrackPicker value={track} onChange={handleTrackChange} />
         </div>
       </div>
-
-      {update.isError && (
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.2 }}
-          className="font-mono text-xs text-danger"
-        >
-          Failed to save. Please try again.
-        </motion.p>
-      )}
-      {update.isSuccess && (
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.2 }}
-          className="font-mono text-xs text-success"
-        >
-          Saved.
-        </motion.p>
-      )}
-
-      <Button type="submit" disabled={update.isPending}>
-        {update.isPending ? 'Saving…' : 'Save profile'}
-      </Button>
-    </form>
+    </div>
   );
 }

@@ -39,6 +39,7 @@ export function useMeAvailability() {
 export function useUpdateAvailability() {
   const qc = useQueryClient();
   return useMutation({
+    mutationKey: ['me', 'availability'],
     mutationFn: (input: AvailabilityPatch) =>
       apiFetch('/me/availability', { method: 'PATCH', body: JSON.stringify(input) }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['me', 'availability'] }),
@@ -48,6 +49,7 @@ export function useUpdateAvailability() {
 export function useUpdateProfile() {
   const qc = useQueryClient();
   return useMutation({
+    mutationKey: ['me', 'profile'],
     mutationFn: (input: { whatsappPhone?: string | null; targetTrack?: string | null }) =>
       apiFetch('/me/profile', { method: 'PATCH', body: JSON.stringify(input) }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['me'] }),

@@ -1,5 +1,5 @@
 /**
- * Playwright smoke test — availability slot editor at /me/settings
+ * Playwright smoke test — availability slot editor at /me/settings/availability
  *
  * Auth pattern (no globalSetup / storageState):
  *   The app reads its JWT from localStorage key `ics_access_token` (see
@@ -80,7 +80,7 @@ test.describe('availability slot editor', () => {
   });
 
   test('preset + overlap guard', async ({ page }) => {
-    await page.goto('/me/settings');
+    await page.goto('/me/settings/availability');
 
     // The Availability section heading must be visible.
     await expect(page.getByText('Available time slots')).toBeVisible();
@@ -110,9 +110,7 @@ test.describe('availability slot editor', () => {
     // The overlap warning must appear in the Mon row.
     await expect(page.getByText(/faixas se sobrepõem/i)).toBeVisible();
 
-    // The Save button must be disabled while any overlap exists.
-    await expect(
-      page.getByRole('button', { name: /Save availability/i }),
-    ).toBeDisabled();
+    // The GlobalSaveIndicator must show the overlap guard message.
+    await expect(page.getByText(/Fix overlap to save/i)).toBeVisible();
   });
 });
