@@ -49,6 +49,9 @@ function fakePrisma() {
     memberAvailability: {
       findUnique: jest.fn(async () => availability),
     },
+    availabilitySlot: {
+      findMany: jest.fn(async () => []),
+    },
     weeklyPlanItem: {
       update: jest.fn(async () => ({})),
       updateMany: jest.fn(async () => ({ count: 0 })),
