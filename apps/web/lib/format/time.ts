@@ -51,3 +51,21 @@ export function formatRelativeFromIso(iso: string, now: Date = new Date()): stri
   const diffW = Math.floor(diffD / 7);
   return `${diffW}w ago`;
 }
+
+export function minutesToHHMM(minutes: number): string {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+}
+
+export function hhmmToMinutes(hhmm: string): number {
+  const [h, m] = hhmm.split(':').map((x) => parseInt(x, 10));
+  if (Number.isNaN(h) || Number.isNaN(m)) throw new Error(`bad time: ${hhmm}`);
+  return (h! * 60) + m!;
+}
+
+export function thirtyMinuteGrid(): string[] {
+  const out: string[] = [];
+  for (let m = 0; m <= 1440; m += 30) out.push(minutesToHHMM(m));
+  return out;
+}
