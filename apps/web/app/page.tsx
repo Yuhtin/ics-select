@@ -16,11 +16,7 @@ export default function RootPage() {
       setShowLanding(true);
       return;
     }
-    if (!user.privacyAcceptedAt) {
-      router.replace('/privacy');
-    } else {
-      router.replace(user.role === 'ADMIN' ? '/admin/cycles' : '/me');
-    }
+    router.replace(user.role === 'ADMIN' ? '/admin/cycles' : '/me');
   }, [user, isLoading, router]);
 
   if (!showLanding) {

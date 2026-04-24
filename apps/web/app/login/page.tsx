@@ -1,9 +1,8 @@
 'use client';
 
-import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
-import { Info, ShieldCheck, AlertCircle } from 'lucide-react';
+import { Info, ShieldCheck, AlertCircle, Lock } from 'lucide-react';
 
 export default function LoginPage() {
   const apiBase = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
@@ -109,23 +108,15 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <p className="mt-6 border-t border-border-token/70 pt-5 text-center font-sans text-[11px] leading-relaxed text-fg-mute">
-              Ao entrar, você concorda com os{' '}
-              <Link
-                href="/terms"
-                className="font-medium text-fg-soft underline decoration-border-strong underline-offset-[3px] transition-colors hover:text-fg hover:decoration-fg"
-              >
-                Termos
-              </Link>{' '}
-              e a{' '}
-              <Link
-                href="/privacy"
-                className="font-medium text-fg-soft underline decoration-border-strong underline-offset-[3px] transition-colors hover:text-fg hover:decoration-fg"
-              >
-                Política de Privacidade
-              </Link>
-              .
-            </p>
+            <div className="mt-6 flex items-start gap-3 border-t border-border-token/70 pt-5">
+              <Lock className="mt-[2px] h-3.5 w-3.5 shrink-0 text-fg-mute" strokeWidth={1.8} />
+              <p className="font-sans text-[11px] leading-relaxed text-fg-mute">
+                Só você enxerga seu Calendar. A gente lê apenas os slots
+                marcados como <span className="text-fg-soft">ocupados</span> pra
+                agendar estudos nos horários livres — nunca vemos o título,
+                descrição ou convidados dos seus eventos.
+              </p>
+            </div>
           </div>
 
           {/* Below-card sub-note */}

@@ -88,24 +88,31 @@ test.describe('availability slot editor', () => {
     // Apply the "Noite de semana" preset — sets Mon-Fri 19:00-22:00.
     await page.getByRole('button', { name: 'Noite de semana' }).click();
 
-    // Monday's start selector (aria-label "Mon start") should now show 19:00.
-    const mondayStart = page.getByRole('combobox', { name: 'Mon start' }).first();
-    await expect(mondayStart).toHaveValue('19:00');
+    // Monday's start pill (aria-label "Mon start") should now show 19:00.
+    const mondayStart = page.getByRole('button', { name: 'Mon start' }).first();
+    await expect(mondayStart).toContainText('19:00');
 
     // Add a second slot for Monday by clicking "adicionar faixa" in the Mon row.
-    // Locate the Mon row as the nearest ancestor of the "Mon start" combobox that
+    // Locate the Mon row as the nearest ancestor of the "Mon start" pill that
     // also contains the "adicionar faixa" button.
     const monRow = page
-      .getByRole('combobox', { name: 'Mon start' })
+      .getByRole('button', { name: 'Mon start' })
       .first()
       .locator('xpath=ancestor::div[.//button[normalize-space()="adicionar faixa"]][1]');
     await monRow.getByRole('button', { name: 'adicionar faixa' }).click();
 
     // Change the newly added slot to 08:00–20:00 (overlaps the preset 19:00-22:00).
-    const allMonStarts = page.getByRole('combobox', { name: 'Mon start' });
-    const allMonEnds = page.getByRole('combobox', { name: 'Mon end' });
-    await allMonStarts.last().selectOption('08:00');
-    await allMonEnds.last().selectOption('20:00');
+    // Open the start pill, pick hour 08 + :00, then the end pill, pick 20 + :00.
+    const allMonStarts = page.getByRole('button', { name: 'Mon start' });
+    const allMonEnds = page.getByRole('button', { name: 'Mon end' });
+
+    await allMonStarts.last().click();
+    await page.getByRole('button', { name: 'Hour 08' }).click();
+    await page.getByRole('button', { name: 'Minute 00' }).click();
+
+    await allMonEnds.last().click();
+    await page.getByRole('button', { name: 'Hour 20' }).click();
+    await page.getByRole('button', { name: 'Minute 00' }).click();
 
     // The overlap warning must appear in the Mon row.
     await expect(page.getByText(/faixas se sobrepõem/i)).toBeVisible();

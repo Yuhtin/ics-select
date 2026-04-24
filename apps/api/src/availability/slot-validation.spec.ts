@@ -41,6 +41,17 @@ describe('validateSlots', () => {
     ).toThrow(/too_short/);
   });
 
+  it('rejects inverted slot (end before start, e.g. 17:00-05:00)', () => {
+    try {
+      validateSlots([{ dayOfWeek: 0, startMinute: 17 * 60, endMinute: 5 * 60 }]);
+      fail('should throw');
+    } catch (e: any) {
+      expect(e).toBeInstanceOf(SlotValidationError);
+      expect(e.reason).toBe('inverted');
+      expect(e.dayOfWeek).toBe(0);
+    }
+  });
+
   it('rejects endMinute > 1440', () => {
     expect(() =>
       validateSlots([{ dayOfWeek: 0, startMinute: 1380, endMinute: 1500 }]),

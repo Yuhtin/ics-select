@@ -121,18 +121,24 @@ test.describe('settings tabs', () => {
     await expect(page.getByText('Available time slots')).toBeVisible();
 
     // The fixture already has Mon 19:00-22:00. Add a second overlapping slot.
-    // Locate the Mon row as the nearest ancestor of the first "Mon start"
-    // combobox that also contains the "adicionar faixa" button — the same
-    // locator approach proven in availability-slots.spec.ts.
+    // Locate the Mon row as the nearest ancestor of the first "Mon start" pill
+    // that also contains the "adicionar faixa" button — the same locator
+    // approach proven in availability-slots.spec.ts.
     const monRow = page
-      .getByRole('combobox', { name: 'Mon start' })
+      .getByRole('button', { name: 'Mon start' })
       .first()
       .locator('xpath=ancestor::div[.//button[normalize-space()="adicionar faixa"]][1]');
     await monRow.getByRole('button', { name: 'adicionar faixa' }).click();
 
     // Set the new slot to 08:00-20:00, which overlaps 19:00-22:00.
-    await page.getByRole('combobox', { name: 'Mon start' }).last().selectOption('08:00');
-    await page.getByRole('combobox', { name: 'Mon end' }).last().selectOption('20:00');
+    // The TimePill opens a popover with Hour/Minute buttons (aria-labelled).
+    await page.getByRole('button', { name: 'Mon start' }).last().click();
+    await page.getByRole('button', { name: 'Hour 08' }).click();
+    await page.getByRole('button', { name: 'Minute 00' }).click();
+
+    await page.getByRole('button', { name: 'Mon end' }).last().click();
+    await page.getByRole('button', { name: 'Hour 20' }).click();
+    await page.getByRole('button', { name: 'Minute 00' }).click();
 
     // Inline overlap warning inside the row.
     await expect(page.getByText(/faixas se sobrepõem/i)).toBeVisible();

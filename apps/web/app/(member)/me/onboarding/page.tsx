@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import { clsx } from 'clsx';
-import { ArrowLeft, ArrowRight, Check } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Lock } from 'lucide-react';
 import { TRACKS } from '@ics-select/shared';
 import {
   useUpdateAvailability,
@@ -201,6 +201,18 @@ export default function MemberOnboardingPage() {
                   <div className="mt-3">
                     <SessionLengthPresets value={sessionMin} onChange={setSessionMin} />
                   </div>
+                </div>
+
+                <div className="mt-8 flex items-start gap-3 rounded-card border border-border-token bg-bg-subtle/60 px-4 py-3">
+                  <Lock className="mt-[2px] h-3.5 w-3.5 shrink-0 text-fg-mute" strokeWidth={1.8} />
+                  <p className="font-sans text-[12px] leading-relaxed text-fg-soft">
+                    <span className="font-semibold text-fg">Só você enxerga seu Calendar.</span>{' '}
+                    O scheduler lê apenas os slots marcados como{' '}
+                    <span className="font-medium text-fg">ocupados</span> e
+                    agenda as sessões nos horários livres — título,
+                    descrição e convidados dos seus eventos ficam invisíveis
+                    pra gente.
+                  </p>
                 </div>
               </StepCard>
             )}

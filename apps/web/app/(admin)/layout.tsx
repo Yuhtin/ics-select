@@ -12,11 +12,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   useEffect(() => {
     if (isLoading) return;
     if (!user) router.replace('/login');
-    else if (!user.privacyAcceptedAt) router.replace('/privacy');
     else if (user.role === 'MEMBER') router.replace('/me');
   }, [user, isLoading, router]);
 
-  if (isLoading || !user || !user.privacyAcceptedAt || user.role === 'MEMBER') {
+  if (isLoading || !user || user.role === 'MEMBER') {
     return (
       <main className="flex min-h-screen items-center justify-center">
         <p className="font-mono text-xs uppercase tracking-label text-ink-mute">Loading…</p>

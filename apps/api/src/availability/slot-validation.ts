@@ -2,6 +2,7 @@ import type { AvailabilitySlotInput } from './availability.types.js';
 
 export type SlotViolationReason =
   | 'range'
+  | 'inverted'
   | 'granularity'
   | 'too_short'
   | 'overlap';
@@ -28,6 +29,9 @@ export function validateSlots(slots: AvailabilitySlotInput[]): void {
     }
     if (s.startMinute < 0 || s.endMinute > 1440) {
       throw new SlotValidationError('range', s.dayOfWeek, `range: slot out of [0, 1440]`);
+    }
+    if (s.endMinute < s.startMinute) {
+      throw new SlotValidationError('inverted', s.dayOfWeek, `inverted: slot end is before start (cross-midnight slots not supported)`);
     }
     if (s.endMinute - s.startMinute < MIN_SLOT_MINUTES) {
       throw new SlotValidationError('too_short', s.dayOfWeek, `too_short: slot must be at least ${MIN_SLOT_MINUTES} minutes`);

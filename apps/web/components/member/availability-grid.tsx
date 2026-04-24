@@ -118,6 +118,9 @@ export function AvailabilityGrid({ initial }: Props) {
         <SectionLabel>Available time slots</SectionLabel>
         <p className="mt-1 font-sans text-sm text-fg-soft">
           When you can study each day of the week. Empty day = no study scheduled.
+          Cross-midnight? Split into two — e.g.{' '}
+          <span className="font-mono text-xs">Mon 22:00–24:00</span> +{' '}
+          <span className="font-mono text-xs">Tue 00:00–05:00</span>.
         </p>
         <div className="mt-3">
           <AvailabilitySlotPresets
