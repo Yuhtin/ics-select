@@ -46,6 +46,18 @@ function sortItems(items: AdminLibraryItem[], order: Record<string, number>) {
   });
 }
 
+type ItemMark =
+  | { kind: 'mastered' } // hide
+  | { kind: 'doubts' }
+  | { kind: 'stuck' }
+  | { kind: 'carried-over' }
+  | { kind: 'fresh' };
+
+type MemberHistoryRow = {
+  libraryItemId: string;
+  lastOutcome: 'DONE_EASY' | 'DONE_HARD' | 'DOUBTS' | 'STUCK' | 'SKIPPED';
+};
+
 export interface LibraryPickerModalProps {
   open: boolean;
   onClose: () => void;
@@ -54,7 +66,22 @@ export interface LibraryPickerModalProps {
   plannedMinutes: number;
   budgetMinutes: number;
   selectedLibraryItemIds: Set<string>;
+  carryOverLibraryItemIds: Set<string>;
+  memberHistory: MemberHistoryRow[];
   onAdd: (libraryItemId: string) => void;
+}
+
+function markFor(
+  libraryItemId: string,
+  carryOver: Set<string>,
+  historyByItem: Map<string, MemberHistoryRow['lastOutcome']>,
+): ItemMark {
+  const last = historyByItem.get(libraryItemId);
+  if (last === 'DONE_EASY' || last === 'DONE_HARD') return { kind: 'mastered' };
+  if (carryOver.has(libraryItemId)) return { kind: 'carried-over' };
+  if (last === 'STUCK') return { kind: 'stuck' };
+  if (last === 'DOUBTS') return { kind: 'doubts' };
+  return { kind: 'fresh' };
 }
 
 export function LibraryPickerModal({
@@ -65,6 +92,8 @@ export function LibraryPickerModal({
   plannedMinutes,
   budgetMinutes,
   selectedLibraryItemIds,
+  carryOverLibraryItemIds,
+  memberHistory,
   onAdd,
 }: LibraryPickerModalProps) {
   const { data: topics } = useTopics();
@@ -97,8 +126,18 @@ export function LibraryPickerModal({
     return m;
   }, [items]);
 
+  const historyByItem = useMemo(() => {
+    const m = new Map<string, MemberHistoryRow['lastOutcome']>();
+    for (const row of memberHistory) m.set(row.libraryItemId, row.lastOutcome);
+    return m;
+  }, [memberHistory]);
+
   const filtered = useMemo(() => {
     let list = items ?? [];
+    // Hide items the member has already mastered (DONE_EASY / DONE_HARD).
+    list = list.filter(
+      (i) => markFor(i.id, carryOverLibraryItemIds, historyByItem).kind !== 'mastered',
+    );
     if (memberTrack) {
       list = list.filter((i) => !i.tracks || i.tracks.length === 0 || i.tracks.includes(memberTrack));
     }
@@ -107,7 +146,17 @@ export function LibraryPickerModal({
     if (difficulties.length > 0) list = list.filter((i) => difficulties.includes(i.difficulty));
     if (query.trim().length >= 2) return fuseFilter(list, query);
     return sortItems(list, topicOrder);
-  }, [items, memberTrack, topicId, formats, difficulties, query, topicOrder]);
+  }, [
+    items,
+    memberTrack,
+    topicId,
+    formats,
+    difficulties,
+    query,
+    topicOrder,
+    carryOverLibraryItemIds,
+    historyByItem,
+  ]);
 
   const clearFilters = () => {
     setQuery('');
@@ -228,6 +277,7 @@ export function LibraryPickerModal({
                     key={item.id}
                     item={item}
                     selected={selectedLibraryItemIds.has(item.id)}
+                    mark={markFor(item.id, carryOverLibraryItemIds, historyByItem)}
                     onAdd={() => onAdd(item.id)}
                   />
                 ))}
@@ -250,17 +300,40 @@ export function LibraryPickerModal({
   );
 }
 
+// Tailwind class map for the + circle, keyed by the picker mark. Tokens
+// already exist in design-system.md (--outcome-stuck/doubts, --accent for
+// carried-over).
+const PLUS_STYLES: Record<ItemMark['kind'], { ring: string; label: string | null }> = {
+  fresh: { ring: 'border-rule text-ink-mute', label: null },
+  'carried-over': {
+    ring: 'border-accent text-accent bg-accent/10',
+    label: 'carried over',
+  },
+  doubts: {
+    ring: 'border-outcome-doubts text-outcome-doubts bg-outcome-doubts/10',
+    label: 'had doubts',
+  },
+  stuck: {
+    ring: 'border-outcome-stuck text-outcome-stuck bg-outcome-stuck/10',
+    label: 'stuck',
+  },
+  mastered: { ring: 'border-rule text-ink-mute', label: null }, // never rendered (filtered out)
+};
+
 function PickerRow({
   item,
   selected,
+  mark,
   onAdd,
 }: {
   item: AdminLibraryItem;
   selected: boolean;
+  mark: ItemMark;
   onAdd: () => void;
 }) {
   const platform = detectPlatform(item.url ?? null, item.format);
   const primary = item.topics.find((t) => t.isPrimary) ?? item.topics[0] ?? null;
+  const plus = PLUS_STYLES[mark.kind];
   return (
     <li>
       <button
@@ -273,19 +346,34 @@ function PickerRow({
         )}
       >
         <span
+          title={!selected && plus.label ? plus.label : undefined}
           className={clsx(
             'mt-0.5 grid h-6 w-6 place-items-center rounded-pill shrink-0 border',
             selected
               ? 'border-outcome-done-easy text-outcome-done-easy bg-outcome-done-easy/10'
-              : 'border-rule text-ink-mute',
+              : plus.ring,
           )}
         >
           {selected ? <Check className="h-3 w-3" strokeWidth={2} /> : <Plus className="h-3 w-3" strokeWidth={2} />}
         </span>
         <div className="flex-1 min-w-0">
-          <p className="font-serif-tool text-sm font-semibold text-ink truncate">
-            {item.title}
-          </p>
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="font-serif-tool text-sm font-semibold text-ink truncate">
+              {item.title}
+            </p>
+            {!selected && plus.label && (
+              <span
+                className={clsx(
+                  'font-mono text-[9px] uppercase tracking-label px-1.5 py-0.5 rounded-pill border',
+                  mark.kind === 'carried-over' && 'border-accent/40 text-accent',
+                  mark.kind === 'doubts' && 'border-outcome-doubts/40 text-outcome-doubts',
+                  mark.kind === 'stuck' && 'border-outcome-stuck/40 text-outcome-stuck',
+                )}
+              >
+                {plus.label}
+              </span>
+            )}
+          </div>
           <div className="mt-0.5 flex items-center gap-2 font-mono text-[10px] uppercase tracking-label text-ink-mute flex-wrap">
             <span>{platformLabel(platform)}</span>
             {primary && (

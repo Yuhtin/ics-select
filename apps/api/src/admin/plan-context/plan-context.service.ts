@@ -65,6 +65,16 @@ export type PlanContextResponse = {
     topicLabel: string | null;
     estimatedMinutes: number;
   }>;
+  /**
+   * Latest non-PENDING outcome the member has logged per library item, across
+   * every plan they've ever had. Lets the library picker hide items already
+   * mastered (DONE_EASY/DONE_HARD) and color the + button for items that
+   * stalled (STUCK/DOUBTS).
+   */
+  memberHistory: Array<{
+    libraryItemId: string;
+    lastOutcome: 'DONE_EASY' | 'DONE_HARD' | 'DOUBTS' | 'STUCK' | 'SKIPPED';
+  }>;
   retro: {
     whatClicked: string | null;
     whatStuck: string | null;
@@ -164,7 +174,14 @@ export class PlanContextService {
 
     const lastWeekStart = new Date(input.weekStart.getTime() - WEEK_MS);
 
-    const [lastWeekPlan, thisCyclePlans, retro, availabilityRow, topics] = await Promise.all([
+    const [
+      lastWeekPlan,
+      thisCyclePlans,
+      retro,
+      availabilityRow,
+      topics,
+      memberItemsRaw,
+    ] = await Promise.all([
       this.prisma.weeklyPlan.findFirst({
         where: {
           userId: input.memberId,
@@ -218,6 +235,17 @@ export class PlanContextService {
         where: { userId: input.memberId },
       }) as Promise<AvailabilityRow | null>,
       this.prisma.topic.findMany({ orderBy: { order: 'asc' } }) as Promise<TopicRow[]>,
+      // Pull every non-PENDING outcome the member has logged, newest first.
+      // We dedupe by libraryItemId in JS keeping the first (= latest) row per
+      // item to compute memberHistory below.
+      this.prisma.weeklyPlanItem.findMany({
+        where: {
+          weeklyPlan: { userId: input.memberId },
+          outcome: { not: 'PENDING' },
+        },
+        orderBy: { weeklyPlan: { weekStart: 'desc' } },
+        select: { libraryItemId: true, outcome: true },
+      }) as Promise<Array<{ libraryItemId: string; outcome: Outcome | 'SKIPPED' }>>,
     ]);
 
     const topicById = new Map(topics.map((t) => [t.id, t]));
@@ -236,6 +264,19 @@ export class PlanContextService {
     const carryOverCandidates = this.buildCarryOver(lastWeekPlan, topicById);
     const topicCoverage = this.computeTopicCoverage(topics, thisCyclePlans);
     const availability = this.buildAvailability(availabilityRow);
+
+    // Latest outcome per library item — first occurrence wins because the query
+    // ordered weekStart desc.
+    const seen = new Set<string>();
+    const memberHistory: PlanContextResponse['memberHistory'] = [];
+    for (const row of memberItemsRaw) {
+      if (seen.has(row.libraryItemId)) continue;
+      seen.add(row.libraryItemId);
+      memberHistory.push({
+        libraryItemId: row.libraryItemId,
+        lastOutcome: row.outcome as PlanContextResponse['memberHistory'][number]['lastOutcome'],
+      });
+    }
 
     return {
       member: {
@@ -262,6 +303,7 @@ export class PlanContextService {
         : null,
       topicCoverage,
       availability,
+      memberHistory,
     };
   }
 

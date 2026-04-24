@@ -59,6 +59,10 @@ export type PlanContextResponse = {
     weeklyBudgetMinutes: number;
     timezone: string;
   };
+  memberHistory: Array<{
+    libraryItemId: string;
+    lastOutcome: 'DONE_EASY' | 'DONE_HARD' | 'DOUBTS' | 'STUCK' | 'SKIPPED';
+  }>;
 };
 
 export function useAdminPlanContext(memberId: string, weekStart: string | null | undefined) {

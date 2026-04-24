@@ -136,6 +136,8 @@ export function EditablePlanPanel({
         plannedMinutes={plannedMinutes}
         budgetMinutes={budgetMinutes}
         selectedLibraryItemIds={excludeIds}
+        carryOverLibraryItemIds={carryOverLibraryItemIds}
+        memberHistory={context.memberHistory}
         onAdd={onAddLibraryItem}
       />
 

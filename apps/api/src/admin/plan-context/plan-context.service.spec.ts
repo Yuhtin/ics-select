@@ -6,6 +6,7 @@ type PrismaMock = {
   user: { findUnique: jest.Mock };
   cycleMembership: { findFirst: jest.Mock };
   weeklyPlan: { findFirst: jest.Mock; findMany: jest.Mock };
+  weeklyPlanItem: { findMany: jest.Mock };
   weeklyRetro: { findFirst: jest.Mock };
   memberAvailability: { findUnique: jest.Mock };
   topic: { findMany: jest.Mock };
@@ -19,6 +20,7 @@ function makePrisma(overrides: Partial<any> = {}): PrismaMock {
       findFirst: jest.fn(async () => null),
       findMany: jest.fn(async () => []),
     },
+    weeklyPlanItem: { findMany: jest.fn(async () => []) },
     weeklyRetro: { findFirst: jest.fn(async () => null) },
     memberAvailability: { findUnique: jest.fn(async () => null) },
     topic: { findMany: jest.fn(async () => []) },
