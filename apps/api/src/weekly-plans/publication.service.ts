@@ -110,7 +110,10 @@ export class PublicationService {
     } = {},
   ) {
     const now = options.now ?? new Date();
-    const plan = await this.prisma.weeklyPlan.findUnique({ where: { id: planId } });
+    const plan = await this.prisma.weeklyPlan.findUnique({
+      where: { id: planId },
+      include: { user: { select: { name: true, whatsappPhone: true } } },
+    });
     if (!plan) throw new NotFoundException('plan not found');
     if (plan.status !== 'DRAFT' && plan.status !== 'SCHEDULED') {
       throw new ConflictException('only DRAFT/SCHEDULED plans can be published');
@@ -147,17 +150,11 @@ export class PublicationService {
     // Replicate the WhatsApp send done by the cron in the scheduled-publish
     // path: same template, same gating, so "Publish now" feels equivalent.
     if (sendWhatsapp) {
-      const planForNotify = await this.prisma.weeklyPlan.findUnique({
-        where: { id: planId },
-        select: {
-          id: true,
-          userId: true,
-          user: { select: { name: true, whatsappPhone: true } },
-        },
+      await this.sendPlanPublishedNotification({
+        id: plan.id,
+        userId: plan.userId,
+        user: plan.user,
       });
-      if (planForNotify) {
-        await this.sendPlanPublishedNotification(planForNotify);
-      }
     }
 
     return { plan: updated, deferred: false as const };
@@ -214,18 +211,22 @@ export class PublicationService {
     if (pending.length === 0) return;
 
     // 1. Delete existing Calendar events for the PENDING items
-    for (const item of pending) {
-      try {
-        const eventId = await this.calendar.findEventIdByIcsId(
-          plan.userId,
-          plan.id,
-          item.id,
-          { start: plan.weekStart, end: plan.weekEnd },
-        );
-        if (eventId) await this.calendar.deleteEvent(plan.userId, eventId);
-      } catch {
-        // swallow — one flaky event should not block the reschedule
-      }
+    try {
+      const eventIds = await this.calendar.findEventIdsByIcsIds(
+        plan.userId,
+        plan.id,
+        pending.map((i) => i.id),
+        { start: plan.weekStart, end: plan.weekEnd },
+      );
+      await Promise.all(
+        Array.from(eventIds.values()).map((eventId) =>
+          this.calendar.deleteEvent(plan.userId, eventId).catch(() => {
+            // swallow — one flaky event should not block the reschedule
+          }),
+        ),
+      );
+    } catch {
+      // swallow — listing failure shouldn't block the reschedule
     }
 
     // 2. Re-schedule PENDING items into remaining window.
@@ -335,28 +336,32 @@ export class PublicationService {
       throw new PlanOverflowError(result.overflow);
     }
 
-    let sessionsFailed = 0;
-    for (const session of result.sessions) {
-      const item = plan.items.find((i) => i.id === session.itemId)!;
-      const eventEnd = new Date(session.scheduledAt.getTime() + session.durationMinutes * 60 * 1000);
-      try {
-        await this.calendar.createEvent(plan.userId, {
-          summary: `ICS Select — ${item.libraryItem.title}`,
-          description: item.libraryItem.url
-            ? `Link: ${item.libraryItem.url}`
-            : 'ICS Select study session',
-          start: session.scheduledAt,
-          end: eventEnd,
-          icsId: { planId: plan.id, itemId: item.id },
-        });
-      } catch (err) {
-        sessionsFailed += 1;
-        const msg = err instanceof Error ? err.message : String(err);
-        this.logger.warn(
-          `calendar.createEvent failed · user=${plan.userId} plan=${plan.id} item=${item.id} · ${msg}`,
-        );
-      }
-    }
+    const itemById = new Map(plan.items.map((i) => [i.id, i]));
+    const createResults = await Promise.all(
+      result.sessions.map(async (session) => {
+        const item = itemById.get(session.itemId)!;
+        const eventEnd = new Date(session.scheduledAt.getTime() + session.durationMinutes * 60 * 1000);
+        try {
+          await this.calendar.createEvent(plan.userId, {
+            summary: `ICS Select — ${item.libraryItem.title}`,
+            description: item.libraryItem.url
+              ? `Link: ${item.libraryItem.url}`
+              : 'ICS Select study session',
+            start: session.scheduledAt,
+            end: eventEnd,
+            icsId: { planId: plan.id, itemId: item.id },
+          });
+          return true;
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          this.logger.warn(
+            `calendar.createEvent failed · user=${plan.userId} plan=${plan.id} item=${item.id} · ${msg}`,
+          );
+          return false;
+        }
+      }),
+    );
+    const sessionsFailed = createResults.filter((ok) => !ok).length;
 
     // Persist the scheduler's plan on each item so the /me/home endpoint
     // can render "19:00 · 45 min" without round-tripping to Google Calendar.
@@ -369,28 +374,30 @@ export class PublicationService {
     }
 
     // Gather all item IDs known to this plan so we can null out overflow items
-    const allItemIds = new Set<string>(plan.items.map((i) => i.id));
+    const overflowIds = plan.items.map((i) => i.id).filter((id) => !byItem.has(id));
 
-    for (const [itemId, chunks] of byItem) {
+    const placedUpdates = Array.from(byItem).map(([itemId, chunks]) => {
       chunks.sort((a, b) => a.startAt.getTime() - b.startAt.getTime());
       const earliest = chunks[0]!;
-      await this.prisma.weeklyPlanItem.update({
+      return this.prisma.weeklyPlanItem.update({
         where: { id: itemId },
         data: {
           scheduledAt: earliest.startAt,
           scheduledMinutes: chunks.reduce((s, c) => s + c.minutes, 0),
         },
       });
-      allItemIds.delete(itemId);
-    }
+    });
 
-    // Items that didn't get sessions (overflow or otherwise unplaced): null out.
-    for (const itemId of allItemIds) {
-      await this.prisma.weeklyPlanItem.update({
-        where: { id: itemId },
-        data: { scheduledAt: null, scheduledMinutes: null },
-      });
-    }
+    const overflowUpdate = overflowIds.length > 0
+      ? [
+          this.prisma.weeklyPlanItem.updateMany({
+            where: { id: { in: overflowIds } },
+            data: { scheduledAt: null, scheduledMinutes: null },
+          }),
+        ]
+      : [];
+
+    await this.prisma.$transaction([...placedUpdates, ...overflowUpdate]);
 
     return {
       sessionsCreated: result.sessions.length - sessionsFailed,

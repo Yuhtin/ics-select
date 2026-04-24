@@ -175,10 +175,10 @@ describe('plan read — skippable flag', () => {
 });
 
 describe('WeeklyPlansService.remove (deletePlan)', () => {
-  const calendar = { findEventIdByIcsId: jest.fn(), deleteEvent: jest.fn() };
+  const calendar = { findEventIdsByIcsIds: jest.fn(), deleteEvent: jest.fn() };
 
   beforeEach(() => {
-    calendar.findEventIdByIcsId.mockReset();
+    calendar.findEventIdsByIcsIds.mockReset();
     calendar.deleteEvent.mockReset();
   });
 
@@ -195,7 +195,7 @@ describe('WeeklyPlansService.remove (deletePlan)', () => {
     };
     const service = new WeeklyPlansService(prisma, calendar as any);
     await service.remove('p1');
-    expect(calendar.findEventIdByIcsId).not.toHaveBeenCalled();
+    expect(calendar.findEventIdsByIcsIds).not.toHaveBeenCalled();
     expect(prisma.weeklyPlan.delete).toHaveBeenCalledWith({ where: { id: 'p1' } });
   });
 
@@ -210,12 +210,16 @@ describe('WeeklyPlansService.remove (deletePlan)', () => {
         delete: jest.fn().mockResolvedValue({}),
       },
     };
-    calendar.findEventIdByIcsId
-      .mockResolvedValueOnce('evt-1')
-      .mockResolvedValueOnce(null);
+    calendar.findEventIdsByIcsIds.mockResolvedValueOnce(new Map([['i1', 'evt-1']]));
     const service = new WeeklyPlansService(prisma, calendar as any);
     await service.remove('p1');
-    expect(calendar.findEventIdByIcsId).toHaveBeenCalledTimes(2);
+    expect(calendar.findEventIdsByIcsIds).toHaveBeenCalledTimes(1);
+    expect(calendar.findEventIdsByIcsIds).toHaveBeenCalledWith(
+      'u1',
+      'p1',
+      ['i1', 'i2'],
+      expect.objectContaining({ start: expect.any(Date), end: expect.any(Date) }),
+    );
     expect(calendar.deleteEvent).toHaveBeenCalledWith('u1', 'evt-1');
     expect(calendar.deleteEvent).toHaveBeenCalledTimes(1);
     expect(prisma.weeklyPlan.delete).toHaveBeenCalled();
@@ -240,7 +244,7 @@ describe('WeeklyPlansService.remove (deletePlan)', () => {
         delete: jest.fn().mockResolvedValue({}),
       },
     };
-    calendar.findEventIdByIcsId.mockRejectedValue(new Error('boom'));
+    calendar.findEventIdsByIcsIds.mockRejectedValue(new Error('boom'));
     const service = new WeeklyPlansService(prisma, calendar as any);
     await expect(service.remove('p1')).resolves.toBeUndefined();
     expect(prisma.weeklyPlan.delete).toHaveBeenCalled();

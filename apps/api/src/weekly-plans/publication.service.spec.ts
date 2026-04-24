@@ -51,7 +51,9 @@ function fakePrisma() {
     },
     weeklyPlanItem: {
       update: jest.fn(async () => ({})),
+      updateMany: jest.fn(async () => ({ count: 0 })),
     },
+    $transaction: jest.fn(async (ops: any[]) => Promise.all(ops)),
   };
 }
 
@@ -60,6 +62,9 @@ const calendar = {
   createEvent: jest.fn(async () => 'evt-1'),
   deleteEvent: jest.fn(async () => undefined),
   findEventIdByIcsId: jest.fn(async () => 'gcal-evt-1'),
+  findEventIdsByIcsIds: jest.fn(async (_u: string, _p: string, ids: string[]) =>
+    new Map(ids.map((id) => [id, 'gcal-evt-1'])),
+  ),
 };
 
 const scheduler = {
@@ -211,10 +216,10 @@ describe('PublicationService.autoSchedule', () => {
         }),
       }),
     );
-    // wpi-2 (overflow) gets null for both fields
-    expect(prisma.weeklyPlanItem.update).toHaveBeenCalledWith(
+    // wpi-2 (overflow) gets null for both fields via a batched updateMany
+    expect(prisma.weeklyPlanItem.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { id: 'wpi-2' },
+        where: { id: { in: ['wpi-2'] } },
         data: expect.objectContaining({
           scheduledAt: null,
           scheduledMinutes: null,
@@ -375,9 +380,13 @@ describe('PublicationService.reschedulePending', () => {
     calendar.createEvent.mockClear();
     calendar.deleteEvent.mockClear();
     calendar.findEventIdByIcsId.mockClear();
+    calendar.findEventIdsByIcsIds.mockClear();
     calendar.getFreeBusy.mockReset();
     calendar.getFreeBusy.mockResolvedValue([]);
     calendar.findEventIdByIcsId.mockResolvedValue('gcal-evt-1');
+    calendar.findEventIdsByIcsIds.mockImplementation(async (_u: string, _p: string, ids: string[]) =>
+      new Map(ids.map((id) => [id, 'gcal-evt-1'])),
+    );
     scheduler.plan.mockReset();
     scheduler.plan.mockReturnValue({
       sessions: [
@@ -410,6 +419,7 @@ describe('PublicationService.reschedulePending', () => {
     const svc = new PublicationService(prisma as any, scheduler as any, calendar as any, whatsapp as any, templates as any);
     await svc.reschedulePending('p-1');
     expect(calendar.findEventIdByIcsId).not.toHaveBeenCalled();
+    expect(calendar.findEventIdsByIcsIds).not.toHaveBeenCalled();
     expect(scheduler.plan).not.toHaveBeenCalled();
   });
 
@@ -419,10 +429,10 @@ describe('PublicationService.reschedulePending', () => {
     const svc = new PublicationService(prisma as any, scheduler as any, calendar as any, whatsapp as any, templates as any);
     await svc.reschedulePending('p-1');
 
-    // findEventIdByIcsId only called for the PENDING item
-    expect(calendar.findEventIdByIcsId).toHaveBeenCalledTimes(1);
-    expect(calendar.findEventIdByIcsId).toHaveBeenCalledWith(
-      'u-1', 'p-1', 'wpi-pending', expect.objectContaining({ start: weekStart, end: weekEnd }),
+    // Batched lookup issued once for only the PENDING item id
+    expect(calendar.findEventIdsByIcsIds).toHaveBeenCalledTimes(1);
+    expect(calendar.findEventIdsByIcsIds).toHaveBeenCalledWith(
+      'u-1', 'p-1', ['wpi-pending'], expect.objectContaining({ start: weekStart, end: weekEnd }),
     );
 
     // deleteEvent called with the returned id
@@ -470,8 +480,8 @@ describe('PublicationService.reschedulePending', () => {
   it('tolerates Calendar errors during cleanup and still creates new events', async () => {
     const prisma = fakePrisma();
     prisma.plans.set('p-1', makePlan());
-    // Simulate findEventIdByIcsId throwing
-    calendar.findEventIdByIcsId.mockRejectedValueOnce(new Error('calendar down'));
+    // Simulate the batched lookup throwing
+    calendar.findEventIdsByIcsIds.mockRejectedValueOnce(new Error('calendar down'));
     const svc = new PublicationService(prisma as any, scheduler as any, calendar as any, whatsapp as any, templates as any);
     await svc.reschedulePending('p-1');
 

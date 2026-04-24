@@ -32,19 +32,23 @@ export class WeeklyPlansService {
     });
     if (!plan) throw new NotFoundException('plan not found');
 
-    if (plan.status === 'PUBLISHED') {
-      for (const item of plan.items) {
-        try {
-          const eventId = await this.calendar.findEventIdByIcsId(
-            plan.userId,
-            plan.id,
-            item.id,
-            { start: plan.weekStart, end: plan.weekEnd },
-          );
-          if (eventId) await this.calendar.deleteEvent(plan.userId, eventId);
-        } catch {
-          // swallow — per-item Calendar failures shouldn't block delete
-        }
+    if (plan.status === 'PUBLISHED' && plan.items.length > 0) {
+      try {
+        const eventIds = await this.calendar.findEventIdsByIcsIds(
+          plan.userId,
+          plan.id,
+          plan.items.map((i) => i.id),
+          { start: plan.weekStart, end: plan.weekEnd },
+        );
+        await Promise.all(
+          Array.from(eventIds.values()).map((eventId) =>
+            this.calendar.deleteEvent(plan.userId, eventId).catch(() => {
+              // swallow — per-event Calendar failures shouldn't block delete
+            }),
+          ),
+        );
+      } catch {
+        // swallow — listing failure shouldn't block delete
       }
     }
 
