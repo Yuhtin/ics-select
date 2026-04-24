@@ -73,10 +73,24 @@ export class PublicationService {
     userId: string;
     user: { name: string | null; whatsappPhone: string | null } | null;
   }): Promise<void> {
-    if (!plan.user?.whatsappPhone) return;
+    if (!plan.user?.whatsappPhone) {
+      this.logger.log(
+        `plan_published whatsapp skipped · plan=${plan.id} user=${plan.userId} · no whatsappPhone`,
+      );
+      return;
+    }
     const firstName = plan.user.name?.split(' ')[0] ?? '';
     const rendered = await this.templates.render('plan_published', { firstName });
-    if (!rendered.enabled) return;
+    if (!rendered.enabled) {
+      this.logger.log(
+        `plan_published whatsapp skipped · plan=${plan.id} user=${plan.userId} · template disabled`,
+      );
+      return;
+    }
+    const startedAt = Date.now();
+    this.logger.log(
+      `plan_published whatsapp sending · plan=${plan.id} user=${plan.userId} to=${plan.user.whatsappPhone}`,
+    );
     await this.whatsapp
       .send({
         userId: plan.userId,
@@ -84,8 +98,15 @@ export class PublicationService {
         to: plan.user.whatsappPhone,
         text: rendered.text,
       })
+      .then(() => {
+        this.logger.log(
+          `plan_published whatsapp sent · plan=${plan.id} user=${plan.userId} · ${Date.now() - startedAt}ms`,
+        );
+      })
       .catch((err) => {
-        this.logger.warn(`plan_published whatsapp failed for ${plan.id}: ${String(err)}`);
+        this.logger.warn(
+          `plan_published whatsapp failed · plan=${plan.id} user=${plan.userId} · ${Date.now() - startedAt}ms · ${String(err)}`,
+        );
       });
   }
 
@@ -147,10 +168,11 @@ export class PublicationService {
       },
     });
 
-    // Replicate the WhatsApp send done by the cron in the scheduled-publish
-    // path: same template, same gating, so "Publish now" feels equivalent.
+    // Fire-and-forget: "Publish now" shouldn't block on Evolution API
+    // (seconds of latency). sendPlanPublishedNotification logs start/sent/fail
+    // so the timing and errors still show up in container logs.
     if (sendWhatsapp) {
-      await this.sendPlanPublishedNotification({
+      void this.sendPlanPublishedNotification({
         id: plan.id,
         userId: plan.userId,
         user: plan.user,
