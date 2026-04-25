@@ -18,7 +18,13 @@ export class RetroCron {
   async tick(now: Date = new Date()): Promise<void> {
     const weekStart = this.mondayUTC(now);
     const members = await this.prisma.user.findMany({
-      where: { role: 'MEMBER', whatsappPhone: { not: null } },
+      where: {
+        role: 'MEMBER',
+        whatsappPhone: { not: null },
+        weeklyPlans: {
+          some: { weekStart, status: 'PUBLISHED' },
+        },
+      },
       select: {
         id: true,
         name: true,

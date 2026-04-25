@@ -1,12 +1,31 @@
 import { RetroCron } from './retro.cron';
 
+// All time-window tests below use Fri/Thu of the same ISO week. The cron
+// computes weekStart as the Monday of that week in UTC → 2026-04-13.
+const WEEK_START_FIXTURE = new Date(Date.UTC(2026, 3, 13));
+const PUBLISHED_PLAN = [
+  { status: 'PUBLISHED', weekStart: WEEK_START_FIXTURE },
+];
+
 describe('RetroCron', () => {
   function makeCron({
     users = [] as any[],
     sentRows = new Map<string, any>(),
   } = {}) {
     const prisma = {
-      user: { findMany: jest.fn(async () => users) },
+      user: {
+        findMany: jest.fn(async ({ where }: any) => {
+          const planFilter = where?.weeklyPlans?.some;
+          if (!planFilter) return users;
+          return users.filter((u: any) =>
+            (u.weeklyPlans ?? []).some(
+              (p: any) =>
+                p.status === planFilter.status &&
+                p.weekStart.getTime() === planFilter.weekStart.getTime(),
+            ),
+          );
+        }),
+      },
       retroReminderSent: {
         findUnique: jest.fn(
           async ({ where }: any) =>
@@ -46,6 +65,7 @@ describe('RetroCron', () => {
           name: 'Davi Duarte',
           whatsappPhone: '5511999',
           availability: { timezone: 'America/Sao_Paulo' },
+          weeklyPlans: PUBLISHED_PLAN,
         },
       ],
     });
@@ -71,6 +91,7 @@ describe('RetroCron', () => {
           name: 'A',
           whatsappPhone: '1',
           availability: { timezone: 'America/Sao_Paulo' },
+          weeklyPlans: PUBLISHED_PLAN,
         },
       ],
     });
@@ -87,6 +108,7 @@ describe('RetroCron', () => {
           name: 'A',
           whatsappPhone: '1',
           availability: { timezone: 'America/Sao_Paulo' },
+          weeklyPlans: PUBLISHED_PLAN,
         },
       ],
     });
@@ -106,6 +128,7 @@ describe('RetroCron', () => {
           name: 'A',
           whatsappPhone: '1',
           availability: { timezone: 'America/Sao_Paulo' },
+          weeklyPlans: PUBLISHED_PLAN,
         },
       ],
       sentRows: sent,
@@ -120,12 +143,13 @@ describe('RetroCron', () => {
     const { cron, whatsapp } = makeCron({
       users: [
         // Bad timezone → Intl.DateTimeFormat throws
-        { id: 'bad', name: 'X', whatsappPhone: '1', availability: { timezone: 'Not/A_Real_TZ' } },
+        { id: 'bad', name: 'X', whatsappPhone: '1', availability: { timezone: 'Not/A_Real_TZ' }, weeklyPlans: PUBLISHED_PLAN },
         {
           id: 'u1',
           name: 'Davi',
           whatsappPhone: '5511999',
           availability: { timezone: 'America/Sao_Paulo' },
+          weeklyPlans: PUBLISHED_PLAN,
         },
       ],
     });
@@ -134,10 +158,47 @@ describe('RetroCron', () => {
     expect(whatsapp.send.mock.calls[0][0].userId).toBe('u1');
   });
 
+  it('skips members without a PUBLISHED plan for this week (program not started)', async () => {
+    const now = new Date('2026-04-17T21:05:00Z');
+    const { cron, whatsapp, prisma } = makeCron({
+      users: [
+        // No weeklyPlans at all — pre-program member
+        {
+          id: 'pre1',
+          name: 'A',
+          whatsappPhone: '1',
+          availability: { timezone: 'America/Sao_Paulo' },
+          weeklyPlans: [],
+        },
+        // Has a plan but DRAFT, not PUBLISHED
+        {
+          id: 'draft1',
+          name: 'B',
+          whatsappPhone: '2',
+          availability: { timezone: 'America/Sao_Paulo' },
+          weeklyPlans: [{ status: 'DRAFT', weekStart: WEEK_START_FIXTURE }],
+        },
+        // Has a PUBLISHED plan but for a different week
+        {
+          id: 'oldweek1',
+          name: 'C',
+          whatsappPhone: '3',
+          availability: { timezone: 'America/Sao_Paulo' },
+          weeklyPlans: [
+            { status: 'PUBLISHED', weekStart: new Date(Date.UTC(2026, 3, 6)) },
+          ],
+        },
+      ],
+    });
+    await cron.tick(now);
+    expect(whatsapp.send).not.toHaveBeenCalled();
+    expect(prisma.retroReminderSent.create).not.toHaveBeenCalled();
+  });
+
   it('uses America/Sao_Paulo as fallback when availability is null', async () => {
     const now = new Date('2026-04-17T21:05:00Z');
     const { cron, whatsapp } = makeCron({
-      users: [{ id: 'u1', name: 'A', whatsappPhone: '1', availability: null }],
+      users: [{ id: 'u1', name: 'A', whatsappPhone: '1', availability: null, weeklyPlans: PUBLISHED_PLAN }],
     });
     await cron.tick(now);
     expect(whatsapp.send).toHaveBeenCalledTimes(1);
