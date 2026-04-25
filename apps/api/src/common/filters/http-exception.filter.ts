@@ -10,6 +10,7 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { ZodError } from 'zod';
 
 type ErrorPayload = {
   error: {
@@ -36,6 +37,21 @@ export class HttpExceptionFilter implements ExceptionFilter {
   }
 
   private map(exception: unknown): { status: number; payload: ErrorPayload } {
+    if (exception instanceof ZodError) {
+      // Controllers that call Schema.parse(body) inline used to bubble ZodError
+      // straight through to the default 500. Map to 400 with field-level
+      // details so clients can show useful inline errors.
+      return {
+        status: 400,
+        payload: {
+          error: {
+            code: 'VALIDATION',
+            message: 'Invalid request payload',
+            details: { issues: exception.flatten() },
+          },
+        },
+      };
+    }
     if (exception instanceof BadRequestException) {
       const res = exception.getResponse();
       if (

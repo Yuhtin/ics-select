@@ -324,51 +324,6 @@ describe('GoogleCalendarService', () => {
     });
   });
 
-  describe('findEventIdByIcsId', () => {
-    const row = {
-      accessTokenEnc: 'enc(plain-access)',
-      refreshTokenEnc: 'enc(plain-refresh)',
-      expiresAt: new Date(Date.now() + 30 * 60 * 1000),
-      scope: 'calendar.events',
-    };
-
-    it('returns the event ID when a matching ICS marker exists', async () => {
-      const prisma = fakePrisma({ ...row });
-      const client = mockClient();
-      client.events.list.mockResolvedValueOnce({
-        data: {
-          items: [
-            { id: 'evt-a', description: 'unrelated' },
-            { id: 'evt-b', description: 'ICS ID: plan-1/item-42' },
-            { id: 'evt-c', description: 'ICS ID: plan-2/item-1' },
-          ],
-        },
-      });
-      const svc = new GoogleCalendarService(prisma as any, aes as any, fakeConfig as any, () => client as any);
-
-      const id = await svc.findEventIdByIcsId('user-1', 'plan-1', 'item-42', {
-        start: new Date('2026-04-20'),
-        end: new Date('2026-04-27'),
-      });
-
-      expect(id).toBe('evt-b');
-    });
-
-    it('returns null when no event matches', async () => {
-      const prisma = fakePrisma({ ...row });
-      const client = mockClient();
-      client.events.list.mockResolvedValueOnce({ data: { items: [] } });
-      const svc = new GoogleCalendarService(prisma as any, aes as any, fakeConfig as any, () => client as any);
-
-      const id = await svc.findEventIdByIcsId('user-1', 'plan-1', 'item-42', {
-        start: new Date('2026-04-20'),
-        end: new Date('2026-04-27'),
-      });
-
-      expect(id).toBeNull();
-    });
-  });
-
   describe('auth client cache', () => {
     const row = {
       accessTokenEnc: 'enc(plain-access)',

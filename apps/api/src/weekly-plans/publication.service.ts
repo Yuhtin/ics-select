@@ -257,7 +257,12 @@ export class PublicationService {
 
     const plan = await this.prisma.weeklyPlan.findUnique({
       where: { id: planId },
-      include: { items: { include: { libraryItem: true }, orderBy: { order: 'asc' } } },
+      include: {
+        items: {
+          include: { libraryItem: true, calendarEvents: true },
+          orderBy: { order: 'asc' },
+        },
+      },
     });
     if (!plan) throw new NotFoundException('plan not found');
     if (plan.status !== 'PUBLISHED') {
@@ -267,23 +272,23 @@ export class PublicationService {
     const pending = plan.items.filter((i) => i.outcome === 'PENDING');
     if (pending.length === 0) return;
 
-    // 1. Delete existing Calendar events for the PENDING items
-    try {
-      const eventIds = await this.calendar.findEventIdsByIcsIds(
-        plan.userId,
-        plan.id,
-        pending.map((i) => i.id),
-        { start: plan.weekStart, end: plan.weekEnd },
-      );
+    // 1. Delete existing Calendar events for PENDING items, looked up by id
+    // from our own DB instead of scanning the member's whole calendar.
+    const pendingItemIds = pending.map((i) => i.id);
+    const staleEvents = pending.flatMap((i) => i.calendarEvents);
+    if (staleEvents.length > 0) {
       await Promise.all(
-        Array.from(eventIds.values()).map((eventId) =>
-          this.calendar.deleteEvent(plan.userId, eventId).catch(() => {
-            // swallow — one flaky event should not block the reschedule
+        staleEvents.map((ev) =>
+          this.calendar.deleteEvent(plan.userId, ev.googleEventId).catch((err) => {
+            this.logger.warn(
+              `calendar.deleteEvent failed during reschedule · user=${plan.userId} plan=${plan.id} event=${ev.googleEventId} · ${String(err)}`,
+            );
           }),
         ),
       );
-    } catch {
-      // swallow — listing failure shouldn't block the reschedule
+      await this.prisma.weeklyPlanItemCalendarEvent.deleteMany({
+        where: { weeklyPlanItemId: { in: pendingItemIds } },
+      });
     }
 
     // 2. Re-schedule PENDING items into remaining window.
@@ -309,12 +314,13 @@ export class PublicationService {
       throw new PlanOverflowError(result.overflow);
     }
 
-    // 3. Create new Calendar events and update DB-side scheduling fields
+    // 3. Create new Calendar events and persist their ids so future deletes
+    // don't need events.list.
     for (const session of result.sessions) {
       const item = pending.find((p) => p.id === session.itemId)!;
       const eventEnd = new Date(session.scheduledAt.getTime() + session.durationMinutes * 60 * 1000);
       try {
-        await this.calendar.createEvent(plan.userId, {
+        const googleEventId = await this.calendar.createEvent(plan.userId, {
           summary: `ICS Select — ${item.libraryItem.title}`,
           description: item.libraryItem.url
             ? `Link: ${item.libraryItem.url}`
@@ -322,6 +328,9 @@ export class PublicationService {
           start: session.scheduledAt,
           end: eventEnd,
           icsId: { planId: plan.id, itemId: item.id },
+        });
+        await this.prisma.weeklyPlanItemCalendarEvent.create({
+          data: { weeklyPlanItemId: item.id, googleEventId },
         });
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
@@ -357,10 +366,32 @@ export class PublicationService {
     const plan = await this.prisma.weeklyPlan.findUnique({
       where: { id: planId },
       include: {
-        items: { include: { libraryItem: true }, orderBy: { order: 'asc' } },
+        items: {
+          include: { libraryItem: true, calendarEvents: true },
+          orderBy: { order: 'asc' },
+        },
       },
     });
     if (!plan) throw new NotFoundException('plan not found');
+
+    // Wipe any events that a previous autoSchedule run created. Without this,
+    // re-running autoSchedule on a PUBLISHED plan duplicates events on the
+    // member's calendar.
+    const existingEvents = plan.items.flatMap((i) => i.calendarEvents);
+    if (existingEvents.length > 0) {
+      await Promise.all(
+        existingEvents.map((ev) =>
+          this.calendar.deleteEvent(plan.userId, ev.googleEventId).catch((err) => {
+            this.logger.warn(
+              `calendar.deleteEvent failed during autoSchedule · user=${plan.userId} plan=${plan.id} event=${ev.googleEventId} · ${String(err)}`,
+            );
+          }),
+        ),
+      );
+      await this.prisma.weeklyPlanItemCalendarEvent.deleteMany({
+        where: { weeklyPlanItemId: { in: plan.items.map((i) => i.id) } },
+      });
+    }
 
     const busyBlocks = await this.calendar
       .getFreeBusy(plan.userId, plan.weekStart, plan.weekEnd)
@@ -391,7 +422,7 @@ export class PublicationService {
         const item = itemById.get(session.itemId)!;
         const eventEnd = new Date(session.scheduledAt.getTime() + session.durationMinutes * 60 * 1000);
         try {
-          await this.calendar.createEvent(plan.userId, {
+          const googleEventId = await this.calendar.createEvent(plan.userId, {
             summary: `ICS Select — ${item.libraryItem.title}`,
             description: item.libraryItem.url
               ? `Link: ${item.libraryItem.url}`
@@ -400,17 +431,23 @@ export class PublicationService {
             end: eventEnd,
             icsId: { planId: plan.id, itemId: item.id },
           });
-          return true;
+          return { ok: true as const, itemId: item.id, googleEventId };
         } catch (err) {
           const msg = err instanceof Error ? err.message : String(err);
           this.logger.warn(
             `calendar.createEvent failed · user=${plan.userId} plan=${plan.id} item=${item.id} · ${msg}`,
           );
-          return false;
+          return { ok: false as const };
         }
       }),
     );
-    const sessionsFailed = createResults.filter((ok) => !ok).length;
+    const sessionsFailed = createResults.filter((r) => !r.ok).length;
+    const persistEvents = createResults
+      .filter((r): r is { ok: true; itemId: string; googleEventId: string } => r.ok)
+      .map((r) => ({ weeklyPlanItemId: r.itemId, googleEventId: r.googleEventId }));
+    if (persistEvents.length > 0) {
+      await this.prisma.weeklyPlanItemCalendarEvent.createMany({ data: persistEvents });
+    }
 
     // Persist the scheduler's plan on each item so the /me/home endpoint
     // can render "19:00 · 45 min" without round-tripping to Google Calendar.

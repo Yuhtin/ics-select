@@ -121,6 +121,17 @@ export class GoogleCalendarService {
     const description = input.icsId
       ? embedIcsId(input.description, input.icsId)
       : input.description;
+    // private extended properties are stamped on every ICS-owned event so a
+    // housekeeping job can list/clean orphaned events without depending on
+    // our DB rows. Google indexes these and they survive description edits.
+    const extendedProperties = input.icsId
+      ? {
+          private: {
+            icsPlanId: input.icsId.planId,
+            icsItemId: input.icsId.itemId,
+          },
+        }
+      : undefined;
     const client = await this.clientFor(userId);
     const res = await client.events.insert({
       calendarId: 'primary',
@@ -129,6 +140,7 @@ export class GoogleCalendarService {
         description,
         start: { dateTime: input.start.toISOString() },
         end: { dateTime: input.end.toISOString() },
+        extendedProperties,
       },
     });
     const id = res.data.id;
@@ -170,52 +182,6 @@ export class GoogleCalendarService {
   async deleteEvent(userId: string, eventId: string): Promise<void> {
     const client = await this.clientFor(userId);
     await client.events.delete({ calendarId: 'primary', eventId });
-  }
-
-  async findEventIdByIcsId(
-    userId: string,
-    planId: string,
-    itemId: string,
-    range: { start: Date; end: Date },
-  ): Promise<string | null> {
-    const map = await this.findEventIdsByIcsIds(userId, planId, [itemId], range);
-    return map.get(itemId) ?? null;
-  }
-
-  async findEventIdsByIcsIds(
-    userId: string,
-    planId: string,
-    itemIds: string[],
-    range: { start: Date; end: Date },
-  ): Promise<Map<string, string>> {
-    const result = new Map<string, string>();
-    if (itemIds.length === 0) return result;
-
-    const client = await this.clientFor(userId);
-    const res = await client.events.list({
-      calendarId: 'primary',
-      timeMin: range.start.toISOString(),
-      timeMax: range.end.toISOString(),
-      singleEvents: true,
-      maxResults: 250,
-      fields: 'items(id,description)',
-    });
-
-    const prefix = `ICS ID: ${planId}/`;
-    const wanted = new Set(itemIds);
-    for (const e of res.data.items ?? []) {
-      if (!e.id || typeof e.description !== 'string') continue;
-      const idx = e.description.indexOf(prefix);
-      if (idx === -1) continue;
-      const rest = e.description.slice(idx + prefix.length);
-      const match = rest.match(/^[\w-]+/);
-      if (!match) continue;
-      const itemId = match[0];
-      if (wanted.has(itemId) && !result.has(itemId)) {
-        result.set(itemId, e.id);
-      }
-    }
-    return result;
   }
 
   private async clientFor(userId: string): Promise<calendar_v3.Calendar> {

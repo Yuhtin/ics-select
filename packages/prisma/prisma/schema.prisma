@@ -312,13 +312,25 @@ model WeeklyPlanItem {
   scheduledAt       DateTime?
   scheduledMinutes  Int?
 
-  weeklyPlan  WeeklyPlan       @relation(fields: [weeklyPlanId], references: [id], onDelete: Cascade)
-  libraryItem LibraryItem      @relation(fields: [libraryItemId], references: [id])
-  carriedFrom WeeklyPlanItem?  @relation("carry", fields: [carriedFromItemId], references: [id])
-  carriedTo   WeeklyPlanItem[] @relation("carry")
+  weeklyPlan     WeeklyPlan                    @relation(fields: [weeklyPlanId], references: [id], onDelete: Cascade)
+  libraryItem    LibraryItem                   @relation(fields: [libraryItemId], references: [id])
+  carriedFrom    WeeklyPlanItem?               @relation("carry", fields: [carriedFromItemId], references: [id])
+  carriedTo      WeeklyPlanItem[]              @relation("carry")
+  calendarEvents WeeklyPlanItemCalendarEvent[]
 
   @@unique([weeklyPlanId, order])
   @@index([scheduledAt])
+}
+
+model WeeklyPlanItemCalendarEvent {
+  id               String   @id @default(cuid())
+  weeklyPlanItemId String
+  googleEventId    String   @unique
+  createdAt        DateTime @default(now())
+
+  weeklyPlanItem WeeklyPlanItem @relation(fields: [weeklyPlanItemId], references: [id], onDelete: Cascade)
+
+  @@index([weeklyPlanItemId])
 }
 
 model WeeklyRetro {

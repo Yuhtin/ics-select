@@ -2,7 +2,6 @@ import { GoogleCalendarService } from '../google-calendar/google-calendar.servic
 import { WeeklyPlansService } from './weekly-plans.service';
 
 const stubCalendar = {
-  findEventIdByIcsId: jest.fn(),
   deleteEvent: jest.fn(),
 } as unknown as GoogleCalendarService;
 

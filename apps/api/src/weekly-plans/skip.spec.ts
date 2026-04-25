@@ -3,18 +3,14 @@ import { GoogleCalendarService } from '../google-calendar/google-calendar.servic
 import { WeeklyPlansService } from './weekly-plans.service';
 
 describe('WeeklyPlansService.setItemOutcome — SKIPPED', () => {
-  const calendar = {
-    findEventIdByIcsId: jest.fn(),
-    deleteEvent: jest.fn(),
-  };
+  const calendar = { deleteEvent: jest.fn() };
 
   const buildPrisma = (item: {
     planId: string;
     userId: string;
     planStatus: 'DRAFT' | 'PUBLISHED';
     topicSlugs: string[];
-    weekStartsAt: Date;
-    weekEndsAt: Date;
+    calendarEvents?: Array<{ id: string; googleEventId: string }>;
   }) => ({
     weeklyPlanItem: {
       findUnique: jest.fn().mockResolvedValue({
@@ -23,15 +19,15 @@ describe('WeeklyPlansService.setItemOutcome — SKIPPED', () => {
           id: item.planId,
           userId: item.userId,
           status: item.planStatus,
-          weekStart: item.weekStartsAt,
-          weekEnd: item.weekEndsAt,
         },
         libraryItem: {
           topics: item.topicSlugs.map((slug) => ({ topic: { slug } })),
         },
+        calendarEvents: item.calendarEvents ?? [],
       }),
       update: jest.fn().mockResolvedValue({ id: 'item-1', outcome: 'SKIPPED' }),
     },
+    weeklyPlanItemCalendarEvent: { deleteMany: jest.fn().mockResolvedValue({ count: 0 }) },
   });
 
   const build = (prisma: unknown) => {
@@ -39,8 +35,8 @@ describe('WeeklyPlansService.setItemOutcome — SKIPPED', () => {
   };
 
   beforeEach(() => {
-    calendar.findEventIdByIcsId.mockReset();
     calendar.deleteEvent.mockReset();
+    calendar.deleteEvent.mockResolvedValue(undefined);
   });
 
   it('rejects SKIPPED on a non-foundations item', async () => {
@@ -49,8 +45,6 @@ describe('WeeklyPlansService.setItemOutcome — SKIPPED', () => {
       userId: 'u1',
       planStatus: 'DRAFT',
       topicSlugs: ['sorting'],
-      weekStartsAt: new Date('2026-04-20'),
-      weekEndsAt: new Date('2026-04-27'),
     });
     const service = build(prisma);
     await expect(
@@ -58,63 +52,59 @@ describe('WeeklyPlansService.setItemOutcome — SKIPPED', () => {
     ).rejects.toThrow(/only foundations items can be skipped/i);
   });
 
-  it('accepts SKIPPED on a foundations item and skips Calendar cleanup when plan is DRAFT', async () => {
+  it('accepts SKIPPED on a foundations item and skips Calendar cleanup when no events exist', async () => {
     const prisma = buildPrisma({
       planId: 'p1',
       userId: 'u1',
       planStatus: 'DRAFT',
       topicSlugs: ['foundations'],
-      weekStartsAt: new Date('2026-04-20'),
-      weekEndsAt: new Date('2026-04-27'),
     });
     const service = build(prisma);
     await service.setItemOutcome('item-1', 'u1', { outcome: 'SKIPPED' });
-    expect(calendar.findEventIdByIcsId).not.toHaveBeenCalled();
     expect(calendar.deleteEvent).not.toHaveBeenCalled();
+    expect(prisma.weeklyPlanItemCalendarEvent.deleteMany).not.toHaveBeenCalled();
   });
 
-  it('accepts SKIPPED on a foundations item in PUBLISHED plan and deletes the Calendar event', async () => {
+  it('accepts SKIPPED on a foundations item in PUBLISHED plan and deletes the persisted Calendar events', async () => {
     const prisma = buildPrisma({
       planId: 'p1',
       userId: 'u1',
       planStatus: 'PUBLISHED',
       topicSlugs: ['sorting', 'foundations'],
-      weekStartsAt: new Date('2026-04-20'),
-      weekEndsAt: new Date('2026-04-27'),
+      calendarEvents: [
+        { id: 'row-1', googleEventId: 'evt-99' },
+        { id: 'row-2', googleEventId: 'evt-100' },
+      ],
     });
-    calendar.findEventIdByIcsId.mockResolvedValue('evt-99');
     const service = build(prisma);
     await service.setItemOutcome('item-1', 'u1', { outcome: 'SKIPPED' });
-    expect(calendar.findEventIdByIcsId).toHaveBeenCalledWith(
-      'u1',
-      'p1',
-      'item-1',
-      { start: expect.any(Date), end: expect.any(Date) },
-    );
     expect(calendar.deleteEvent).toHaveBeenCalledWith('u1', 'evt-99');
+    expect(calendar.deleteEvent).toHaveBeenCalledWith('u1', 'evt-100');
+    expect(prisma.weeklyPlanItemCalendarEvent.deleteMany).toHaveBeenCalledWith({
+      where: { weeklyPlanItemId: 'item-1' },
+    });
   });
 
-  it('tolerates missing Calendar event on PUBLISHED skip', async () => {
+  it('tolerates Calendar failure on PUBLISHED skip', async () => {
     const prisma = buildPrisma({
       planId: 'p1',
       userId: 'u1',
       planStatus: 'PUBLISHED',
       topicSlugs: ['foundations'],
-      weekStartsAt: new Date('2026-04-20'),
-      weekEndsAt: new Date('2026-04-27'),
+      calendarEvents: [{ id: 'row-1', googleEventId: 'evt-99' }],
     });
-    calendar.findEventIdByIcsId.mockResolvedValue(null);
+    calendar.deleteEvent.mockRejectedValue(new Error('boom'));
     const service = build(prisma);
     await expect(
       service.setItemOutcome('item-1', 'u1', { outcome: 'SKIPPED' }),
     ).resolves.toBeDefined();
-    expect(calendar.deleteEvent).not.toHaveBeenCalled();
+    expect(prisma.weeklyPlanItemCalendarEvent.deleteMany).toHaveBeenCalled();
   });
 });
 
 describe('plan read — skippable flag', () => {
   it('sets skippable=true when foundations is in item topics (primary OR cover), false otherwise', async () => {
-    const stubCalendar = { findEventIdByIcsId: jest.fn(), deleteEvent: jest.fn() };
+    const stubCalendar = { deleteEvent: jest.fn() };
 
     const prisma = {
       weeklyPlan: {
@@ -144,7 +134,7 @@ describe('plan read — skippable flag', () => {
   });
 
   it('listForMember sets skippable on each item', async () => {
-    const stubCalendar = { findEventIdByIcsId: jest.fn(), deleteEvent: jest.fn() };
+    const stubCalendar = { deleteEvent: jest.fn() };
 
     const prisma = {
       weeklyPlan: {
@@ -175,54 +165,60 @@ describe('plan read — skippable flag', () => {
 });
 
 describe('WeeklyPlansService.remove (deletePlan)', () => {
-  const calendar = { findEventIdsByIcsIds: jest.fn(), deleteEvent: jest.fn() };
+  const calendar = { deleteEvent: jest.fn() };
 
   beforeEach(() => {
-    calendar.findEventIdsByIcsIds.mockReset();
     calendar.deleteEvent.mockReset();
   });
 
-  it('deletes a DRAFT plan without calling Calendar', async () => {
+  // Wait for queued microtasks (background fire-and-forget) to settle so we
+  // can assert on the post-response cleanup.
+  const flushMicrotasks = () => new Promise((r) => setImmediate(r));
+
+  it('deletes a plan without persisted events without touching Calendar', async () => {
     const prisma: any = {
       weeklyPlan: {
         findUnique: jest.fn().mockResolvedValue({
-          id: 'p1', userId: 'u1', status: 'DRAFT',
-          weekStart: new Date(), weekEnd: new Date(),
-          items: [{ id: 'i1' }, { id: 'i2' }],
+          id: 'p1',
+          userId: 'u1',
+          items: [
+            { calendarEvents: [] },
+            { calendarEvents: [] },
+          ],
         }),
         delete: jest.fn().mockResolvedValue({}),
       },
     };
     const service = new WeeklyPlansService(prisma, calendar as any);
     await service.remove('p1');
-    expect(calendar.findEventIdsByIcsIds).not.toHaveBeenCalled();
+    await flushMicrotasks();
+    expect(calendar.deleteEvent).not.toHaveBeenCalled();
     expect(prisma.weeklyPlan.delete).toHaveBeenCalledWith({ where: { id: 'p1' } });
   });
 
-  it('deletes a PUBLISHED plan and cleans up each item Calendar event', async () => {
+  it('deletes the plan synchronously and cleans up Calendar events in background', async () => {
     const prisma: any = {
       weeklyPlan: {
         findUnique: jest.fn().mockResolvedValue({
-          id: 'p1', userId: 'u1', status: 'PUBLISHED',
-          weekStart: new Date('2026-04-20'), weekEnd: new Date('2026-04-27'),
-          items: [{ id: 'i1' }, { id: 'i2' }],
+          id: 'p1',
+          userId: 'u1',
+          items: [
+            { calendarEvents: [{ googleEventId: 'evt-1' }] },
+            { calendarEvents: [{ googleEventId: 'evt-2' }] },
+          ],
         }),
         delete: jest.fn().mockResolvedValue({}),
       },
     };
-    calendar.findEventIdsByIcsIds.mockResolvedValueOnce(new Map([['i1', 'evt-1']]));
+    calendar.deleteEvent.mockResolvedValue(undefined);
     const service = new WeeklyPlansService(prisma, calendar as any);
     await service.remove('p1');
-    expect(calendar.findEventIdsByIcsIds).toHaveBeenCalledTimes(1);
-    expect(calendar.findEventIdsByIcsIds).toHaveBeenCalledWith(
-      'u1',
-      'p1',
-      ['i1', 'i2'],
-      expect.objectContaining({ start: expect.any(Date), end: expect.any(Date) }),
-    );
+    // The plan delete is awaited; the calendar deletes are not.
+    expect(prisma.weeklyPlan.delete).toHaveBeenCalledWith({ where: { id: 'p1' } });
+    await flushMicrotasks();
     expect(calendar.deleteEvent).toHaveBeenCalledWith('u1', 'evt-1');
-    expect(calendar.deleteEvent).toHaveBeenCalledTimes(1);
-    expect(prisma.weeklyPlan.delete).toHaveBeenCalled();
+    expect(calendar.deleteEvent).toHaveBeenCalledWith('u1', 'evt-2');
+    expect(calendar.deleteEvent).toHaveBeenCalledTimes(2);
   });
 
   it('throws NotFoundException when plan does not exist', async () => {
@@ -233,21 +229,24 @@ describe('WeeklyPlansService.remove (deletePlan)', () => {
     await expect(service.remove('p1')).rejects.toThrow(/not found/i);
   });
 
-  it('tolerates Calendar errors during cleanup', async () => {
+  it('background Calendar errors do not bubble out of remove()', async () => {
     const prisma: any = {
       weeklyPlan: {
         findUnique: jest.fn().mockResolvedValue({
-          id: 'p1', userId: 'u1', status: 'PUBLISHED',
-          weekStart: new Date(), weekEnd: new Date(),
-          items: [{ id: 'i1' }],
+          id: 'p1',
+          userId: 'u1',
+          items: [{ calendarEvents: [{ googleEventId: 'evt-1' }] }],
         }),
         delete: jest.fn().mockResolvedValue({}),
       },
     };
-    calendar.findEventIdsByIcsIds.mockRejectedValue(new Error('boom'));
+    calendar.deleteEvent.mockRejectedValue(new Error('boom'));
     const service = new WeeklyPlansService(prisma, calendar as any);
     await expect(service.remove('p1')).resolves.toBeUndefined();
     expect(prisma.weeklyPlan.delete).toHaveBeenCalled();
+    await flushMicrotasks();
+    // Background failure is logged, not thrown.
+    expect(calendar.deleteEvent).toHaveBeenCalled();
   });
 });
 
@@ -257,6 +256,7 @@ describe('SKIPPED counts as completed across weekly-plans helpers', () => {
     // outcomes [DONE_EASY, SKIPPED, PENDING] — expected done = 2.
     const cycleId = 'cycle-1';
     const userId = 'u1';
+    const weekStart = new Date('2026-04-20');
     const prisma = {
       cycleMembership: {
         findMany: jest.fn().mockResolvedValue([
@@ -264,16 +264,16 @@ describe('SKIPPED counts as completed across weekly-plans helpers', () => {
         ]),
       },
       weeklyPlan: {
+        groupBy: jest.fn().mockResolvedValue([
+          { userId, _max: { weekStart } },
+        ]),
         findMany: jest.fn().mockResolvedValue([
           {
-            id: 'plan-1',
             userId,
-            cycleId,
-            weekStart: new Date('2026-04-20'),
             items: [
-              { id: 'i1', outcome: 'DONE_EASY' },
-              { id: 'i2', outcome: 'SKIPPED' },
-              { id: 'i3', outcome: 'PENDING' },
+              { outcome: 'DONE_EASY' },
+              { outcome: 'SKIPPED' },
+              { outcome: 'PENDING' },
             ],
           },
         ]),
@@ -286,10 +286,7 @@ describe('SKIPPED counts as completed across weekly-plans helpers', () => {
       cycle: { startsAt: new Date('2026-04-01'), endsAt: new Date('2026-06-30'), status: 'ACTIVE' },
     });
 
-    const calendar = {
-      findEventIdByIcsId: jest.fn(),
-      deleteEvent: jest.fn(),
-    };
+    const calendar = { deleteEvent: jest.fn() };
 
     const service = new WeeklyPlansService(prisma as any, calendar as any);
     const result = await service.cohortProgress(userId);
@@ -298,5 +295,11 @@ describe('SKIPPED counts as completed across weekly-plans helpers', () => {
     const row = result[0]!;
     expect(row.done).toBe(2);
     expect(row.total).toBe(3);
+
+    // Sanity: only one findMany call that actually fetches plans, scoped by
+    // the (userId, weekStart) winners — not the whole cycle.
+    expect(prisma.weeklyPlan.findMany).toHaveBeenCalledTimes(1);
+    const findManyArgs = prisma.weeklyPlan.findMany.mock.calls[0]![0] as any;
+    expect(findManyArgs.where.OR).toEqual([{ userId, weekStart }]);
   });
 });

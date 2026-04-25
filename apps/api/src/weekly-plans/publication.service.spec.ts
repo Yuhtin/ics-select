@@ -56,6 +56,11 @@ function fakePrisma() {
       update: jest.fn(async () => ({})),
       updateMany: jest.fn(async () => ({ count: 0 })),
     },
+    weeklyPlanItemCalendarEvent: {
+      create: jest.fn(async () => ({})),
+      createMany: jest.fn(async () => ({ count: 0 })),
+      deleteMany: jest.fn(async () => ({ count: 0 })),
+    },
     $transaction: jest.fn(async (ops: any[]) => Promise.all(ops)),
   };
 }
@@ -64,10 +69,6 @@ const calendar = {
   getFreeBusy: jest.fn(async (): Promise<Array<{ start: Date; end: Date }>> => []),
   createEvent: jest.fn(async () => 'evt-1'),
   deleteEvent: jest.fn(async () => undefined),
-  findEventIdByIcsId: jest.fn(async () => 'gcal-evt-1'),
-  findEventIdsByIcsIds: jest.fn(async (_u: string, _p: string, ids: string[]) =>
-    new Map(ids.map((id) => [id, 'gcal-evt-1'])),
-  ),
 };
 
 const scheduler = {
@@ -111,7 +112,7 @@ describe('PublicationService.autoSchedule', () => {
       weekEnd: new Date('2026-04-20T00:00:00-03:00'),
       status: 'PUBLISHED',
       items: [
-        { id: 'wpi-1', libraryItemId: 'li-1', order: 0, libraryItem: { title: 'A', estimatedMinutes: 60 } },
+        { id: 'wpi-1', libraryItemId: 'li-1', order: 0, calendarEvents: [], libraryItem: { title: 'A', estimatedMinutes: 60 } },
       ],
     });
     scheduler.plan.mockReturnValue({
@@ -151,7 +152,7 @@ describe('PublicationService.autoSchedule', () => {
       weekEnd: new Date('2026-04-20T00:00:00-03:00'),
       status: 'PUBLISHED',
       items: [
-        { id: 'wpi-1', libraryItemId: 'li-1', order: 0, libraryItem: { title: 'A', estimatedMinutes: 60 } },
+        { id: 'wpi-1', libraryItemId: 'li-1', order: 0, calendarEvents: [], libraryItem: { title: 'A', estimatedMinutes: 60 } },
       ],
     });
     scheduler.plan.mockReturnValue({
@@ -173,7 +174,7 @@ describe('PublicationService.autoSchedule', () => {
       weekEnd: new Date('2026-04-20T00:00:00-03:00'),
       status: 'PUBLISHED',
       items: [
-        { id: 'wpi-1', libraryItemId: 'li-1', order: 0, libraryItem: { title: 'A', estimatedMinutes: 60 } },
+        { id: 'wpi-1', libraryItemId: 'li-1', order: 0, calendarEvents: [], libraryItem: { title: 'A', estimatedMinutes: 60 } },
       ],
     });
     scheduler.plan.mockReturnValue({
@@ -197,8 +198,8 @@ describe('PublicationService.autoSchedule', () => {
       weekEnd: new Date('2026-04-20T00:00:00-03:00'),
       status: 'PUBLISHED',
       items: [
-        { id: 'wpi-1', libraryItemId: 'li-1', order: 0, libraryItem: { title: 'A', estimatedMinutes: 60 } },
-        { id: 'wpi-2', libraryItemId: 'li-2', order: 1, libraryItem: { title: 'B', estimatedMinutes: 60 } },
+        { id: 'wpi-1', libraryItemId: 'li-1', order: 0, calendarEvents: [], libraryItem: { title: 'A', estimatedMinutes: 60 } },
+        { id: 'wpi-2', libraryItemId: 'li-2', order: 1, calendarEvents: [], libraryItem: { title: 'B', estimatedMinutes: 60 } },
       ],
     });
     scheduler.plan.mockReturnValue({
@@ -242,7 +243,7 @@ describe('PublicationService.autoSchedule', () => {
       weekEnd: new Date('2026-04-20T00:00:00-03:00'),
       status: 'PUBLISHED',
       items: [
-        { id: 'wpi-1', libraryItemId: 'li-1', order: 0, libraryItem: { title: 'A', estimatedMinutes: 60 } },
+        { id: 'wpi-1', libraryItemId: 'li-1', order: 0, calendarEvents: [], libraryItem: { title: 'A', estimatedMinutes: 60 } },
       ],
     });
     const monBusy = {
@@ -278,14 +279,14 @@ describe('PublicationService.autoSchedule', () => {
           libraryItemId: 'li-1',
           order: 0,
           outcome: 'PENDING',
-          libraryItem: { title: 'A', estimatedMinutes: 60, url: 'https://example.com/a' },
+          calendarEvents: [], libraryItem: { title: 'A', estimatedMinutes: 60, url: 'https://example.com/a' },
         },
         {
           id: 'wpi-skipped',
           libraryItemId: 'li-2',
           order: 1,
           outcome: 'SKIPPED',
-          libraryItem: { title: 'B', estimatedMinutes: 60, url: 'https://example.com/b' },
+          calendarEvents: [], libraryItem: { title: 'B', estimatedMinutes: 60, url: 'https://example.com/b' },
         },
       ],
     });
@@ -327,7 +328,7 @@ describe('PublicationService.autoSchedule', () => {
       weekEnd: new Date('2026-04-20T00:00:00-03:00'),
       status: 'PUBLISHED',
       items: [
-        { id: 'wpi-1', libraryItemId: 'li-1', order: 0, libraryItem: { title: 'A', estimatedMinutes: 60 } },
+        { id: 'wpi-1', libraryItemId: 'li-1', order: 0, calendarEvents: [], libraryItem: { title: 'A', estimatedMinutes: 60 } },
       ],
     });
     calendar.getFreeBusy.mockRejectedValueOnce(new Error('calendar down'));
@@ -365,14 +366,14 @@ describe('PublicationService.reschedulePending', () => {
           libraryItemId: 'li-1',
           order: 0,
           outcome: 'PENDING',
-          libraryItem: { title: 'A', estimatedMinutes: 60, url: 'https://example.com/a' },
+          calendarEvents: [], libraryItem: { title: 'A', estimatedMinutes: 60, url: 'https://example.com/a' },
         },
         {
           id: 'wpi-done',
           libraryItemId: 'li-2',
           order: 1,
           outcome: 'DONE_EASY',
-          libraryItem: { title: 'B', estimatedMinutes: 60, url: 'https://example.com/b' },
+          calendarEvents: [], libraryItem: { title: 'B', estimatedMinutes: 60, url: 'https://example.com/b' },
         },
       ],
       ...overrides,
@@ -382,14 +383,9 @@ describe('PublicationService.reschedulePending', () => {
   beforeEach(() => {
     calendar.createEvent.mockClear();
     calendar.deleteEvent.mockClear();
-    calendar.findEventIdByIcsId.mockClear();
-    calendar.findEventIdsByIcsIds.mockClear();
+    calendar.deleteEvent.mockResolvedValue(undefined);
     calendar.getFreeBusy.mockReset();
     calendar.getFreeBusy.mockResolvedValue([]);
-    calendar.findEventIdByIcsId.mockResolvedValue('gcal-evt-1');
-    calendar.findEventIdsByIcsIds.mockImplementation(async (_u: string, _p: string, ids: string[]) =>
-      new Map(ids.map((id) => [id, 'gcal-evt-1'])),
-    );
     scheduler.plan.mockReset();
     scheduler.plan.mockReturnValue({
       sessions: [
@@ -415,32 +411,31 @@ describe('PublicationService.reschedulePending', () => {
           libraryItemId: 'li-2',
           order: 0,
           outcome: 'DONE_EASY',
-          libraryItem: { title: 'B', estimatedMinutes: 60, url: 'https://example.com/b' },
+          calendarEvents: [], libraryItem: { title: 'B', estimatedMinutes: 60, url: 'https://example.com/b' },
         },
       ],
     }));
     const svc = new PublicationService(prisma as any, scheduler as any, calendar as any, whatsapp as any, templates as any);
     await svc.reschedulePending('p-1');
-    expect(calendar.findEventIdByIcsId).not.toHaveBeenCalled();
-    expect(calendar.findEventIdsByIcsIds).not.toHaveBeenCalled();
+    expect(calendar.deleteEvent).not.toHaveBeenCalled();
     expect(scheduler.plan).not.toHaveBeenCalled();
   });
 
-  it('cleans up existing events then schedules only PENDING items', async () => {
+  it('cleans up persisted events for PENDING items then schedules only PENDING items', async () => {
     const prisma = fakePrisma();
-    prisma.plans.set('p-1', makePlan());
+    const plan = makePlan();
+    (plan.items[0] as any).calendarEvents = [{ googleEventId: 'gcal-evt-1' }];
+    prisma.plans.set('p-1', plan);
     const svc = new PublicationService(prisma as any, scheduler as any, calendar as any, whatsapp as any, templates as any);
     await svc.reschedulePending('p-1');
 
-    // Batched lookup issued once for only the PENDING item id
-    expect(calendar.findEventIdsByIcsIds).toHaveBeenCalledTimes(1);
-    expect(calendar.findEventIdsByIcsIds).toHaveBeenCalledWith(
-      'u-1', 'p-1', ['wpi-pending'], expect.objectContaining({ start: weekStart, end: weekEnd }),
-    );
-
-    // deleteEvent called with the returned id
+    // No events.list scan — delete by id directly from DB-tracked events.
     expect(calendar.deleteEvent).toHaveBeenCalledTimes(1);
     expect(calendar.deleteEvent).toHaveBeenCalledWith('u-1', 'gcal-evt-1');
+    // The DB-side row is removed for PENDING items only (not DONE_EASY).
+    expect(prisma.weeklyPlanItemCalendarEvent.deleteMany).toHaveBeenCalledWith({
+      where: { weeklyPlanItemId: { in: ['wpi-pending'] } },
+    });
 
     // scheduler receives only the PENDING item
     expect(scheduler.plan).toHaveBeenCalledTimes(1);
@@ -448,12 +443,18 @@ describe('PublicationService.reschedulePending', () => {
     expect(input.items).toHaveLength(1);
     expect(input.items[0].id).toBe('wpi-pending');
 
-    // createEvent called for the new session
+    // createEvent called for the new session, and the new id is persisted
     expect(calendar.createEvent).toHaveBeenCalledTimes(1);
     expect(calendar.createEvent).toHaveBeenCalledWith(
       'u-1',
       expect.objectContaining({ icsId: { planId: 'p-1', itemId: 'wpi-pending' } }),
     );
+    expect(prisma.weeklyPlanItemCalendarEvent.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        weeklyPlanItemId: 'wpi-pending',
+        googleEventId: expect.any(String),
+      }),
+    });
   });
 
   it('clamps scheduling window to max(now, plan.weekStart) via now param', async () => {
@@ -480,17 +481,17 @@ describe('PublicationService.reschedulePending', () => {
     await expect(svc.reschedulePending('p-1')).rejects.toBeInstanceOf(PlanOverflowError);
   });
 
-  it('tolerates Calendar errors during cleanup and still creates new events', async () => {
+  it('tolerates Calendar deleteEvent failure during cleanup and still creates new events', async () => {
     const prisma = fakePrisma();
-    prisma.plans.set('p-1', makePlan());
-    // Simulate the batched lookup throwing
-    calendar.findEventIdsByIcsIds.mockRejectedValueOnce(new Error('calendar down'));
+    const plan = makePlan();
+    (plan.items[0] as any).calendarEvents = [{ googleEventId: 'gcal-evt-1' }];
+    prisma.plans.set('p-1', plan);
+    calendar.deleteEvent.mockRejectedValueOnce(new Error('calendar down'));
     const svc = new PublicationService(prisma as any, scheduler as any, calendar as any, whatsapp as any, templates as any);
     await svc.reschedulePending('p-1');
 
-    // deleteEvent should NOT have been called (threw before reaching it)
-    expect(calendar.deleteEvent).not.toHaveBeenCalled();
-    // But createEvent IS still called for the new session
+    // The flaky delete is logged, not thrown.
+    expect(calendar.deleteEvent).toHaveBeenCalledTimes(1);
     expect(calendar.createEvent).toHaveBeenCalledTimes(1);
     expect(calendar.createEvent).toHaveBeenCalledWith(
       'u-1',

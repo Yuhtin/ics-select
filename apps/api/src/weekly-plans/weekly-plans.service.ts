@@ -1,4 +1,4 @@
-import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service.js';
 import { resolveActiveMembership } from '../common/cycle/active-cycle.js';
 import { GoogleCalendarService } from '../google-calendar/google-calendar.service.js';
@@ -20,39 +20,57 @@ type UpdateInput = {
 
 @Injectable()
 export class WeeklyPlansService {
+  private readonly logger = new Logger(WeeklyPlansService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly calendar: GoogleCalendarService,
   ) {}
 
   async remove(id: string) {
+    // Read the event ids we own before the cascade wipes them, then delete the
+    // plan synchronously and return. The Google Calendar delete fan-out runs
+    // in the background — the admin sees a sub-200ms response and a flaky
+    // Calendar (or 10 events × 500ms each) doesn't pin the request thread.
     const plan = await this.prisma.weeklyPlan.findUnique({
       where: { id },
-      include: { items: true },
+      select: {
+        id: true,
+        userId: true,
+        items: { select: { calendarEvents: { select: { googleEventId: true } } } },
+      },
     });
     if (!plan) throw new NotFoundException('plan not found');
 
-    if (plan.status === 'PUBLISHED' && plan.items.length > 0) {
-      try {
-        const eventIds = await this.calendar.findEventIdsByIcsIds(
-          plan.userId,
-          plan.id,
-          plan.items.map((i) => i.id),
-          { start: plan.weekStart, end: plan.weekEnd },
-        );
-        await Promise.all(
-          Array.from(eventIds.values()).map((eventId) =>
-            this.calendar.deleteEvent(plan.userId, eventId).catch(() => {
-              // swallow — per-event Calendar failures shouldn't block delete
-            }),
-          ),
-        );
-      } catch {
-        // swallow — listing failure shouldn't block delete
-      }
-    }
+    const eventIds = plan.items.flatMap((i) => i.calendarEvents.map((e) => e.googleEventId));
 
     await this.prisma.weeklyPlan.delete({ where: { id } });
+
+    if (eventIds.length > 0) {
+      void this.deleteCalendarEventsInBackground(plan.userId, plan.id, eventIds);
+    }
+  }
+
+  private async deleteCalendarEventsInBackground(
+    userId: string,
+    planId: string,
+    eventIds: string[],
+  ): Promise<void> {
+    const startedAt = Date.now();
+    const results = await Promise.allSettled(
+      eventIds.map((eventId) => this.calendar.deleteEvent(userId, eventId)),
+    );
+    const failed = results.filter((r) => r.status === 'rejected').length;
+    this.logger.log(
+      `plan-delete calendar cleanup · user=${userId} plan=${planId} · ${eventIds.length - failed}/${eventIds.length} deleted · ${Date.now() - startedAt}ms`,
+    );
+    for (const r of results) {
+      if (r.status === 'rejected') {
+        this.logger.warn(
+          `calendar.deleteEvent failed during plan delete · user=${userId} plan=${planId} · ${String(r.reason)}`,
+        );
+      }
+    }
   }
 
   async createDraft(input: CreateInput) {
@@ -98,25 +116,32 @@ export class WeeklyPlansService {
     if (existing.status !== 'DRAFT' && existing.status !== 'SCHEDULED') {
       throw new ConflictException('only DRAFT/SCHEDULED plans can be edited');
     }
-    if (input.items) {
-      // Delete and recreate items for simplicity
-      await this.prisma.weeklyPlanItem.deleteMany({ where: { weeklyPlanId: id } });
-    }
-    await this.prisma.weeklyPlan.update({
-      where: { id },
-      data: {
-        adminNotes: input.adminNotes,
-        ...(input.items
-          ? {
-              items: {
-                create: input.items.map((i) => ({
-                  libraryItemId: i.libraryItemId,
-                  order: i.order,
-                })),
-              },
-            }
-          : {}),
-      },
+    // Wrap delete-and-recreate in a transaction so a mid-flight failure
+    // doesn't leave the plan with zero items. WeeklyPlanItemCalendarEvent
+    // rows cascade-delete with the items (only relevant if a SCHEDULED plan
+    // had been pre-scheduled, which currently never happens — autoSchedule
+    // runs on PUBLISHED plans — but the cascade keeps us correct if that
+    // ever changes).
+    await this.prisma.$transaction(async (tx) => {
+      if (input.items) {
+        await tx.weeklyPlanItem.deleteMany({ where: { weeklyPlanId: id } });
+      }
+      await tx.weeklyPlan.update({
+        where: { id },
+        data: {
+          adminNotes: input.adminNotes,
+          ...(input.items
+            ? {
+                items: {
+                  create: input.items.map((i) => ({
+                    libraryItemId: i.libraryItemId,
+                    order: i.order,
+                  })),
+                },
+              }
+            : {}),
+        },
+      });
     });
     // Re-read via getByIdOrThrow so the response carries the hydrated
     // topicId/topic/topics/skippable shape — a bare Prisma update returns raw
@@ -179,23 +204,49 @@ export class WeeklyPlansService {
     const membership = await resolveActiveMembership(this.prisma, userId);
     if (!membership) return [];
 
-    const memberships = await this.prisma.cycleMembership.findMany({
-      where: { cycleId: membership.cycleId },
-      include: {
-        user: { select: { id: true, name: true, pictureUrl: true } },
-      },
-    });
+    // Two-step query so we don't load every PUBLISHED plan in the cycle when
+    // we only need each member's most recent one.
+    //   1. cohort roster + max(weekStart) per user (groupBy is a single
+    //      indexed query; previously this pulled 12 members × 12 weeks of
+    //      plans + items just to use plans[0]).
+    //   2. fetch only the (userId, weekStart) pairs that actually win.
+    const [memberships, latestByUser] = await Promise.all([
+      this.prisma.cycleMembership.findMany({
+        where: { cycleId: membership.cycleId },
+        include: {
+          user: { select: { id: true, name: true, pictureUrl: true } },
+        },
+      }),
+      this.prisma.weeklyPlan.groupBy({
+        by: ['userId'],
+        where: { cycleId: membership.cycleId, status: 'PUBLISHED' },
+        _max: { weekStart: true },
+      }),
+    ]);
 
-    const plans = await this.prisma.weeklyPlan.findMany({
-      where: { cycleId: membership.cycleId, status: 'PUBLISHED' },
-      orderBy: { weekStart: 'desc' },
-      include: { items: { select: { id: true, outcome: true } } },
-    });
+    const latestPairs = latestByUser
+      .filter((row): row is { userId: string; _max: { weekStart: Date } } => row._max.weekStart != null)
+      .map((row) => ({ userId: row.userId, weekStart: row._max.weekStart }));
+
+    const plans = latestPairs.length === 0
+      ? []
+      : await this.prisma.weeklyPlan.findMany({
+          where: {
+            cycleId: membership.cycleId,
+            status: 'PUBLISHED',
+            OR: latestPairs.map((p) => ({ userId: p.userId, weekStart: p.weekStart })),
+          },
+          select: {
+            userId: true,
+            items: { select: { outcome: true } },
+          },
+        });
+
+    const planByUser = new Map(plans.map((p) => [p.userId, p]));
 
     return memberships
       .map((m) => {
-        const userPlans = plans.filter((p) => p.userId === m.userId);
-        const currentPlan = userPlans[0];
+        const currentPlan = planByUser.get(m.userId);
         const done = currentPlan?.items.filter((i) => isPositiveOutcome(i.outcome)).length ?? 0;
         const total = currentPlan?.items.length ?? 0;
         return {
@@ -280,8 +331,9 @@ export class WeeklyPlansService {
     const item = await this.prisma.weeklyPlanItem.findUnique({
       where: { id: itemId },
       include: {
-        weeklyPlan: { select: { id: true, userId: true, status: true, weekStart: true, weekEnd: true } },
+        weeklyPlan: { select: { id: true, userId: true, status: true } },
         libraryItem: { include: { topics: { include: { topic: { select: { slug: true } } } } } },
+        calendarEvents: { select: { id: true, googleEventId: true } },
       },
     });
     if (!item) throw new NotFoundException('Item not found');
@@ -294,20 +346,19 @@ export class WeeklyPlansService {
       if (!slugs.includes('foundations')) {
         throw new ForbiddenException('Only foundations items can be skipped');
       }
-      if (item.weeklyPlan.status === 'PUBLISHED') {
-        const eventId = await this.calendar.findEventIdByIcsId(
-          userId,
-          item.weeklyPlan.id,
-          item.id,
-          { start: item.weeklyPlan.weekStart, end: item.weeklyPlan.weekEnd },
+      if (item.calendarEvents.length > 0) {
+        await Promise.all(
+          item.calendarEvents.map((ev) =>
+            this.calendar.deleteEvent(userId, ev.googleEventId).catch((err) => {
+              this.logger.warn(
+                `calendar.deleteEvent failed on SKIPPED · user=${userId} item=${item.id} event=${ev.googleEventId} · ${String(err)}`,
+              );
+            }),
+          ),
         );
-        if (eventId) {
-          try {
-            await this.calendar.deleteEvent(userId, eventId);
-          } catch {
-            // swallow — matches PublicationService style
-          }
-        }
+        await this.prisma.weeklyPlanItemCalendarEvent.deleteMany({
+          where: { weeklyPlanItemId: item.id },
+        });
       }
     }
 

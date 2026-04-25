@@ -1,4 +1,5 @@
 import { ArgumentsHost, BadRequestException, InternalServerErrorException } from '@nestjs/common';
+import { z } from 'zod';
 import { HttpExceptionFilter } from './http-exception.filter';
 
 type Captured = { status?: number; body?: unknown };
@@ -51,6 +52,22 @@ describe('HttpExceptionFilter', () => {
     expect(captured.body).toMatchObject({
       error: { code: 'INTERNAL' },
     });
+  });
+
+  it('maps ZodError to 400 VALIDATION with field-level details', () => {
+    const { host, captured } = mockHost();
+    const schema = z.object({ name: z.string().min(1), age: z.number().int() });
+    let err: unknown;
+    try {
+      schema.parse({ name: '', age: 'twelve' });
+    } catch (e) {
+      err = e;
+    }
+    filter.catch(err, host);
+    expect(captured.status).toBe(400);
+    const body = captured.body as { error: { code: string; details: { issues: unknown } } };
+    expect(body.error.code).toBe('VALIDATION');
+    expect(body.error.details.issues).toBeDefined();
   });
 
   it('maps unknown errors to 500 INTERNAL without leaking message', () => {
