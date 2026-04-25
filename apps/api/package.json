@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test": "jest",
     "test:e2e": "jest --config jest.e2e.config.js",
-    "seed:library": "ts-node --transpile-only -r tsconfig-paths/register scripts/seed-library.ts"
+    "seed:library": "ts-node --transpile-only -r tsconfig-paths/register scripts/seed-library.ts",
+    "reschedule:plans": "ts-node --transpile-only -r tsconfig-paths/register scripts/reschedule-scheduled-plans.ts"
   },
   "dependencies": {
     "@ics-select/prisma": "workspace:*",
