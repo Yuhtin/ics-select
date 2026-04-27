@@ -63,14 +63,24 @@ export function EditablePlanPanel({
   const [publishOpen, setPublishOpen] = useState(false);
   const isPublished = plan.status === 'PUBLISHED';
 
-  // Use allocated minutes (2× padding, rounded to 15) so the budget badge
-  // matches what the scheduler will actually try to fit on the Calendar.
+  // Allocated minutes match what the scheduler will reserve on Calendar.
+  // SKIPPED items have their Calendar event deleted, so their slot is freed —
+  // sumAllocatedMinutes excludes them so admin sees real available budget.
   const plannedMinutes = useMemo(
-    () => sumAllocatedMinutes(plan.items.map((i) => ({ estimatedMinutes: i.libraryItem.estimatedMinutes }))),
+    () =>
+      sumAllocatedMinutes(
+        plan.items.map((i) => ({
+          estimatedMinutes: i.libraryItem.estimatedMinutes,
+          outcome: i.outcome,
+        })),
+      ),
     [plan.items],
   );
   const rawMinutes = useMemo(
-    () => plan.items.reduce((s, i) => s + i.libraryItem.estimatedMinutes, 0),
+    () =>
+      plan.items
+        .filter((i) => i.outcome !== 'SKIPPED')
+        .reduce((s, i) => s + i.libraryItem.estimatedMinutes, 0),
     [plan.items],
   );
   const budgetMinutes = context.availability.weeklyBudgetMinutes;

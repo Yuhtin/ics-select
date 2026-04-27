@@ -6,17 +6,18 @@ import {
 } from './publication.service';
 
 describe('allocatedMinutes', () => {
-  it('pads by 2× and rounds up to the next 15-min slot', () => {
-    expect(allocatedMinutes(13)).toBe(30); // 2× = 26 → ↑15 = 30
-    expect(allocatedMinutes(25)).toBe(60); // 2× = 50 → ↑15 = 60
-    expect(allocatedMinutes(17)).toBe(45); // 2× = 34 → ↑15 = 45
-    expect(allocatedMinutes(30)).toBe(60); // 2× = 60 → already on slot
-    expect(allocatedMinutes(45)).toBe(90); // 2× = 90 → already on slot
+  it('rounds up to the next 15-min slot, no multiplicative padding', () => {
+    expect(allocatedMinutes(13)).toBe(15);
+    expect(allocatedMinutes(25)).toBe(30);
+    expect(allocatedMinutes(17)).toBe(30);
+    expect(allocatedMinutes(30)).toBe(30);
+    expect(allocatedMinutes(45)).toBe(45);
+    expect(allocatedMinutes(46)).toBe(60);
   });
 
   it('enforces a 15-minute minimum for very short items', () => {
-    expect(allocatedMinutes(5)).toBe(15); // 2× = 10 → ↑15 = 15
-    expect(allocatedMinutes(7)).toBe(15); // 2× = 14 → ↑15 = 15
+    expect(allocatedMinutes(5)).toBe(15);
+    expect(allocatedMinutes(7)).toBe(15);
     expect(allocatedMinutes(1)).toBe(15);
     expect(allocatedMinutes(0)).toBe(15);
   });
