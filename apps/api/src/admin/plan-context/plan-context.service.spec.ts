@@ -108,6 +108,7 @@ describe('PlanContextService', () => {
       done_hard: 0,
       doubts: 0,
       stuck: 0,
+      skipped: 0,
       pending: 0,
     });
     expect(result.carryOverCandidates).toEqual([]);
@@ -223,6 +224,7 @@ describe('PlanContextService', () => {
       done_hard: 1,
       doubts: 1,
       stuck: 1,
+      skipped: 0,
       pending: 1,
     });
     expect(result.lastWeek.weekStart).toBe(LAST_WEEK_START.toISOString());

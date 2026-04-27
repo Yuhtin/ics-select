@@ -38,6 +38,15 @@ export const PublishPlanSchema = z
   .strict();
 export type PublishPlanInput = z.infer<typeof PublishPlanSchema>;
 
+export const EditPublishedPlanSchema = z
+  .object({
+    adminNotes: z.string().optional(),
+    items: z.array(PlanItemSchema).min(1),
+    force: z.boolean().optional(),
+  })
+  .strict();
+export type EditPublishedPlanInput = z.infer<typeof EditPublishedPlanSchema>;
+
 export const SetItemOutcomeSchema = z
   .object({
     outcome: z.enum(ITEM_OUTCOMES),

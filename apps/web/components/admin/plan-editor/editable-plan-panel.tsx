@@ -1,6 +1,6 @@
 'use client';
 import { useMemo, useState } from 'react';
-import { Plus } from 'lucide-react';
+import { AlertCircle, Plus } from 'lucide-react';
 import { BudgetBadge } from './budget-badge';
 import { ItemCard } from './item-card';
 import { LibraryPickerModal } from './library-picker-modal';
@@ -26,8 +26,10 @@ export interface EditablePlanPanelProps {
   onAddLibraryItem: (libraryItemId: string) => void;
   onSaveDraft: () => void;
   onPublish: (options: PublishOptions) => void;
+  onApplyEdit: () => void;
   saving: boolean;
   publishing: boolean;
+  applyingEdit: boolean;
 }
 
 function formatShort(iso: string): string {
@@ -51,11 +53,14 @@ export function EditablePlanPanel({
   onAddLibraryItem,
   onSaveDraft,
   onPublish,
+  onApplyEdit,
   saving,
   publishing,
+  applyingEdit,
 }: EditablePlanPanelProps) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [publishOpen, setPublishOpen] = useState(false);
+  const isPublished = plan.status === 'PUBLISHED';
 
   const plannedMinutes = useMemo(
     () => plan.items.reduce((s, i) => s + i.libraryItem.estimatedMinutes, 0),
@@ -96,6 +101,21 @@ export function EditablePlanPanel({
           <BudgetBadge plannedMinutes={plannedMinutes} budgetMinutes={budgetMinutes} />
         </div>
       </header>
+
+      {isPublished && (
+        <div className="flex items-start gap-3 rounded-card border border-accent/40 bg-accent/5 p-3">
+          <AlertCircle className="h-4 w-4 mt-0.5 shrink-0 text-accent" strokeWidth={1.5} />
+          <div className="space-y-1">
+            <p className="font-mono text-[11px] uppercase tracking-label text-accent">
+              Editing a published plan
+            </p>
+            <p className="font-sans text-sm text-ink-soft">
+              Changes go straight to the member&rsquo;s Calendar. Items already
+              completed (with any outcome) cannot be removed. No WhatsApp is sent.
+            </p>
+          </div>
+        </div>
+      )}
 
       <section className="space-y-3">
         {plan.items.length === 0 ? (
@@ -153,22 +173,35 @@ export function EditablePlanPanel({
       </section>
 
       <footer className="flex justify-end gap-3 pt-6 border-t border-rule">
-        <button
-          type="button"
-          onClick={onSaveDraft}
-          disabled={saving}
-          className="font-mono text-xs uppercase tracking-label px-4 py-2 text-ink-soft hover:bg-paper-warm rounded-pill disabled:opacity-40"
-        >
-          {saving ? 'Saving…' : 'Save draft'}
-        </button>
-        <button
-          type="button"
-          onClick={() => setPublishOpen(true)}
-          disabled={publishing || plan.items.length === 0}
-          className="font-mono text-xs uppercase tracking-label px-4 py-2 bg-ink text-paper rounded-pill hover:opacity-90 disabled:opacity-40"
-        >
-          {publishing ? 'Publishing…' : 'Publish…'}
-        </button>
+        {isPublished ? (
+          <button
+            type="button"
+            onClick={onApplyEdit}
+            disabled={applyingEdit || plan.items.length === 0}
+            className="font-mono text-xs uppercase tracking-label px-4 py-2 bg-ink text-paper rounded-pill hover:opacity-90 disabled:opacity-40"
+          >
+            {applyingEdit ? 'Applying…' : 'Apply changes'}
+          </button>
+        ) : (
+          <>
+            <button
+              type="button"
+              onClick={onSaveDraft}
+              disabled={saving}
+              className="font-mono text-xs uppercase tracking-label px-4 py-2 text-ink-soft hover:bg-paper-warm rounded-pill disabled:opacity-40"
+            >
+              {saving ? 'Saving…' : 'Save draft'}
+            </button>
+            <button
+              type="button"
+              onClick={() => setPublishOpen(true)}
+              disabled={publishing || plan.items.length === 0}
+              className="font-mono text-xs uppercase tracking-label px-4 py-2 bg-ink text-paper rounded-pill hover:opacity-90 disabled:opacity-40"
+            >
+              {publishing ? 'Publishing…' : 'Publish…'}
+            </button>
+          </>
+        )}
       </footer>
 
       <PublishModal

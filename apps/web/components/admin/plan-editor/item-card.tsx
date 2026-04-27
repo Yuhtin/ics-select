@@ -3,6 +3,24 @@ import { GripVertical, X } from 'lucide-react';
 import { clsx } from 'clsx';
 import type { WeeklyPlanItem } from '../../../lib/queries/admin-plan-editor';
 
+const OUTCOME_BORDER: Record<WeeklyPlanItem['outcome'], string | null> = {
+  PENDING: null,
+  DONE_EASY: 'border-2 border-outcome-done-easy',
+  DONE_HARD: 'border-2 border-outcome-done-hard',
+  DOUBTS: 'border-2 border-outcome-doubts',
+  STUCK: 'border-2 border-outcome-stuck',
+  SKIPPED: 'border-2 border-outcome-skipped',
+};
+
+const OUTCOME_LABEL: Record<WeeklyPlanItem['outcome'], string | null> = {
+  PENDING: null,
+  DONE_EASY: 'nailed it',
+  DONE_HARD: 'got it · hard',
+  DOUBTS: 'doubts',
+  STUCK: 'stuck',
+  SKIPPED: 'skipped',
+};
+
 export function ItemCard({
   item,
   order,
@@ -24,13 +42,19 @@ export function ItemCard({
   canMoveUp: boolean;
   canMoveDown: boolean;
 }) {
+  const outcomeBorder = OUTCOME_BORDER[item.outcome];
+  const outcomeLabel = OUTCOME_LABEL[item.outcome];
+  const isCompleted = item.outcome !== 'PENDING';
+
   return (
     <div
       className={clsx(
-        'group flex items-start gap-3 border rounded-card p-3 transition-colors',
-        isCarriedOver
-          ? 'bg-paper-warm border-accent/40'
-          : 'bg-surface border-rule hover:bg-paper-warm/60',
+        'group flex items-start gap-3 rounded-card p-3 transition-colors',
+        outcomeBorder
+          ? clsx(outcomeBorder, 'bg-surface')
+          : isCarriedOver
+            ? 'border bg-paper-warm border-accent/40'
+            : 'border bg-surface border-rule hover:bg-paper-warm/60',
       )}
     >
       <span className="font-serif-tool text-lg font-semibold text-ink-mute min-w-[1.5ch]">
@@ -50,6 +74,20 @@ export function ItemCard({
           {item.skippable && (
             <span className="rounded-full border border-rule bg-paper-warm px-2 py-0.5 text-xs font-mono uppercase tracking-label text-ink-mute">
               skippable
+            </span>
+          )}
+          {outcomeLabel && (
+            <span
+              className={clsx(
+                'rounded-pill px-2 py-0.5 font-mono text-[10px] uppercase tracking-label',
+                item.outcome === 'DONE_EASY' && 'bg-outcome-done-easy/10 text-outcome-done-easy',
+                item.outcome === 'DONE_HARD' && 'bg-outcome-done-hard/10 text-outcome-done-hard',
+                item.outcome === 'DOUBTS' && 'bg-outcome-doubts/10 text-outcome-doubts',
+                item.outcome === 'STUCK' && 'bg-outcome-stuck/10 text-outcome-stuck',
+                item.outcome === 'SKIPPED' && 'bg-outcome-skipped/10 text-outcome-skipped',
+              )}
+            >
+              {outcomeLabel}
             </span>
           )}
         </div>
@@ -87,7 +125,9 @@ export function ItemCard({
         <button
           type="button"
           onClick={onRemove}
-          className="text-ink-mute hover:text-outcome-stuck"
+          disabled={isCompleted}
+          title={isCompleted ? 'Item já tem progresso — não dá pra remover' : undefined}
+          className="text-ink-mute hover:text-outcome-stuck disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:text-ink-mute"
           aria-label="Remove"
         >
           <X className="h-3 w-3" strokeWidth={2} />

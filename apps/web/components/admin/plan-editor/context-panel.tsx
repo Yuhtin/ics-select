@@ -27,7 +27,12 @@ interface ContextPanelProps {
 export function ContextPanel({ data, carryOverIds, onCarryOverChange }: ContextPanelProps) {
   const outcomes = data.lastWeek.outcomes;
   const totalOutcomes =
-    outcomes.done_easy + outcomes.done_hard + outcomes.doubts + outcomes.stuck + outcomes.pending;
+    outcomes.done_easy +
+    outcomes.done_hard +
+    outcomes.doubts +
+    outcomes.stuck +
+    outcomes.skipped +
+    outcomes.pending;
 
   return (
     <div className="space-y-10">
@@ -47,6 +52,7 @@ export function ContextPanel({ data, carryOverIds, onCarryOverChange }: ContextP
         <SectionLabel>Last week · {totalOutcomes} outcomes</SectionLabel>
         <div className="mt-3 grid grid-cols-2 gap-3">
           <OutcomeCell dotClass="bg-outcome-done-easy" label="Nailed it" count={outcomes.done_easy} />
+          <OutcomeCell dotClass="bg-outcome-skipped" label="Skipped" count={outcomes.skipped} />
           <OutcomeCell dotClass="bg-outcome-done-hard" label="Got it · hard" count={outcomes.done_hard} />
           <OutcomeCell dotClass="bg-outcome-doubts" label="Had doubts" count={outcomes.doubts} />
           <OutcomeCell dotClass="bg-outcome-stuck" label="Stuck" count={outcomes.stuck} />

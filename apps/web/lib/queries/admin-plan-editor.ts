@@ -48,6 +48,17 @@ export type AutoScheduleResponse = {
   overflow: Array<{ itemId: string; minutesRequired: number }>;
 };
 
+export type EditPublishedResponse = {
+  plan: WeeklyPlan;
+  scheduling: {
+    sessionsCreated: number;
+    sessionsFailed: number;
+    overflow: Array<{ itemId: string; minutesRequired: number }>;
+    removedCount: number;
+    addedCount: number;
+  };
+};
+
 export function usePlan(planId: string | null | undefined) {
   return useQuery({
     queryKey: ['plan', planId],
@@ -150,6 +161,30 @@ export function useDeletePlan() {
     },
     onSuccess: (_data, planId) => {
       qc.removeQueries({ queryKey: ['plan', planId] });
+      qc.invalidateQueries({ queryKey: ['admin', 'plans-overview'] });
+    },
+  });
+}
+
+export function useEditPublishedPlan() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: {
+      planId: string;
+      adminNotes?: string;
+      items: Array<{ libraryItemId: string; order: number }>;
+      force?: boolean;
+    }) =>
+      apiFetch<EditPublishedResponse>(`/plans/${input.planId}/edit`, {
+        method: 'POST',
+        body: JSON.stringify({
+          adminNotes: input.adminNotes,
+          items: input.items,
+          force: input.force ?? false,
+        }),
+      }),
+    onSuccess: (res) => {
+      qc.setQueryData(['plan', res.plan.id], res.plan);
       qc.invalidateQueries({ queryKey: ['admin', 'plans-overview'] });
     },
   });

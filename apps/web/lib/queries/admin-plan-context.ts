@@ -12,13 +12,14 @@ export type PlanContextResponse = {
       done_hard: number;
       doubts: number;
       stuck: number;
+      skipped: number;
       pending: number;
     };
     items: Array<{
       id: string;
       libraryItemId: string;
       title: string;
-      outcome: 'PENDING' | 'DONE_EASY' | 'DONE_HARD' | 'DOUBTS' | 'STUCK';
+      outcome: 'PENDING' | 'DONE_EASY' | 'DONE_HARD' | 'DOUBTS' | 'STUCK' | 'SKIPPED';
       reflection: string | null;
     }>;
   };

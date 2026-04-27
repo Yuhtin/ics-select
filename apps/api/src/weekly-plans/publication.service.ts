@@ -491,4 +491,283 @@ export class PublicationService {
       overflow: result.overflow,
     };
   }
+
+  /**
+   * Edit a PUBLISHED plan: diff the incoming items against the existing
+   * roster, drop removed items + their Calendar events, add new items and
+   * schedule Calendar events only for those (existing items keep their
+   * outcome/reflection/calendarEvents). Items with outcome ≠ PENDING cannot
+   * be removed — admin must keep historical work intact.
+   *
+   * Status stays PUBLISHED, no WhatsApp fires. The newly added items are
+   * scheduled into the remaining window via getFreeBusy + scheduler.plan
+   * (existing in-plan events show up as busy because they live on the user's
+   * Calendar, so we never double-book).
+   */
+  async editPublished(
+    planId: string,
+    input: {
+      adminNotes?: string;
+      items: Array<{ libraryItemId: string; order: number }>;
+    },
+    options: { force?: boolean; now?: Date } = {},
+  ): Promise<{
+    sessionsCreated: number;
+    sessionsFailed: number;
+    overflow: Array<{ itemId: string; minutesRequired: number }>;
+    removedCount: number;
+    addedCount: number;
+  }> {
+    const now = options.now ?? new Date();
+    const plan = await this.prisma.weeklyPlan.findUnique({
+      where: { id: planId },
+      include: {
+        items: { include: { calendarEvents: true } },
+      },
+    });
+    if (!plan) throw new NotFoundException('plan not found');
+    if (plan.status !== 'PUBLISHED') {
+      throw new ConflictException('only PUBLISHED plans can be edited via this endpoint');
+    }
+
+    // Diff by libraryItemId. The frontend sends a fresh roster; we figure out
+    // what's removed/added/kept by comparing libraryItemIds.
+    const existingByLibId = new Map(plan.items.map((i) => [i.libraryItemId, i]));
+    const incomingLibIds = new Set(input.items.map((i) => i.libraryItemId));
+
+    const removedItems = plan.items.filter((i) => !incomingLibIds.has(i.libraryItemId));
+    const addedRows = input.items.filter((i) => !existingByLibId.has(i.libraryItemId));
+    const keptUpdates = input.items
+      .filter((i) => existingByLibId.has(i.libraryItemId))
+      .map((i) => ({
+        id: existingByLibId.get(i.libraryItemId)!.id,
+        order: i.order,
+      }));
+
+    // Block remove of items the member already engaged with — outcome ≠ PENDING
+    // means there's history we'd lose (completion, reflection, doubts).
+    const blockedRemoves = removedItems.filter((i) => i.outcome !== 'PENDING');
+    if (blockedRemoves.length > 0) {
+      throw new ConflictException({
+        error: {
+          code: 'CANT_REMOVE_COMPLETED_ITEM',
+          message: `Cannot remove ${blockedRemoves.length} item(s) the member already engaged with`,
+          details: { itemIds: blockedRemoves.map((i) => i.id) },
+        },
+      });
+    }
+
+    const removedEventIds = removedItems.flatMap((i) =>
+      i.calendarEvents.map((e) => e.googleEventId),
+    );
+
+    // Mutate the plan's items in a single transaction so a mid-flight failure
+    // doesn't leave the plan in a torn state. The negative-bump trick avoids
+    // collisions with @@unique([weeklyPlanId, order]) when reordering.
+    await this.prisma.$transaction(async (tx) => {
+      // 1. Move every existing order into negative space so subsequent updates
+      //    don't transiently collide with the unique constraint.
+      const existingIds = plan.items.map((i) => i.id);
+      if (existingIds.length > 0) {
+        for (const item of plan.items) {
+          await tx.weeklyPlanItem.update({
+            where: { id: item.id },
+            data: { order: -(item.order + 1) },
+          });
+        }
+      }
+
+      // 2. Delete removed items (cascades to WeeklyPlanItemCalendarEvent rows
+      //    in the DB; Google Calendar deletes happen post-tx).
+      if (removedItems.length > 0) {
+        await tx.weeklyPlanItem.deleteMany({
+          where: { id: { in: removedItems.map((i) => i.id) } },
+        });
+      }
+
+      // 3. Update kept items to their final orders.
+      for (const k of keptUpdates) {
+        await tx.weeklyPlanItem.update({
+          where: { id: k.id },
+          data: { order: k.order },
+        });
+      }
+
+      // 4. Create new items with their final orders.
+      for (const a of addedRows) {
+        await tx.weeklyPlanItem.create({
+          data: {
+            weeklyPlanId: planId,
+            libraryItemId: a.libraryItemId,
+            order: a.order,
+          },
+        });
+      }
+
+      // 5. Update adminNotes (if provided).
+      if (input.adminNotes !== undefined) {
+        await tx.weeklyPlan.update({
+          where: { id: planId },
+          data: { adminNotes: input.adminNotes },
+        });
+      }
+    });
+
+    // Post-tx: delete Google Calendar events for removed items. Fire-and-forget
+    // — a flaky Google API call shouldn't undo the DB diff.
+    await Promise.all(
+      removedEventIds.map((eventId) =>
+        this.calendar.deleteEvent(plan.userId, eventId).catch((err) => {
+          this.logger.warn(
+            `calendar.deleteEvent failed during editPublished · user=${plan.userId} plan=${plan.id} event=${eventId} · ${String(err)}`,
+          );
+        }),
+      ),
+    );
+
+    // Schedule Calendar events for the newly added items. Pull the fresh DB
+    // ids — addedRows only had libraryItemIds.
+    let scheduling = {
+      sessionsCreated: 0,
+      sessionsFailed: 0,
+      overflow: [] as Array<{ itemId: string; minutesRequired: number }>,
+    };
+    if (addedRows.length > 0) {
+      scheduling = await this.scheduleAddedItems(planId, {
+        addedLibraryItemIds: addedRows.map((a) => a.libraryItemId),
+        force: options.force ?? false,
+        now,
+      });
+    }
+
+    return {
+      ...scheduling,
+      removedCount: removedItems.length,
+      addedCount: addedRows.length,
+    };
+  }
+
+  /**
+   * Schedule Calendar events for items just added to a PUBLISHED plan. Treats
+   * the user's whole Calendar (via getFreeBusy) as busy — existing in-plan
+   * events show up there too, so the scheduler avoids double-booking. Throws
+   * PlanOverflowError when items don't fit and `force` is false.
+   */
+  private async scheduleAddedItems(
+    planId: string,
+    options: { addedLibraryItemIds: string[]; force: boolean; now: Date },
+  ): Promise<{
+    sessionsCreated: number;
+    sessionsFailed: number;
+    overflow: Array<{ itemId: string; minutesRequired: number }>;
+  }> {
+    const plan = await this.prisma.weeklyPlan.findUnique({
+      where: { id: planId },
+      include: { items: { include: { libraryItem: true } } },
+    });
+    if (!plan) throw new NotFoundException('plan not found');
+
+    const addedItems = plan.items.filter((i) =>
+      options.addedLibraryItemIds.includes(i.libraryItemId),
+    );
+    if (addedItems.length === 0) {
+      return { sessionsCreated: 0, sessionsFailed: 0, overflow: [] };
+    }
+
+    const busyBlocks = await this.calendar
+      .getFreeBusy(plan.userId, options.now, plan.weekEnd)
+      .catch(() => [] as Array<{ start: Date; end: Date }>);
+
+    const result = this.scheduler.plan({
+      weekStart: plan.weekStart,
+      availability: await loadSchedulerAvailability(this.prisma, plan.userId),
+      busyBlocks,
+      items: addedItems.map((i) => ({
+        id: i.id,
+        estimatedMinutes: allocatedMinutes(i.libraryItem.estimatedMinutes),
+        order: i.order,
+      })),
+      now: options.now,
+    });
+
+    if (result.overflow.length > 0 && !options.force) {
+      throw new PlanOverflowError(result.overflow);
+    }
+
+    const itemById = new Map(addedItems.map((i) => [i.id, i]));
+    const createResults = await Promise.all(
+      result.sessions.map(async (session) => {
+        const item = itemById.get(session.itemId)!;
+        const eventEnd = new Date(
+          session.scheduledAt.getTime() + session.durationMinutes * 60 * 1000,
+        );
+        try {
+          const googleEventId = await this.calendar.createEvent(plan.userId, {
+            summary: `ICS Select — ${item.libraryItem.title}`,
+            description: item.libraryItem.url
+              ? `Link: ${item.libraryItem.url}`
+              : 'ICS Select study session',
+            start: session.scheduledAt,
+            end: eventEnd,
+            icsId: { planId: plan.id, itemId: item.id },
+          });
+          return { ok: true as const, itemId: item.id, googleEventId };
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          this.logger.warn(
+            `calendar.createEvent failed during editPublished · user=${plan.userId} plan=${plan.id} item=${item.id} · ${msg}`,
+          );
+          return { ok: false as const };
+        }
+      }),
+    );
+    const sessionsFailed = createResults.filter((r) => !r.ok).length;
+    const persistEvents = createResults
+      .filter((r): r is { ok: true; itemId: string; googleEventId: string } => r.ok)
+      .map((r) => ({ weeklyPlanItemId: r.itemId, googleEventId: r.googleEventId }));
+    if (persistEvents.length > 0) {
+      await this.prisma.weeklyPlanItemCalendarEvent.createMany({ data: persistEvents });
+    }
+
+    // Persist scheduledAt/scheduledMinutes per item. Items in overflow get
+    // null (no slot found).
+    const byItem = new Map<string, { startAt: Date; minutes: number }[]>();
+    for (const session of result.sessions) {
+      const list = byItem.get(session.itemId) ?? [];
+      list.push({ startAt: session.scheduledAt, minutes: session.durationMinutes });
+      byItem.set(session.itemId, list);
+    }
+    const overflowItemIds = addedItems.map((i) => i.id).filter((id) => !byItem.has(id));
+
+    const placedUpdates = Array.from(byItem).map(([itemId, chunks]) => {
+      chunks.sort((a, b) => a.startAt.getTime() - b.startAt.getTime());
+      const earliest = chunks[0]!;
+      return this.prisma.weeklyPlanItem.update({
+        where: { id: itemId },
+        data: {
+          scheduledAt: earliest.startAt,
+          scheduledMinutes: chunks.reduce((s, c) => s + c.minutes, 0),
+        },
+      });
+    });
+    const overflowUpdate =
+      overflowItemIds.length > 0
+        ? [
+            this.prisma.weeklyPlanItem.updateMany({
+              where: { id: { in: overflowItemIds } },
+              data: { scheduledAt: null, scheduledMinutes: null },
+            }),
+          ]
+        : [];
+
+    if (placedUpdates.length > 0 || overflowUpdate.length > 0) {
+      await this.prisma.$transaction([...placedUpdates, ...overflowUpdate]);
+    }
+
+    return {
+      sessionsCreated: result.sessions.length - sessionsFailed,
+      sessionsFailed,
+      overflow: result.overflow,
+    };
+  }
 }

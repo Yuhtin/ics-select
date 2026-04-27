@@ -13,6 +13,7 @@ import {
   usePublishPlan,
   useAutoSchedulePlan,
   useDeletePlan,
+  useEditPublishedPlan,
   useReschedulePending,
   type WeeklyPlan,
   type WeeklyPlanItem,
@@ -135,6 +136,7 @@ export default function PlanEditorPage({
   const publishPlan = usePublishPlan();
   const autoSchedule = useAutoSchedulePlan();
   const deletePlan = useDeletePlan();
+  const editPublished = useEditPublishedPlan();
   const reschedulePending = useReschedulePending();
 
   const fetchMissingLibraryItems = async (ids: string[]): Promise<void> => {
@@ -316,8 +318,68 @@ export default function PlanEditorPage({
     }
   }
 
+  async function handleApplyEdit(force = false) {
+    if (!plan) return;
+    try {
+      const res = await editPublished.mutateAsync({
+        planId: plan.id,
+        adminNotes: plan.adminNotes ?? undefined,
+        items: plan.items.map((i) => ({
+          libraryItemId: i.libraryItemId,
+          order: i.order,
+        })),
+        force,
+      });
+      setPlan(res.plan);
+      const { addedCount, removedCount, sessionsCreated, sessionsFailed } = res.scheduling;
+      const parts: string[] = [];
+      if (addedCount > 0) parts.push(`+${addedCount} added`);
+      if (removedCount > 0) parts.push(`−${removedCount} removed`);
+      if (sessionsCreated > 0) parts.push(`${sessionsCreated} on calendar`);
+      if (sessionsFailed > 0) parts.push(`${sessionsFailed} calendar errors`);
+      addToast({
+        title: sessionsFailed > 0 ? 'Changes applied with calendar errors' : 'Changes applied',
+        description: parts.join(' · ') || 'No changes detected.',
+        color: sessionsFailed > 0 ? 'warning' : 'success',
+      });
+      setOverflowState({ open: false, overflow: [] });
+    } catch (err) {
+      if (
+        err instanceof ApiErrorResponse &&
+        err.apiError?.code === 'PLAN_OVERFLOW'
+      ) {
+        const overflow =
+          (err.apiError.details as { overflow?: OverflowItem[] } | undefined)
+            ?.overflow ?? [];
+        setOverflowState({ open: true, overflow });
+        return;
+      }
+      if (
+        err instanceof ApiErrorResponse &&
+        err.apiError?.code === 'CANT_REMOVE_COMPLETED_ITEM'
+      ) {
+        addToast({
+          title: 'Cannot remove completed items',
+          description: 'Items the member already engaged with stay in the plan.',
+          color: 'danger',
+        });
+        return;
+      }
+      addToast({
+        title: 'Apply failed',
+        description: err instanceof Error ? err.message : 'Unknown error',
+        color: 'danger',
+      });
+    }
+  }
+
   async function handleForcePublish() {
     if (!plan) return;
+    // Overflow modal in edit-published flow → re-call edit with force=true.
+    if (plan.status === 'PUBLISHED') {
+      await handleApplyEdit(true);
+      return;
+    }
     try {
       const res = await autoSchedule.mutateAsync({ planId: plan.id, force: true });
       setOverflowState({ open: false, overflow: [] });
@@ -498,10 +560,14 @@ export default function PlanEditorPage({
                 onPublish={(options) => {
                   void handlePublish(options);
                 }}
+                onApplyEdit={() => {
+                  void handleApplyEdit();
+                }}
                 saving={updatePlan.isPending}
                 publishing={
                   publishPlan.isPending || autoSchedule.isPending
                 }
+                applyingEdit={editPublished.isPending}
               />
             </div>
           </div>
@@ -523,7 +589,7 @@ export default function PlanEditorPage({
           onForce={() => {
             void handleForcePublish();
           }}
-          pending={autoSchedule.isPending}
+          pending={autoSchedule.isPending || editPublished.isPending}
         />
       </div>
 

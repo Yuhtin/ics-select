@@ -6,6 +6,7 @@ import { WeeklyPlansService } from './weekly-plans.service.js';
 import { PublicationService } from './publication.service.js';
 import {
   CreatePlanSchema,
+  EditPublishedPlanSchema,
   PublishPlanSchema,
   SetItemOutcomeSchema,
   UpdatePlanSchema,
@@ -48,6 +49,19 @@ export class WeeklyPlansController {
       sendWhatsapp: parsed.sendWhatsapp,
       autoSchedule: parsed.autoSchedule,
     });
+  }
+
+  @Roles('ADMIN')
+  @Post('plans/:id/edit')
+  async editPublished(@Param('id') id: string, @Body() body: unknown) {
+    const parsed = EditPublishedPlanSchema.parse(body);
+    const result = await this.publication.editPublished(
+      id,
+      { adminNotes: parsed.adminNotes, items: parsed.items },
+      { force: parsed.force ?? false },
+    );
+    const plan = await this.plans.getByIdOrThrow(id);
+    return { plan, scheduling: result };
   }
 
   @Roles('ADMIN')

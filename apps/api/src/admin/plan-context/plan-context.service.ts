@@ -22,7 +22,7 @@ const DEFAULT_AVAILABILITY = {
   timezone: 'America/Sao_Paulo',
 };
 
-type Outcome = 'PENDING' | 'DONE_EASY' | 'DONE_HARD' | 'DOUBTS' | 'STUCK';
+type Outcome = 'PENDING' | 'DONE_EASY' | 'DONE_HARD' | 'DOUBTS' | 'STUCK' | 'SKIPPED';
 type CarryOutcome = 'PENDING' | 'DOUBTS' | 'STUCK';
 
 export type PlanContextResponse = {
@@ -45,6 +45,7 @@ export type PlanContextResponse = {
       done_hard: number;
       doubts: number;
       stuck: number;
+      skipped: number;
       pending: number;
     };
     items: Array<{
@@ -311,7 +312,7 @@ export class PlanContextService {
     if (!plan) {
       return {
         weekStart: null,
-        outcomes: { done_easy: 0, done_hard: 0, doubts: 0, stuck: 0, pending: 0 },
+        outcomes: { done_easy: 0, done_hard: 0, doubts: 0, stuck: 0, skipped: 0, pending: 0 },
         items: [],
       };
     }
@@ -331,7 +332,7 @@ export class PlanContextService {
   }
 
   private computeOutcomes(items: LastWeekItem[]): PlanContextResponse['lastWeek']['outcomes'] {
-    const out = { done_easy: 0, done_hard: 0, doubts: 0, stuck: 0, pending: 0 };
+    const out = { done_easy: 0, done_hard: 0, doubts: 0, stuck: 0, skipped: 0, pending: 0 };
     for (const item of items) {
       switch (item.outcome) {
         case 'DONE_EASY':
@@ -345,6 +346,9 @@ export class PlanContextService {
           break;
         case 'STUCK':
           out.stuck += 1;
+          break;
+        case 'SKIPPED':
+          out.skipped += 1;
           break;
         case 'PENDING':
           out.pending += 1;
