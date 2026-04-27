@@ -102,12 +102,14 @@ Batch-curate `LibraryItem` rows for the ICS Select acervo, following the layered
 | Lucas Montano (BR) | Architecture + CS concepts (Big-O, complexity) | Arquitetura + teaching conceitual. Filter: no members-only videos, no 60min+ VSCode screencasts. Big-O video `GLKDo13920k` confirmed good EASY for sorting/complexity. |
 | mycodeschool | Algorithms & DS fundamentals | Whiteboard-style, zero IDE. Canonical for basic DS. **Cap ~3 items per topic** to avoid over-anchoring. |
 | Back To Back SWE | Interview prep / algorithms | Animated slides + whiteboard, zero VSCode |
-| NeetCode | Arrays/hashing/algos animated explainers | **Only animated explanation videos, NOT LC solve-alongs** in VSCode. If title is "Leetcode X - Python" with code walkthrough, skip. |
+| NeetCode | Arrays/hashing/algos animated explainers + LC walkthroughs | Confiar amplamente no canal main `@NeetCode` — Davi: "ele puxa um Excalidraw e vai explicando tudo antes de resolver". Vídeos com "Leetcode XXX" no título normalmente seguem ritual: Excalidraw teaching → código. **Pular** apenas: canal secundário `@NeetCodeIO` (VSCode puro) e shorts <2min. |
 | Filipe Deschamps (BR) | Architecture-only | Filter out VSCode screencasts video-by-video. Heuristic: titles with "criando X", "codando Y", "montando Z" with a specific framework name are usually screencasts — skip. Architectural titles ("como funciona", "por que X", "entendendo Y") are usually OK. When in doubt, open the video page and check the thumbnail/description for IDE shots. |
 | Arthur Takeda (BR) `@arthur.takeda` | System Design series (#1-5) + fundamentos (OS, Docker, compiladores, auth, cloud) + JS/framework deep-dives | Davi: "MUITO BONS". Conceitual, 8-12min sweet-spot. Use pra SD topics (cap-consistency `g9DfXmDfE_Q`, reliability `Xiod8w7QtQ4`, sharding `czMY_ATOej0`) e fundamentos (containers `jftIzkXbKKY`, security/auth `uLY1CuLi9ac`, cloud `8chgJEuDzYM`). |
 | Augusto Galego (BR) | Senior interview prep + algos/EDs practice in Python | Channel `@GutoGalego`. Whole channel OK. **First stop for BR `practice`-tier content** on algos/EDs (MergeSort `a5LfKZp34d8`, Quicksort `nV_WE8SEuGE`, hashmap `J4ELMYEGVS0`, linked list `-BU34jnMasc`, LC 206 `8kmAY2O4SBg`). Senior eng playlist = BIG_TECH only. |
 
-**Rejected channels — NEVER propose**: Michael Sambol, Gaurav Sen, Jordan has no life, Fabio Akita, IBM Technology.
+**Rejected channels — NEVER propose**: Michael Sambol, Gaurav Sen, Jordan has no life, Fabio Akita, IBM Technology, Tushar Roy / Coding Made Simple.
+
+**Style heuristic — also skip:** canais no estilo educacional indiano (acadêmico, pacing arrastado, tom de aula). Davi 2026-04-25: "nao gosto muito de indianos". Heurística: pular Abdul Bari, Tutorialspoint, GeeksforGeeks-vídeo, Coding Made Simple e similares. Se desconhecido + pacing lento + sotaque/estilo escolar indiano → presumir rejeição em vez de propor.
 
 ## Tag vocabulary (MANDATORY)
 

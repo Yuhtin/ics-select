@@ -13,8 +13,8 @@
  */
 import { PrismaClient } from '@ics-select/prisma';
 
-// 2026-04-28 07:00 America/Sao_Paulo (BRT, UTC-3, no DST since 2019) = 10:00 UTC.
-const TARGET_PUBLISH_AT = new Date('2026-04-28T10:00:00Z');
+// 2026-04-27 13:20 America/Sao_Paulo (BRT, UTC-3, no DST since 2019) = 16:20 UTC.
+const TARGET_PUBLISH_AT = new Date('2026-04-27T16:20:00Z');
 
 async function main() {
   const apply = process.argv.includes('--apply');

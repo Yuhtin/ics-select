@@ -163,7 +163,7 @@ const ITEMS: ItemSeed[] = [
     description:
       'ByteByteGo — 90s em cima da frase "only two hard things in CS: cache invalidation and naming things". Por que é difícil e o que fazer.',
     format: 'VIDEO',
-    difficulty: 'HARD',
+    difficulty: 'MEDIUM',
     estimatedMinutes: 2,
     topicSlugs: ['caching'],
     tracks: ['BIG_TECH', 'CONSULTING_TECH'],
@@ -218,7 +218,7 @@ const ITEMS: ItemSeed[] = [
     description:
       'Fireship — os 7 paradigmas (relational, document, graph, key-value, wide-column, search, multi-model) com exemplo de quando cada um faz sentido.',
     format: 'VIDEO',
-    difficulty: 'MEDIUM',
+    difficulty: 'EASY',
     estimatedMinutes: 10,
     topicSlugs: ['databases'],
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
@@ -316,6 +316,19 @@ const ITEMS: ItemSeed[] = [
     source: 'Medium — Hussein Nasser',
     tags: ['concept', 'pages', 'storage', 'rows', 'internals'],
   },
+  {
+    title: 'Why Netflix, Instagram, and Twitter Pick Different Databases',
+    url: 'https://www.youtube.com/watch?v=XjHZCprrEgk',
+    description:
+      'ByteMonk — comparativo das escolhas de banco de Netflix, Instagram e Twitter e os trade-offs por trás: padrão de leitura/escrita, escala e consistência.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 11,
+    topicSlugs: ['databases'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — ByteMonk',
+    tags: ['case-study', 'database-selection', 'netflix', 'instagram', 'twitter'],
+  },
 
   // ---------------------------------------------------------------------------
   // array (7 items) — 2026-04-19
@@ -339,7 +352,7 @@ const ITEMS: ItemSeed[] = [
     description:
       'mycodeschool — array na memória, indexing, static vs dynamic. Whiteboard puro.',
     format: 'VIDEO',
-    difficulty: 'MEDIUM',
+    difficulty: 'EASY',
     estimatedMinutes: 11,
     topicSlugs: ['array'],
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
@@ -352,7 +365,7 @@ const ITEMS: ItemSeed[] = [
     description:
       'mycodeschool — array vs linked list em cada operação (acesso, inserção, busca) com custo explícito.',
     format: 'VIDEO',
-    difficulty: 'MEDIUM',
+    difficulty: 'EASY',
     estimatedMinutes: 13,
     topicSlugs: ['array'],
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
@@ -363,27 +376,14 @@ const ITEMS: ItemSeed[] = [
     title: 'Implementando um hashmap do ZERO em Python',
     url: 'https://www.youtube.com/watch?v=J4ELMYEGVS0',
     description:
-      'Augusto Galego — implementa uma hashmap em Python do zero: hash function, colisões, chaining.',
+      'Augusto Galego — implementação de hashmap em Python do zero: hash function, buckets, collision via chaining, resize quando o load factor estoura.',
     format: 'VIDEO',
     difficulty: 'MEDIUM',
     estimatedMinutes: 13,
-    topicSlugs: ['array'],
+    topicSlugs: ['hashmap', 'array'],
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'YouTube — Augusto Galego',
-    tags: ['concept', 'hashmap', 'hash-function', 'collisions', 'python'],
-  },
-  {
-    title: 'NeetCode 150 Ep.1: Arrays & Hashing Explained',
-    url: 'https://www.youtube.com/watch?v=IiDuXLqV6e4',
-    description:
-      'NeetCode — 1h54min animados em arrays e hashing pra entrevista. Pode ser dividido em várias sessões na semana.',
-    format: 'VIDEO',
-    difficulty: 'HARD',
-    estimatedMinutes: 114,
-    topicSlugs: ['array'],
-    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
-    source: 'YouTube — NeetCode',
-    tags: ['concept', 'hashing', 'masterclass', 'blind75', 'interview'],
+    tags: ['practice', 'hashmap', 'python', 'implementation', 'collision', 'galego'],
   },
   {
     title: '10 Key Data Structures We Use Every Day',
@@ -391,7 +391,7 @@ const ITEMS: ItemSeed[] = [
     description:
       'ByteByteGo — as 10 ED que todo dev bate na semana: array, hashmap, linked list, stack, queue, tree, graph, e mais.',
     format: 'ARTICLE',
-    difficulty: 'MEDIUM',
+    difficulty: 'EASY',
     estimatedMinutes: 10,
     // First cross-topic item: primary = array (indexed/keyed family), cover = lists.
     // Once `tree` and `graph` are populated, add them as covers too.
@@ -426,7 +426,7 @@ const ITEMS: ItemSeed[] = [
     description:
       'mycodeschool — linked list do zero: por que não array, nós + ponteiros, memory layout. Whiteboard puro.',
     format: 'VIDEO',
-    difficulty: 'MEDIUM',
+    difficulty: 'EASY',
     estimatedMinutes: 18,
     topicSlugs: ['lists'],
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
@@ -439,7 +439,7 @@ const ITEMS: ItemSeed[] = [
     description:
       'mycodeschool — linked list com dois ponteiros (forward + back). Custo extra de memória vs inserção/remoção bidirecional barata.',
     format: 'VIDEO',
-    difficulty: 'MEDIUM',
+    difficulty: 'EASY',
     estimatedMinutes: 8,
     topicSlugs: ['lists'],
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
@@ -465,7 +465,7 @@ const ITEMS: ItemSeed[] = [
     description:
       'mycodeschool — stack (LIFO): push/pop/peek, overflow/underflow, com exemplos reais (function calls, undo, parsing).',
     format: 'VIDEO',
-    difficulty: 'MEDIUM',
+    difficulty: 'EASY',
     estimatedMinutes: 9,
     topicSlugs: ['lists'],
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
@@ -478,7 +478,7 @@ const ITEMS: ItemSeed[] = [
     description:
       'Augusto Galego — traversal de linked list em Python: current + current.next até cair em null.',
     format: 'VIDEO',
-    difficulty: 'MEDIUM',
+    difficulty: 'EASY',
     estimatedMinutes: 8,
     topicSlugs: ['lists'],
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
@@ -504,7 +504,7 @@ const ITEMS: ItemSeed[] = [
     description:
       'mycodeschool — queue (FIFO) com enqueue/dequeue O(1) construída em cima de linked list.',
     format: 'VIDEO',
-    difficulty: 'HARD',
+    difficulty: 'MEDIUM',
     estimatedMinutes: 15,
     topicSlugs: ['lists'],
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
@@ -541,7 +541,7 @@ const ITEMS: ItemSeed[] = [
     format: 'VIDEO',
     difficulty: 'EASY',
     estimatedMinutes: 5,
-    topicSlugs: ['tree', 'array', 'databases'],
+    topicSlugs: ['tree', 'array', 'databases', 'trie'],
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'YouTube — Fireship',
     tags: ['concept', 'b-tree', 'radix-tree', 'rope', 'bloom-filter', 'cuckoo-hashing', 'fireship'],
@@ -552,7 +552,7 @@ const ITEMS: ItemSeed[] = [
     description:
       'mycodeschool — árvores do zero: terminologia (root, leaf, parent, child, depth, height), representação em memória, quando tree ganha de array/list.',
     format: 'VIDEO',
-    difficulty: 'MEDIUM',
+    difficulty: 'EASY',
     estimatedMinutes: 16,
     topicSlugs: ['tree'],
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
@@ -636,6 +636,19 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'Book — Grokking Data Structures',
     tags: ['concept', 'book', 'grokking', 'tree', 'bst'],
+  },
+  {
+    title: 'Binary Tree Inorder e Preorder',
+    url: 'https://www.youtube.com/watch?v=kdSrjg9N1Yg',
+    description:
+      'Augusto Galego — inorder e preorder traversal em Python resolvendo um LeetCode. 6min direto pro código.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 6,
+    topicSlugs: ['tree'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — Augusto Galego',
+    tags: ['practice', 'tree', 'inorder', 'preorder', 'traversal', 'leetcode'],
   },
 
   // ---------------------------------------------------------------------------
@@ -741,7 +754,7 @@ const ITEMS: ItemSeed[] = [
     format: 'VIDEO',
     difficulty: 'MEDIUM',
     estimatedMinutes: 8,
-    topicSlugs: ['cap-consistency'],
+    topicSlugs: ['cap-consistency', 'reliability'],
     tracks: ['BIG_TECH', 'CONSULTING_TECH'],
     source: 'YouTube — Arthur Takeda',
     tags: ['concept', 'cap-theorem', 'consistency', 'availability', 'partition-tolerance', 'pt-br'],
@@ -960,6 +973,1621 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'YouTube — NeetCode',
     tags: ['concept', 'hashmap', 'two-sum', 'leetcode', 'neetcode'],
+  },
+  {
+    title: 'I ACED my Technical Interviews knowing these System Design Basics',
+    url: 'https://www.youtube.com/watch?v=FxAom29OEKE',
+    description:
+      "Kiki's Bytes — passa de um servidor único pra sistema escalável: load balancing, cache, SQL vs NoSQL, CAP theorem.",
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 10,
+    topicSlugs: ['scalability', 'load-balancers', 'cap-consistency'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: "YouTube — Kiki's Bytes",
+    tags: ['concept', 'system-design-overview', 'load-balancing', 'caching', 'cap-theorem', 'sql-vs-nosql'],
+  },
+
+  // ---------------------------------------------------------------------------
+  // heap (5 items) — 2026-04-25
+  // ---------------------------------------------------------------------------
+  {
+    title: 'Substituir array por HEAP???',
+    url: 'https://www.youtube.com/watch?v=4Gr4LozxccY',
+    description:
+      'Augusto Galego — quando trocar array por heap em Python: heapq na biblioteca padrão, custo O(log n) pra extract-min vs O(n) na busca em array.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 7,
+    topicSlugs: ['heap'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — Augusto Galego',
+    tags: ['concept', 'heap', 'heapq', 'python', 'galego'],
+  },
+  {
+    title: 'Implement A Binary Heap — An Efficient Implementation of The Priority Queue ADT',
+    url: 'https://www.youtube.com/watch?v=g9YK6sftDi0',
+    description:
+      'Back to Back SWE — implementação de binary heap como priority queue: insert, extract-min, heapify, índice pai/filho num array.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 21,
+    topicSlugs: ['heap'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — Back To Back SWE',
+    tags: ['concept', 'binary-heap', 'priority-queue', 'heapify', 'min-heap', 'max-heap'],
+  },
+  {
+    title: 'Merge K Sorted Arrays — Min Heap Algorithm',
+    url: 'https://www.youtube.com/watch?v=ptYUCjfNhJY',
+    description:
+      'Back to Back SWE — merge K listas ordenadas com min-heap: complexidade O(N log K), por que ganha do merge linear.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 12,
+    topicSlugs: ['heap'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — Back To Back SWE',
+    tags: ['concept', 'merge-k-sorted', 'min-heap', 'priority-queue', 'interview'],
+  },
+  {
+    title: "Find the k'th Largest or Smallest Element of an Array: From Sorting To Heaps To Partitioning",
+    url: 'https://www.youtube.com/watch?v=hGK_5n81drs',
+    description:
+      'Back to Back SWE — três abordagens pro k-ésimo maior: sort O(n log n), min-heap de tamanho k O(n log k), quickselect O(n) médio. 30min comparando.',
+    format: 'VIDEO',
+    difficulty: 'HARD',
+    estimatedMinutes: 30,
+    topicSlugs: ['heap', 'sorting'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — Back To Back SWE',
+    tags: ['concept', 'kth-largest', 'min-heap', 'quickselect', 'partitioning', 'interview'],
+  },
+  {
+    title: 'Grokking Data Structures — Heaps (chapter)',
+    url: 'https://github.com/mlarocca/grokking_data_structures',
+    description:
+      'Capítulo de heaps do Grokking Data Structures (La Rocca, Manning). Representação em array, sift-up/sift-down, priority queue. Livro pago — ver biblioteca da Inteli ou Manning. O GitHub tem só o código de apoio, não o PDF.',
+    format: 'BOOK',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 25,
+    topicSlugs: ['heap'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'Book — Grokking Data Structures',
+    tags: ['concept', 'book', 'grokking', 'heap', 'priority-queue'],
+  },
+
+  // ---------------------------------------------------------------------------
+  // graph (7 items) — 2026-04-25
+  // ---------------------------------------------------------------------------
+  {
+    title: 'Data structures: Introduction to graphs',
+    url: 'https://www.youtube.com/watch?v=gXgEDyodOJU',
+    description:
+      'mycodeschool — graphs do zero: vertex, edge, directed/undirected, weighted/unweighted, ciclos e conexão.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 17,
+    topicSlugs: ['graph'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — mycodeschool',
+    tags: ['concept', 'graph', 'terminology', 'fundamentals'],
+  },
+  {
+    title: 'Graph Representation part 02 — Adjacency Matrix',
+    url: 'https://www.youtube.com/watch?v=9C2cpQZVRBA',
+    description:
+      'mycodeschool — adjacency matrix como representação: matriz V×V, custo O(V²) de memória, lookup O(1) pra checar aresta.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 15,
+    topicSlugs: ['graph'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — mycodeschool',
+    tags: ['concept', 'graph', 'adjacency-matrix', 'representation'],
+  },
+  {
+    title: 'Breadth First Search (BFS): Visualized and Explained',
+    url: 'https://www.youtube.com/watch?v=xlVX7dXLS64',
+    description:
+      'Reducible — BFS visualizado: queue, visita level-by-level, animação passo a passo.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 11,
+    topicSlugs: ['graph'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — Reducible',
+    tags: ['concept', 'graph', 'bfs', 'queue', 'visualization'],
+  },
+  {
+    title: 'Depth First Search Algorithm | Graph Theory',
+    url: 'https://www.youtube.com/watch?v=7fujbpJ0LB4',
+    description:
+      'William Fiset — DFS no grafo: stack/recursão, ordem de visita, grafo conectado vs desconectado.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 11,
+    topicSlugs: ['graph'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — William Fiset',
+    tags: ['concept', 'graph', 'dfs', 'recursion', 'stack'],
+  },
+  {
+    title: "Dijkstra's Shortest Path Algorithm | Graph Theory",
+    url: 'https://www.youtube.com/watch?v=pSqmAO-m7Lk',
+    description:
+      'William Fiset — Dijkstra com priority queue: caminho mais curto em grafos com pesos não-negativos. 25min.',
+    format: 'VIDEO',
+    difficulty: 'HARD',
+    estimatedMinutes: 25,
+    topicSlugs: ['graph', 'heap'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — William Fiset',
+    tags: ['concept', 'graph', 'dijkstra', 'shortest-path', 'priority-queue'],
+  },
+  {
+    title: "Topological Sort | Kahn's Algorithm | Graph Theory",
+    url: 'https://www.youtube.com/watch?v=cIBFEhD77b4',
+    description:
+      "William Fiset — topological sort com Kahn's: DAGs e ordem que respeita dependências, BFS modificada.",
+    format: 'VIDEO',
+    difficulty: 'HARD',
+    estimatedMinutes: 14,
+    topicSlugs: ['graph'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — William Fiset',
+    tags: ['concept', 'graph', 'topological-sort', 'dag', 'kahn'],
+  },
+  {
+    title: 'Grokking Algorithms — Breadth-First Search (chapter)',
+    url: 'https://github.com/egonSchiele/grokking_algorithms',
+    description:
+      'Capítulo de BFS do Grokking Algorithms (Bhargava, Manning). Queue, shortest path em grafos não-pesados, exemplo de busca de amigos. Livro pago — ver biblioteca da Inteli ou Manning. O GitHub tem só o código de apoio, não o PDF.',
+    format: 'BOOK',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 25,
+    topicSlugs: ['graph'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'Book — Grokking Algorithms',
+    tags: ['concept', 'book', 'grokking', 'graph', 'bfs'],
+  },
+  {
+    title: "Grokking Algorithms — Dijkstra's Algorithm (chapter)",
+    url: 'https://github.com/egonSchiele/grokking_algorithms',
+    description:
+      "Capítulo de Dijkstra do Grokking Algorithms (Bhargava, Manning). Caminho mais curto em grafos com pesos não-negativos, exemplo do mapa de São Francisco. Livro pago — ver biblioteca da Inteli ou Manning. O GitHub tem só o código de apoio, não o PDF.",
+    format: 'BOOK',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 25,
+    topicSlugs: ['graph', 'heap'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'Book — Grokking Algorithms',
+    tags: ['concept', 'book', 'grokking', 'graph', 'dijkstra', 'shortest-path'],
+  },
+
+  // ---------------------------------------------------------------------------
+  // searching (6 items) — 2026-04-25
+  // ---------------------------------------------------------------------------
+  {
+    title: 'Binary Search em 5 minutos',
+    url: 'https://www.youtube.com/watch?v=zSyV0VaTF3k',
+    description:
+      'Augusto Galego — binary search em 5min: meio do array ordenado, descarta metade a cada passo, O(log n).',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 5,
+    topicSlugs: ['searching'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — Augusto Galego',
+    tags: ['concept', 'binary-search', 'galego'],
+  },
+  {
+    title: 'What is binary search',
+    url: 'https://www.youtube.com/watch?v=j5uXyPJ0Pew',
+    description:
+      'mycodeschool — binary search do zero: por que requer array ordenado, intuição do meio, complexidade O(log n).',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 13,
+    topicSlugs: ['searching'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — mycodeschool',
+    tags: ['concept', 'binary-search', 'fundamentals'],
+  },
+  {
+    title: 'Binary Search — Iterative Implementation and common errors',
+    url: 'https://www.youtube.com/watch?v=OAZc1zwjERU',
+    description:
+      'mycodeschool — binary search iterativo: low/high/mid, integer overflow no cálculo de mid, erros off-by-one comuns.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 11,
+    topicSlugs: ['searching'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — mycodeschool',
+    tags: ['concept', 'binary-search', 'iterative', 'overflow', 'off-by-one'],
+  },
+  {
+    title: 'Binary search — finding first or last occurrence of a number',
+    url: 'https://www.youtube.com/watch?v=OE7wUUpJw6I',
+    description:
+      'mycodeschool — variante: achar primeira ou última ocorrência num array com duplicatas, ajuste do passo após encontrar.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 11,
+    topicSlugs: ['searching'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — mycodeschool',
+    tags: ['concept', 'binary-search', 'duplicates', 'first-last-occurrence'],
+  },
+  {
+    title: 'Total Occurrences Of K In A Sorted Array (Facebook Software Engineering Interview Question)',
+    url: 'https://www.youtube.com/watch?v=RlXtTF34nnE',
+    description:
+      'Back to Back SWE — combinação de duas binary searches pra contar quantas vezes K aparece num array ordenado. Pergunta de entrevista do Facebook.',
+    format: 'VIDEO',
+    difficulty: 'HARD',
+    estimatedMinutes: 14,
+    topicSlugs: ['searching'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — Back To Back SWE',
+    tags: ['concept', 'binary-search', 'duplicates', 'interview', 'facebook'],
+  },
+  {
+    title: 'Grokking Algorithms — Binary Search (chapter 1)',
+    url: 'https://github.com/egonSchiele/grokking_algorithms',
+    description:
+      'Capítulo 1 do Grokking Algorithms (Bhargava, Manning). Binary search com exemplos visuais, comparação com busca linear, complexidade. Livro pago — ver biblioteca da Inteli ou Manning. O GitHub tem só o código de apoio, não o PDF.',
+    format: 'BOOK',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 20,
+    topicSlugs: ['searching'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'Book — Grokking Algorithms',
+    tags: ['concept', 'book', 'grokking', 'binary-search'],
+  },
+
+  // ---------------------------------------------------------------------------
+  // recursion (1 item) — 2026-04-25
+  // ---------------------------------------------------------------------------
+  {
+    title: 'Algoritmo de Torre de Hanoi Explicado',
+    url: 'https://www.youtube.com/watch?v=Ug6hIyn3txE',
+    description:
+      'Augusto Galego — Tower of Hanoi: por que recursão é a forma natural, T(n) = 2T(n-1) + 1.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 16,
+    topicSlugs: ['recursion'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — Augusto Galego',
+    tags: ['concept', 'recursion', 'tower-of-hanoi', 'galego'],
+  },
+
+  // ---------------------------------------------------------------------------
+  // dp (7 items) — 2026-04-25
+  // ---------------------------------------------------------------------------
+  {
+    title: 'Fibonacci Sequence — Recursion with memoization',
+    url: 'https://www.youtube.com/watch?v=UxICsjrdlJA',
+    description:
+      'mycodeschool — Fibonacci com memoization: cache dos resultados intermediários, reduz O(2^n) recursivo pra O(n) com tradeoff de memória.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 9,
+    topicSlugs: ['dp', 'recursion'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — mycodeschool',
+    tags: ['concept', 'dp', 'memoization', 'fibonacci', 'recursion-to-dp'],
+  },
+  {
+    title: 'Dynamic Programming | Leetcode 70 (Climbing Stairs)',
+    url: 'https://www.youtube.com/watch?v=sBZtJs0WmgQ',
+    description:
+      'Augusto Galego — climbing stairs (LC 70) com DP: identificar o subproblema e construir bottom-up.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 8,
+    topicSlugs: ['dp'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — Augusto Galego',
+    tags: ['concept', 'dp', 'climbing-stairs', 'leetcode-70', 'galego'],
+  },
+  {
+    title: 'Top 5 Dynamic Programming Patterns for Coding Interviews — For Beginners',
+    url: 'https://www.youtube.com/watch?v=mBNrRy2_hVs',
+    description:
+      'NeetCode — os 5 padrões de DP que mais aparecem em entrevistas: 1D, 2D, knapsack, decisão, intervalos. 29min.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 29,
+    topicSlugs: ['dp'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — NeetCode',
+    tags: ['concept', 'dp', 'patterns', 'overview', 'neetcode'],
+  },
+  {
+    title: 'The Recursive Staircase — Top Down & Bottom Up Dynamic Programming',
+    url: 'https://www.youtube.com/watch?v=NFJ3m9a1oJQ',
+    description:
+      'Back to Back SWE — recursive staircase com top-down (memoization) e bottom-up (tabulation), as duas abordagens lado a lado.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 20,
+    topicSlugs: ['dp', 'recursion'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — Back To Back SWE',
+    tags: ['concept', 'dp', 'top-down', 'bottom-up', 'staircase', 'memoization', 'tabulation'],
+  },
+  {
+    title: 'The 0/1 Knapsack Problem (Demystifying Dynamic Programming)',
+    url: 'https://www.youtube.com/watch?v=xCbYmUPvc2Q',
+    description:
+      'Back to Back SWE — 0/1 Knapsack: tabela 2D itens × capacidade, decisão pegar ou não a cada passo.',
+    format: 'VIDEO',
+    difficulty: 'HARD',
+    estimatedMinutes: 21,
+    topicSlugs: ['dp'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — Back To Back SWE',
+    tags: ['concept', 'dp', '0-1-knapsack', '2d-dp', 'classic'],
+  },
+  {
+    title: 'Edit Distance Between 2 Strings — The Levenshtein Distance',
+    url: 'https://www.youtube.com/watch?v=MiqoA-yF-0M',
+    description:
+      'Back to Back SWE — Levenshtein/Edit Distance: tabela 2D, três operações (insert, delete, replace) custam 1 cada.',
+    format: 'VIDEO',
+    difficulty: 'HARD',
+    estimatedMinutes: 17,
+    topicSlugs: ['dp'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — Back To Back SWE',
+    tags: ['concept', 'dp', 'edit-distance', 'levenshtein', 'string-dp', '2d-dp'],
+  },
+  {
+    title: 'Grokking Algorithms — Dynamic Programming (chapter 9)',
+    url: 'https://github.com/egonSchiele/grokking_algorithms',
+    description:
+      'Capítulo 9 do Grokking Algorithms (Bhargava, Manning). DP com exemplos visuais de knapsack e longest common subsequence. Livro pago — ver biblioteca da Inteli ou Manning. O GitHub tem só o código de apoio, não o PDF.',
+    format: 'BOOK',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 25,
+    topicSlugs: ['dp'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'Book — Grokking Algorithms',
+    tags: ['concept', 'book', 'grokking', 'dp', 'knapsack', 'lcs'],
+  },
+  {
+    title: 'O que é replicação de Banco de Dados?',
+    url: 'https://www.youtube.com/watch?v=e6r7Uqe6Tn4',
+    description:
+      'Augusto Galego — replicação de banco: master/replica, sync vs async, trade-offs de consistência e disponibilidade.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 12,
+    topicSlugs: ['replication', 'databases'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Augusto Galego',
+    tags: ['concept', 'replication', 'master-replica', 'sync-async', 'galego'],
+  },
+
+  // ---------------------------------------------------------------------------
+  // trie (2 items) — 2026-04-25
+  // ---------------------------------------------------------------------------
+  {
+    title: 'Implement Trie (Prefix Tree) — Leetcode 208',
+    url: 'https://www.youtube.com/watch?v=oobqoCJlHA0',
+    description:
+      'NeetCode — explica trie no Excalidraw antes de implementar: nó com filhos por caractere, insert e search percorrem caractere a caractere.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 19,
+    topicSlugs: ['trie'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — NeetCode',
+    tags: ['concept', 'trie', 'prefix-tree', 'leetcode-208', 'neetcode'],
+  },
+  {
+    title: 'Grokking Data Structures — Tries (chapter)',
+    url: 'https://github.com/mlarocca/grokking_data_structures',
+    description:
+      'Capítulo de tries do Grokking Data Structures (La Rocca, Manning). Prefix tree, inserção, busca, aplicações em autocomplete e dictionary. Livro pago — ver biblioteca da Inteli ou Manning. O GitHub tem só o código de apoio, não o PDF.',
+    format: 'BOOK',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 25,
+    topicSlugs: ['trie'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'Book — Grokking Data Structures',
+    tags: ['concept', 'book', 'grokking', 'trie', 'prefix-tree', 'autocomplete'],
+  },
+
+  // ---------------------------------------------------------------------------
+  // AlgoViz interactive visualizers (16 items) — 2026-04-25
+  // pt-BR, Davi's own algorithm visualization site
+  // ---------------------------------------------------------------------------
+  {
+    title: 'AlgoViz — Bubble Sort',
+    url: 'https://algorithms.daviduarte.com.br/algoritmos/bubble-sort',
+    description:
+      'AlgoViz — visualizador interativo de bubble sort: comparações de pares adjacentes e swaps até a lista ordenar. pt-BR.',
+    format: 'ARTICLE',
+    difficulty: 'EASY',
+    estimatedMinutes: 6,
+    topicSlugs: ['sorting'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'Site — AlgoViz (Davi Duarte)',
+    tags: ['concept', 'sorting', 'bubble-sort', 'algoviz', 'visualization', 'pt-br'],
+  },
+  {
+    title: 'AlgoViz — Selection Sort',
+    url: 'https://algorithms.daviduarte.com.br/algoritmos/selection-sort',
+    description:
+      'AlgoViz — visualizador interativo de selection sort: encontra o menor a cada passo e troca pra posição correta. pt-BR.',
+    format: 'ARTICLE',
+    difficulty: 'EASY',
+    estimatedMinutes: 6,
+    topicSlugs: ['sorting'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'Site — AlgoViz (Davi Duarte)',
+    tags: ['concept', 'sorting', 'selection-sort', 'algoviz', 'visualization', 'pt-br'],
+  },
+  {
+    title: 'AlgoViz — Insertion Sort',
+    url: 'https://algorithms.daviduarte.com.br/algoritmos/insertion-sort',
+    description:
+      'AlgoViz — visualizador interativo de insertion sort: insere cada elemento na posição certa do prefixo já ordenado. pt-BR.',
+    format: 'ARTICLE',
+    difficulty: 'EASY',
+    estimatedMinutes: 6,
+    topicSlugs: ['sorting'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'Site — AlgoViz (Davi Duarte)',
+    tags: ['concept', 'sorting', 'insertion-sort', 'algoviz', 'visualization', 'pt-br'],
+  },
+  {
+    title: 'AlgoViz — Merge Sort',
+    url: 'https://algorithms.daviduarte.com.br/algoritmos/merge-sort',
+    description:
+      'AlgoViz — visualizador interativo de merge sort: divide pela metade recursivamente e faz o merge das duas halves ordenadas. pt-BR.',
+    format: 'ARTICLE',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 8,
+    topicSlugs: ['sorting', 'recursion'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'Site — AlgoViz (Davi Duarte)',
+    tags: ['concept', 'sorting', 'merge-sort', 'divide-and-conquer', 'algoviz', 'visualization', 'pt-br'],
+  },
+  {
+    title: 'AlgoViz — Quick Sort',
+    url: 'https://algorithms.daviduarte.com.br/algoritmos/quick-sort',
+    description:
+      'AlgoViz — visualizador interativo de quick sort: escolhe pivot, particiona em <pivot e >pivot, recurso nas duas partes. pt-BR.',
+    format: 'ARTICLE',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 8,
+    topicSlugs: ['sorting', 'recursion'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'Site — AlgoViz (Davi Duarte)',
+    tags: ['concept', 'sorting', 'quick-sort', 'partitioning', 'algoviz', 'visualization', 'pt-br'],
+  },
+  {
+    title: 'AlgoViz — Counting Sort',
+    url: 'https://algorithms.daviduarte.com.br/algoritmos/counting-sort',
+    description:
+      'AlgoViz — visualizador interativo de counting sort: array de contagem de ocorrências, sort em O(n+k) sem comparações. pt-BR.',
+    format: 'ARTICLE',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 7,
+    topicSlugs: ['sorting'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'Site — AlgoViz (Davi Duarte)',
+    tags: ['concept', 'sorting', 'counting-sort', 'non-comparison', 'algoviz', 'visualization', 'pt-br'],
+  },
+  {
+    title: 'AlgoViz — Bucket Sort',
+    url: 'https://algorithms.daviduarte.com.br/algoritmos/bucket-sort',
+    description:
+      'AlgoViz — visualizador interativo de bucket sort: distribui em buckets por range, ordena cada bucket e concatena. pt-BR.',
+    format: 'ARTICLE',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 7,
+    topicSlugs: ['sorting'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'Site — AlgoViz (Davi Duarte)',
+    tags: ['concept', 'sorting', 'bucket-sort', 'algoviz', 'visualization', 'pt-br'],
+  },
+  {
+    title: 'AlgoViz — BFS (Breadth-First Search)',
+    url: 'https://algorithms.daviduarte.com.br/algoritmos/bfs',
+    description:
+      'AlgoViz — visualizador interativo de BFS: queue, visita level-by-level, caminho mais curto em grafos não-pesados. pt-BR.',
+    format: 'ARTICLE',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 8,
+    topicSlugs: ['graph'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'Site — AlgoViz (Davi Duarte)',
+    tags: ['concept', 'graph', 'bfs', 'queue', 'algoviz', 'visualization', 'pt-br'],
+  },
+  {
+    title: 'AlgoViz — DFS (Depth-First Search)',
+    url: 'https://algorithms.daviduarte.com.br/algoritmos/dfs',
+    description:
+      'AlgoViz — visualizador interativo de DFS: stack/recursão, exploração completa de cada caminho antes de retroceder. pt-BR.',
+    format: 'ARTICLE',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 8,
+    topicSlugs: ['graph', 'recursion'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'Site — AlgoViz (Davi Duarte)',
+    tags: ['concept', 'graph', 'dfs', 'recursion', 'stack', 'algoviz', 'visualization', 'pt-br'],
+  },
+  {
+    title: 'AlgoViz — Dijkstra',
+    url: 'https://algorithms.daviduarte.com.br/algoritmos/dijkstra',
+    description:
+      'AlgoViz — visualizador interativo de Dijkstra: priority queue, caminho mais curto em grafo com pesos não-negativos. pt-BR.',
+    format: 'ARTICLE',
+    difficulty: 'HARD',
+    estimatedMinutes: 10,
+    topicSlugs: ['graph', 'heap'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'Site — AlgoViz (Davi Duarte)',
+    tags: ['concept', 'graph', 'dijkstra', 'shortest-path', 'priority-queue', 'algoviz', 'visualization', 'pt-br'],
+  },
+  {
+    title: 'AlgoViz — Topological Sort',
+    url: 'https://algorithms.daviduarte.com.br/algoritmos/topological-sort',
+    description:
+      'AlgoViz — visualizador interativo de topological sort: DAG, ordem que respeita dependências, Kahn ou DFS-based. pt-BR.',
+    format: 'ARTICLE',
+    difficulty: 'HARD',
+    estimatedMinutes: 10,
+    topicSlugs: ['graph'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'Site — AlgoViz (Davi Duarte)',
+    tags: ['concept', 'graph', 'topological-sort', 'dag', 'kahn', 'algoviz', 'visualization', 'pt-br'],
+  },
+  {
+    title: 'AlgoViz — Union-Find (DSU)',
+    url: 'https://algorithms.daviduarte.com.br/algoritmos/union-find',
+    description:
+      'AlgoViz — visualizador interativo de Union-Find (DSU): union, find, path compression, detecção de componentes conexos. pt-BR.',
+    format: 'ARTICLE',
+    difficulty: 'HARD',
+    estimatedMinutes: 10,
+    topicSlugs: ['graph'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'Site — AlgoViz (Davi Duarte)',
+    tags: ['concept', 'graph', 'union-find', 'dsu', 'path-compression', 'algoviz', 'visualization', 'pt-br'],
+  },
+  {
+    title: 'AlgoViz — Ciclo Único em Array',
+    url: 'https://algorithms.daviduarte.com.br/algoritmos/single-cycle-check',
+    description:
+      'AlgoViz — visualizador interativo de Ciclo Único em Array: verifica se dá pra visitar todos os elementos saltando os valores e voltar ao início em exatamente n passos. pt-BR.',
+    format: 'ARTICLE',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 7,
+    topicSlugs: ['array'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'Site — AlgoViz (Davi Duarte)',
+    tags: ['concept', 'array', 'cycle-detection', 'simulation', 'algoviz', 'visualization', 'pt-br'],
+  },
+  {
+    title: 'AlgoViz — Two Sum',
+    url: 'https://algorithms.daviduarte.com.br/algoritmos/two-sum',
+    description:
+      'AlgoViz — visualizador interativo de Two Sum (LC 1): hashmap mapeia valor → índice, busca complemento em O(1). pt-BR.',
+    format: 'ARTICLE',
+    difficulty: 'EASY',
+    estimatedMinutes: 6,
+    topicSlugs: ['hashmap', 'array'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'Site — AlgoViz (Davi Duarte)',
+    tags: ['concept', 'hashmap', 'two-sum', 'leetcode-1', 'algoviz', 'visualization', 'pt-br'],
+  },
+  {
+    title: 'AlgoViz — LRU Cache',
+    url: 'https://algorithms.daviduarte.com.br/algoritmos/lru-cache',
+    description:
+      'AlgoViz — visualizador interativo de LRU Cache: doubly linked list + hashmap, get/put em O(1), evicta o least recently used. pt-BR.',
+    format: 'ARTICLE',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 8,
+    topicSlugs: ['caching', 'lists', 'hashmap'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'Site — AlgoViz (Davi Duarte)',
+    tags: ['concept', 'caching', 'lru', 'doubly-linked-list', 'hashmap', 'algoviz', 'visualization', 'pt-br'],
+  },
+  {
+    title: 'AlgoViz — Trie (Prefix Tree)',
+    url: 'https://algorithms.daviduarte.com.br/algoritmos/trie',
+    description:
+      'AlgoViz — visualizador interativo de Trie (Prefix Tree): nó por caractere, insert/search em O(m), aplicações em autocomplete. pt-BR.',
+    format: 'ARTICLE',
+    difficulty: 'EASY',
+    estimatedMinutes: 7,
+    topicSlugs: ['trie', 'tree'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'Site — AlgoViz (Davi Duarte)',
+    tags: ['concept', 'trie', 'prefix-tree', 'autocomplete', 'algoviz', 'visualization', 'pt-br'],
+  },
+
+  // ---------------------------------------------------------------------------
+  // hashmap (3 items) — 2026-04-25
+  // ---------------------------------------------------------------------------
+  {
+    title: 'Consistent Hashing — Algorithms You Should Know #1',
+    url: 'https://www.youtube.com/watch?v=UF9Iqmg94tk',
+    description:
+      'ByteByteGo — consistent hashing pra distribuir chaves em servidores: anel de hash, virtual nodes, rebalanceamento mínimo quando um servidor entra ou sai.',
+    format: 'VIDEO',
+    difficulty: 'HARD',
+    estimatedMinutes: 9,
+    topicSlugs: ['hashmap', 'sharding'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — ByteByteGo',
+    tags: ['concept', 'hashmap', 'consistent-hashing', 'sharding', 'distributed', 'bytebytego'],
+  },
+  {
+    title: 'Grokking Algorithms — Hash Tables (chapter 5)',
+    url: 'https://github.com/egonSchiele/grokking_algorithms',
+    description:
+      'Capítulo 5 do Grokking Algorithms (Bhargava, Manning). Hash tables com exemplos visuais, hash function, collision e applications. Livro pago — ver biblioteca da Inteli ou Manning. O GitHub tem só o código de apoio, não o PDF.',
+    format: 'BOOK',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 25,
+    topicSlugs: ['hashmap'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'Book — Grokking Algorithms',
+    tags: ['concept', 'book', 'grokking', 'hashmap', 'hash-function'],
+  },
+  {
+    title: 'Group Anagrams — Categorize Strings by Count — Leetcode 49',
+    url: 'https://www.youtube.com/watch?v=vzdNOK2oB2E',
+    description:
+      'NeetCode — LC 49 com Excalidraw: hashmap onde a chave é a contagem de caracteres, agrupa strings que têm a mesma assinatura.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 9,
+    topicSlugs: ['hashmap'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — NeetCode',
+    tags: ['practice', 'hashmap', 'leetcode-49', 'group-anagrams', 'neetcode'],
+  },
+
+  // ---------------------------------------------------------------------------
+  // message-queues (6 items) — 2026-04-26
+  // ---------------------------------------------------------------------------
+  {
+    title: 'Kafka in 100 Seconds',
+    url: 'https://www.youtube.com/watch?v=uvb00oaa3k8',
+    description:
+      'Fireship — Kafka em 100s: log distribuído particionado, producers, consumers, brokers.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 3,
+    topicSlugs: ['message-queues'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Fireship',
+    tags: ['concept', 'kafka', 'log-based', 'fireship'],
+  },
+  {
+    title: 'RabbitMQ in 100 Seconds',
+    url: 'https://www.youtube.com/watch?v=NQ3fZtyXji0',
+    description:
+      'Fireship — RabbitMQ em 100s: broker tradicional, exchanges, queues, routing keys.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 3,
+    topicSlugs: ['message-queues'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Fireship',
+    tags: ['concept', 'rabbitmq', 'broker', 'fireship'],
+  },
+  {
+    title: 'What is a Message Queue and When should you use Messaging Queue Systems Like RabbitMQ and Kafka',
+    url: 'https://www.youtube.com/watch?v=W4_aGb_MOls',
+    description:
+      'Hussein Nasser — o que é message queue e quando usar: desacoplamento producer/consumer, retry, ordering, comparação Kafka vs RabbitMQ.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 14,
+    topicSlugs: ['message-queues'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Hussein Nasser',
+    tags: ['concept', 'message-queues', 'overview', 'when-to-use', 'hussein-nasser'],
+  },
+  {
+    title: 'Kafka vs. RabbitMQ vs. Messaging Middleware vs. Pulsar',
+    url: 'https://www.youtube.com/watch?v=x4k1XEjNzYQ',
+    description:
+      'ByteByteGo — comparativo Kafka vs RabbitMQ vs Pulsar: log-based vs broker tradicional, trade-offs de throughput, ordering, retention.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 5,
+    topicSlugs: ['message-queues', 'pubsub'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — ByteByteGo',
+    tags: ['tradeoffs', 'kafka', 'rabbitmq', 'pulsar', 'comparison'],
+  },
+  {
+    title: 'Apache Kafka Fundamentals You Should Know',
+    url: 'https://www.youtube.com/watch?v=-RDyEFvnTXI',
+    description:
+      'ByteByteGo — fundamentos de Kafka: tópicos, partitions, consumer groups, replication.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 5,
+    topicSlugs: ['message-queues'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — ByteByteGo',
+    tags: ['concept', 'kafka', 'partitions', 'consumer-groups', 'replication'],
+  },
+  {
+    title: 'System Design: Why is Kafka fast?',
+    url: 'https://www.youtube.com/watch?v=UNUz1-msbOM',
+    description:
+      'ByteByteGo — por que Kafka é rápido: zero-copy, sequential I/O, batch + compression no producer.',
+    format: 'VIDEO',
+    difficulty: 'HARD',
+    estimatedMinutes: 6,
+    topicSlugs: ['message-queues'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — ByteByteGo',
+    tags: ['concept', 'kafka', 'internals', 'zero-copy', 'sequential-io'],
+  },
+
+  // ---------------------------------------------------------------------------
+  // greedy (6 items) — 2026-04-26
+  // ---------------------------------------------------------------------------
+  {
+    title: 'Jump Game — Greedy — Leetcode 55',
+    url: 'https://www.youtube.com/watch?v=Yan0cv2cLy8',
+    description:
+      'NeetCode — LC 55 com Excalidraw: greedy de "máximo alcance", track o índice mais distante alcançável a cada passo.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 16,
+    topicSlugs: ['greedy'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — NeetCode',
+    tags: ['practice', 'greedy', 'leetcode-55', 'jump-game', 'neetcode'],
+  },
+  {
+    title: 'Gas Station — Greedy — Leetcode 134',
+    url: 'https://www.youtube.com/watch?v=lJwbPZGo05A',
+    description:
+      'NeetCode — LC 134: se a soma total de gas - cost é positiva, existe ponto de partida válido. Greedy reseta ao saldo negativo.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 16,
+    topicSlugs: ['greedy'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — NeetCode',
+    tags: ['practice', 'greedy', 'leetcode-134', 'gas-station', 'neetcode'],
+  },
+  {
+    title: 'Jump Game II — Greedy — Leetcode 45',
+    url: 'https://www.youtube.com/watch?v=dJ7sWiOoK7g',
+    description:
+      'NeetCode — LC 45: variante do Jump Game que pede o número mínimo de saltos. BFS implícito com greedy de fronteira.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 12,
+    topicSlugs: ['greedy'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — NeetCode',
+    tags: ['practice', 'greedy', 'leetcode-45', 'jump-game-ii', 'bfs', 'neetcode'],
+  },
+  {
+    title: 'Interval Scheduling Maximization (Proof w/ Exchange Argument)',
+    url: 'https://www.youtube.com/watch?v=hVhOeaONg1Y',
+    description:
+      'Back to Back SWE — interval scheduling: ordena por end time e pega o que termina antes. Prova de optimalidade pelo exchange argument.',
+    format: 'VIDEO',
+    difficulty: 'HARD',
+    estimatedMinutes: 20,
+    topicSlugs: ['greedy'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — Back To Back SWE',
+    tags: ['concept', 'greedy', 'interval-scheduling', 'exchange-argument', 'proof'],
+  },
+  {
+    title: 'Huffman Codes: An Information Theory Perspective',
+    url: 'https://www.youtube.com/watch?v=B3y0RsVCyrw',
+    description:
+      'Reducible — Huffman codes pela lente de teoria da informação: por que combinar greedy os dois símbolos menos frequentes produz a árvore ótima.',
+    format: 'VIDEO',
+    difficulty: 'HARD',
+    estimatedMinutes: 29,
+    topicSlugs: ['greedy', 'tree'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — Reducible',
+    tags: ['concept', 'greedy', 'huffman', 'compression', 'information-theory', 'tree'],
+  },
+  {
+    title: 'Grokking Algorithms — Greedy Algorithms (chapter 8)',
+    url: 'https://github.com/egonSchiele/grokking_algorithms',
+    description:
+      'Capítulo 8 do Grokking Algorithms (Bhargava, Manning). Greedy com set cover, NP-completude e aproximação pra traveling salesman. Livro pago — ver biblioteca da Inteli ou Manning. O GitHub tem só o código de apoio, não o PDF.',
+    format: 'BOOK',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 25,
+    topicSlugs: ['greedy'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'Book — Grokking Algorithms',
+    tags: ['concept', 'book', 'grokking', 'greedy', 'set-cover', 'np-complete'],
+  },
+
+  // ---------------------------------------------------------------------------
+  // rate-limiting (4 items) — 2026-04-26
+  // ---------------------------------------------------------------------------
+  {
+    title: 'O que é um Rate Limiter?',
+    url: 'https://www.youtube.com/watch?v=H8gOOqC1WDQ',
+    description:
+      'Augusto Galego — entry de rate limiter em 6min: o que é, pra que serve (proteção de API, fairness entre usuários, evitar abuse), onde implementar.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 6,
+    topicSlugs: ['rate-limiting'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Augusto Galego',
+    tags: ['concept', 'rate-limiting', 'fundamentals', 'galego'],
+  },
+  {
+    title: 'Rate Limiting Fundamentals',
+    url: 'https://blog.bytebytego.com/p/rate-limiting-fundamentals',
+    description:
+      'ByteByteGo Blog — rate limiting como padrão de sistema distribuído: por que existe (proteção de recursos, fairness entre usuários), onde implementa e quando aplicar.',
+    format: 'ARTICLE',
+    difficulty: 'EASY',
+    estimatedMinutes: 12,
+    topicSlugs: ['rate-limiting'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'Blog — ByteByteGo',
+    tags: ['concept', 'rate-limiting', 'fundamentals', 'distributed-systems', 'bytebytego'],
+  },
+  {
+    title: 'Rate Limiter System Design: Token Bucket, Leaky Bucket, Scaling',
+    url: 'https://www.youtube.com/watch?v=YXkOdWBwqaA',
+    description:
+      'ByteByteGo — design de rate limiter: token bucket vs leaky bucket vs sliding window, throttling, escala em sistema distribuído.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 8,
+    topicSlugs: ['rate-limiting'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — ByteByteGo',
+    tags: ['concept', 'rate-limiting', 'token-bucket', 'leaky-bucket', 'distributed', 'bytebytego'],
+  },
+  {
+    title: 'How Rate Limiting and Throttling Saves Your API Server From CRASHING',
+    url: 'https://www.youtube.com/watch?v=_qNHROq0pGk',
+    description:
+      'ByteMonk — token bucket e leaky bucket implementados em Java, foco em quando cada um aplica e diferença entre rate limiting e throttling.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 8,
+    topicSlugs: ['rate-limiting'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — ByteMonk',
+    tags: ['practice', 'rate-limiting', 'token-bucket', 'leaky-bucket', 'java', 'throttling'],
+  },
+  {
+    title: 'Five Rate Limiting Algorithms — Key Concepts in System Design',
+    url: 'https://www.youtube.com/watch?v=mQCJJqUfn9Y',
+    description:
+      'Hello Byte — 5 algoritmos de rate limiting comparados: token bucket, leaky bucket, fixed window, sliding window log, sliding window counter.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 18,
+    topicSlugs: ['rate-limiting'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Hello Byte',
+    tags: ['concept', 'rate-limiting', 'algorithms', 'overview', 'sliding-window'],
+  },
+  {
+    title: 'Rate Limiter | Explicação Completa',
+    url: 'https://www.youtube.com/watch?v=mlzPJlQeqBM',
+    description:
+      'Augusto Galego — deep dive em rate limiter (28min): algoritmos completos, distributed state, com challenge prático leaky bucket da Woovi.',
+    format: 'VIDEO',
+    difficulty: 'HARD',
+    estimatedMinutes: 28,
+    topicSlugs: ['rate-limiting'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Augusto Galego',
+    tags: ['concept', 'rate-limiting', 'leaky-bucket', 'distributed', 'practice', 'galego'],
+  },
+
+  // ---------------------------------------------------------------------------
+  // networking (7 items) — 2026-04-26 Hussein Nasser sweep
+  // ---------------------------------------------------------------------------
+  {
+    title: 'Computer Networking in 100 Seconds',
+    url: 'https://www.youtube.com/watch?v=keeqnciDVOo',
+    description:
+      'Fireship — networking em 100s: pilha TCP/IP, OSI vs TCP/IP model, packet routing, do bit ao protocolo de aplicação.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 3,
+    topicSlugs: ['networking'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Fireship',
+    tags: ['concept', 'networking', 'overview', 'tcp-ip', 'fireship'],
+  },
+  {
+    title: 'DNS Explained in 100 Seconds',
+    url: 'https://www.youtube.com/watch?v=UVR9lhUGAyU',
+    description:
+      'Fireship — DNS em 100s: como nome de domínio vira IP, hierarquia de servidores (root, TLD, authoritative), cache local.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 3,
+    topicSlugs: ['networking'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Fireship',
+    tags: ['concept', 'networking', 'dns', 'fireship'],
+  },
+  {
+    title: 'When to use UDP vs TCP in Building a Backend Application?',
+    url: 'https://www.youtube.com/watch?v=G86axGfnWag',
+    description:
+      'Hussein Nasser — quando escolher UDP ou TCP num backend: garantias de entrega vs latência, ordering, casos de uso reais (vídeo, gaming, banking).',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 21,
+    topicSlugs: ['networking'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Hussein Nasser',
+    tags: ['tradeoffs', 'networking', 'tcp', 'udp', 'protocol', 'hussein-nasser'],
+  },
+  {
+    title: 'What are SSL/TLS Certificates? Why do we Need them? and How do they Work?',
+    url: 'https://www.youtube.com/watch?v=r1nJT63BFQ0',
+    description:
+      'Hussein Nasser — SSL/TLS: o que é certificado, cadeia de confiança, CAs, handshake, por que HTTPS importa.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 15,
+    topicSlugs: ['networking', 'security'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Hussein Nasser',
+    tags: ['concept', 'networking', 'ssl', 'tls', 'certificates', 'security', 'hussein-nasser'],
+  },
+  {
+    title: 'This is why gRPC was invented',
+    url: 'https://www.youtube.com/watch?v=u4LWEXDP7_M',
+    description:
+      'Hussein Nasser — porque gRPC nasceu: limitações do REST, binary protocol via Protocol Buffers, streaming bidirecional via HTTP/2.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 9,
+    topicSlugs: ['networking'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Hussein Nasser',
+    tags: ['concept', 'networking', 'grpc', 'rpc', 'http2', 'protobuf', 'hussein-nasser'],
+  },
+  {
+    title: 'Hyper Text Transfer Protocol Crash Course — HTTP 1.0, 1.1, HTTP/2, HTTP/3',
+    url: 'https://www.youtube.com/watch?v=0OrmKCB0UrQ',
+    description:
+      'Hussein Nasser — HTTP histórico em 46min: 1.0 (uma conexão por request), 1.1 (keep-alive), HTTP/2 (multiplex), HTTP/3 (QUIC sobre UDP).',
+    format: 'VIDEO',
+    difficulty: 'HARD',
+    estimatedMinutes: 46,
+    topicSlugs: ['networking'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Hussein Nasser',
+    tags: ['concept', 'networking', 'http', 'http2', 'http3', 'quic', 'hussein-nasser'],
+  },
+  {
+    title: 'WebSockets Crash Course — Handshake, Use-cases, Pros & Cons and more',
+    url: 'https://www.youtube.com/watch?v=2Nt-ZrNP22A',
+    description:
+      'Hussein Nasser — WebSockets em 48min: upgrade handshake do HTTP, conexão full-duplex persistente, casos de uso (chat, streaming, jogos), prós e contras.',
+    format: 'VIDEO',
+    difficulty: 'HARD',
+    estimatedMinutes: 48,
+    topicSlugs: ['networking', 'pubsub'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Hussein Nasser',
+    tags: ['concept', 'networking', 'websockets', 'realtime', 'full-duplex', 'hussein-nasser'],
+  },
+
+  // ---------------------------------------------------------------------------
+  // Galego SD sweep (8 items) — 2026-04-26
+  // ---------------------------------------------------------------------------
+  {
+    title: 'Cache explicado — O que é e como funciona cache?',
+    url: 'https://www.youtube.com/watch?v=r-tiD2MYnWE',
+    description:
+      'Augusto Galego — cache do zero em 19min: o que é, hit/miss, write-through vs write-back, expiração e invalidação.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 19,
+    topicSlugs: ['caching'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Augusto Galego',
+    tags: ['concept', 'caching', 'fundamentals', 'hit-miss', 'galego'],
+  },
+  {
+    title: 'O que é Load Balancer?',
+    url: 'https://www.youtube.com/watch?v=OIw0kWQwGis',
+    description:
+      'Augusto Galego — load balancer em 9min: o que é, round robin, least connections, sticky sessions, L4 vs L7.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 9,
+    topicSlugs: ['load-balancers'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Augusto Galego',
+    tags: ['concept', 'load-balancer', 'fundamentals', 'l4', 'l7', 'galego'],
+  },
+  {
+    title: 'O que é DB Sharding?',
+    url: 'https://www.youtube.com/watch?v=Um7XlWJsPxw',
+    description:
+      'Augusto Galego — sharding em 9min: por que dividir o banco, horizontal vs vertical, escolha de shard key.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 9,
+    topicSlugs: ['sharding'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Augusto Galego',
+    tags: ['concept', 'sharding', 'database', 'shard-key', 'galego'],
+  },
+  {
+    title: 'O que são sharded counters?',
+    url: 'https://www.youtube.com/watch?v=eAnuBiiReVc',
+    description:
+      'Augusto Galego — sharded counters: como evitar contenção em counters de alta escrita distribuindo em múltiplas chaves.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 9,
+    topicSlugs: ['sharding'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Augusto Galego',
+    tags: ['concept', 'sharding', 'counters', 'high-write', 'contention', 'galego'],
+  },
+  {
+    title: 'Concorrência é DIFERENTE de Paralelismo!',
+    url: 'https://www.youtube.com/watch?v=74RLgpAV6LQ',
+    description:
+      'Augusto Galego — concorrência (intercalar tarefas) vs paralelismo (executar simultâneo): por que JS é concorrente single-threaded, exemplos práticos.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 13,
+    topicSlugs: ['scalability'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Augusto Galego',
+    tags: ['concept', 'concurrency', 'parallelism', 'threading', 'galego'],
+  },
+  {
+    title: 'Quando usar Monolitos vs Microserviços',
+    url: 'https://www.youtube.com/watch?v=ooJjxNsQnK4',
+    description:
+      'Augusto Galego — monolitos vs microserviços em 23min: trade-offs reais, quando vale, custos operacionais.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 23,
+    topicSlugs: ['scalability', 'design-patterns'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Augusto Galego',
+    tags: ['tradeoffs', 'monolith', 'microservices', 'architecture', 'galego'],
+  },
+  {
+    title: 'Princípios SOLID Pelos Olhos de um Dev Sr.',
+    url: 'https://www.youtube.com/watch?v=2yqHlJ2HbTo',
+    description:
+      'Augusto Galego — os 5 princípios SOLID com exemplos práticos: SRP, Open/Closed, Liskov, ISP, DIP. 21min.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 21,
+    topicSlugs: ['design-patterns'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Augusto Galego',
+    tags: ['concept', 'solid', 'design-principles', 'srp', 'liskov', 'galego'],
+  },
+  {
+    title: 'Padrão SAGA | Orquestrando diferentes microsserviços',
+    url: 'https://www.youtube.com/watch?v=Q5qZVWTQQOE',
+    description:
+      'Augusto Galego — padrão SAGA em microserviços: transações distribuídas via choreography ou orchestration, compensações em caso de falha.',
+    format: 'VIDEO',
+    difficulty: 'HARD',
+    estimatedMinutes: 20,
+    topicSlugs: ['design-patterns', 'reliability'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Augusto Galego',
+    tags: ['concept', 'saga', 'microservices', 'distributed-transactions', 'compensation', 'galego'],
+  },
+  {
+    title: 'Top 6 Load Balancing Algorithms Every Developer Should Know',
+    url: 'https://www.youtube.com/watch?v=dBmxNsS3BGE',
+    description:
+      'ByteByteGo — 6 algoritmos de load balancing comparados: round robin, weighted round robin, least connections, IP hash, least response time, random.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 6,
+    topicSlugs: ['load-balancers'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — ByteByteGo',
+    tags: ['tradeoffs', 'load-balancer', 'algorithms', 'round-robin', 'least-connections', 'bytebytego'],
+  },
+
+  // ---------------------------------------------------------------------------
+  // containers (5 items) — 2026-04-26
+  // ---------------------------------------------------------------------------
+  {
+    title: 'Docker in 100 Seconds',
+    url: 'https://www.youtube.com/watch?v=Gjnup-PuquQ',
+    description:
+      'Fireship — Docker em 100s: imagem vs container, layered filesystem, Dockerfile, por que existe (resolve "funciona na minha máquina").',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 3,
+    topicSlugs: ['containers'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Fireship',
+    tags: ['concept', 'containers', 'docker', 'fireship'],
+  },
+  {
+    title: 'Kubernetes Explained in 100 Seconds',
+    url: 'https://www.youtube.com/watch?v=PziYflu8cB8',
+    description:
+      'Fireship — Kubernetes em 100s: orquestração de containers, pods, deployments, services, control plane vs worker nodes.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 3,
+    topicSlugs: ['containers'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Fireship',
+    tags: ['concept', 'containers', 'kubernetes', 'k8s', 'orchestration', 'fireship'],
+  },
+  {
+    title: 'Kubernetes Explained in 6 Minutes | k8s Architecture',
+    url: 'https://www.youtube.com/watch?v=TlHvYWVUZyc',
+    description:
+      'ByteByteGo — arquitetura do Kubernetes: API server, etcd, scheduler, controller manager, kubelet, kube-proxy. Como tudo se conecta.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 7,
+    topicSlugs: ['containers', 'scalability'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — ByteByteGo',
+    tags: ['concept', 'containers', 'kubernetes', 'architecture', 'etcd', 'scheduler', 'bytebytego'],
+  },
+  {
+    title: 'The evolution from virtual machines to containers',
+    url: 'https://www.youtube.com/watch?v=8qU3hZOXlBE',
+    description:
+      'Hussein Nasser — história de VMs → containers: hypervisor vs container engine, overhead de boot, isolação via cgroups e namespaces.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 18,
+    topicSlugs: ['containers'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Hussein Nasser',
+    tags: ['concept', 'containers', 'virtual-machines', 'history', 'hussein-nasser'],
+  },
+  {
+    title: "99% of Developers Don't Get Docker",
+    url: 'https://www.youtube.com/watch?v=Sz2ayy2NomY',
+    description:
+      'The Coding Gopher — Docker além do `docker run`: como o container engine usa namespaces e cgroups do Linux pra isolar processos sem virtualização.',
+    format: 'VIDEO',
+    difficulty: 'HARD',
+    estimatedMinutes: 15,
+    topicSlugs: ['containers'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — The Coding Gopher',
+    tags: ['concept', 'containers', 'docker', 'namespaces', 'cgroups', 'linux', 'internals', 'coding-gopher'],
+  },
+  {
+    title: 'Eu não sabia o que era Docker até agora...',
+    url: 'https://www.youtube.com/watch?v=LGpJuDUaHXY',
+    description:
+      'Augusto Galego — Docker em pt-BR: o que resolve, imagem vs container, layered filesystem, exemplos práticos.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 26,
+    topicSlugs: ['containers'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Augusto Galego',
+    tags: ['concept', 'containers', 'docker', 'fundamentals', 'galego'],
+  },
+
+  // ---------------------------------------------------------------------------
+  // cloud (5 items) — 2026-04-26
+  // ---------------------------------------------------------------------------
+  {
+    title: 'AWS for the Haters in 100 Seconds',
+    url: 'https://www.youtube.com/watch?v=ZzI9JE0i6Lc',
+    description:
+      'Fireship — entry crítico em AWS: por que é difícil de usar, vendor lock-in, complexidade dos serviços, mas por que ainda é dominante.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 3,
+    topicSlugs: ['cloud'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Fireship',
+    tags: ['concept', 'cloud', 'aws', 'fireship'],
+  },
+  {
+    title: 'Top 50+ AWS Services Explained in 10 Minutes',
+    url: 'https://www.youtube.com/watch?v=JIbIYCM48to',
+    description:
+      'Fireship — tour por 50+ serviços AWS em 12min: compute (EC2, Lambda), storage (S3, EBS), DBs (RDS, DynamoDB), networking (VPC, Route 53) e mais.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 12,
+    topicSlugs: ['cloud'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Fireship',
+    tags: ['concept', 'cloud', 'aws', 'services', 'overview', 'fireship'],
+  },
+  {
+    title: 'But What Is Cloud Native Really All About?',
+    url: 'https://www.youtube.com/watch?v=p-88GN1WVs8',
+    description:
+      'ByteByteGo — Cloud Native como prática: containers + microservices + orquestração + DevOps + observabilidade. Não é só rodar na cloud.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 8,
+    topicSlugs: ['cloud'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — ByteByteGo',
+    tags: ['concept', 'cloud', 'cloud-native', 'microservices', 'devops', 'bytebytego'],
+  },
+  {
+    title: 'Serverless Computing in 100 Seconds',
+    url: 'https://www.youtube.com/watch?v=W_VV2Fx32_Y',
+    description:
+      'Fireship — serverless explicado: FaaS (Lambda, Cloud Functions), pay-per-execution, cold start, quando vale e quando não.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 17,
+    topicSlugs: ['cloud'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Fireship',
+    tags: ['concept', 'cloud', 'serverless', 'faas', 'lambda', 'fireship'],
+  },
+  {
+    title: 'Amazon Prime Video Ditches AWS Serverless, Saves 90%',
+    url: 'https://www.youtube.com/watch?v=JTp0TY_2hXM',
+    description:
+      'ByteByteGo — case real Prime Video: por que migraram de serverless distribuído pra monolith, custos de orquestração, lições sobre escolha de arquitetura.',
+    format: 'VIDEO',
+    difficulty: 'HARD',
+    estimatedMinutes: 5,
+    topicSlugs: ['cloud', 'scalability'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — ByteByteGo',
+    tags: ['case-study', 'cloud', 'serverless', 'monolith', 'prime-video', 'bytebytego'],
+  },
+
+  // ---------------------------------------------------------------------------
+  // security (7 items) — 2026-04-26
+  // ---------------------------------------------------------------------------
+  {
+    title: 'O MÍNIMO que um dev precisa saber sobre segurança',
+    url: 'https://www.youtube.com/watch?v=aGVN6aHKkE0',
+    description:
+      'Augusto Galego — entry BR de segurança em 18min: ataques comuns (SQL injection, XSS, CSRF), princípios básicos pra dev não-especialista.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 18,
+    topicSlugs: ['security'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Augusto Galego',
+    tags: ['concept', 'security', 'fundamentals', 'sql-injection', 'xss', 'csrf', 'galego'],
+  },
+  {
+    title: 'Session vs Token Authentication in 100 Seconds',
+    url: 'https://www.youtube.com/watch?v=UBUNrFtufWo',
+    description:
+      'Fireship — session vs token em 100s: stateful (server lembra) vs stateless (cliente carrega), trade-offs de revogação e escala.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 3,
+    topicSlugs: ['security'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Fireship',
+    tags: ['concept', 'security', 'session', 'token', 'authentication', 'fireship'],
+  },
+  {
+    title: '7 Cryptography Concepts EVERY Developer Should Know',
+    url: 'https://www.youtube.com/watch?v=NuyzuNBFWxQ',
+    description:
+      'Fireship — 7 conceitos de criptografia: hashing, salting, symmetric/asymmetric encryption, signatures, MAC, key exchange.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 12,
+    topicSlugs: ['security'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Fireship',
+    tags: ['concept', 'security', 'cryptography', 'hashing', 'encryption', 'fireship'],
+  },
+  {
+    title: 'OAuth 2 Explained In Simple Terms',
+    url: 'https://www.youtube.com/watch?v=ZV5yTm4pT8g',
+    description:
+      'ByteByteGo — OAuth 2 sem jargão: roles (resource owner, client, auth server, resource server), flows authorization code e client credentials.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 5,
+    topicSlugs: ['security'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — ByteByteGo',
+    tags: ['concept', 'security', 'oauth', 'oauth2', 'authorization', 'bytebytego'],
+  },
+  {
+    title: 'JSON Web Tokens (JWTs) Explained',
+    url: 'https://www.youtube.com/watch?v=fCP2FttGkt8',
+    description:
+      'The Coding Gopher — JWT em 11min: estrutura (header.payload.signature), HMAC vs RSA, verificação no servidor, riscos comuns.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 11,
+    topicSlugs: ['security'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — The Coding Gopher',
+    tags: ['concept', 'security', 'jwt', 'token', 'hmac', 'coding-gopher'],
+  },
+  {
+    title: 'Five Password Authentications From Least to Most Secure (Explained with NodeJS & Postgres)',
+    url: 'https://www.youtube.com/watch?v=_t8EPImx9LI',
+    description:
+      'Hussein Nasser — 5 níveis de armazenamento de senha: plaintext, MD5, salted hash, bcrypt, argon2. Por que cada nível ainda quebra ou resiste.',
+    format: 'VIDEO',
+    difficulty: 'HARD',
+    estimatedMinutes: 25,
+    topicSlugs: ['security'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Hussein Nasser',
+    tags: ['concept', 'security', 'password', 'hashing', 'bcrypt', 'argon2', 'hussein-nasser'],
+  },
+  {
+    title: 'Securing Backend Applications (OWASP recommendations)',
+    url: 'https://www.youtube.com/watch?v=Vc6kWFivQtw',
+    description:
+      'Hussein Nasser — OWASP top 10 para backend em 28min: injection, broken auth, exposed data, XXE, broken access, misconfig, XSS, deserialization, components, logging.',
+    format: 'VIDEO',
+    difficulty: 'HARD',
+    estimatedMinutes: 28,
+    topicSlugs: ['security'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Hussein Nasser',
+    tags: ['concept', 'security', 'owasp', 'backend', 'injection', 'hussein-nasser'],
+  },
+
+  // ---------------------------------------------------------------------------
+  // reliability (3 items) — 2026-04-26
+  // ---------------------------------------------------------------------------
+  {
+    title: '8 Most Important Tips for Designing Fault-Tolerant System',
+    url: 'https://www.youtube.com/watch?v=3Lis4w4_bBc',
+    description:
+      'ByteByteGo — 8 dicas práticas pra fault tolerance: redundância, failover, circuit breaker, retries com backoff, timeouts, graceful degradation.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 6,
+    topicSlugs: ['reliability'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — ByteByteGo',
+    tags: ['concept', 'reliability', 'fault-tolerance', 'circuit-breaker', 'retry', 'bytebytego'],
+  },
+  {
+    title: 'Top 7 Most-Used Distributed System Patterns',
+    url: 'https://www.youtube.com/watch?v=nH4qjmP2KEE',
+    description:
+      'ByteByteGo — 7 padrões clássicos de sistemas distribuídos: leader/follower, consensus (Paxos/Raft), heartbeat, sharding, write-ahead log, gossip.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 7,
+    topicSlugs: ['reliability', 'cap-consistency'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — ByteByteGo',
+    tags: ['concept', 'reliability', 'distributed-systems', 'consensus', 'paxos', 'raft', 'bytebytego'],
+  },
+  {
+    title: 'Fail-over and High-Availability (Explained by Example)',
+    url: 'https://www.youtube.com/watch?v=Zgy1miPsTNs',
+    description:
+      'Hussein Nasser — failover e alta disponibilidade com exemplo prático: active-passive vs active-active, health checks, split-brain, RTO vs RPO.',
+    format: 'VIDEO',
+    difficulty: 'HARD',
+    estimatedMinutes: 20,
+    topicSlugs: ['reliability'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Hussein Nasser',
+    tags: ['concept', 'reliability', 'failover', 'high-availability', 'split-brain', 'hussein-nasser'],
+  },
+
+  // ---------------------------------------------------------------------------
+  // pubsub (3 items) — 2026-04-26
+  // ---------------------------------------------------------------------------
+  {
+    title: 'Top 5 Most Used Architecture Patterns',
+    url: 'https://www.youtube.com/watch?v=f6zXyq4VPP8',
+    description:
+      'ByteByteGo — 5 padrões arquiteturais clássicos: layered, event-driven (pub/sub), microservices, microkernel, space-based. Quando aplicar cada um.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 6,
+    topicSlugs: ['pubsub', 'design-patterns'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — ByteByteGo',
+    tags: ['concept', 'pubsub', 'architecture-patterns', 'overview', 'event-driven', 'bytebytego'],
+  },
+  {
+    title: 'Publish-Subscribe Architecture (Explained by Example)',
+    url: 'https://www.youtube.com/watch?v=O1PgqUqZKTA',
+    description:
+      'Hussein Nasser — pub/sub explicado com exemplo prático: producer/topic/subscriber, desacoplamento, fan-out, casos de uso reais. 30min.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 30,
+    topicSlugs: ['pubsub'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Hussein Nasser',
+    tags: ['concept', 'pubsub', 'publish-subscribe', 'event-driven', 'fan-out', 'hussein-nasser'],
+  },
+  {
+    title: 'Publish-Subscribe Pattern vs Message Queues vs Request Response (Detailed Discussion with Examples)',
+    url: 'https://www.youtube.com/watch?v=DXTHb9TqJOs',
+    description:
+      'Hussein Nasser — comparativo profundo de 3 padrões de comunicação: pub/sub (fan-out), message queues (work distribution), request-response (síncrono). 44min.',
+    format: 'VIDEO',
+    difficulty: 'HARD',
+    estimatedMinutes: 44,
+    topicSlugs: ['pubsub', 'message-queues'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Hussein Nasser',
+    tags: ['tradeoffs', 'pubsub', 'message-queues', 'request-response', 'comparison', 'hussein-nasser'],
+  },
+
+  // ---------------------------------------------------------------------------
+  // cap-consistency (4 items) — 2026-04-26
+  // ---------------------------------------------------------------------------
+  {
+    title: 'CAP Theorem Simplified',
+    url: 'https://www.youtube.com/watch?v=BHqjEjzAicA',
+    description:
+      'ByteByteGo — CAP em 6min: consistência, disponibilidade, tolerância a partição, por que só dá pra escolher 2 quando partition acontece.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 6,
+    topicSlugs: ['cap-consistency'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — ByteByteGo',
+    tags: ['concept', 'cap-theorem', 'consistency', 'availability', 'partition-tolerance', 'bytebytego'],
+  },
+  {
+    title: 'ACID Properties in Databases With Examples',
+    url: 'https://www.youtube.com/watch?v=GAe5oB742dw',
+    description:
+      'ByteByteGo — ACID em 5min com exemplos: atomicity, consistency, isolation, durability. Por que cada propriedade importa.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 5,
+    topicSlugs: ['cap-consistency', 'databases'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — ByteByteGo',
+    tags: ['concept', 'acid', 'transactions', 'consistency', 'isolation', 'bytebytego'],
+  },
+  {
+    title: 'My thoughts on the CAP theorem',
+    url: 'https://www.youtube.com/watch?v=KmGy3sU6Xw8',
+    description:
+      'Hussein Nasser — perspectiva crítica sobre CAP em 18min: por que o teorema é mal interpretado, partition tolerance não é opcional na prática.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 18,
+    topicSlugs: ['cap-consistency'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Hussein Nasser',
+    tags: ['concept', 'cap-theorem', 'partition-tolerance', 'distributed', 'opinion', 'hussein-nasser'],
+  },
+  {
+    title: 'Relational Database ACID Transactions (Explained by Example)',
+    url: 'https://www.youtube.com/watch?v=pomxJOFVcQs',
+    description:
+      'Hussein Nasser — ACID transactions deep dive em 43min: cada propriedade implementada na prática (Postgres), isolation levels, locks, MVCC.',
+    format: 'VIDEO',
+    difficulty: 'HARD',
+    estimatedMinutes: 43,
+    topicSlugs: ['cap-consistency', 'databases'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Hussein Nasser',
+    tags: ['concept', 'acid', 'transactions', 'isolation-levels', 'mvcc', 'postgres', 'hussein-nasser'],
+  },
+
+  // ---------------------------------------------------------------------------
+  // recursion (6 items) — 2026-04-27
+  // ---------------------------------------------------------------------------
+  {
+    title: 'Recursion basics — using factorial',
+    url: 'https://www.youtube.com/watch?v=_OmRGjbyzno',
+    description:
+      'mycodeschool — recursion do zero com factorial: base case, chamada recursiva, stack frames empilhados.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 9,
+    topicSlugs: ['recursion'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — mycodeschool',
+    tags: ['concept', 'recursion', 'factorial', 'base-case', 'stack-frames'],
+  },
+  {
+    title: 'Mentiram pra você sobre recursão...',
+    url: 'https://www.youtube.com/watch?v=5Zmc6f420rg',
+    description:
+      'Augusto Galego — perspectiva BR mais ampla sobre recursão em 24min: quando vale, quando não, por que iteração às vezes ganha.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 24,
+    topicSlugs: ['recursion'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — Augusto Galego',
+    tags: ['concept', 'recursion', 'iteration', 'tradeoffs', 'galego'],
+  },
+  {
+    title: 'Time and space complexity analysis of recursive programs — using factorial',
+    url: 'https://www.youtube.com/watch?v=ncpTxqK35PI',
+    description:
+      'mycodeschool — análise de complexidade de recursão: stack depth, ocupação de memória pelas chamadas, custo extra vs iteração.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 8,
+    topicSlugs: ['recursion'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — mycodeschool',
+    tags: ['concept', 'recursion', 'complexity', 'stack-depth', 'memory'],
+  },
+  {
+    title: 'The Backtracking Blueprint — The Legendary 3 Keys to Backtracking Algorithms',
+    url: 'https://www.youtube.com/watch?v=Zq4upTEaQyM',
+    description:
+      'Back to Back SWE — backtracking como paradigma: 3 perguntas-chave (escolha, restrições, fim) com template aplicável a qualquer problema.',
+    format: 'VIDEO',
+    difficulty: 'HARD',
+    estimatedMinutes: 14,
+    topicSlugs: ['recursion'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — Back To Back SWE',
+    tags: ['concept', 'recursion', 'backtracking', 'paradigm', 'template'],
+  },
+  {
+    title: 'The N Queens Problem using Backtracking/Recursion — Explained',
+    url: 'https://www.youtube.com/watch?v=wGbuCyNpxIg',
+    description:
+      'Back to Back SWE — N Queens: como backtracking explora o tabuleiro coluna a coluna podando posições inválidas.',
+    format: 'VIDEO',
+    difficulty: 'HARD',
+    estimatedMinutes: 14,
+    topicSlugs: ['recursion'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — Back To Back SWE',
+    tags: ['concept', 'recursion', 'backtracking', 'n-queens', 'application'],
+  },
+  {
+    title: 'Grokking Algorithms — Recursion (chapter 3)',
+    url: 'https://github.com/egonSchiele/grokking_algorithms',
+    description:
+      'Capítulo 3 do Grokking Algorithms (Bhargava, Manning). Recursion: base case, recursive case, stack das chamadas, exemplos visuais. Livro pago — ver biblioteca da Inteli ou Manning. O GitHub tem só o código de apoio, não o PDF.',
+    format: 'BOOK',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 25,
+    topicSlugs: ['recursion'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'Book — Grokking Algorithms',
+    tags: ['concept', 'book', 'grokking', 'recursion'],
   },
 ];
 
