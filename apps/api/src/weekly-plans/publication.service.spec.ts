@@ -14,10 +14,11 @@ describe('allocatedMinutes', () => {
     expect(allocatedMinutes(45)).toBe(90); // 2× = 90 → already on slot
   });
 
-  it('enforces a 30-minute minimum for very short items', () => {
-    expect(allocatedMinutes(5)).toBe(30);
-    expect(allocatedMinutes(1)).toBe(30);
-    expect(allocatedMinutes(0)).toBe(30);
+  it('enforces a 15-minute minimum for very short items', () => {
+    expect(allocatedMinutes(5)).toBe(15); // 2× = 10 → ↑15 = 15
+    expect(allocatedMinutes(7)).toBe(15); // 2× = 14 → ↑15 = 15
+    expect(allocatedMinutes(1)).toBe(15);
+    expect(allocatedMinutes(0)).toBe(15);
   });
 });
 

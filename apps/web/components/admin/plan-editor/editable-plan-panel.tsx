@@ -1,6 +1,7 @@
 'use client';
 import { useMemo, useState } from 'react';
 import { AlertCircle, Plus } from 'lucide-react';
+import { sumAllocatedMinutes } from '@ics-select/shared';
 import { BudgetBadge } from './budget-badge';
 import { ItemCard } from './item-card';
 import { LibraryPickerModal } from './library-picker-modal';
@@ -62,7 +63,13 @@ export function EditablePlanPanel({
   const [publishOpen, setPublishOpen] = useState(false);
   const isPublished = plan.status === 'PUBLISHED';
 
+  // Use allocated minutes (2× padding, rounded to 15) so the budget badge
+  // matches what the scheduler will actually try to fit on the Calendar.
   const plannedMinutes = useMemo(
+    () => sumAllocatedMinutes(plan.items.map((i) => ({ estimatedMinutes: i.libraryItem.estimatedMinutes }))),
+    [plan.items],
+  );
+  const rawMinutes = useMemo(
     () => plan.items.reduce((s, i) => s + i.libraryItem.estimatedMinutes, 0),
     [plan.items],
   );
@@ -96,7 +103,8 @@ export function EditablePlanPanel({
         </h2>
         <div className="flex items-center gap-3 flex-wrap">
           <span className="font-mono text-xs text-ink-mute">
-            {plan.items.length} items · {plannedMinutes} min
+            {plan.items.length} items · {plannedMinutes} min{' '}
+            <span className="text-ink-faint">({rawMinutes} raw)</span>
           </span>
           <BudgetBadge plannedMinutes={plannedMinutes} budgetMinutes={budgetMinutes} />
         </div>

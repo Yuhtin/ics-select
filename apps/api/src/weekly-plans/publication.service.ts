@@ -1,9 +1,12 @@
 import { Injectable, Logger, NotFoundException, ConflictException } from '@nestjs/common';
+import { allocatedMinutes } from '@ics-select/shared';
 import { PrismaService } from '../common/prisma/prisma.service.js';
 import { SchedulerService, type SchedulerInput } from '../scheduler/scheduler.service.js';
 import { GoogleCalendarService } from '../google-calendar/google-calendar.service.js';
 import { WhatsappService } from '../whatsapp/whatsapp.service.js';
 import { WhatsappTemplateService } from '../whatsapp/whatsapp-template.service.js';
+
+export { allocatedMinutes };
 
 export class PlanOverflowError extends ConflictException {
   constructor(public readonly overflow: Array<{ itemId: string; minutesRequired: number }>) {
@@ -33,26 +36,9 @@ type SchedulerAvailability = {
   timezone: string;
 };
 
-/**
- * Convert a library item's raw `estimatedMinutes` (the intrinsic length of
- * the material) into the calendar block we actually reserve for it. Two
- * adjustments stack:
- *
- *   1. 2× padding — people pause videos, take notes, re-watch confusing parts.
- *   2. Round UP to the nearest 15 minutes, minimum 30. Study slots feel
- *      cleaner in quarter-hour increments; sub-30-min blocks are too granular.
- *
- * Examples:
- *   13 min  → 2× = 26 → round ↑ 15 = 30
- *   25 min  → 2× = 50 → round ↑ 15 = 60
- *   17 min  → 2× = 34 → round ↑ 15 = 45
- *   5 min   → 2× = 10 → min 30    = 30
- */
-export function allocatedMinutes(estimated: number): number {
-  const padded = Math.max(0, estimated) * 2;
-  const rounded = Math.ceil(padded / 15) * 15;
-  return Math.max(30, rounded);
-}
+// allocatedMinutes lives in @ics-select/shared so the web budget badge and
+// the api scheduler agree on the per-item calendar block size. Re-exported
+// above for downstream importers that already pull from this file.
 
 async function loadSchedulerAvailability(
   prisma: { memberAvailability: any; availabilitySlot: any },
@@ -561,9 +547,58 @@ export class PublicationService {
       i.calendarEvents.map((e) => e.googleEventId),
     );
 
-    // Mutate the plan's items in a single transaction so a mid-flight failure
-    // doesn't leave the plan in a torn state. The negative-bump trick avoids
-    // collisions with @@unique([weeklyPlanId, order]) when reordering.
+    // Pre-flight scheduler check BEFORE mutating the DB. If the added items
+    // can't fit and force=false, throw PlanOverflowError now — the plan stays
+    // unchanged so the admin can adjust without orphaning items in the DB.
+    // We use the libraryItemId as the scheduler's item key here (the
+    // WeeklyPlanItem rows don't exist yet) and re-key by libraryItemId after
+    // the DB diff to find the real item ids for createEvent.
+    const force = options.force ?? false;
+    let plannedSessions: Array<{
+      libraryItemId: string;
+      scheduledAt: Date;
+      durationMinutes: number;
+    }> = [];
+    let plannedOverflow: Array<{ itemId: string; minutesRequired: number }> = [];
+
+    if (addedRows.length > 0) {
+      const addedLibraryItems = await this.prisma.libraryItem.findMany({
+        where: { id: { in: addedRows.map((a) => a.libraryItemId) } },
+        select: { id: true, estimatedMinutes: true, title: true, url: true },
+      });
+      const libById = new Map(addedLibraryItems.map((l) => [l.id, l]));
+
+      const busyBlocks = await this.calendar
+        .getFreeBusy(plan.userId, now, plan.weekEnd)
+        .catch(() => [] as Array<{ start: Date; end: Date }>);
+
+      const result = this.scheduler.plan({
+        weekStart: plan.weekStart,
+        availability: await loadSchedulerAvailability(this.prisma, plan.userId),
+        busyBlocks,
+        items: addedRows.map((a) => ({
+          id: a.libraryItemId,
+          estimatedMinutes: allocatedMinutes(libById.get(a.libraryItemId)?.estimatedMinutes ?? 0),
+          order: a.order,
+        })),
+        now,
+      });
+
+      if (result.overflow.length > 0 && !force) {
+        throw new PlanOverflowError(result.overflow);
+      }
+
+      plannedSessions = result.sessions.map((s) => ({
+        libraryItemId: s.itemId, // we used libraryItemId as the scheduler key
+        scheduledAt: s.scheduledAt,
+        durationMinutes: s.durationMinutes,
+      }));
+      plannedOverflow = result.overflow;
+    }
+
+    // Pre-flight passed. Now commit the DB diff in a single transaction. The
+    // negative-bump trick avoids collisions with @@unique([weeklyPlanId, order])
+    // when reordering.
     await this.prisma.$transaction(async (tx) => {
       // 1. Move every existing order into negative space so subsequent updates
       //    don't transiently collide with the unique constraint.
@@ -625,20 +660,13 @@ export class PublicationService {
       ),
     );
 
-    // Schedule Calendar events for the newly added items. Pull the fresh DB
-    // ids — addedRows only had libraryItemIds.
-    let scheduling = {
-      sessionsCreated: 0,
-      sessionsFailed: 0,
-      overflow: [] as Array<{ itemId: string; minutesRequired: number }>,
-    };
-    if (addedRows.length > 0) {
-      scheduling = await this.scheduleAddedItems(planId, {
-        addedLibraryItemIds: addedRows.map((a) => a.libraryItemId),
-        force: options.force ?? false,
-        now,
-      });
-    }
+    // Apply the pre-computed scheduler placements to Calendar + persist
+    // scheduledAt/scheduledMinutes on the freshly-created items.
+    const scheduling = await this.applyAddedItemPlacements(plan, {
+      plannedSessions,
+      plannedOverflow,
+      addedLibraryItemIds: addedRows.map((a) => a.libraryItemId),
+    });
 
     return {
       ...scheduling,
@@ -648,56 +676,66 @@ export class PublicationService {
   }
 
   /**
-   * Schedule Calendar events for items just added to a PUBLISHED plan. Treats
-   * the user's whole Calendar (via getFreeBusy) as busy — existing in-plan
-   * events show up there too, so the scheduler avoids double-booking. Throws
-   * PlanOverflowError when items don't fit and `force` is false.
+   * Apply pre-computed scheduler placements to Calendar + persist
+   * scheduledAt/scheduledMinutes on the freshly-created items. Called after
+   * editPublished's DB diff commits — the scheduler ran on libraryItemId keys
+   * before the items had real ids, so we re-key by libraryItemId here.
    */
-  private async scheduleAddedItems(
-    planId: string,
-    options: { addedLibraryItemIds: string[]; force: boolean; now: Date },
+  private async applyAddedItemPlacements(
+    plan: { id: string; userId: string },
+    input: {
+      plannedSessions: Array<{ libraryItemId: string; scheduledAt: Date; durationMinutes: number }>;
+      plannedOverflow: Array<{ itemId: string; minutesRequired: number }>;
+      addedLibraryItemIds: string[];
+    },
   ): Promise<{
     sessionsCreated: number;
     sessionsFailed: number;
     overflow: Array<{ itemId: string; minutesRequired: number }>;
   }> {
-    const plan = await this.prisma.weeklyPlan.findUnique({
-      where: { id: planId },
-      include: { items: { include: { libraryItem: true } } },
-    });
-    if (!plan) throw new NotFoundException('plan not found');
-
-    const addedItems = plan.items.filter((i) =>
-      options.addedLibraryItemIds.includes(i.libraryItemId),
-    );
-    if (addedItems.length === 0) {
+    if (input.addedLibraryItemIds.length === 0) {
       return { sessionsCreated: 0, sessionsFailed: 0, overflow: [] };
     }
 
-    const busyBlocks = await this.calendar
-      .getFreeBusy(plan.userId, options.now, plan.weekEnd)
-      .catch(() => [] as Array<{ start: Date; end: Date }>);
-
-    const result = this.scheduler.plan({
-      weekStart: plan.weekStart,
-      availability: await loadSchedulerAvailability(this.prisma, plan.userId),
-      busyBlocks,
-      items: addedItems.map((i) => ({
-        id: i.id,
-        estimatedMinutes: allocatedMinutes(i.libraryItem.estimatedMinutes),
-        order: i.order,
-      })),
-      now: options.now,
+    // Re-fetch the freshly-created items to get their DB ids.
+    const newItems = await this.prisma.weeklyPlanItem.findMany({
+      where: {
+        weeklyPlanId: plan.id,
+        libraryItemId: { in: input.addedLibraryItemIds },
+      },
+      include: { libraryItem: true },
     });
+    const itemByLibId = new Map(newItems.map((i) => [i.libraryItemId, i]));
 
-    if (result.overflow.length > 0 && !options.force) {
-      throw new PlanOverflowError(result.overflow);
+    if (input.plannedSessions.length === 0) {
+      // All overflow — set scheduledAt/Minutes null and surface overflow.
+      const ids = newItems.map((i) => i.id);
+      if (ids.length > 0) {
+        await this.prisma.weeklyPlanItem.updateMany({
+          where: { id: { in: ids } },
+          data: { scheduledAt: null, scheduledMinutes: null },
+        });
+      }
+      // Re-key overflow itemIds (which were libraryItemIds) onto real item ids
+      // so the response matches the OverflowModal's expectations.
+      return {
+        sessionsCreated: 0,
+        sessionsFailed: 0,
+        overflow: input.plannedOverflow.map((o) => ({
+          itemId: itemByLibId.get(o.itemId)?.id ?? o.itemId,
+          minutesRequired: o.minutesRequired,
+        })),
+      };
     }
 
-    const itemById = new Map(addedItems.map((i) => [i.id, i]));
+
+    // Create Calendar events for placed sessions. The pre-flight gave us
+    // libraryItemId-keyed sessions; resolve them to the freshly-created item
+    // ids via itemByLibId.
     const createResults = await Promise.all(
-      result.sessions.map(async (session) => {
-        const item = itemById.get(session.itemId)!;
+      input.plannedSessions.map(async (session) => {
+        const item = itemByLibId.get(session.libraryItemId);
+        if (!item) return { ok: false as const };
         const eventEnd = new Date(
           session.scheduledAt.getTime() + session.durationMinutes * 60 * 1000,
         );
@@ -732,12 +770,14 @@ export class PublicationService {
     // Persist scheduledAt/scheduledMinutes per item. Items in overflow get
     // null (no slot found).
     const byItem = new Map<string, { startAt: Date; minutes: number }[]>();
-    for (const session of result.sessions) {
-      const list = byItem.get(session.itemId) ?? [];
+    for (const session of input.plannedSessions) {
+      const item = itemByLibId.get(session.libraryItemId);
+      if (!item) continue;
+      const list = byItem.get(item.id) ?? [];
       list.push({ startAt: session.scheduledAt, minutes: session.durationMinutes });
-      byItem.set(session.itemId, list);
+      byItem.set(item.id, list);
     }
-    const overflowItemIds = addedItems.map((i) => i.id).filter((id) => !byItem.has(id));
+    const overflowItemIds = newItems.map((i) => i.id).filter((id) => !byItem.has(id));
 
     const placedUpdates = Array.from(byItem).map(([itemId, chunks]) => {
       chunks.sort((a, b) => a.startAt.getTime() - b.startAt.getTime());
@@ -765,9 +805,12 @@ export class PublicationService {
     }
 
     return {
-      sessionsCreated: result.sessions.length - sessionsFailed,
+      sessionsCreated: input.plannedSessions.length - sessionsFailed,
       sessionsFailed,
-      overflow: result.overflow,
+      overflow: input.plannedOverflow.map((o) => ({
+        itemId: itemByLibId.get(o.itemId)?.id ?? o.itemId,
+        minutesRequired: o.minutesRequired,
+      })),
     };
   }
 }
