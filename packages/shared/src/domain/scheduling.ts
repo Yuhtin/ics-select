@@ -2,25 +2,27 @@
  * Convert a library item's raw `estimatedMinutes` (the intrinsic length of
  * the material) into the calendar block actually reserved for it.
  *
- * Round UP to the nearest 15-minute slot, minimum 15. No multiplicative
- * padding — earlier 2× rule blew short items into 30-min slots when a 2-min
- * Fireship video really only needs 15 min on the calendar.
+ * Round UP to the nearest 15-minute slot with 3-min tolerance, minimum 15.
+ * The tolerance lets items that just barely cross a slot boundary (16-18 min
+ * → still 15 min) sit comfortably in the smaller slot — in practice the
+ * member finishes within the slot or extends a touch.
  *
  * Used by the api scheduler AND the web budget badge so both surfaces show
  * the same number.
  *
  * Examples:
  *   2 min  → 15
- *   11 min → 15
  *   14 min → 15
- *   16 min → 30
- *   25 min → 30
- *   35 min → 45
+ *   18 min → 15  (3-min tolerance over slot boundary)
+ *   19 min → 30
+ *   30 min → 30
+ *   33 min → 30  (3-min tolerance)
+ *   34 min → 45
  *   60 min → 60
  */
 export function allocatedMinutes(estimated: number): number {
   const raw = Math.max(0, estimated);
-  const rounded = Math.ceil(raw / 15) * 15;
+  const rounded = Math.ceil((raw - 3) / 15) * 15;
   return Math.max(15, rounded);
 }
 

@@ -6,13 +6,18 @@ import {
 } from './publication.service';
 
 describe('allocatedMinutes', () => {
-  it('rounds up to the next 15-min slot, no multiplicative padding', () => {
+  it('rounds up to the next 15-min slot with 3-min tolerance', () => {
     expect(allocatedMinutes(13)).toBe(15);
+    expect(allocatedMinutes(17)).toBe(15); // tolerance: 17 fits in 15-slot
+    expect(allocatedMinutes(18)).toBe(15); // edge of tolerance
+    expect(allocatedMinutes(19)).toBe(30); // outside tolerance → 30
     expect(allocatedMinutes(25)).toBe(30);
-    expect(allocatedMinutes(17)).toBe(30);
     expect(allocatedMinutes(30)).toBe(30);
+    expect(allocatedMinutes(33)).toBe(30); // tolerance: 33 fits in 30-slot
+    expect(allocatedMinutes(34)).toBe(45);
     expect(allocatedMinutes(45)).toBe(45);
-    expect(allocatedMinutes(46)).toBe(60);
+    expect(allocatedMinutes(48)).toBe(45); // tolerance
+    expect(allocatedMinutes(49)).toBe(60);
   });
 
   it('enforces a 15-minute minimum for very short items', () => {
