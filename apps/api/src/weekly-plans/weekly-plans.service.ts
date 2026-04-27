@@ -2,7 +2,7 @@ import { ConflictException, ForbiddenException, Injectable, Logger, NotFoundExce
 import { PrismaService } from '../common/prisma/prisma.service.js';
 import { resolveActiveMembership } from '../common/cycle/active-cycle.js';
 import { GoogleCalendarService } from '../google-calendar/google-calendar.service.js';
-import { type ItemOutcome, isPositiveOutcome } from '@ics-select/shared';
+import { type ItemOutcome, allocatedMinutes, isPositiveOutcome } from '@ics-select/shared';
 
 type CreateInput = {
   userId: string;
@@ -341,6 +341,8 @@ export class WeeklyPlansService {
       throw new ForbiddenException("Forbidden: cannot change someone else's item");
     }
 
+    const now = new Date();
+
     if (input.outcome === 'SKIPPED') {
       const slugs = item.libraryItem.topics.map((t) => t.topic.slug);
       if (!slugs.includes('foundations')) {
@@ -360,6 +362,55 @@ export class WeeklyPlansService {
           where: { weeklyPlanItemId: item.id },
         });
       }
+    } else if (
+      input.outcome !== 'PENDING' &&
+      item.scheduledAt &&
+      item.scheduledAt.getTime() > now.getTime() &&
+      item.calendarEvents.length > 0
+    ) {
+      // Member completed early. Move the Calendar block to "now" so the future
+      // slot is freed up — the admin can fit more work in the freed window,
+      // and the member's calendar reflects when they actually did the study.
+      // Also corrects drift if the member moved the event manually in Google
+      // (we don't watch Calendar for changes, so DB scheduledAt can lag).
+      const totalMinutes =
+        item.scheduledMinutes ?? allocatedMinutes(item.libraryItem.estimatedMinutes);
+      const SLOT_MS = 15 * 60 * 1000;
+      const endMs = Math.ceil(now.getTime() / SLOT_MS) * SLOT_MS;
+      const startMs = endMs - totalMinutes * 60 * 1000;
+      const newStart = new Date(startMs);
+      const newEnd = new Date(endMs);
+
+      // Collapse multi-chunk items into one event at now-slot — keeping the
+      // first event, dropping the rest. Most items are single-chunk anyway.
+      const [first, ...rest] = item.calendarEvents;
+      if (first) {
+        await this.calendar
+          .rescheduleEvent(userId, first.googleEventId, newStart, newEnd)
+          .catch((err) => {
+            this.logger.warn(
+              `calendar.rescheduleEvent failed on outcome=${input.outcome} · user=${userId} item=${item.id} event=${first.googleEventId} · ${String(err)}`,
+            );
+          });
+      }
+      if (rest.length > 0) {
+        await Promise.all(
+          rest.map((ev) =>
+            this.calendar.deleteEvent(userId, ev.googleEventId).catch((err) => {
+              this.logger.warn(
+                `calendar.deleteEvent failed on outcome collapse · user=${userId} item=${item.id} event=${ev.googleEventId} · ${String(err)}`,
+              );
+            }),
+          ),
+        );
+        await this.prisma.weeklyPlanItemCalendarEvent.deleteMany({
+          where: { id: { in: rest.map((r) => r.id) } },
+        });
+      }
+      await this.prisma.weeklyPlanItem.update({
+        where: { id: itemId },
+        data: { scheduledAt: newStart, scheduledMinutes: totalMinutes },
+      });
     }
 
     const completed = input.outcome !== 'PENDING';
