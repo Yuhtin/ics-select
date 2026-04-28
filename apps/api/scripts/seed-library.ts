@@ -63,8 +63,9 @@ const TOPICS: TopicSeed[] = [
   { slug: 'dp', label: 'Dynamic Programming', order: 9 },
   { slug: 'greedy', label: 'Greedy', order: 10 },
   { slug: 'bit-manipulation', label: 'Bit Manipulation', order: 11 },
-  { slug: 'math', label: 'Math', order: 12 },
+  { slug: 'math', label: 'Math (foundations for ML/DS)', order: 12 },
   { slug: 'hashmap', label: 'Hash Map', order: 13 },
+  { slug: 'data-science', label: 'Data Science & ML', order: 14 },
 
   // Fundamentos de Engenharia (order 20–27) — universais, tracks múltiplas
   { slug: 'databases', label: 'Databases', order: 20 },
@@ -4440,68 +4441,12 @@ const ITEMS: ItemSeed[] = [
   },
 
   // ---------------------------------------------------------------------------
-  // Math & Geometry — TEACHING (2026-04-28)
-  // 4 itens. Fireship dá um tour conceitual; os 3 walkthroughs do NeetCode/
-  // Galego pareiam com LCs do acervo (lc-50 fast exp, lc-54 spiral, lc-48
-  // rotate). Falta cobrir modular arithmetic e prime sieve — push pro futuro.
-  // ---------------------------------------------------------------------------
-  {
-    title: '10 weird algorithms every developer should know',
-    url: 'https://www.youtube.com/watch?v=SmyPTnlqhlk',
-    description:
-      'Fireship — tour por 10 algoritmos exóticos: Y combinator, gradient descent, quaternions, MapReduce, simulated annealing. Não vira solução de LC, mas amplia o vocabulário matemático.',
-    format: 'VIDEO',
-    difficulty: 'EASY',
-    estimatedMinutes: 10,
-    topicSlugs: ['math'],
-    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
-    source: 'YouTube — Fireship',
-    tags: ['concept', 'algorithms', 'fireship'],
-  },
-  {
-    title: 'Pow(x, n) — Fast Exponentiation (LeetCode 50)',
-    url: 'https://www.youtube.com/watch?v=g9YQyYi4IQQ',
-    description:
-      'NeetCode — walkthrough do LC50. Fast exponentiation via divide-and-conquer: x^n = (x^(n/2))^2 quando n par, ou x * (x^(n/2))^2 quando ímpar. O(log n). Pareia com lc-50.',
-    format: 'VIDEO',
-    difficulty: 'MEDIUM',
-    estimatedMinutes: 13,
-    topicSlugs: ['math'],
-    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
-    source: 'YouTube — NeetCode',
-    tags: ['concept', 'fast-exponentiation', 'divide-and-conquer', 'leetcode-walkthrough', 'lc-50'],
-  },
-  {
-    title: 'Spiral Matrix — LeetCode 54',
-    url: 'https://www.youtube.com/watch?v=BJnMZNwUk1M',
-    description:
-      'NeetCode — walkthrough do LC54. Boundary traversal com 4 ponteiros (top/bottom/left/right) que encolhem a cada lap. Pareia com lc-54.',
-    format: 'VIDEO',
-    difficulty: 'MEDIUM',
-    estimatedMinutes: 17,
-    topicSlugs: ['math'],
-    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
-    source: 'YouTube — NeetCode',
-    tags: ['concept', 'matrix', 'boundary-traversal', 'leetcode-walkthrough', 'lc-54'],
-  },
-  {
-    title: 'LeetCode 48 — Girar Matrix (Explicado)',
-    url: 'https://www.youtube.com/watch?v=BF7tIeVoLSU',
-    description:
-      'Augusto Galego — walkthrough do LC48 em português. Rotacionar matriz 90° in-place: transpose seguido de reverse de cada linha. Pareia com lc-48.',
-    format: 'VIDEO',
-    difficulty: 'MEDIUM',
-    estimatedMinutes: 14,
-    topicSlugs: ['math'],
-    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
-    source: 'YouTube — Augusto Galego',
-    tags: ['concept', 'matrix', 'rotation', 'leetcode-walkthrough', 'lc-48'],
-  },
-
-  // ---------------------------------------------------------------------------
-  // PROBLEMs — Math & Geometry (NeetCode 150) — 2026-04-28
+  // PROBLEMs — NeetCode 150 "Math & Geometry" pattern — 2026-04-28
   // 8 itens · 2 Easy + 6 Medium
-  // primary=math, tracks=[BIG_TECH, COMPETITIVE_PROGRAMMING]
+  // primary=array. NeetCode chamou de "Math & Geometry" mas a maioria são
+  // matrix/digit tricks — não math conceitual. Retagueado em 2026-04-28: o
+  // topic `math` agora é reservado pra foundations matemáticas pra ML/DS
+  // (linear algebra, calc, stats), e topic `data-science` pra ML como tema.
   // ---------------------------------------------------------------------------
   {
     title: 'LeetCode 202 — Happy Number',
@@ -4511,7 +4456,7 @@ const ITEMS: ItemSeed[] = [
     format: 'PROBLEM',
     difficulty: 'EASY',
     estimatedMinutes: 30,
-    topicSlugs: ['math'],
+    topicSlugs: ['array'],
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Math & Geometry',
     tags: ['practice', 'leetcode', 'lc-202', 'math'],
@@ -4524,7 +4469,7 @@ const ITEMS: ItemSeed[] = [
     format: 'PROBLEM',
     difficulty: 'EASY',
     estimatedMinutes: 30,
-    topicSlugs: ['math'],
+    topicSlugs: ['array'],
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Math & Geometry',
     tags: ['practice', 'leetcode', 'lc-66', 'math'],
@@ -4537,7 +4482,7 @@ const ITEMS: ItemSeed[] = [
     format: 'PROBLEM',
     difficulty: 'MEDIUM',
     estimatedMinutes: 60,
-    topicSlugs: ['math'],
+    topicSlugs: ['array'],
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Math & Geometry',
     tags: ['practice', 'leetcode', 'lc-2013', 'math'],
@@ -4550,7 +4495,7 @@ const ITEMS: ItemSeed[] = [
     format: 'PROBLEM',
     difficulty: 'MEDIUM',
     estimatedMinutes: 60,
-    topicSlugs: ['math'],
+    topicSlugs: ['array'],
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Math & Geometry',
     tags: ['practice', 'leetcode', 'lc-43', 'math'],
@@ -4563,7 +4508,7 @@ const ITEMS: ItemSeed[] = [
     format: 'PROBLEM',
     difficulty: 'MEDIUM',
     estimatedMinutes: 60,
-    topicSlugs: ['math'],
+    topicSlugs: ['array'],
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Math & Geometry',
     tags: ['practice', 'leetcode', 'lc-50', 'math'],
@@ -4576,7 +4521,7 @@ const ITEMS: ItemSeed[] = [
     format: 'PROBLEM',
     difficulty: 'MEDIUM',
     estimatedMinutes: 60,
-    topicSlugs: ['math'],
+    topicSlugs: ['array'],
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Math & Geometry',
     tags: ['practice', 'leetcode', 'lc-48', 'math'],
@@ -4589,7 +4534,7 @@ const ITEMS: ItemSeed[] = [
     format: 'PROBLEM',
     difficulty: 'MEDIUM',
     estimatedMinutes: 60,
-    topicSlugs: ['math'],
+    topicSlugs: ['array'],
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Math & Geometry',
     tags: ['practice', 'leetcode', 'lc-73', 'math'],
@@ -4602,7 +4547,7 @@ const ITEMS: ItemSeed[] = [
     format: 'PROBLEM',
     difficulty: 'MEDIUM',
     estimatedMinutes: 60,
-    topicSlugs: ['math'],
+    topicSlugs: ['array'],
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Math & Geometry',
     tags: ['practice', 'leetcode', 'lc-54', 'math'],
@@ -4774,6 +4719,349 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Bit Manipulation',
     tags: ['practice', 'leetcode', 'lc-371', 'bit-manipulation'],
+  },
+
+  // ===========================================================================
+  // math (foundations for ML/DS) — 2026-04-28
+  // 6 itens: 3Blue1Brown "Essence of Linear Algebra" — fundação universal
+  // pra quem vai mexer com ML/DS. CP não usa, fica fora.
+  // ===========================================================================
+  {
+    title: 'Vectors | Chapter 1, Essence of Linear Algebra',
+    url: 'https://www.youtube.com/watch?v=fNk_zzaMoSs',
+    description:
+      '3Blue1Brown — o que é um vetor sob 3 perspectivas (físico, programador, matemático). Animação clarifica por que a setinha da origem importa.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 10,
+    topicSlugs: ['math'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — 3Blue1Brown',
+    tags: ['concept', 'linear-algebra', 'vectors', '3blue1brown'],
+  },
+  {
+    title: 'Linear combinations, span, basis vectors | Chapter 2',
+    url: 'https://www.youtube.com/watch?v=k7RM-ot2NWY',
+    description:
+      '3Blue1Brown — combinação linear, span, base. Como qualquer vetor 2D vira combinação de 2 base vectors, e o que muda em 3D.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 10,
+    topicSlugs: ['math'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — 3Blue1Brown',
+    tags: ['concept', 'linear-algebra', 'span', 'basis', '3blue1brown'],
+  },
+  {
+    title: 'Linear transformations and matrices | Chapter 3',
+    url: 'https://www.youtube.com/watch?v=kYB8IZa5AuE',
+    description:
+      '3Blue1Brown — transformações lineares como movimento do espaço. A matriz só guarda onde os vetores base aterrissam.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 11,
+    topicSlugs: ['math'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — 3Blue1Brown',
+    tags: ['concept', 'linear-algebra', 'transformations', 'matrices', '3blue1brown'],
+  },
+  {
+    title: 'Matrix multiplication as composition | Chapter 4',
+    url: 'https://www.youtube.com/watch?v=XkY2DOUCWMU',
+    description:
+      '3Blue1Brown — multiplicação de matriz é composição de duas transformações. Por que A·B ≠ B·A: ordem importa, não comuta.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 11,
+    topicSlugs: ['math'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — 3Blue1Brown',
+    tags: ['concept', 'linear-algebra', 'matrix-multiplication', '3blue1brown'],
+  },
+  {
+    title: 'The determinant | Chapter 6',
+    url: 'https://www.youtube.com/watch?v=Ip3X9LOh2dk',
+    description:
+      '3Blue1Brown — determinante = fator de escala da área (2D) ou volume (3D) após a transformação. Negativo = orientação invertida.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 11,
+    topicSlugs: ['math'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — 3Blue1Brown',
+    tags: ['concept', 'linear-algebra', 'determinant', '3blue1brown'],
+  },
+  {
+    title: 'Eigenvectors and eigenvalues | Chapter 14',
+    url: 'https://www.youtube.com/watch?v=PFDu9oVAE-g',
+    description:
+      '3Blue1Brown — eigenvectors são as direções que a transformação só estica/comprime (sem rotacionar). Eigenvalue = quanto. Base de PCA, SVD, espectral.',
+    format: 'VIDEO',
+    difficulty: 'HARD',
+    estimatedMinutes: 18,
+    topicSlugs: ['math'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — 3Blue1Brown',
+    tags: ['concept', 'linear-algebra', 'eigenvectors', 'eigenvalues', '3blue1brown'],
+  },
+
+  // --- Calculus essentials (4 items) ---
+  {
+    title: 'The essence of calculus | Chapter 1',
+    url: 'https://www.youtube.com/watch?v=WUvTyaaNkzM',
+    description:
+      '3Blue1Brown — abertura da série Essence of Calculus. Inventa derivada e integral do zero a partir do problema de área de um círculo.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 18,
+    topicSlugs: ['math'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — 3Blue1Brown',
+    tags: ['concept', 'calculus', 'derivative', 'integral', '3blue1brown'],
+  },
+  {
+    title: 'The paradox of the derivative | Chapter 2',
+    url: 'https://www.youtube.com/watch?v=9vKqVkMQHKk',
+    description:
+      '3Blue1Brown — derivada como taxa instantânea de mudança. Resolve o paradoxo do "no exato instante" via limite.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 17,
+    topicSlugs: ['math'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — 3Blue1Brown',
+    tags: ['concept', 'calculus', 'derivative', '3blue1brown'],
+  },
+  {
+    title: 'Visualizing the chain rule and product rule | Chapter 4',
+    url: 'https://www.youtube.com/watch?v=YG15m2VwSjA',
+    description:
+      '3Blue1Brown — chain rule e product rule visualmente. Chain rule é o motor do backpropagation em redes neurais.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 16,
+    topicSlugs: ['math'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — 3Blue1Brown',
+    tags: ['concept', 'calculus', 'chain-rule', 'product-rule', '3blue1brown'],
+  },
+  {
+    title: 'Integration and the fundamental theorem of calculus | Chapter 8',
+    url: 'https://www.youtube.com/watch?v=rfG8ce4nNh0',
+    description:
+      '3Blue1Brown — integração como soma infinitesimal e o teorema fundamental que conecta derivada e integral.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 21,
+    topicSlugs: ['math'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — 3Blue1Brown',
+    tags: ['concept', 'calculus', 'integration', 'fundamental-theorem', '3blue1brown'],
+  },
+
+  // --- Probability + stats (3 items) ---
+  {
+    title: 'The Normal Distribution, Clearly Explained',
+    url: 'https://www.youtube.com/watch?v=rzFX5NWojp0',
+    description:
+      'StatQuest — distribuição normal: média, desvio padrão, regra 68/95/99,7%. Base estatística pra todo modelo paramétrico.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 6,
+    topicSlugs: ['math'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — StatQuest with Josh Starmer',
+    tags: ['concept', 'statistics', 'normal-distribution', 'statquest'],
+  },
+  {
+    title: 'p-values: What they are and how to interpret them',
+    url: 'https://www.youtube.com/watch?v=vemZtEM63GY',
+    description:
+      'StatQuest — p-values sem mistério. Hipótese nula, significância, por que p<0.05 não prova nada sozinho.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 12,
+    topicSlugs: ['math'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — StatQuest with Josh Starmer',
+    tags: ['concept', 'statistics', 'p-value', 'hypothesis-testing', 'statquest'],
+  },
+  {
+    title: 'Bayes theorem, the geometry of changing beliefs',
+    url: 'https://www.youtube.com/watch?v=HZGCoVF3YvM',
+    description:
+      '3Blue1Brown — Bayes via geometria de áreas (não fórmula). Como atualizar uma crença ao receber nova evidência.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 16,
+    topicSlugs: ['math'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — 3Blue1Brown',
+    tags: ['concept', 'probability', 'bayes-theorem', '3blue1brown'],
+  },
+
+  // ===========================================================================
+  // data-science (ML primary) — 2026-04-28
+  // 11 itens. Fireship abre vocabulário, StatQuest para modelos clássicos
+  // (regressão, árvores), 3Blue1Brown para neural nets visualizados, Karpathy
+  // para o coding hands-on (micrograd from scratch — 146min, scheduler chunka
+  // em ~3 sessões de 60min via [60, 60, 26]).
+  // ===========================================================================
+  {
+    title: 'Machine Learning Explained in 100 Seconds',
+    url: 'https://www.youtube.com/watch?v=PeMlggyqz0Y',
+    description:
+      'Fireship — ML em 100 segundos: training, features, modelo, inference. Vocabulário pra entrar no campo.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 3,
+    topicSlugs: ['data-science'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Fireship',
+    tags: ['concept', 'machine-learning', 'fireship'],
+  },
+  {
+    title: 'PyTorch in 100 Seconds',
+    url: 'https://www.youtube.com/watch?v=ORMx45xqWkA',
+    description:
+      'Fireship — PyTorch em 100 segundos. Tensores, autograd, modelos. Vocabulário básico do framework mais usado em ML em 2026.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 3,
+    topicSlugs: ['data-science'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Fireship',
+    tags: ['concept', 'pytorch', 'tensors', 'fireship'],
+  },
+  {
+    title: 'The Essential Main Ideas of Neural Networks',
+    url: 'https://www.youtube.com/watch?v=CqOfi41LfDw',
+    description:
+      'StatQuest — neural net por dentro: input/hidden/output layers, weights, bias, activation function. Animação acessível, sem matemática pesada.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 19,
+    topicSlugs: ['data-science'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — StatQuest with Josh Starmer',
+    tags: ['concept', 'neural-network', 'statquest'],
+  },
+  {
+    title: 'Linear Regression, Clearly Explained',
+    url: 'https://www.youtube.com/watch?v=7ArmBVF2dCs',
+    description:
+      'StatQuest — regressão linear do começo: ajuste por mínimos quadrados, R², p-values. Modelo mais básico de ML.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 28,
+    topicSlugs: ['data-science'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — StatQuest with Josh Starmer',
+    tags: ['concept', 'linear-regression', 'least-squares', 'statquest'],
+  },
+  {
+    title: 'StatQuest: Logistic Regression',
+    url: 'https://www.youtube.com/watch?v=yIYKR4sgzI8',
+    description:
+      'StatQuest — regressão logística: classificação binária via sigmoid, maximum likelihood, predição de probabilidades.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 9,
+    topicSlugs: ['data-science'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — StatQuest with Josh Starmer',
+    tags: ['concept', 'logistic-regression', 'classification', 'statquest'],
+  },
+  {
+    title: 'Decision and Classification Trees, Clearly Explained',
+    url: 'https://www.youtube.com/watch?v=_L39rN6gz7Y',
+    description:
+      'StatQuest — árvore de decisão: como cada split escolhe a feature que mais reduz impureza (Gini ou entropia). Base pra Random Forest e XGBoost.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 19,
+    topicSlugs: ['data-science'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — StatQuest with Josh Starmer',
+    tags: ['concept', 'decision-tree', 'classification', 'gini', 'statquest'],
+  },
+  {
+    title: 'But what is a neural network? | Deep Learning Chapter 1',
+    url: 'https://www.youtube.com/watch?v=aircAruvnKk',
+    description:
+      '3Blue1Brown — primeira parte da série Deep Learning. Reconhecimento de dígitos como exemplo, layers/neurons/weights/biases visualizados.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 19,
+    topicSlugs: ['data-science'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — 3Blue1Brown',
+    tags: ['concept', 'neural-network', 'deep-learning', '3blue1brown'],
+  },
+  {
+    title: 'Gradient descent, how neural networks learn | Deep Learning Chapter 2',
+    url: 'https://www.youtube.com/watch?v=IHZwWFHWa-w',
+    description:
+      '3Blue1Brown — gradient descent visualmente: superfície de cost function, descer o gradiente a passos pequenos. Por que a rede "aprende".',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 21,
+    topicSlugs: ['data-science'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — 3Blue1Brown',
+    tags: ['concept', 'gradient-descent', 'cost-function', '3blue1brown'],
+  },
+  {
+    title: 'Backpropagation, intuitively | Deep Learning Chapter 3',
+    url: 'https://www.youtube.com/watch?v=Ilg3gGewQ5U',
+    description:
+      '3Blue1Brown — backprop sem o cálculo. Por que cada peso muda e quanto, baseado na propagação reversa do erro pelas camadas.',
+    format: 'VIDEO',
+    difficulty: 'HARD',
+    estimatedMinutes: 13,
+    topicSlugs: ['data-science'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — 3Blue1Brown',
+    tags: ['concept', 'backpropagation', '3blue1brown'],
+  },
+  {
+    title: 'Backpropagation calculus | Deep Learning Chapter 4',
+    url: 'https://www.youtube.com/watch?v=tIeHLnjs5U8',
+    description:
+      '3Blue1Brown — backprop com cálculo. Chain rule encadeada pra computar derivadas das losses em relação a cada peso. 11min densos.',
+    format: 'VIDEO',
+    difficulty: 'HARD',
+    estimatedMinutes: 11,
+    topicSlugs: ['data-science'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — 3Blue1Brown',
+    tags: ['concept', 'backpropagation', 'chain-rule', 'calculus', '3blue1brown'],
+  },
+  {
+    title: 'Transformers, the tech behind LLMs | Deep Learning Chapter 5',
+    url: 'https://www.youtube.com/watch?v=wjZofJX0v4M',
+    description:
+      '3Blue1Brown — como funciona o transformer (arquitetura por trás de GPT/Claude). Embeddings, attention, predição token-a-token.',
+    format: 'VIDEO',
+    difficulty: 'HARD',
+    estimatedMinutes: 28,
+    topicSlugs: ['data-science'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — 3Blue1Brown',
+    tags: ['concept', 'transformer', 'llm', 'attention', '3blue1brown'],
+  },
+  {
+    title: 'The spelled-out intro to neural networks and backpropagation: building micrograd',
+    url: 'https://www.youtube.com/watch?v=VMj-3S1tku0',
+    description:
+      'Andrej Karpathy — implementa autograd e MLP do zero em Python. 146min (~2.5h), denso, padrão ouro pra entender backprop. Scheduler vai chunkar em ~3 sessões.',
+    format: 'VIDEO',
+    difficulty: 'HARD',
+    estimatedMinutes: 146,
+    topicSlugs: ['data-science'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Andrej Karpathy',
+    tags: ['concept', 'neural-network', 'autograd', 'micrograd', 'from-scratch', 'python', 'karpathy'],
   },
 ];
 
