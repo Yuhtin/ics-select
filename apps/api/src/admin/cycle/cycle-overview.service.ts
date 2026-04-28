@@ -2,7 +2,21 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service.js';
 import { computeWeekPosition } from '../../common/cycle/active-cycle.js';
 
-import { type ItemOutcome, isPositiveOutcome } from '@ics-select/shared';
+import {
+  type ItemOutcome,
+  isPositiveOutcome,
+  sumAllocatedMinutes,
+} from '@ics-select/shared';
+
+const DEFAULT_AVAILABILITY = {
+  mondayMinutes: 60,
+  tuesdayMinutes: 60,
+  wednesdayMinutes: 60,
+  thursdayMinutes: 60,
+  fridayMinutes: 60,
+  saturdayMinutes: 0,
+  sundayMinutes: 0,
+};
 
 const POSITIVE = new Set<ItemOutcome>(['DONE_EASY', 'DONE_HARD', 'SKIPPED']);
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
@@ -29,6 +43,11 @@ export type CycleOverviewResponse = {
     done: number;
     total: number;
     hasAlert: boolean;
+    availability: {
+      itemsCount: number;
+      plannedMinutes: number;
+      budgetMinutes: number;
+    };
   }>;
   heatmap: {
     weeks: Array<{
@@ -66,6 +85,7 @@ type PlanRow = {
     outcome: 'PENDING' | 'DONE_EASY' | 'DONE_HARD' | 'DOUBTS' | 'STUCK';
     completedAt: Date | null;
     weeklyPlanId: string;
+    libraryItem: { estimatedMinutes: number };
   }>;
 };
 
@@ -131,10 +151,53 @@ export class CycleOverviewService {
               userId: true,
               weekStart: true,
               items: {
-                select: { outcome: true, completedAt: true, weeklyPlanId: true },
+                select: {
+                  outcome: true,
+                  completedAt: true,
+                  weeklyPlanId: true,
+                  libraryItem: { select: { estimatedMinutes: true } },
+                },
               },
             },
           })) as PlanRow[]);
+
+    const availabilityRows =
+      userIds.length === 0
+        ? []
+        : await this.prisma.memberAvailability.findMany({
+            where: { userId: { in: userIds } },
+            select: {
+              userId: true,
+              mondayMinutes: true,
+              tuesdayMinutes: true,
+              wednesdayMinutes: true,
+              thursdayMinutes: true,
+              fridayMinutes: true,
+              saturdayMinutes: true,
+              sundayMinutes: true,
+            },
+          });
+    const budgetByUser = new Map<string, number>();
+    for (const row of availabilityRows) {
+      budgetByUser.set(
+        row.userId,
+        (row.mondayMinutes ?? 0) +
+          (row.tuesdayMinutes ?? 0) +
+          (row.wednesdayMinutes ?? 0) +
+          (row.thursdayMinutes ?? 0) +
+          (row.fridayMinutes ?? 0) +
+          (row.saturdayMinutes ?? 0) +
+          (row.sundayMinutes ?? 0),
+      );
+    }
+    const defaultBudget =
+      DEFAULT_AVAILABILITY.mondayMinutes +
+      DEFAULT_AVAILABILITY.tuesdayMinutes +
+      DEFAULT_AVAILABILITY.wednesdayMinutes +
+      DEFAULT_AVAILABILITY.thursdayMinutes +
+      DEFAULT_AVAILABILITY.fridayMinutes +
+      DEFAULT_AVAILABILITY.saturdayMinutes +
+      DEFAULT_AVAILABILITY.sundayMinutes;
 
     // hasAlert proxy: any STUCK outcome in last 72h (completedAt window).
     const stuckSince = new Date(now.getTime() - STUCK_PROXY_WINDOW_MS);
@@ -163,6 +226,13 @@ export class CycleOverviewService {
       const total = currentPlan?.items.length ?? 0;
       const done = (currentPlan?.items ?? []).filter((i) => POSITIVE.has(i.outcome)).length;
       const percent = total === 0 ? 0 : Math.round((done / total) * 100);
+      const plannedMinutes = sumAllocatedMinutes(
+        (currentPlan?.items ?? []).map((i) => ({
+          estimatedMinutes: i.libraryItem.estimatedMinutes,
+          outcome: i.outcome,
+        })),
+      );
+      const budgetMinutes = budgetByUser.get(m.userId) ?? defaultBudget;
       return {
         userId: m.userId,
         name: m.user.name,
@@ -172,6 +242,11 @@ export class CycleOverviewService {
         done,
         total,
         hasAlert: membersWithStuck.has(m.userId),
+        availability: {
+          itemsCount: total,
+          plannedMinutes,
+          budgetMinutes,
+        },
       };
     });
 

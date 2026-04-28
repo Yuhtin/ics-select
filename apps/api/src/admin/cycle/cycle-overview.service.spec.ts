@@ -7,6 +7,7 @@ type PrismaMock = {
   weeklyPlan: { findMany: jest.Mock };
   weeklyPlanItem: { findMany: jest.Mock };
   weeklyRetro: { findMany: jest.Mock };
+  memberAvailability: { findMany: jest.Mock };
 };
 
 function makePrisma(overrides: Partial<any> = {}): PrismaMock {
@@ -15,6 +16,7 @@ function makePrisma(overrides: Partial<any> = {}): PrismaMock {
     weeklyPlan: { findMany: jest.fn(async () => []) },
     weeklyPlanItem: { findMany: jest.fn(async () => []) },
     weeklyRetro: { findMany: jest.fn(async () => []) },
+    memberAvailability: { findMany: jest.fn(async () => []) },
   };
   for (const key of Object.keys(overrides) as (keyof PrismaMock)[]) {
     base[key] = { ...base[key], ...(overrides[key] as any) };
@@ -96,10 +98,10 @@ describe('CycleOverviewService', () => {
             userId: 'user-a',
             weekStart: THIS_MONDAY,
             items: [
-              { outcome: 'DONE_EASY', completedAt: new Date('2026-04-14T10:00:00Z'), weeklyPlanId: 'plan-a' },
-              { outcome: 'DONE_HARD', completedAt: new Date('2026-04-15T10:00:00Z'), weeklyPlanId: 'plan-a' },
-              { outcome: 'PENDING', completedAt: null, weeklyPlanId: 'plan-a' },
-              { outcome: 'DOUBTS', completedAt: new Date('2026-04-16T10:00:00Z'), weeklyPlanId: 'plan-a' },
+              { outcome: 'DONE_EASY', completedAt: new Date('2026-04-14T10:00:00Z'), weeklyPlanId: 'plan-a', libraryItem: { estimatedMinutes: 30 } },
+              { outcome: 'DONE_HARD', completedAt: new Date('2026-04-15T10:00:00Z'), weeklyPlanId: 'plan-a', libraryItem: { estimatedMinutes: 30 } },
+              { outcome: 'PENDING', completedAt: null, weeklyPlanId: 'plan-a', libraryItem: { estimatedMinutes: 30 } },
+              { outcome: 'DOUBTS', completedAt: new Date('2026-04-16T10:00:00Z'), weeklyPlanId: 'plan-a', libraryItem: { estimatedMinutes: 30 } },
             ],
           },
         ]),
@@ -138,8 +140,8 @@ describe('CycleOverviewService', () => {
             userId: 'user-a',
             weekStart: week0Start,
             items: [
-              { outcome: 'DONE_EASY', completedAt: week0Start, weeklyPlanId: 'plan-w0' },
-              { outcome: 'PENDING', completedAt: null, weeklyPlanId: 'plan-w0' },
+              { outcome: 'DONE_EASY', completedAt: week0Start, weeklyPlanId: 'plan-w0', libraryItem: { estimatedMinutes: 30 } },
+              { outcome: 'PENDING', completedAt: null, weeklyPlanId: 'plan-w0', libraryItem: { estimatedMinutes: 30 } },
             ],
           },
           {
@@ -147,10 +149,10 @@ describe('CycleOverviewService', () => {
             userId: 'user-a',
             weekStart: week1Start,
             items: [
-              { outcome: 'DONE_HARD', completedAt: new Date('2026-04-15T10:00:00Z'), weeklyPlanId: 'plan-w1' },
-              { outcome: 'DONE_EASY', completedAt: new Date('2026-04-16T10:00:00Z'), weeklyPlanId: 'plan-w1' },
-              { outcome: 'DONE_EASY', completedAt: new Date('2026-04-17T10:00:00Z'), weeklyPlanId: 'plan-w1' },
-              { outcome: 'PENDING', completedAt: null, weeklyPlanId: 'plan-w1' },
+              { outcome: 'DONE_HARD', completedAt: new Date('2026-04-15T10:00:00Z'), weeklyPlanId: 'plan-w1', libraryItem: { estimatedMinutes: 30 } },
+              { outcome: 'DONE_EASY', completedAt: new Date('2026-04-16T10:00:00Z'), weeklyPlanId: 'plan-w1', libraryItem: { estimatedMinutes: 30 } },
+              { outcome: 'DONE_EASY', completedAt: new Date('2026-04-17T10:00:00Z'), weeklyPlanId: 'plan-w1', libraryItem: { estimatedMinutes: 30 } },
+              { outcome: 'PENDING', completedAt: null, weeklyPlanId: 'plan-w1', libraryItem: { estimatedMinutes: 30 } },
             ],
           },
         ]),
@@ -220,6 +222,62 @@ describe('CycleOverviewService', () => {
     const result = await service.getOverview('cycle-1', NOW);
     expect(result.cycle.weeksTotal).toBe(12);
     expect(result.cycle.weekNumber).toBe(4);
+  });
+
+  it('returns availability stats per member (allocated minutes vs declared budget)', async () => {
+    const prisma = makePrisma({
+      cycle: {
+        findUnique: jest.fn(async () => ({
+          ...baseCycle,
+          memberships: [memberA, memberB],
+        })),
+      },
+      weeklyPlan: {
+        findMany: jest.fn(async () => [
+          {
+            id: 'plan-a',
+            userId: 'user-a',
+            weekStart: THIS_MONDAY,
+            items: [
+              // 30 + 30 + 30 = 90 allocated min (SKIPPED excluded).
+              { outcome: 'DONE_EASY', completedAt: new Date(), weeklyPlanId: 'plan-a', libraryItem: { estimatedMinutes: 30 } },
+              { outcome: 'PENDING', completedAt: null, weeklyPlanId: 'plan-a', libraryItem: { estimatedMinutes: 30 } },
+              { outcome: 'PENDING', completedAt: null, weeklyPlanId: 'plan-a', libraryItem: { estimatedMinutes: 30 } },
+            ],
+          },
+        ]),
+      },
+      memberAvailability: {
+        findMany: jest.fn(async () => [
+          {
+            userId: 'user-a',
+            mondayMinutes: 60,
+            tuesdayMinutes: 60,
+            wednesdayMinutes: 60,
+            thursdayMinutes: 60,
+            fridayMinutes: 60,
+            saturdayMinutes: 0,
+            sundayMinutes: 0,
+          },
+        ]),
+      },
+    });
+    const service = makeService(prisma);
+    const result = await service.getOverview('cycle-1', NOW);
+
+    const alice = result.members.find((m) => m.userId === 'user-a')!;
+    expect(alice.availability).toEqual({
+      itemsCount: 3,
+      plannedMinutes: 90,
+      budgetMinutes: 300,
+    });
+    // Bob has no plan and no availability row → defaults to DEFAULT_AVAILABILITY budget (300).
+    const bob = result.members.find((m) => m.userId === 'user-b')!;
+    expect(bob.availability).toEqual({
+      itemsCount: 0,
+      plannedMinutes: 0,
+      budgetMinutes: 300,
+    });
   });
 
   it('caps weekNumber at weeksTotal when now is past cycle end', async () => {

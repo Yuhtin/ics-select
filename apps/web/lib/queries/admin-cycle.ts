@@ -11,6 +11,11 @@ export type CycleOverviewMember = {
   done: number;
   total: number;
   hasAlert: boolean;
+  availability: {
+    itemsCount: number;
+    plannedMinutes: number;
+    budgetMinutes: number;
+  };
 };
 
 export type CycleOverviewHeatmapWeek = {

@@ -39,6 +39,34 @@ function Initials({
   );
 }
 
+function AvailabilityLine({
+  availability,
+}: {
+  availability: CycleOverviewMember['availability'];
+}) {
+  const { itemsCount, plannedMinutes, budgetMinutes } = availability;
+  if (itemsCount === 0) return null;
+  if (budgetMinutes === 0) {
+    return (
+      <span className="font-mono text-[11px] text-ink-mute">
+        No availability declared yet.
+      </span>
+    );
+  }
+  const pct = Math.round((plannedMinutes / budgetMinutes) * 100);
+  const tone =
+    pct <= 80
+      ? 'text-outcome-done-easy'
+      : pct <= 100
+        ? 'text-outcome-done-hard'
+        : 'text-outcome-stuck';
+  return (
+    <span className={clsx('font-mono text-[11px] tabular-nums', tone)}>
+      {itemsCount} items · {plannedMinutes} / {budgetMinutes} min ({pct}%)
+    </span>
+  );
+}
+
 const TRACK_LABELS: Record<string, string> = {
   BIG_TECH: 'Big Tech',
   CONSULTING_TECH: 'Consulting Tech',
@@ -92,6 +120,7 @@ export function CycleMembersGrid({ members }: { members: CycleOverviewMember[] }
               {m.done}/{m.total} this week
             </span>
           </div>
+          <AvailabilityLine availability={m.availability} />
         </Link>
       ))}
     </div>
