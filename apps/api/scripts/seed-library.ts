@@ -5063,6 +5063,64 @@ const ITEMS: ItemSeed[] = [
     source: 'YouTube — Andrej Karpathy',
     tags: ['concept', 'neural-network', 'autograd', 'micrograd', 'from-scratch', 'python', 'karpathy'],
   },
+
+  // ===========================================================================
+  // cicd — 2026-04-28
+  // 4 itens. Sem HARD: canais aprovados não têm deep-dive específico de
+  // CI/CD pipeline internals. Item 4 é cross-topic com 'deploy'.
+  // ===========================================================================
+  {
+    title: 'DevOps CI/CD Explained in 100 Seconds',
+    url: 'https://www.youtube.com/watch?v=scEDHsr3APg',
+    description:
+      'Fireship — CI/CD em 100 segundos. Pipeline integrando build → test → deploy automático.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 2,
+    topicSlugs: ['cicd'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Fireship',
+    tags: ['concept', 'cicd', 'devops', 'fireship'],
+  },
+  {
+    title: 'CI/CD In 5 Minutes — Crash Course System Design #2',
+    url: 'https://www.youtube.com/watch?v=42UP1fxi2SY',
+    description:
+      'ByteByteGo — crash course de 6min sobre CI/CD: o que é, por que vale o esforço, etapas comuns (commit → build → test → staging → prod).',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 6,
+    topicSlugs: ['cicd'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — ByteByteGo',
+    tags: ['concept', 'cicd', 'pipeline', 'bytebytego'],
+  },
+  {
+    title: '5 Ways to DevOps-ify your App — GitHub Actions Tutorial',
+    url: 'https://www.youtube.com/watch?v=eB0nUzAI7M8',
+    description:
+      'Fireship — 5 padrões de DevOps no GitHub Actions: lint, test, build, deploy, release. 13min com exemplos de workflow YAML.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 13,
+    topicSlugs: ['cicd'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Fireship',
+    tags: ['practice', 'cicd', 'github-actions', 'workflow', 'yaml', 'fireship'],
+  },
+  {
+    title: 'Top 5 Most-Used Deployment Strategies',
+    url: 'https://www.youtube.com/watch?v=AWVTKBUnoIg',
+    description:
+      'ByteByteGo — 5 estratégias de deploy: blue-green, canary, rolling, A/B, recreate. Trade-offs visuais de risco vs custo.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 10,
+    topicSlugs: ['cicd', 'deploy'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — ByteByteGo',
+    tags: ['tradeoffs', 'cicd', 'deployment', 'blue-green', 'canary', 'rolling', 'bytebytego'],
+  },
 ];
 
 // -----------------------------------------------------------------------------
