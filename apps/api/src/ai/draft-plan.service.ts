@@ -320,7 +320,11 @@ Regras:
 - Se search_library trouxer poucos resultados pra uma query, amplia (remove filtros
   ou deixa query em branco) — NÃO desista e NÃO invente IDs.
 - Se o bloco "ITENS JÁ NO PLANO ATUAL" tiver itens, inclua-os em "items" antes
-  de sugerir complementos; não duplique.`;
+  de sugerir complementos; não duplique.
+- Se o track for COMPETITIVE_PROGRAMMING, o plano DEVE incluir no mínimo
+  2 itens com format=PROBLEM (LeetCode practice). Pra outras tracks, equilibra
+  teaching (VIDEO/ARTICLE/BOOK) com practice (PROBLEM) — pelo menos 1 PROBLEM
+  por semana quando o tópico tiver problems disponíveis.`;
 
     const promptSections = [
       memberLine,
