@@ -4440,6 +4440,65 @@ const ITEMS: ItemSeed[] = [
   },
 
   // ---------------------------------------------------------------------------
+  // Math & Geometry — TEACHING (2026-04-28)
+  // 4 itens. Fireship dá um tour conceitual; os 3 walkthroughs do NeetCode/
+  // Galego pareiam com LCs do acervo (lc-50 fast exp, lc-54 spiral, lc-48
+  // rotate). Falta cobrir modular arithmetic e prime sieve — push pro futuro.
+  // ---------------------------------------------------------------------------
+  {
+    title: '10 weird algorithms every developer should know',
+    url: 'https://www.youtube.com/watch?v=SmyPTnlqhlk',
+    description:
+      'Fireship — tour por 10 algoritmos exóticos: Y combinator, gradient descent, quaternions, MapReduce, simulated annealing. Não vira solução de LC, mas amplia o vocabulário matemático.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 10,
+    topicSlugs: ['math'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — Fireship',
+    tags: ['concept', 'algorithms', 'fireship'],
+  },
+  {
+    title: 'Pow(x, n) — Fast Exponentiation (LeetCode 50)',
+    url: 'https://www.youtube.com/watch?v=g9YQyYi4IQQ',
+    description:
+      'NeetCode — walkthrough do LC50. Fast exponentiation via divide-and-conquer: x^n = (x^(n/2))^2 quando n par, ou x * (x^(n/2))^2 quando ímpar. O(log n). Pareia com lc-50.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 13,
+    topicSlugs: ['math'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — NeetCode',
+    tags: ['concept', 'fast-exponentiation', 'divide-and-conquer', 'leetcode-walkthrough', 'lc-50'],
+  },
+  {
+    title: 'Spiral Matrix — LeetCode 54',
+    url: 'https://www.youtube.com/watch?v=BJnMZNwUk1M',
+    description:
+      'NeetCode — walkthrough do LC54. Boundary traversal com 4 ponteiros (top/bottom/left/right) que encolhem a cada lap. Pareia com lc-54.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 17,
+    topicSlugs: ['math'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — NeetCode',
+    tags: ['concept', 'matrix', 'boundary-traversal', 'leetcode-walkthrough', 'lc-54'],
+  },
+  {
+    title: 'LeetCode 48 — Girar Matrix (Explicado)',
+    url: 'https://www.youtube.com/watch?v=BF7tIeVoLSU',
+    description:
+      'Augusto Galego — walkthrough do LC48 em português. Rotacionar matriz 90° in-place: transpose seguido de reverse de cada linha. Pareia com lc-48.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 14,
+    topicSlugs: ['math'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — Augusto Galego',
+    tags: ['concept', 'matrix', 'rotation', 'leetcode-walkthrough', 'lc-48'],
+  },
+
+  // ---------------------------------------------------------------------------
   // PROBLEMs — Math & Geometry (NeetCode 150) — 2026-04-28
   // 8 itens · 2 Easy + 6 Medium
   // primary=math, tracks=[BIG_TECH, COMPETITIVE_PROGRAMMING]
@@ -4547,6 +4606,77 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Math & Geometry',
     tags: ['practice', 'leetcode', 'lc-54', 'math'],
+  },
+
+  // ---------------------------------------------------------------------------
+  // Bit Manipulation — TEACHING (2026-04-28)
+  // 5 itens pareados com os LC problems abaixo. Itens 1-2 (concept geral)
+  // ficam universais; 3-5 (walkthrough de LC) restritos ao track avançado.
+  // ---------------------------------------------------------------------------
+  {
+    title: 'Binary Explained in 01100100 Seconds',
+    url: 'https://www.youtube.com/watch?v=zDNaUi2cjv4',
+    description:
+      'Fireship — binário em 100 segundos: bit, byte, hex, complemento de 2 e por que computadores pensam em zeros e uns.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 3,
+    topicSlugs: ['bit-manipulation'],
+    tracks: [],
+    source: 'YouTube — Fireship',
+    tags: ['concept', 'binary', 'fireship'],
+  },
+  {
+    title: 'How to count to 1000 on two hands',
+    url: 'https://www.youtube.com/watch?v=1SMmc9gQmHQ',
+    description:
+      '3Blue1Brown — contar até 1023 usando 10 dedos. Cada dedo vira um bit e a sequência reproduz binário, jeito visceral de internalizar a base 2.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 3,
+    topicSlugs: ['bit-manipulation'],
+    tracks: [],
+    source: 'YouTube — 3Blue1Brown',
+    tags: ['concept', 'binary', 'counting'],
+  },
+  {
+    title: 'Single Number — Leetcode 136 (XOR trick)',
+    url: 'https://www.youtube.com/watch?v=qMPX1AOa83k',
+    description:
+      'NeetCode — walkthrough do LC136. XOR cancela duplicatas (a^a=0, a^0=a), o único elemento sem par sobra. Pareia com lc-136 no acervo.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 8,
+    topicSlugs: ['bit-manipulation'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — NeetCode',
+    tags: ['concept', 'xor', 'leetcode-walkthrough', 'lc-136'],
+  },
+  {
+    title: 'Number of 1 Bits — Leetcode 191 (Brian Kernighan)',
+    url: 'https://www.youtube.com/watch?v=5Km3utixwZs',
+    description:
+      'NeetCode — walkthrough do LC191. Brian Kernighan: `n & (n-1)` zera o bit 1 menos significativo a cada iteração. Pareia com lc-191.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 12,
+    topicSlugs: ['bit-manipulation'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — NeetCode',
+    tags: ['concept', 'kernighan', 'popcount', 'leetcode-walkthrough', 'lc-191'],
+  },
+  {
+    title: 'Add Two Numbers Without The "+" Sign (Bit Shifting Basics)',
+    url: 'https://www.youtube.com/watch?v=qq64FrA2UXQ',
+    description:
+      'Back To Back SWE — somar dois inteiros sem operadores aritméticos. XOR é soma sem carry, AND << 1 é o carry; loop até zerar. 19min de fundamentação. Pareia com lc-371.',
+    format: 'VIDEO',
+    difficulty: 'HARD',
+    estimatedMinutes: 19,
+    topicSlugs: ['bit-manipulation'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — Back To Back SWE',
+    tags: ['concept', 'xor', 'carry', 'arithmetic', 'leetcode-walkthrough', 'lc-371'],
   },
 
   // ---------------------------------------------------------------------------
