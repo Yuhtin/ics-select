@@ -169,19 +169,17 @@ All three topics' completion % count this item. Admin finds it under `tree` (pri
 
 ## Track tagging cheat sheet
 
-Every item's `tracks: Track[]` is a routing primitive — admin filters items by the member's track.
+Every item's `tracks: Track[]` is a routing primitive — admin filters items by the member's track. Updated 2026-04-28 after the Lorena (CONSULTING_TECH) bug: the previous "DSA = `[BIG_TECH, COMPETITIVE_PROGRAMMING]`" rule hid arrays/sorting/etc from consulting and startup members, who DO need basic DSA in their interviews (McKinsey/BCG quant, YC technicals).
 
-| Item type | Tracks |
-|---|---|
-| Interview prep (senior eng hiring signals) | `['BIG_TECH']` |
-| Engineering internals (how DBs/caches work) | `['BIG_TECH', 'CONSULTING_TECH', 'STARTUP']` |
-| Algorithms & DS | `['BIG_TECH', 'COMPETITIVE_PROGRAMMING']` |
-| System design fundamentals | `['BIG_TECH', 'CONSULTING_TECH']` |
-| Pure competitive programming | `['COMPETITIVE_PROGRAMMING']` |
-| Startup / product / scrappy infra | `['STARTUP']` |
-| Universal concept (intro "what is X") | `[]` (empty = applies to all; library service handles this) |
+| Item type | Tracks | Notes |
+|---|---|---|
+| **DSA fundamental** (array, lists, tree, hashmap, sorting, searching, foundations) | `[]` (universal) | Every track needs basics. Don't restrict. |
+| **DSA advanced** (recursion, dp, greedy, trie, heap, graph) | `['BIG_TECH', 'COMPETITIVE_PROGRAMMING']` | Heavy interview lifting — Big Tech + CP only. Consulting/startup rarely test these. |
+| **System Design** (databases, networking, containers, cloud, security, design-patterns, load-balancers, caching, sharding, replication, pubsub, message-queues, rate-limiting, scalability, cap-consistency, reliability) | `['BIG_TECH', 'CONSULTING_TECH', 'STARTUP']` | All eng tracks need SD. CP doesn't. |
+| Pure competitive programming | `['COMPETITIVE_PROGRAMMING']` | (rare — CP-specific tricks like segment trees deep dives) |
+| Universal concept (cross-cutting "what is X") | `[]` | Applies to everyone. |
 
-**Never over-tag.** If unsure whether an item is useful for STARTUP, don't add it — noise breaks the routing.
+**Never over-tag.** If unsure whether an item is useful for STARTUP, don't add it — noise breaks the routing. But also **never under-tag a foundational item** to one or two tracks when it's actually universal.
 
 ## Book items (whitelisted)
 
