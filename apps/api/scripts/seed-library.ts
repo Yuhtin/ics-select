@@ -5121,6 +5121,21 @@ const ITEMS: ItemSeed[] = [
     source: 'YouTube — ByteByteGo',
     tags: ['tradeoffs', 'cicd', 'deployment', 'blue-green', 'canary', 'rolling', 'bytebytego'],
   },
+
+  // --- hashmap teaching (article do Davi) — 2026-04-28 ---
+  {
+    title: 'Hashing in the Real World: From TLS to Secure Password Storage',
+    url: 'https://medium.com/@yuhtin/hashing-in-the-real-world-from-tls-to-secure-password-storage-765627b57cde',
+    description:
+      'Davi Duarte (Medium) — o que é uma função hash: input variável → output fixo, determinística e irreversível. Aplicações: integridade no TLS e password storage com bcrypt/Argon2 vs MD5/SHA-1. Pré-requisito conceitual antes de mexer com hashmap.',
+    format: 'ARTICLE',
+    difficulty: 'EASY',
+    estimatedMinutes: 10,
+    topicSlugs: ['hashmap', 'security'],
+    tracks: [],
+    source: 'Medium — Davi Duarte',
+    tags: ['concept', 'hashing', 'sha-256', 'bcrypt', 'argon2', 'tls', 'password-storage'],
+  },
 ];
 
 // -----------------------------------------------------------------------------
