@@ -2589,6 +2589,128 @@ const ITEMS: ItemSeed[] = [
     source: 'Book — Grokking Algorithms',
     tags: ['concept', 'book', 'grokking', 'recursion'],
   },
+
+  // ---------------------------------------------------------------------------
+  // PROBLEMs — Arrays & Hashing (NeetCode 150) — 2026-04-28
+  // 9 itens · 3 Easy + 6 Medium · primary=array, cover=hashmap (universal)
+  // ---------------------------------------------------------------------------
+  {
+    title: 'LeetCode 217 — Contains Duplicate',
+    url: 'https://leetcode.com/problems/contains-duplicate/',
+    description:
+      'Checar se um array tem algum valor duplicado. Set em uma passada O(n), ou sort + scan O(n log n).',
+    format: 'PROBLEM',
+    difficulty: 'EASY',
+    estimatedMinutes: 30,
+    topicSlugs: ['array', 'hashmap'],
+    tracks: [],
+    source: 'LeetCode — Arrays & Hashing',
+    tags: ['practice', 'leetcode', 'lc-217', 'arrays-hashing', 'hashset'],
+  },
+  {
+    title: 'LeetCode 1 — Two Sum',
+    url: 'https://leetcode.com/problems/two-sum/',
+    description:
+      'Encontrar índices de dois elementos que somam um target. Hash map em uma passada faz O(n) — guarda o complemento conforme percorre.',
+    format: 'PROBLEM',
+    difficulty: 'EASY',
+    estimatedMinutes: 30,
+    topicSlugs: ['array', 'hashmap'],
+    tracks: [],
+    source: 'LeetCode — Arrays & Hashing',
+    tags: ['practice', 'leetcode', 'lc-1', 'arrays-hashing', 'hashmap'],
+  },
+  {
+    title: 'LeetCode 242 — Valid Anagram',
+    url: 'https://leetcode.com/problems/valid-anagram/',
+    description:
+      'Decidir se duas strings são anagramas. Conta caracteres com hash map (ou array de 26) e compara.',
+    format: 'PROBLEM',
+    difficulty: 'EASY',
+    estimatedMinutes: 30,
+    topicSlugs: ['array', 'hashmap'],
+    tracks: [],
+    source: 'LeetCode — Arrays & Hashing',
+    tags: ['practice', 'leetcode', 'lc-242', 'arrays-hashing', 'string', 'counting'],
+  },
+  {
+    title: 'LeetCode 49 — Group Anagrams',
+    url: 'https://leetcode.com/problems/group-anagrams/',
+    description:
+      'Agrupar strings que são anagramas entre si. Key do hash map = sorted chars (O(nk log k)) ou tuple de contagens (O(nk)).',
+    format: 'PROBLEM',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 60,
+    topicSlugs: ['array', 'hashmap'],
+    tracks: [],
+    source: 'LeetCode — Arrays & Hashing',
+    tags: ['practice', 'leetcode', 'lc-49', 'arrays-hashing', 'hashmap', 'string'],
+  },
+  {
+    title: 'LeetCode 347 — Top K Frequent Elements',
+    url: 'https://leetcode.com/problems/top-k-frequent-elements/',
+    description:
+      'Top K elementos mais frequentes do array. Bucket sort por contagem em O(n), ou min-heap de tamanho K em O(n log k).',
+    format: 'PROBLEM',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 60,
+    topicSlugs: ['array', 'hashmap', 'heap'],
+    tracks: [],
+    source: 'LeetCode — Arrays & Hashing',
+    tags: ['practice', 'leetcode', 'lc-347', 'arrays-hashing', 'bucket-sort', 'heap'],
+  },
+  {
+    title: 'LeetCode 238 — Product of Array Except Self',
+    url: 'https://leetcode.com/problems/product-of-array-except-self/',
+    description:
+      'Produto de todos os elementos exceto o próprio, sem divisão. Prefix * suffix em duas passadas, O(n) tempo, O(1) extra.',
+    format: 'PROBLEM',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 60,
+    topicSlugs: ['array'],
+    tracks: [],
+    source: 'LeetCode — Arrays & Hashing',
+    tags: ['practice', 'leetcode', 'lc-238', 'arrays-hashing', 'prefix-product'],
+  },
+  {
+    title: 'LeetCode 36 — Valid Sudoku',
+    url: 'https://leetcode.com/problems/valid-sudoku/',
+    description:
+      'Validar tabuleiro de Sudoku 9×9 (sem precisar resolver). Três conjuntos simultâneos: linhas, colunas, boxes 3×3.',
+    format: 'PROBLEM',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 60,
+    topicSlugs: ['array', 'hashmap'],
+    tracks: [],
+    source: 'LeetCode — Arrays & Hashing',
+    tags: ['practice', 'leetcode', 'lc-36', 'arrays-hashing', 'matrix', 'hashset'],
+  },
+  {
+    title: 'LeetCode 271 — Encode and Decode Strings',
+    url: 'https://leetcode.com/problems/encode-and-decode-strings/',
+    description:
+      'Serializar e desserializar uma lista de strings. Length-prefix encoding (`<n>#<string>`) é a solução robusta — funciona com qualquer caractere.',
+    format: 'PROBLEM',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 60,
+    topicSlugs: ['array'],
+    tracks: [],
+    source: 'LeetCode — Arrays & Hashing',
+    tags: ['practice', 'leetcode', 'lc-271', 'arrays-hashing', 'string', 'serialization'],
+  },
+  {
+    title: 'LeetCode 128 — Longest Consecutive Sequence',
+    url: 'https://leetcode.com/problems/longest-consecutive-sequence/',
+    description:
+      'Maior sequência de números consecutivos no array, em O(n). Set + começa a contar só de `n` quando `n-1` não existe (evita re-trabalho).',
+    format: 'PROBLEM',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 60,
+    topicSlugs: ['array', 'hashmap'],
+    tracks: [],
+    source: 'LeetCode — Arrays & Hashing',
+    tags: ['practice', 'leetcode', 'lc-128', 'arrays-hashing', 'hashset'],
+  },
 ];
 
 // -----------------------------------------------------------------------------
