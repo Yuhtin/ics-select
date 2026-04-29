@@ -10,6 +10,7 @@ describe('WeeklyPlansService.setItemOutcome — SKIPPED', () => {
     userId: string;
     planStatus: 'DRAFT' | 'PUBLISHED';
     topicSlugs: string[];
+    format?: string;
     calendarEvents?: Array<{ id: string; googleEventId: string }>;
   }) => ({
     weeklyPlanItem: {
@@ -21,6 +22,7 @@ describe('WeeklyPlansService.setItemOutcome — SKIPPED', () => {
           status: item.planStatus,
         },
         libraryItem: {
+          format: item.format ?? 'ARTICLE',
           topics: item.topicSlugs.map((slug) => ({ topic: { slug } })),
         },
         calendarEvents: item.calendarEvents ?? [],
@@ -39,7 +41,7 @@ describe('WeeklyPlansService.setItemOutcome — SKIPPED', () => {
     calendar.deleteEvent.mockResolvedValue(undefined);
   });
 
-  it('rejects SKIPPED on a non-foundations item', async () => {
+  it('rejects SKIPPED on a non-foundations, non-video item', async () => {
     const prisma = buildPrisma({
       planId: 'p1',
       userId: 'u1',
@@ -49,7 +51,20 @@ describe('WeeklyPlansService.setItemOutcome — SKIPPED', () => {
     const service = build(prisma);
     await expect(
       service.setItemOutcome('item-1', 'u1', { outcome: 'SKIPPED' }),
-    ).rejects.toThrow(/only foundations items can be skipped/i);
+    ).rejects.toThrow(/only foundations or video items can be skipped/i);
+  });
+
+  it('accepts SKIPPED on a video item even when no topic is foundations', async () => {
+    const prisma = buildPrisma({
+      planId: 'p1',
+      userId: 'u1',
+      planStatus: 'DRAFT',
+      topicSlugs: ['array'],
+      format: 'VIDEO',
+    });
+    const service = build(prisma);
+    await service.setItemOutcome('item-1', 'u1', { outcome: 'SKIPPED' });
+    expect(prisma.weeklyPlanItem.update).toHaveBeenCalled();
   });
 
   it('accepts SKIPPED on a foundations item and skips Calendar cleanup when no events exist', async () => {

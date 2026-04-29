@@ -18,6 +18,20 @@ type UpdateInput = {
   items?: Array<{ libraryItemId: string; order: number }>;
 };
 
+// Foundations items are skippable because the cohort enters the cycle with
+// uneven priors — strong members shouldn't have to mark "done" on what they
+// already know. Videos are skippable too: members regularly already watched
+// the channel/playlist and forcing a re-watch is friction with no learning
+// gain. Both surfaces (admin pill + member action) and the server-side
+// guard share this rule.
+function isItemSkippable(libraryItem: {
+  format: string;
+  topics: ReadonlyArray<{ topic: { slug: string } }>;
+}): boolean {
+  if (libraryItem.format === 'VIDEO') return true;
+  return libraryItem.topics.some((t) => t.topic.slug === 'foundations');
+}
+
 @Injectable()
 export class WeeklyPlansService {
   private readonly logger = new Logger(WeeklyPlansService.name);
@@ -177,7 +191,7 @@ export class WeeklyPlansService {
         const primary = i.libraryItem.topics.find((t) => t.isPrimary)?.topic ?? null;
         return {
           ...i,
-          skippable: i.libraryItem.topics.some((t) => t.topic.slug === 'foundations'),
+          skippable: isItemSkippable(i.libraryItem),
           libraryItem: {
             ...i.libraryItem,
             topicId: primary?.id ?? null,
@@ -306,7 +320,7 @@ export class WeeklyPlansService {
         const primary = i.libraryItem.topics.find((t) => t.isPrimary)?.topic ?? null;
         return {
           ...i,
-          skippable: i.libraryItem.topics.some((t) => t.topic.slug === 'foundations'),
+          skippable: isItemSkippable(i.libraryItem),
           libraryItem: {
             ...i.libraryItem,
             topicId: primary?.id ?? null,
@@ -344,9 +358,8 @@ export class WeeklyPlansService {
     const now = new Date();
 
     if (input.outcome === 'SKIPPED') {
-      const slugs = item.libraryItem.topics.map((t) => t.topic.slug);
-      if (!slugs.includes('foundations')) {
-        throw new ForbiddenException('Only foundations items can be skipped');
+      if (!isItemSkippable(item.libraryItem)) {
+        throw new ForbiddenException('Only foundations or video items can be skipped');
       }
       if (item.calendarEvents.length > 0) {
         await Promise.all(
