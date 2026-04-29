@@ -26,6 +26,22 @@ describe('allocatedMinutes', () => {
     expect(allocatedMinutes(1)).toBe(15);
     expect(allocatedMinutes(0)).toBe(15);
   });
+
+  it('doubles VIDEO durations before snapping to a slot', () => {
+    expect(allocatedMinutes(13, 'VIDEO')).toBe(30); // 13×2=26 → 30
+    expect(allocatedMinutes(8, 'VIDEO')).toBe(15); // 8×2=16 → 15 (tolerance)
+    expect(allocatedMinutes(20, 'VIDEO')).toBe(45); // 20×2=40 → 45
+    expect(allocatedMinutes(30, 'VIDEO')).toBe(60); // 30×2=60 → 60
+    expect(allocatedMinutes(2, 'VIDEO')).toBe(15); // floor
+  });
+
+  it('keeps non-VIDEO formats at their raw length', () => {
+    expect(allocatedMinutes(13, 'ARTICLE')).toBe(15);
+    expect(allocatedMinutes(13, 'PROBLEM')).toBe(15);
+    expect(allocatedMinutes(13, 'BOOK')).toBe(15);
+    expect(allocatedMinutes(13, null)).toBe(15);
+    expect(allocatedMinutes(13, undefined)).toBe(15);
+  });
 });
 
 function fakePrisma() {

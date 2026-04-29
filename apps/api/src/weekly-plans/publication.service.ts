@@ -290,7 +290,7 @@ export class PublicationService {
       busyBlocks,
       items: pending.map((i) => ({
         id: i.id,
-        estimatedMinutes: allocatedMinutes(i.libraryItem.estimatedMinutes),
+        estimatedMinutes: allocatedMinutes(i.libraryItem.estimatedMinutes, i.libraryItem.format),
         order: i.order,
       })),
       now,
@@ -391,7 +391,7 @@ export class PublicationService {
       busyBlocks,
       items: schedulableItems.map((i) => ({
         id: i.id,
-        estimatedMinutes: allocatedMinutes(i.libraryItem.estimatedMinutes),
+        estimatedMinutes: allocatedMinutes(i.libraryItem.estimatedMinutes, i.libraryItem.format),
         order: i.order,
       })),
       now: new Date(),
@@ -564,7 +564,7 @@ export class PublicationService {
     if (addedRows.length > 0) {
       const addedLibraryItems = await this.prisma.libraryItem.findMany({
         where: { id: { in: addedRows.map((a) => a.libraryItemId) } },
-        select: { id: true, estimatedMinutes: true, title: true, url: true },
+        select: { id: true, estimatedMinutes: true, format: true, title: true, url: true },
       });
       const libById = new Map(addedLibraryItems.map((l) => [l.id, l]));
 
@@ -576,11 +576,14 @@ export class PublicationService {
         weekStart: plan.weekStart,
         availability: await loadSchedulerAvailability(this.prisma, plan.userId),
         busyBlocks,
-        items: addedRows.map((a) => ({
-          id: a.libraryItemId,
-          estimatedMinutes: allocatedMinutes(libById.get(a.libraryItemId)?.estimatedMinutes ?? 0),
-          order: a.order,
-        })),
+        items: addedRows.map((a) => {
+          const lib = libById.get(a.libraryItemId);
+          return {
+            id: a.libraryItemId,
+            estimatedMinutes: allocatedMinutes(lib?.estimatedMinutes ?? 0, lib?.format),
+            order: a.order,
+          };
+        }),
         now,
       });
 

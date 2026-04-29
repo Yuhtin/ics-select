@@ -71,6 +71,7 @@ export function EditablePlanPanel({
       sumAllocatedMinutes(
         plan.items.map((i) => ({
           estimatedMinutes: i.libraryItem.estimatedMinutes,
+          format: i.libraryItem.format,
           outcome: i.outcome,
         })),
       ),

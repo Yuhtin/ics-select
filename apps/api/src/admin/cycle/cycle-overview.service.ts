@@ -85,7 +85,7 @@ type PlanRow = {
     outcome: 'PENDING' | 'DONE_EASY' | 'DONE_HARD' | 'DOUBTS' | 'STUCK';
     completedAt: Date | null;
     weeklyPlanId: string;
-    libraryItem: { estimatedMinutes: number };
+    libraryItem: { estimatedMinutes: number; format: string };
   }>;
 };
 
@@ -155,7 +155,7 @@ export class CycleOverviewService {
                   outcome: true,
                   completedAt: true,
                   weeklyPlanId: true,
-                  libraryItem: { select: { estimatedMinutes: true } },
+                  libraryItem: { select: { estimatedMinutes: true, format: true } },
                 },
               },
             },
@@ -229,6 +229,7 @@ export class CycleOverviewService {
       const plannedMinutes = sumAllocatedMinutes(
         (currentPlan?.items ?? []).map((i) => ({
           estimatedMinutes: i.libraryItem.estimatedMinutes,
+          format: i.libraryItem.format,
           outcome: i.outcome,
         })),
       );

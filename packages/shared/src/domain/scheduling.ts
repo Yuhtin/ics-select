@@ -2,27 +2,37 @@
  * Convert a library item's raw `estimatedMinutes` (the intrinsic length of
  * the material) into the calendar block actually reserved for it.
  *
- * Round UP to the nearest 15-minute slot with 3-min tolerance, minimum 15.
+ * Videos get a 2x multiplier first — a 13-min video isn't 13 min of work, it's
+ * pause-take-notes-rewind time, so we reserve double the raw length before
+ * snapping to a slot. Other formats keep their raw length.
+ *
+ * Then round UP to the nearest 15-minute slot with 3-min tolerance, minimum 15.
  * The tolerance lets items that just barely cross a slot boundary (16-18 min
- * → still 15 min) sit comfortably in the smaller slot — in practice the
- * member finishes within the slot or extends a touch.
+ * → still 15 min) sit comfortably in the smaller slot.
  *
  * Used by the api scheduler AND the web budget badge so both surfaces show
  * the same number.
  *
- * Examples:
+ * Examples (non-video):
  *   2 min  → 15
- *   14 min → 15
- *   18 min → 15  (3-min tolerance over slot boundary)
+ *   18 min → 15  (tolerance)
  *   19 min → 30
- *   30 min → 30
- *   33 min → 30  (3-min tolerance)
+ *   33 min → 30  (tolerance)
  *   34 min → 45
- *   60 min → 60
+ *
+ * Examples (VIDEO, raw → ×2 → slot):
+ *   13 min → 26 → 30
+ *   8 min  → 16 → 15  (tolerance)
+ *   20 min → 40 → 45
+ *   30 min → 60 → 60
  */
-export function allocatedMinutes(estimated: number): number {
+export function allocatedMinutes(
+  estimated: number,
+  format?: string | null,
+): number {
   const raw = Math.max(0, estimated);
-  const rounded = Math.ceil((raw - 3) / 15) * 15;
+  const effective = format === 'VIDEO' ? raw * 2 : raw;
+  const rounded = Math.ceil((effective - 3) / 15) * 15;
   return Math.max(15, rounded);
 }
 
@@ -33,12 +43,16 @@ export function allocatedMinutes(estimated: number): number {
  * against the weekly budget when admin is adding replacement work.
  */
 export function sumAllocatedMinutes(
-  items: ReadonlyArray<{ estimatedMinutes: number; outcome?: string | null }>,
+  items: ReadonlyArray<{
+    estimatedMinutes: number;
+    format?: string | null;
+    outcome?: string | null;
+  }>,
 ): number {
   let total = 0;
   for (const i of items) {
     if (i.outcome === 'SKIPPED') continue;
-    total += allocatedMinutes(i.estimatedMinutes);
+    total += allocatedMinutes(i.estimatedMinutes, i.format);
   }
   return total;
 }

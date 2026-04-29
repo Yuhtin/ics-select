@@ -374,7 +374,7 @@ export class WeeklyPlansService {
       // Also corrects drift if the member moved the event manually in Google
       // (we don't watch Calendar for changes, so DB scheduledAt can lag).
       const totalMinutes =
-        item.scheduledMinutes ?? allocatedMinutes(item.libraryItem.estimatedMinutes);
+        item.scheduledMinutes ?? allocatedMinutes(item.libraryItem.estimatedMinutes, item.libraryItem.format);
       const SLOT_MS = 15 * 60 * 1000;
       const endMs = Math.ceil(now.getTime() / SLOT_MS) * SLOT_MS;
       const startMs = endMs - totalMinutes * 60 * 1000;
