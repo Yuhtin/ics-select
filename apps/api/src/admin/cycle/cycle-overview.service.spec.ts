@@ -114,9 +114,10 @@ describe('CycleOverviewService', () => {
     const alice = result.members[0]!;
     expect(alice.userId).toBe('user-a');
     expect(alice.track).toBe('BIG_TECH');
-    expect(alice.done).toBe(2);
+    // DOUBTS counts as done — the study was attempted to completion.
+    expect(alice.done).toBe(3);
     expect(alice.total).toBe(4);
-    expect(alice.percentThisWeek).toBe(50);
+    expect(alice.percentThisWeek).toBe(75);
     expect(alice.hasAlert).toBe(false);
   });
 

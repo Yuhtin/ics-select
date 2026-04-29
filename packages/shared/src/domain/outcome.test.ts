@@ -17,6 +17,16 @@ describe('ItemOutcome', () => {
     expect(isPositiveOutcome('SKIPPED')).toBe(true);
   });
 
+  it('treats DOUBTS as positive — the study was done, just wants more depth', () => {
+    expect(POSITIVE_OUTCOMES.has('DOUBTS')).toBe(true);
+    expect(isPositiveOutcome('DOUBTS')).toBe(true);
+  });
+
+  it('does not treat STUCK or PENDING as positive', () => {
+    expect(isPositiveOutcome('STUCK')).toBe(false);
+    expect(isPositiveOutcome('PENDING')).toBe(false);
+  });
+
   it('isSkipped is true only for SKIPPED', () => {
     expect(isSkipped('SKIPPED')).toBe(true);
     expect(isSkipped('DONE_EASY')).toBe(false);

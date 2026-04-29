@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import type { AlertType, ItemOutcome } from '@ics-select/shared';
+import { type AlertType, POSITIVE_OUTCOMES } from '@ics-select/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import {
   computeWeekPosition,
@@ -47,7 +47,6 @@ export type TriageResponse = {
 };
 
 const DAY_MS = 24 * 60 * 60 * 1000;
-const POSITIVE = new Set<ItemOutcome>(['DONE_EASY', 'DONE_HARD', 'SKIPPED']);
 
 type Member = {
   userId: string;
@@ -292,7 +291,7 @@ export class TriageService {
     const positiveByMember = new Set<string>();
     for (const item of ctx.recentItems) {
       if (!item.completedAt || item.completedAt < cutoff) continue;
-      if (POSITIVE.has(item.outcome)) positiveByMember.add(item.weeklyPlan.userId);
+      if (POSITIVE_OUTCOMES.has(item.outcome)) positiveByMember.add(item.weeklyPlan.userId);
     }
     // Find missed (scheduled in past, still PENDING) per member.
     const missedByMember = new Map<string, RecentItem>();
@@ -362,7 +361,7 @@ export class TriageService {
     const alerts: TriageAlert[] = [];
     for (const plan of currentPlans) {
       if (plan.items.length === 0) continue;
-      const allPositive = plan.items.every((i) => POSITIVE.has(i.outcome));
+      const allPositive = plan.items.every((i) => POSITIVE_OUTCOMES.has(i.outcome));
       if (!allPositive) continue;
       const latest = plan.items
         .filter((i) => i.completedAt)
@@ -482,7 +481,7 @@ export class TriageService {
       const plan = currentPlansByUser.get(m.userId);
       let percent = 0;
       if (plan && plan.items.length > 0) {
-        const done = plan.items.filter((i) => POSITIVE.has(i.outcome)).length;
+        const done = plan.items.filter((i) => POSITIVE_OUTCOMES.has(i.outcome)).length;
         percent = Math.round((done / plan.items.length) * 100);
       }
       return {

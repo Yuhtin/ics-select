@@ -4,10 +4,11 @@ import {
   computeWeekPosition,
   resolveActiveMembership,
 } from '../../common/cycle/active-cycle.js';
-import type { ItemOutcome } from '@ics-select/shared';
+import { POSITIVE_OUTCOMES } from '@ics-select/shared';
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
-const POSITIVE = new Set<ItemOutcome>(['DONE_EASY', 'DONE_HARD', 'SKIPPED']);
+// DOUBTS is positive (counts as done) but still carries over — the study was
+// done, but the member wants a deeper follow-up next week.
 const CARRY_OUTCOMES = new Set(['PENDING', 'DOUBTS', 'STUCK']);
 
 const DEFAULT_AVAILABILITY = {
@@ -398,7 +399,7 @@ export class PlanContextService {
           );
           if (!touchesTopic) continue;
           itemsPlanned += 1;
-          if (POSITIVE.has(item.outcome)) itemsDone += 1;
+          if (POSITIVE_OUTCOMES.has(item.outcome)) itemsDone += 1;
         }
       }
       const coveragePct = itemsPlanned === 0 ? 0 : Math.round((100 * itemsDone) / itemsPlanned);

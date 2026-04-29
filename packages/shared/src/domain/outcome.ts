@@ -9,9 +9,16 @@ export const ITEM_OUTCOMES = [
 
 export type ItemOutcome = (typeof ITEM_OUTCOMES)[number];
 
+// "Positive" = the member engaged with the material to completion. DOUBTS
+// belongs here because the study itself was done — the member just wants to
+// go deeper later. The doubt is about future depth, not about whether the
+// item was studied. Triage / progress / "finished" feed events all key off
+// this set, so a DOUBTS item counts toward weekly progress and doesn't trip
+// "disappeared" alerts.
 export const POSITIVE_OUTCOMES: ReadonlySet<ItemOutcome> = new Set([
   'DONE_EASY',
   'DONE_HARD',
+  'DOUBTS',
   'SKIPPED',
 ]);
 

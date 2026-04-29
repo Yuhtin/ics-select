@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { resolveActiveMembership } from '../../common/cycle/active-cycle';
-import { type ItemOutcome, isPositiveOutcome } from '@ics-select/shared';
+import { type ItemOutcome, isPositiveOutcome, POSITIVE_OUTCOMES } from '@ics-select/shared';
 
 type CohortEvent = {
   id: string;
@@ -38,8 +38,6 @@ export type CohortResponse = {
   feed: CohortEvent[];
   ranking?: MemberRank[];
 };
-
-const POSITIVE = new Set<ItemOutcome>(['DONE_EASY', 'DONE_HARD', 'SKIPPED']);
 
 @Injectable()
 export class CohortService {
@@ -126,9 +124,12 @@ export class CohortService {
     for (const item of recentItems) {
       if (!item.completedAt) continue;
       let kind: CohortEvent['kind'] | null = null;
-      if (isPositiveOutcome(item.outcome as ItemOutcome)) kind = 'finished';
-      else if (item.outcome === 'STUCK') kind = 'got_stuck';
+      // Specific signals (STUCK / DOUBTS) win over the generic "finished"
+      // bucket — DOUBTS is positive for progress but the cohort feed should
+      // still surface it as "had doubts" so peers see the nuance.
+      if (item.outcome === 'STUCK') kind = 'got_stuck';
       else if (item.outcome === 'DOUBTS') kind = 'had_doubts';
+      else if (isPositiveOutcome(item.outcome as ItemOutcome)) kind = 'finished';
       if (!kind) continue;
       feed.push({
         id: `${(item as any).weeklyPlan.userId}:${kind}:${item.id}`,
@@ -167,7 +168,7 @@ export class CohortService {
       for (const plan of plans) {
         const tally = byUser.get(plan.userId) ?? { done: 0, total: 0 };
         tally.total += (plan as any).items.length;
-        tally.done += (plan as any).items.filter((i: any) => POSITIVE.has(i.outcome)).length;
+        tally.done += (plan as any).items.filter((i: any) => POSITIVE_OUTCOMES.has(i.outcome)).length;
         byUser.set(plan.userId, tally);
       }
 

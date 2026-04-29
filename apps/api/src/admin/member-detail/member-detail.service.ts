@@ -5,9 +5,8 @@ import {
   resolveActiveMembership,
 } from '../../common/cycle/active-cycle.js';
 
-import type { ItemOutcome } from '@ics-select/shared';
+import { POSITIVE_OUTCOMES } from '@ics-select/shared';
 
-const POSITIVE = new Set<ItemOutcome>(['DONE_EASY', 'DONE_HARD', 'SKIPPED']);
 const DAY_MS = 24 * 60 * 60 * 1000;
 const WEEK_MS = 7 * DAY_MS;
 
@@ -441,7 +440,7 @@ export class MemberDetailService {
           );
           if (!touchesTopic) continue;
           itemsPlanned += 1;
-          if (POSITIVE.has(item.outcome)) itemsDone += 1;
+          if (POSITIVE_OUTCOMES.has(item.outcome)) itemsDone += 1;
         }
       }
       const coveragePct =

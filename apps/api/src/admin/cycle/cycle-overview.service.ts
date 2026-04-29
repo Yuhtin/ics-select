@@ -5,6 +5,7 @@ import { computeWeekPosition } from '../../common/cycle/active-cycle.js';
 import {
   type ItemOutcome,
   isPositiveOutcome,
+  POSITIVE_OUTCOMES,
   sumAllocatedMinutes,
 } from '@ics-select/shared';
 
@@ -18,7 +19,6 @@ const DEFAULT_AVAILABILITY = {
   sundayMinutes: 0,
 };
 
-const POSITIVE = new Set<ItemOutcome>(['DONE_EASY', 'DONE_HARD', 'SKIPPED']);
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 const STUCK_PROXY_WINDOW_MS = 72 * 60 * 60 * 1000;
 const FEED_WINDOW_DAYS = 7;
@@ -224,7 +224,7 @@ export class CycleOverviewService {
     const members = memberships.map((m) => {
       const currentPlan = planByUserWeek.get(`${m.userId}:${currentWeekStart.getTime()}`);
       const total = currentPlan?.items.length ?? 0;
-      const done = (currentPlan?.items ?? []).filter((i) => POSITIVE.has(i.outcome)).length;
+      const done = (currentPlan?.items ?? []).filter((i) => POSITIVE_OUTCOMES.has(i.outcome)).length;
       const percent = total === 0 ? 0 : Math.round((done / total) * 100);
       const plannedMinutes = sumAllocatedMinutes(
         (currentPlan?.items ?? []).map((i) => ({
@@ -255,7 +255,7 @@ export class CycleOverviewService {
       const cells = weeksWindow.map((w) => {
         const plan = planByUserWeek.get(`${m.userId}:${w.startsAt.getTime()}`);
         const total = plan?.items.length ?? 0;
-        const done = (plan?.items ?? []).filter((i) => POSITIVE.has(i.outcome)).length;
+        const done = (plan?.items ?? []).filter((i) => POSITIVE_OUTCOMES.has(i.outcome)).length;
         return total === 0 ? 0 : Math.round((done / total) * 100);
       });
       return {
@@ -307,9 +307,13 @@ export class CycleOverviewService {
     for (const item of recentItems as any[]) {
       if (!item.completedAt) continue;
       let kind: CycleOverviewResponse['feed'][number]['kind'] | null = null;
-      if (isPositiveOutcome(item.outcome as ItemOutcome)) kind = 'finished';
-      else if (item.outcome === 'STUCK') kind = 'got_stuck';
+      // DOUBTS / STUCK get their own feed kinds (so admin sees the signal
+      // distinctly), even though DOUBTS is also a positive outcome for the
+      // progress count. Order matters: check the specific outcomes before
+      // falling back to "finished".
+      if (item.outcome === 'STUCK') kind = 'got_stuck';
       else if (item.outcome === 'DOUBTS') kind = 'had_doubts';
+      else if (isPositiveOutcome(item.outcome as ItemOutcome)) kind = 'finished';
       if (!kind) continue;
       feed.push({
         id: `${item.weeklyPlan.userId}:${kind}:${item.id}`,
