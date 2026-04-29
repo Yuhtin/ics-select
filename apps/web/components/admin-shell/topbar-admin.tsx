@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { LucideIcon } from 'lucide-react';
 import {
-  Bell,
   BookOpen,
   CircleDot,
   ClipboardList,
@@ -26,7 +25,6 @@ type NavItem = {
 };
 
 const NAV: readonly NavItem[] = [
-  { href: '/admin', label: 'Triage', icon: Bell, exact: true },
   { href: '/admin/members', label: 'Members', icon: Users },
   { href: '/admin/cycles', label: 'Cycles', icon: CircleDot },
   { href: '/admin/plans', label: 'Plans', icon: ListChecks },
@@ -54,7 +52,7 @@ export function TopbarAdmin() {
     <header className="sticky top-0 z-40 border-b border-border-token/60 bg-bg/80 backdrop-blur">
       <div className="mx-auto flex h-14 max-w-[1400px] items-center justify-between px-6">
         <Link
-          href="/admin"
+          href="/admin/cycle/active"
           className="flex items-center gap-2 font-sans text-sm font-semibold tracking-tight text-fg"
         >
           <span className="grid h-7 w-7 place-items-center rounded-[8px] bg-fg text-[11px] font-bold tracking-tight text-bg">
@@ -92,7 +90,7 @@ export function TopbarAdmin() {
           {user && (
             <>
               <Link
-                href="/admin"
+                href="/admin/cycle/active"
                 aria-label={user.name}
                 title={user.name}
                 className="inline-grid h-8 w-8 place-items-center overflow-hidden rounded-full border border-border-token bg-bg-subtle font-sans text-[11px] font-semibold text-fg-soft transition-colors hover:text-fg"

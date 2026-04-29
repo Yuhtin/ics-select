@@ -66,6 +66,16 @@ export function useAdminCycleOverview(cycleId: string | null | undefined) {
   });
 }
 
+export function useAdminActiveCycleOverview() {
+  return useQuery({
+    queryKey: ['admin', 'cycle', 'active'],
+    queryFn: () => apiFetch<CycleOverviewResponse>('/admin/cycle/active'),
+    // 404 when no cycle is ACTIVE — caller renders an empty-state instead of
+    // retrying.
+    retry: false,
+  });
+}
+
 export function useToggleRanking() {
   const qc = useQueryClient();
   return useMutation({

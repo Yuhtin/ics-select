@@ -16,7 +16,7 @@ export default function RootPage() {
       setShowLanding(true);
       return;
     }
-    router.replace(user.role === 'ADMIN' ? '/admin/cycles' : '/me');
+    router.replace(user.role === 'ADMIN' ? '/admin/cycle/active' : '/me');
   }, [user, isLoading, router]);
 
   if (!showLanding) {
