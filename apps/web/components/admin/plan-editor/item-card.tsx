@@ -71,11 +71,6 @@ export function ItemCard({
               carried over
             </span>
           )}
-          {item.skippable && (
-            <span className="rounded-full border border-rule bg-paper-warm px-2 py-0.5 text-xs font-mono uppercase tracking-label text-ink-mute">
-              skippable
-            </span>
-          )}
           {outcomeLabel && (
             <span
               className={clsx(
