@@ -12,10 +12,26 @@ function formatDate(iso: string, inUtc = false): string {
   });
 }
 
-function RetroBlock({ label, text }: { label: string; text: string }) {
+function RetroBlock({
+  label,
+  text,
+  linkedItem,
+}: {
+  label: string;
+  text: string;
+  linkedItem?: { id: string; title: string; outcome: string } | null;
+}) {
   return (
     <div className="border-l-2 border-accent pl-4 py-2 bg-paper-warm/40">
-      <p className="font-mono text-[10px] uppercase tracking-eyebrow text-ink-mute font-semibold">{label}</p>
+      <p className="font-mono text-[10px] uppercase tracking-eyebrow text-ink-mute font-semibold">
+        {label}
+      </p>
+      {linkedItem && (
+        <p className="mt-1 font-mono text-[11px] text-ink-mute">
+          → {linkedItem.title}
+          <span className="ml-2 text-ink-faint">[{linkedItem.outcome}]</span>
+        </p>
+      )}
       <p className="mt-1 font-serif-tool text-sm italic text-ink leading-relaxed">&ldquo;{text}&rdquo;</p>
     </div>
   );
@@ -42,8 +58,12 @@ export function RetrosTab({ retros }: { retros: Retro[] }) {
             </button>
             {open && (
               <div className="px-4 pb-4 space-y-3">
-                {r.whatClicked && <RetroBlock label="What clicked" text={r.whatClicked} />}
-                {r.whatStuck && <RetroBlock label="What stuck" text={r.whatStuck} />}
+                {r.whatClicked && (
+                  <RetroBlock label="What clicked" text={r.whatClicked} linkedItem={r.valuedItem} />
+                )}
+                {r.whatStuck && (
+                  <RetroBlock label="What stuck" text={r.whatStuck} linkedItem={r.stuckItem} />
+                )}
                 {r.nextWeekWish && <RetroBlock label="Next week wish" text={r.nextWeekWish} />}
               </div>
             )}

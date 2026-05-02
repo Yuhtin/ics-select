@@ -81,10 +81,18 @@ export function ContextPanel({ data, carryOverIds, onCarryOverChange }: ContextP
           {data.retro ? (
             <>
               {data.retro.whatClicked && (
-                <RetroBlock label="What clicked" text={data.retro.whatClicked} />
+                <RetroBlock
+                  label="What clicked"
+                  text={data.retro.whatClicked}
+                  linkedItem={data.retro.valuedItem}
+                />
               )}
               {data.retro.whatStuck && (
-                <RetroBlock label="What stuck" text={data.retro.whatStuck} />
+                <RetroBlock
+                  label="What stuck"
+                  text={data.retro.whatStuck}
+                  linkedItem={data.retro.stuckItem}
+                />
               )}
               {data.retro.nextWeekWish && (
                 <RetroBlock label="Next week wish" text={data.retro.nextWeekWish} />
@@ -140,12 +148,26 @@ function OutcomeCell({
   );
 }
 
-function RetroBlock({ label, text }: { label: string; text: string }) {
+function RetroBlock({
+  label,
+  text,
+  linkedItem,
+}: {
+  label: string;
+  text: string;
+  linkedItem?: { id: string; title: string; outcome: string } | null;
+}) {
   return (
     <div className="border-l-2 border-accent pl-4 py-2 bg-paper-warm/40">
       <p className="font-mono text-[10px] uppercase tracking-eyebrow text-ink-mute font-semibold">
         {label}
       </p>
+      {linkedItem && (
+        <p className="mt-1 font-mono text-[11px] text-ink-mute">
+          → {linkedItem.title}
+          <span className="ml-2 text-ink-faint">[{linkedItem.outcome}]</span>
+        </p>
+      )}
       <p className="mt-1 font-serif-tool text-sm italic text-ink leading-relaxed">&ldquo;{text}&rdquo;</p>
     </div>
   );

@@ -317,6 +317,8 @@ model WeeklyPlanItem {
   carriedFrom    WeeklyPlanItem?               @relation("carry", fields: [carriedFromItemId], references: [id])
   carriedTo      WeeklyPlanItem[]              @relation("carry")
   calendarEvents WeeklyPlanItemCalendarEvent[]
+  valuedInRetros WeeklyRetro[]                 @relation("RetroValuedItem")
+  stuckInRetros  WeeklyRetro[]                 @relation("RetroStuckItem")
 
   @@unique([weeklyPlanId, order])
   @@index([scheduledAt])
@@ -338,13 +340,22 @@ model WeeklyRetro {
   userId       String
   cycleId      String
   weekStart    DateTime
+  // whatClicked: kept name; semantics shifted to "valued reason" — paired with valuedItemId
   whatClicked  String?
+  // whatStuck: kept name; semantics shifted to "stuck blocker" — paired with stuckItemId
   whatStuck    String?
   nextWeekWish String?
+  // FK to the WeeklyPlanItem the member picked as "most valued" in Q2.
+  // SetNull so deleting an item doesn't cascade-delete the retro text.
+  valuedItemId String?
+  // FK to the WeeklyPlanItem the member picked as "stuck/in doubt" in Q1.
+  stuckItemId  String?
   submittedAt  DateTime @default(now())
 
-  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  cycle Cycle @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cycle       Cycle            @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  valuedItem  WeeklyPlanItem?  @relation("RetroValuedItem", fields: [valuedItemId], references: [id], onDelete: SetNull)
+  stuckItem   WeeklyPlanItem?  @relation("RetroStuckItem",  fields: [stuckItemId],  references: [id], onDelete: SetNull)
 
   @@unique([userId, weekStart])
   @@index([cycleId, weekStart])

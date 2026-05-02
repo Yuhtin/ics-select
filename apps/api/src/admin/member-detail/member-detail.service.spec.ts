@@ -209,6 +209,8 @@ describe('MemberDetailService', () => {
       whatStuck: `stuck ${i}`,
       nextWeekWish: `wish ${i}`,
       submittedAt: new Date(submittedAt.getTime() - i * 1000),
+      valuedItem: null,
+      stuckItem: null,
     }));
 
     const prisma = makePrisma({
@@ -333,6 +335,50 @@ describe('MemberDetailService', () => {
     await expect(
       service.getDetail('user-a', 'cycle-nonexistent', NOW),
     ).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('denormalizes valuedItem and stuckItem with title + outcome in retros array', async () => {
+    const submittedAt = new Date('2026-04-12T22:00:00Z');
+    const retros = [
+      {
+        id: 'retro-1',
+        weekStart: new Date('2026-04-06T00:00:00Z'),
+        whatClicked: 'great week',
+        whatStuck: null,
+        nextWeekWish: null,
+        submittedAt,
+        valuedItem: {
+          id: 'wpi-valued',
+          outcome: 'DONE_EASY',
+          libraryItem: { title: 'Arrays basics' },
+        },
+        stuckItem: {
+          id: 'wpi-stuck',
+          outcome: 'STUCK',
+          libraryItem: { title: 'Graph traversal' },
+        },
+      },
+    ];
+
+    const prisma = makePrisma({
+      user: { findUnique: jest.fn(async () => defaultMember) },
+      cycleMembership: { findFirst: jest.fn(async () => defaultMembership) },
+      weeklyRetro: { findMany: jest.fn(async () => retros) },
+    });
+    const service = makeService(prisma);
+    const result = await service.getDetail('user-a', null, NOW);
+
+    expect(result.retros).toHaveLength(1);
+    expect(result.retros[0]!.valuedItem).toEqual({
+      id: 'wpi-valued',
+      title: 'Arrays basics',
+      outcome: 'DONE_EASY',
+    });
+    expect(result.retros[0]!.stuckItem).toEqual({
+      id: 'wpi-stuck',
+      title: 'Graph traversal',
+      outcome: 'STUCK',
+    });
   });
 
   it('response includes memberships and attendance arrays', async () => {

@@ -38,6 +38,8 @@ export type PlanContextResponse = {
     whatStuck: string | null;
     nextWeekWish: string | null;
     submittedAt: string;
+    valuedItem: { id: string; title: string; outcome: string } | null;
+    stuckItem: { id: string; title: string; outcome: string } | null;
   } | null;
   topicCoverage: Array<{
     topicId: string;
