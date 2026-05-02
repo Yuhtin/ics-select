@@ -15,6 +15,15 @@ import { OutcomeDot } from '../ui/outcome-dot';
 import { formatTimeLocal, formatDateLocal } from '../../lib/format/time';
 import { platformLabel, detectPlatform, type PlatformKey } from '../../lib/format/platform';
 
+const TIME_CHIPS = [
+  { label: '15 min', value: 15 },
+  { label: '30 min', value: 30 },
+  { label: '1h',     value: 60 },
+  { label: '1h30',   value: 90 },
+  { label: '2h+',    value: 120 },
+  { label: 'Não sei', value: null },
+] as const;
+
 const PLATFORM_STRIPE: Record<PlatformKey, string> = {
   leetcode: 'bg-platform-leetcode',
   youtube: 'bg-platform-youtube',
@@ -33,6 +42,7 @@ export function ItemFocus({ item }: ItemFocusProps) {
   const [outcome, setOutcome] = useState<ItemOutcome | null>(isDone ? item.outcome : null);
   const [reflection, setReflection] = useState(item.reflection ?? '');
   const [editing, setEditing] = useState(!isDone);
+  const [actualMinutes, setActualMinutes] = useState<number | null | undefined>(undefined);
 
   const mutation = useSetItemOutcome();
 
@@ -69,7 +79,9 @@ export function ItemFocus({ item }: ItemFocusProps) {
       itemId: item.id,
       outcome,
       reflection: reflection.trim() === '' ? undefined : reflection,
+      actualMinutes: actualMinutes === undefined ? null : actualMinutes,
     });
+    setActualMinutes(undefined);
     setEditing(false);
   }
 
@@ -169,6 +181,28 @@ export function ItemFocus({ item }: ItemFocusProps) {
                 placeholder="Escreve em pt-BR se quiser — é sua nota"
                 className="w-full min-h-[96px] rounded-input border border-rule bg-surface p-3 font-sans text-sm text-ink placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-ink"
               />
+            )}
+            {outcome && outcome !== 'PENDING' && outcome !== 'SKIPPED' && (
+              <div className="space-y-2">
+                <p className="font-mono text-[11px] uppercase tracking-[0.1em] text-ink-mute">Tempo gasto (opcional)</p>
+                <div className="flex flex-wrap gap-2">
+                  {TIME_CHIPS.map((chip) => (
+                    <button
+                      key={chip.label}
+                      type="button"
+                      onClick={() => setActualMinutes(chip.value)}
+                      className={clsx(
+                        'font-mono text-[11px] uppercase tracking-[0.1em] px-3 py-1.5 rounded-pill border transition-colors',
+                        actualMinutes === chip.value
+                          ? 'bg-ink text-paper border-ink'
+                          : 'bg-paper-warm text-ink-soft border-rule hover:bg-rule',
+                      )}
+                    >
+                      {chip.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
             )}
             <Button
               onClick={handleSave}

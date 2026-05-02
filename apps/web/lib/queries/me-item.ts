@@ -47,12 +47,17 @@ export function useSetItemOutcome() {
       itemId: string;
       outcome: ItemOutcome;
       reflection?: string;
+      actualMinutes?: number | null;
     }) =>
       apiFetch<ItemResponse>(
         `/plans/${input.planId}/items/${input.itemId}/outcome`,
         {
           method: 'PATCH',
-          body: JSON.stringify({ outcome: input.outcome, reflection: input.reflection }),
+          body: JSON.stringify({
+            outcome: input.outcome,
+            reflection: input.reflection,
+            actualMinutes: input.actualMinutes ?? null,
+          }),
         },
       ),
     onSuccess: (_res, input) => {
