@@ -26,6 +26,24 @@ export type WeekRecap = {
   items: WeekRecapItem[];
 };
 
+// Mirrors the PlanOverflowError pattern in publication.service.ts: a
+// custom ConflictException subclass that carries the structured
+// { error: { code, message, details } } payload the global
+// HttpExceptionFilter forwards to the client. Tests assert via
+// toBeInstanceOf(InvalidItemReferenceError) instead of regex matching
+// on the message.
+export class InvalidItemReferenceError extends ConflictException {
+  constructor(public readonly missing: string[]) {
+    super({
+      error: {
+        code: 'INVALID_ITEM_REFERENCE',
+        message: 'One or more linked items do not belong to your current-week plan',
+        details: { missing },
+      },
+    });
+  }
+}
+
 @Injectable()
 export class RetroService {
   constructor(private readonly prisma: PrismaService) {}
@@ -137,9 +155,7 @@ export class RetroService {
       const foundIds = new Set(found.map((r) => r.id));
       const missing = idsToCheck.filter((id) => !foundIds.has(id));
       if (missing.length > 0) {
-        throw new ConflictException(
-          `INVALID_ITEM_REFERENCE: One or more linked items do not belong to your current-week plan (missing: ${missing.join(', ')})`,
-        );
+        throw new InvalidItemReferenceError(missing);
       }
     }
 

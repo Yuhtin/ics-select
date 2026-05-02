@@ -1,6 +1,6 @@
 import { Test } from '@nestjs/testing';
 import { ConflictException } from '@nestjs/common';
-import { RetroService } from './retro.service';
+import { InvalidItemReferenceError, RetroService } from './retro.service';
 import { PrismaService } from '../../common/prisma/prisma.service';
 
 const makePrismaMock = () => ({
@@ -188,7 +188,7 @@ describe('RetroService', () => {
         { whatClicked: 'x', valuedItemId: 'foreign-item' },
         new Date('2026-04-17T22:00:00Z'),
       ),
-    ).rejects.toThrow(/INVALID_ITEM_REFERENCE/);
+    ).rejects.toBeInstanceOf(InvalidItemReferenceError);
   });
 
   it('submit treats null/undefined ids as "no link" (no validation needed)', async () => {
