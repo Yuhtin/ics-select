@@ -88,6 +88,8 @@ export type MemberDetailResponse = {
     whatStuck: string | null;
     nextWeekWish: string | null;
     submittedAt: string;
+    valuedItem: { id: string; title: string; outcome: string } | null;
+    stuckItem: { id: string; title: string; outcome: string } | null;
   }>;
   attendance: Array<{
     classId: string;
@@ -175,6 +177,12 @@ type TimelinePlan = {
   items: TimelinePlanItem[];
 };
 
+type RetroLinkedItem = {
+  id: string;
+  outcome: string;
+  libraryItem: { title: string };
+} | null;
+
 type RetroRow = {
   id: string;
   weekStart: Date;
@@ -182,6 +190,8 @@ type RetroRow = {
   whatStuck: string | null;
   nextWeekWish: string | null;
   submittedAt: Date;
+  valuedItem: RetroLinkedItem;
+  stuckItem: RetroLinkedItem;
 };
 
 type TopicRow = { id: string; slug: string; label: string; order: number };
@@ -266,6 +276,28 @@ export class MemberDetailService {
           where: { userId: memberId },
           orderBy: { submittedAt: 'desc' },
           take: 8,
+          select: {
+            id: true,
+            weekStart: true,
+            whatClicked: true,
+            whatStuck: true,
+            nextWeekWish: true,
+            submittedAt: true,
+            valuedItem: {
+              select: {
+                id: true,
+                outcome: true,
+                libraryItem: { select: { title: true } },
+              },
+            },
+            stuckItem: {
+              select: {
+                id: true,
+                outcome: true,
+                libraryItem: { select: { title: true } },
+              },
+            },
+          },
         }) as Promise<RetroRow[]>,
         this.prisma.topic.findMany({ orderBy: { order: 'asc' } }) as Promise<TopicRow[]>,
         resolvedCycleId
@@ -358,6 +390,20 @@ export class MemberDetailService {
         whatStuck: r.whatStuck,
         nextWeekWish: r.nextWeekWish,
         submittedAt: r.submittedAt.toISOString(),
+        valuedItem: r.valuedItem
+          ? {
+              id: r.valuedItem.id,
+              title: r.valuedItem.libraryItem.title,
+              outcome: r.valuedItem.outcome,
+            }
+          : null,
+        stuckItem: r.stuckItem
+          ? {
+              id: r.stuckItem.id,
+              title: r.stuckItem.libraryItem.title,
+              outcome: r.stuckItem.outcome,
+            }
+          : null,
       })),
       attendance: classes.map((cls) => ({
         classId: cls.id,

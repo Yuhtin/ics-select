@@ -82,6 +82,8 @@ export type PlanContextResponse = {
     whatStuck: string | null;
     nextWeekWish: string | null;
     submittedAt: string;
+    valuedItem: { id: string; title: string; outcome: string } | null;
+    stuckItem: { id: string; title: string; outcome: string } | null;
   } | null;
   topicCoverage: Array<{
     topicId: string;
@@ -139,11 +141,19 @@ type AvailabilityRow = typeof DEFAULT_AVAILABILITY & { userId?: string };
 
 type TopicRow = { id: string; slug: string; label: string; order: number };
 
+type RetroLinkedItem = {
+  id: string;
+  outcome: string;
+  libraryItem: { title: string };
+} | null;
+
 type RetroRow = {
   whatClicked: string | null;
   whatStuck: string | null;
   nextWeekWish: string | null;
   submittedAt: Date;
+  valuedItem: RetroLinkedItem;
+  stuckItem: RetroLinkedItem;
 };
 
 @Injectable()
@@ -231,6 +241,20 @@ export class PlanContextService {
           whatStuck: true,
           nextWeekWish: true,
           submittedAt: true,
+          valuedItem: {
+            select: {
+              id: true,
+              outcome: true,
+              libraryItem: { select: { title: true } },
+            },
+          },
+          stuckItem: {
+            select: {
+              id: true,
+              outcome: true,
+              libraryItem: { select: { title: true } },
+            },
+          },
         },
       }) as Promise<RetroRow | null>,
       this.prisma.memberAvailability.findUnique({
@@ -301,6 +325,20 @@ export class PlanContextService {
             whatStuck: retro.whatStuck,
             nextWeekWish: retro.nextWeekWish,
             submittedAt: retro.submittedAt.toISOString(),
+            valuedItem: retro.valuedItem
+              ? {
+                  id: retro.valuedItem.id,
+                  title: retro.valuedItem.libraryItem.title,
+                  outcome: retro.valuedItem.outcome,
+                }
+              : null,
+            stuckItem: retro.stuckItem
+              ? {
+                  id: retro.stuckItem.id,
+                  title: retro.stuckItem.libraryItem.title,
+                  outcome: retro.stuckItem.outcome,
+                }
+              : null,
           }
         : null,
       topicCoverage,

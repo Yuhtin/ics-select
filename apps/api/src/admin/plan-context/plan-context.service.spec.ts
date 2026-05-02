@@ -242,6 +242,8 @@ describe('PlanContextService', () => {
           whatStuck: 'graph traversal still fuzzy',
           nextWeekWish: 'more graph drills',
           submittedAt,
+          valuedItem: null,
+          stuckItem: null,
         })),
       },
     });
@@ -416,6 +418,48 @@ describe('PlanContextService', () => {
       name: 'Alice',
       pictureUrl: 'https://example.com/a.jpg',
       track: 'BIG_TECH',
+    });
+  });
+
+  it('denormalizes valuedItem and stuckItem with title + outcome', async () => {
+    const submittedAt = new Date('2026-04-12T22:00:00Z');
+    const prisma = makePrisma({
+      user: { findUnique: jest.fn(async () => defaultMember) },
+      cycleMembership: { findFirst: jest.fn(async () => defaultMembership) },
+      weeklyRetro: {
+        findFirst: jest.fn(async () => ({
+          whatClicked: 'great week',
+          whatStuck: null,
+          nextWeekWish: null,
+          submittedAt,
+          valuedItem: {
+            id: 'wpi-valued',
+            outcome: 'DONE_EASY',
+            libraryItem: { title: 'Arrays basics' },
+          },
+          stuckItem: {
+            id: 'wpi-stuck',
+            outcome: 'STUCK',
+            libraryItem: { title: 'Graph traversal' },
+          },
+        })),
+      },
+    });
+    const service = makeService(prisma);
+    const result = await service.getContext(
+      { memberId: 'user-a', weekStart: WEEK_START },
+      NOW,
+    );
+    expect(result.retro).not.toBeNull();
+    expect(result.retro!.valuedItem).toEqual({
+      id: 'wpi-valued',
+      title: 'Arrays basics',
+      outcome: 'DONE_EASY',
+    });
+    expect(result.retro!.stuckItem).toEqual({
+      id: 'wpi-stuck',
+      title: 'Graph traversal',
+      outcome: 'STUCK',
     });
   });
 });
