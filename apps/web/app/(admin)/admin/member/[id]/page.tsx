@@ -7,6 +7,7 @@ import { RiskBanner } from '../../../../../components/admin/member-cockpit/risk-
 import { EngagementCard } from '../../../../../components/admin/member-cockpit/engagement-card';
 import { ItemsCompletedCard } from '../../../../../components/admin/member-cockpit/items-completed-card';
 import { TimeInvestedCard } from '../../../../../components/admin/member-cockpit/time-invested-card';
+import { BehaviorStrip } from '../../../../../components/admin/member-cockpit/behavior-strip';
 import { Eyebrow } from '../../../../../components/ui/eyebrow';
 
 type Range = 'cycle' | '7d' | 'all';
@@ -86,6 +87,8 @@ export default function AdminMemberPage({ params }: { params: Promise<{ id: stri
         <ItemsCompletedCard itemsCompleted={data.itemsCompleted} />
         <TimeInvestedCard timeInvested={data.timeInvested} />
       </div>
+
+      <BehaviorStrip behavior={data.behavior} />
     </div>
   );
 }
