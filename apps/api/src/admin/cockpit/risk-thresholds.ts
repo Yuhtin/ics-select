@@ -39,9 +39,15 @@ export function classifyRisk(input: RiskInput): RiskVerdict {
 type HitKind = 'session' | 'completion' | 'cohort';
 type Hit = { kind: HitKind; value: number; threshold: number };
 
+type ThresholdSet = {
+  readonly daysSinceLastSession: number;
+  readonly completionRate: number;
+  readonly cohortRankBottomPct: number;
+};
+
 function collectHits(
   input: RiskInput,
-  t: typeof RISK_THRESHOLDS.AT_RISK,
+  t: ThresholdSet,
 ): Hit[] {
   const hits: Hit[] = [];
   if (input.daysSinceLastSession >= t.daysSinceLastSession) {
