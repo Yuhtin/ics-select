@@ -80,6 +80,15 @@ enum ThemePreference {
   DARK
 }
 
+enum UserEventType {
+  SESSION_START
+  PLAN_VIEW
+  ITEM_VIEW
+  OUTCOME_MARKED
+  RETRO_SUBMITTED
+  AVAILABILITY_SAVED
+}
+
 model User {
   id                String           @id @default(cuid())
   email             String           @unique
@@ -106,6 +115,7 @@ model User {
   dismissedAlerts    DismissedAlert[]
   retroRemindersSent RetroReminderSent[]
   invitesCreated     InvitedEmail[]      @relation("inviteCreatedBy")
+  events             UserEvent[]
 }
 
 // Allowlist for first-login. Admin pre-registers an email with a role; the
@@ -311,6 +321,7 @@ model WeeklyPlanItem {
   carriedFromItemId String?
   scheduledAt       DateTime?
   scheduledMinutes  Int?
+  actualMinutes     Int?
 
   weeklyPlan     WeeklyPlan                    @relation(fields: [weeklyPlanId], references: [id], onDelete: Cascade)
   libraryItem    LibraryItem                   @relation(fields: [libraryItemId], references: [id])
@@ -397,6 +408,18 @@ model RetroReminderSent {
 
   @@unique([userId, weekStart])
   @@index([weekStart])
+}
+
+model UserEvent {
+  id         String        @id @default(cuid())
+  userId     String
+  type       UserEventType
+  occurredAt DateTime      @default(now())
+  meta       Json?
+  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, occurredAt])
+  @@index([userId, type, occurredAt])
 }
 
 model AiGeneration {
