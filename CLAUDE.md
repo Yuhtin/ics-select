@@ -71,6 +71,28 @@ cp .env.example .env                          # POSTGRES_* for the compose file
 docker compose up -d postgres                 # pgvector/pgvector:pg16 on :5432
 ```
 
+### Database workflow — **READ THIS BEFORE TOUCHING ANY MIGRATION**
+
+**The repo's `apps/api/.env` ships pointing at the production DB** (`212.38.89.33:5433`). That file is the same file Prisma reads when you run `prisma migrate dev`, `prisma migrate reset`, or `prisma db execute` from your laptop. There is no built-in safety net — every migration command targets whatever `DATABASE_URL` resolves to, and the prod DB is **not baselined** with `_prisma_migrations`, so `prisma migrate dev` against it will hit P3005 and offer to **reset the database**. Confirming that prompt drops every table. This has happened. Don't repeat it.
+
+**The contract:**
+
+- **Local dev → use the local Postgres.** Bring it up with `docker compose up -d postgres`. Then run migrations against an explicitly-overridden URL:
+  ```bash
+  DATABASE_URL='postgres://ics:ics_dev_password@localhost:5432/ics_select?sslmode=disable' \
+    pnpm --filter @ics-select/prisma exec prisma migrate dev --name <slug>
+  ```
+  Prefer setting `DATABASE_URL` per-command (as above) over editing `apps/api/.env` so the prod URL stays available for one-off recovery work.
+- **Prod migrations ship via the container.** New migration files go into `packages/prisma/prisma/migrations/`, get committed, and the next container start runs `prisma migrate deploy` from `apps/api/docker-entrypoint.sh`. **Never** run `prisma migrate dev` or `prisma migrate reset` against the prod URL — `deploy` is the only safe verb, and it only ever applies pending migrations (no destructive prompts).
+- **Seed scripts and ad-hoc reads** that need prod data (e.g., `seed:library`, `seed:recovery`, the recovery `psql` queries we did on 2026-05-02) **must be explicitly confirmed by the user before running**. The signal is unambiguous: the user says "rode contra prod" / "pode rodar" / similar, *for that specific command*. A general "fix the X" instruction is not a license to point a Prisma command at prod.
+
+**Hard rules for AI assistants (Claude or otherwise) operating in this repo:**
+
+1. Before running anything that touches a database, confirm `DATABASE_URL`. If it points at prod, **stop and ask** — even for read-only queries, even for "small" migrations, even when retrying a failure.
+2. Never confirm an interactive `prisma migrate dev` / `migrate reset` reset prompt without the user's explicit go-ahead for that prompt. Treat any P3005 against prod as a hard stop.
+3. Subagents implementing plan tasks must inherit this rule via their prompt; pass an explicit "do not run destructive DB commands; if a step appears to require one, escalate." constraint.
+4. Production-data write operations (seed scripts, recovery imports, schema fixes) should always be shown to the user as a dry preview (or at least a one-line summary of what's about to change) **before** execution. The user OKs each one separately.
+
 ## Architecture notes that matter
 
 ### HeroUI + pnpm content path
