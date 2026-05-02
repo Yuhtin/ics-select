@@ -1,10 +1,11 @@
 import { ArgumentsHost, BadRequestException, InternalServerErrorException } from '@nestjs/common';
+import type { ConfigService } from '@nestjs/config';
 import { z } from 'zod';
 import { HttpExceptionFilter } from './http-exception.filter';
 
-type Captured = { status?: number; body?: unknown };
+type Captured = { status?: number; body?: unknown; redirect?: string };
 
-function mockHost(): { host: ArgumentsHost; captured: Captured } {
+function mockHost(path = '/test'): { host: ArgumentsHost; captured: Captured } {
   const captured: Captured = {};
   const res = {
     status(code: number) {
@@ -15,18 +16,27 @@ function mockHost(): { host: ArgumentsHost; captured: Captured } {
       captured.body = body;
       return this;
     },
+    redirect(url: string) {
+      captured.redirect = url;
+      return this;
+    },
   };
   const host = {
     switchToHttp: () => ({
       getResponse: () => res,
-      getRequest: () => ({ url: '/test' }),
+      getRequest: () => ({ path, url: path }),
     }),
   } as unknown as ArgumentsHost;
   return { host, captured };
 }
 
+const config = {
+  getOrThrow: (key: string) =>
+    key === 'FRONTEND_BASE_URL' ? 'https://ics.example.com' : '',
+} as unknown as ConfigService;
+
 describe('HttpExceptionFilter', () => {
-  const filter = new HttpExceptionFilter();
+  const filter = new HttpExceptionFilter(config);
 
   it('maps BadRequestException to 400 VALIDATION_ERROR', () => {
     const { host, captured } = mockHost();
@@ -75,5 +85,22 @@ describe('HttpExceptionFilter', () => {
     filter.catch(new Error('db password is hunter2'), host);
     expect(captured.status).toBe(500);
     expect((captured.body as { error: { message: string } }).error.message).not.toContain('hunter2');
+  });
+
+  it('redirects OAuth TokenError on /auth/google/callback to /login?error=auth_retry', () => {
+    const { host, captured } = mockHost('/auth/google/callback');
+    const err = new Error('Bad Request');
+    err.name = 'TokenError';
+    filter.catch(err, host);
+    expect(captured.redirect).toBe('https://ics.example.com/login?error=auth_retry');
+    expect(captured.status).toBeUndefined();
+    expect(captured.body).toBeUndefined();
+  });
+
+  it('falls through to JSON 500 for non-OAuth errors on the callback path', () => {
+    const { host, captured } = mockHost('/auth/google/callback');
+    filter.catch(new Error('something else broke'), host);
+    expect(captured.redirect).toBeUndefined();
+    expect(captured.status).toBe(500);
   });
 });

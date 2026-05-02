@@ -136,7 +136,19 @@ export default function LoginPage() {
 function LoginErrorBanner() {
   const searchParams = useSearchParams();
   const error = searchParams.get('error');
-  if (error !== 'not_invited') return null;
+  if (error !== 'not_invited' && error !== 'auth_retry') return null;
+  const copy =
+    error === 'auth_retry'
+      ? {
+          title: 'Login falhou — tenta de novo',
+          body:
+            'O Google rejeitou esse login (geralmente porque a página foi recarregada ou o link foi clicado duas vezes). Clica em "Continuar com Google" abaixo pra fazer um novo login.',
+        }
+      : {
+          title: 'Email não autorizado',
+          body:
+            'Sua conta ainda não foi convidada para o ICS Select. Peça ao diretor educacional para adicionar seu email.',
+        };
   return (
     <div
       role="alert"
@@ -148,13 +160,8 @@ function LoginErrorBanner() {
     >
       <AlertCircle className="mt-[1px] h-4 w-4 shrink-0 text-danger" strokeWidth={1.8} />
       <div className="min-w-0">
-        <p className="font-sans text-[13px] font-semibold text-fg">
-          Email não autorizado
-        </p>
-        <p className="mt-0.5 font-sans text-[12px] leading-relaxed text-fg-soft">
-          Sua conta ainda não foi convidada para o ICS Select. Peça ao diretor
-          educacional para adicionar seu email.
-        </p>
+        <p className="font-sans text-[13px] font-semibold text-fg">{copy.title}</p>
+        <p className="mt-0.5 font-sans text-[12px] leading-relaxed text-fg-soft">{copy.body}</p>
       </div>
     </div>
   );

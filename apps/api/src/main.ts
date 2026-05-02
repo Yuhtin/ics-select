@@ -2,6 +2,7 @@ import 'reflect-metadata';
 import cookieParser from 'cookie-parser';
 import { NestFactory } from '@nestjs/core';
 import { Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module.js';
 import { loadEnv } from './config/env.js';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter.js';
@@ -17,7 +18,7 @@ async function bootstrap() {
   // everyone as one.
   (expressApp as unknown as { set: (k: string, v: unknown) => void }).set('trust proxy', 1);
 
-  app.useGlobalFilters(new HttpExceptionFilter());
+  app.useGlobalFilters(new HttpExceptionFilter(app.get(ConfigService)));
   app.use(cookieParser());
   app.use(requestTiming);
 

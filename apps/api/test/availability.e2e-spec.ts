@@ -19,6 +19,7 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
+import { ConfigService } from '@nestjs/config';
 import { Test } from '@nestjs/testing';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
@@ -106,7 +107,15 @@ describe('PATCH /me/availability (e2e)', () => {
     }).compile();
 
     app = mod.createNestApplication();
-    app.useGlobalFilters(new HttpExceptionFilter());
+    // The lightweight test module doesn't register ConfigModule; the e2e
+    // path doesn't exercise the OAuth-redirect branch of the filter, so a
+    // stub ConfigService that throws on access is enough.
+    const stubConfig = {
+      getOrThrow: () => {
+        throw new Error('ConfigService not available in this e2e harness');
+      },
+    } as unknown as ConfigService;
+    app.useGlobalFilters(new HttpExceptionFilter(stubConfig));
     await app.init();
   });
 

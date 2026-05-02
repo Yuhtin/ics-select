@@ -10,6 +10,7 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { ZodError } from 'zod';
 
 type ErrorPayload = {
@@ -20,13 +21,45 @@ type ErrorPayload = {
   };
 };
 
+// Errors thrown inside passport-google-oauth20 strategy code (token exchange,
+// profile fetch) before the controller handler runs. Most common cause:
+// the auth code was already used / expired / revoked — typically because
+// the user hit back/refresh, or there was a network hiccup between us and
+// Google. Without special handling the user sees a raw 500 INTERNAL.
+function isOAuthFlowError(exception: unknown): boolean {
+  if (!exception || typeof exception !== 'object') return false;
+  const name = (exception as { name?: string }).name;
+  return name === 'TokenError' || name === 'InternalOAuthError';
+}
+
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(HttpExceptionFilter.name);
 
+  constructor(private readonly config: ConfigService) {}
+
   catch(exception: unknown, host: ArgumentsHost): void {
     const ctx = host.switchToHttp();
+    const request = ctx.getRequest<{ path?: string; url?: string }>();
     const response = ctx.getResponse();
+
+    // Special case: Google OAuth callback failures (TokenError /
+    // InternalOAuthError) are user-visible — passport throws before the
+    // controller runs, the user sees the raw API response. Bounce them
+    // back to /login with a friendly error code so the UI can render a
+    // "try again" message instead of a JSON dump.
+    const path = request.path ?? request.url ?? '';
+    if (path.startsWith('/auth/google/callback') && isOAuthFlowError(exception)) {
+      const frontend = this.config.getOrThrow<string>('FRONTEND_BASE_URL');
+      const url = new URL('/login', frontend);
+      url.searchParams.set('error', 'auth_retry');
+      this.logger.warn(
+        `OAuth callback ${(exception as { name?: string }).name}: ${(exception as Error).message ?? 'unknown'} — redirecting to ${url.toString()}`,
+      );
+      response.redirect(url.toString());
+      return;
+    }
+
     const { status, payload } = this.map(exception);
 
     if (status >= 500) {
