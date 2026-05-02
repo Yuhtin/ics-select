@@ -1,5 +1,8 @@
-import { Module } from '@nestjs/common';
-import { APP_GUARD } from '@nestjs/core';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { ActivityModule } from './activity/activity.module.js';
+import { ActivityMiddleware } from './activity/activity.middleware.js';
+import { LogEventInterceptor } from './activity/log-event.interceptor.js';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { PrismaModule } from './common/prisma/prisma.module.js';
@@ -70,10 +73,16 @@ import { loadEnv } from './config/env.js';
     WaitlistModule,
     PublicCohortModule,
     HealthModule,
+    ActivityModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
+    { provide: APP_INTERCEPTOR, useClass: LogEventInterceptor },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer): void {
+    consumer.apply(ActivityMiddleware).forRoutes('*');
+  }
+}
