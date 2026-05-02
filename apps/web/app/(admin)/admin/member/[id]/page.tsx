@@ -5,6 +5,7 @@ import { ArrowLeft, ChevronDown, MessageCircle } from 'lucide-react';
 import { useAdminCockpit } from '../../../../../lib/queries/admin-cockpit';
 import { RiskBanner } from '../../../../../components/admin/member-cockpit/risk-banner';
 import { EngagementCard } from '../../../../../components/admin/member-cockpit/engagement-card';
+import { ItemsCompletedCard } from '../../../../../components/admin/member-cockpit/items-completed-card';
 import { Eyebrow } from '../../../../../components/ui/eyebrow';
 
 type Range = 'cycle' | '7d' | 'all';
@@ -81,9 +82,7 @@ export default function AdminMemberPage({ params }: { params: Promise<{ id: stri
 
       <div className="grid grid-cols-12 gap-5">
         <EngagementCard engagement={data.engagement} status={data.risk.status} />
-        <div className="col-span-6 bg-surface border border-rule rounded-lg p-6 flex items-center justify-center text-ink-faint font-mono text-[11px]">
-          ItemsCompletedCard (T14)
-        </div>
+        <ItemsCompletedCard itemsCompleted={data.itemsCompleted} />
         <div className="col-span-3 bg-surface border border-rule rounded-lg p-6 flex items-center justify-center text-ink-faint font-mono text-[11px]">
           TimeInvestedCard (T15)
         </div>
