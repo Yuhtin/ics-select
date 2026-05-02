@@ -104,6 +104,7 @@ describe('WeeklyPlansService', () => {
       const result = await svc.setItemOutcome(itemId, 'u-1', {
         outcome: 'DONE_EASY',
         reflection: 'foi tranquilo',
+        actualMinutes: null,
       });
 
       expect(prisma.weeklyPlanItem.update).toHaveBeenCalledWith(
@@ -112,6 +113,7 @@ describe('WeeklyPlansService', () => {
           data: expect.objectContaining({
             outcome: 'DONE_EASY',
             reflection: 'foi tranquilo',
+            actualMinutes: null,
             completedAt: expect.any(Date),
           }),
         }),
@@ -131,12 +133,13 @@ describe('WeeklyPlansService', () => {
       });
       const itemId = plan.items[0]!.id;
 
-      await svc.setItemOutcome(itemId, 'u-1', { outcome: 'PENDING' });
+      await svc.setItemOutcome(itemId, 'u-1', { outcome: 'PENDING', actualMinutes: null });
 
       expect(prisma.weeklyPlanItem.update).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
             outcome: 'PENDING',
+            actualMinutes: null,
             completedAt: null,
           }),
         }),
@@ -157,7 +160,7 @@ describe('WeeklyPlansService', () => {
       const itemId = plan.items[0]!.id;
 
       await expect(
-        svc.setItemOutcome(itemId, 'someone-else', { outcome: 'DONE_EASY' }),
+        svc.setItemOutcome(itemId, 'someone-else', { outcome: 'DONE_EASY', actualMinutes: null }),
       ).rejects.toThrow(/forbidden/i);
     });
   });

@@ -11,6 +11,7 @@ import {
   SetItemOutcomeSchema,
   UpdatePlanSchema,
 } from './dto.js';
+import { LogEvent } from '../activity/log-event.decorator.js';
 
 @Controller()
 export class WeeklyPlansController {
@@ -122,6 +123,11 @@ export class WeeklyPlansController {
   }
 
   @Patch('plans/:planId/items/:itemId/outcome')
+  @LogEvent('OUTCOME_MARKED', ({ body, request }) => {
+    const r = request as { params: { itemId: string } };
+    const b = body as { outcome: string; actualMinutes?: number | null };
+    return { itemId: r.params.itemId, outcome: b.outcome, actualMinutes: b.actualMinutes ?? null };
+  })
   setItemOutcome(
     @Param('planId') _planId: string,
     @Param('itemId') itemId: string,
@@ -132,6 +138,7 @@ export class WeeklyPlansController {
     return this.plans.setItemOutcome(itemId, user.sub, {
       outcome: input.outcome,
       reflection: input.reflection,
+      actualMinutes: input.actualMinutes ?? null,
     });
   }
 }

@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
 import type { JwtStrategyPayload } from '../auth/strategies/jwt.strategy.js';
 import { AvailabilityService } from './availability.service.js';
+import { LogEvent } from '../activity/log-event.decorator.js';
 
 const SlotSchema = z
   .object({
@@ -56,6 +57,7 @@ export class AvailabilityController {
   }
 
   @Patch('availability')
+  @LogEvent('AVAILABILITY_SAVED')
   upsert(@CurrentUser() user: JwtStrategyPayload, @Body() body: unknown) {
     const parsed = AvailabilityPatchSchema.parse(body);
     return this.availability.upsert(user.sub, parsed);
