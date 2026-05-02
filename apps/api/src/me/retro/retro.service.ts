@@ -120,6 +120,29 @@ export class RetroService {
     const membership = await resolveActiveMembership(this.prisma, userId, now);
     if (!membership) throw new NotFoundException('No active cycle membership');
 
+    // Validate any provided item ids against the caller's current-week plan.
+    // Both ids are independently optional; null means "explicit clear" and
+    // is also valid (no DB lookup needed).
+    const idsToCheck = [input.valuedItemId, input.stuckItemId].filter(
+      (id): id is string => typeof id === 'string',
+    );
+    if (idsToCheck.length > 0) {
+      const found = await this.prisma.weeklyPlanItem.findMany({
+        where: {
+          id: { in: idsToCheck },
+          weeklyPlan: { userId, weekStart },
+        },
+        select: { id: true },
+      });
+      const foundIds = new Set(found.map((r) => r.id));
+      const missing = idsToCheck.filter((id) => !foundIds.has(id));
+      if (missing.length > 0) {
+        throw new ConflictException(
+          `INVALID_ITEM_REFERENCE: One or more linked items do not belong to your current-week plan (missing: ${missing.join(', ')})`,
+        );
+      }
+    }
+
     return this.prisma.weeklyRetro.upsert({
       where: { userId_weekStart: { userId, weekStart } },
       create: {
@@ -129,11 +152,15 @@ export class RetroService {
         whatClicked: input.whatClicked ?? null,
         whatStuck: input.whatStuck ?? null,
         nextWeekWish: input.nextWeekWish ?? null,
+        valuedItemId: input.valuedItemId ?? null,
+        stuckItemId: input.stuckItemId ?? null,
       },
       update: {
         whatClicked: input.whatClicked ?? null,
         whatStuck: input.whatStuck ?? null,
         nextWeekWish: input.nextWeekWish ?? null,
+        valuedItemId: input.valuedItemId ?? null,
+        stuckItemId: input.stuckItemId ?? null,
         submittedAt: new Date(),
       },
     });

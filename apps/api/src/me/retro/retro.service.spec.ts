@@ -13,6 +13,9 @@ const makePrismaMock = () => ({
   weeklyPlan: {
     findFirst: jest.fn(),
   },
+  weeklyPlanItem: {
+    findMany: jest.fn(),
+  },
 });
 
 describe('RetroService', () => {
@@ -137,5 +140,74 @@ describe('RetroService', () => {
     );
     expect(prisma.weeklyRetro.upsert).toHaveBeenCalled();
     expect(result.whatClicked).toBe('clicked');
+  });
+
+  it('submit accepts valuedItemId/stuckItemId when both belong to the caller and the current week', async () => {
+    prisma.memberAvailability.findUnique.mockResolvedValue({ timezone: 'America/Sao_Paulo' });
+    prisma.cycleMembership.findFirst.mockResolvedValue({ cycleId: 'c-1' });
+    // Both ids resolve to items in the caller's current-week plan.
+    prisma.weeklyPlanItem.findMany.mockResolvedValue([
+      { id: 'item-valued', weeklyPlan: { userId: 'u-1', weekStart: new Date('2026-04-13T00:00:00Z') } },
+      { id: 'item-stuck',  weeklyPlan: { userId: 'u-1', weekStart: new Date('2026-04-13T00:00:00Z') } },
+    ]);
+    prisma.weeklyRetro.upsert.mockResolvedValue({
+      id: 'r-1', userId: 'u-1', cycleId: 'c-1',
+      weekStart: new Date('2026-04-13T00:00:00Z'),
+      whatClicked: 'because',
+      whatStuck: 'lost on subqueries',
+      nextWeekWish: null,
+      valuedItemId: 'item-valued',
+      stuckItemId: 'item-stuck',
+      submittedAt: new Date(),
+    });
+    const result = await service.submit(
+      'u-1',
+      {
+        whatClicked: 'because',
+        whatStuck: 'lost on subqueries',
+        valuedItemId: 'item-valued',
+        stuckItemId: 'item-stuck',
+      },
+      new Date('2026-04-17T22:00:00Z'),
+    );
+    expect(prisma.weeklyRetro.upsert).toHaveBeenCalled();
+    expect(result.valuedItemId).toBe('item-valued');
+    expect(result.stuckItemId).toBe('item-stuck');
+  });
+
+  it('submit rejects valuedItemId belonging to another user', async () => {
+    prisma.memberAvailability.findUnique.mockResolvedValue({ timezone: 'America/Sao_Paulo' });
+    prisma.cycleMembership.findFirst.mockResolvedValue({ cycleId: 'c-1' });
+    prisma.weeklyPlanItem.findMany.mockResolvedValue([
+      // findMany returned 0 rows that match the caller + week — the id either
+      // doesn't exist or belongs to a different user/week.
+    ]);
+    await expect(
+      service.submit(
+        'u-1',
+        { whatClicked: 'x', valuedItemId: 'foreign-item' },
+        new Date('2026-04-17T22:00:00Z'),
+      ),
+    ).rejects.toThrow(/INVALID_ITEM_REFERENCE/);
+  });
+
+  it('submit treats null/undefined ids as "no link" (no validation needed)', async () => {
+    prisma.memberAvailability.findUnique.mockResolvedValue({ timezone: 'America/Sao_Paulo' });
+    prisma.cycleMembership.findFirst.mockResolvedValue({ cycleId: 'c-1' });
+    prisma.weeklyRetro.upsert.mockResolvedValue({
+      id: 'r-1', userId: 'u-1', cycleId: 'c-1',
+      weekStart: new Date('2026-04-13T00:00:00Z'),
+      whatClicked: null, whatStuck: null,
+      nextWeekWish: 'mais SD',
+      valuedItemId: null, stuckItemId: null,
+      submittedAt: new Date(),
+    });
+    await service.submit(
+      'u-1',
+      { nextWeekWish: 'mais SD' },
+      new Date('2026-04-17T22:00:00Z'),
+    );
+    // No findMany call needed when both ids are absent.
+    expect(prisma.weeklyPlanItem.findMany).not.toHaveBeenCalled();
   });
 });
