@@ -6,6 +6,7 @@ const config: Config = {
     './app/**/*.{ts,tsx}',
     './components/**/*.{ts,tsx}',
     '../../node_modules/.pnpm/@heroui+theme@*/node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}',
+    '../../node_modules/.pnpm/@tremor+react@*/node_modules/@tremor/react/dist/**/*.{js,ts,jsx,tsx}',
   ],
   darkMode: ['class', '[data-theme="dark"]'],
   theme: {
