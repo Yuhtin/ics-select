@@ -64,7 +64,7 @@ export default function MeHomePage() {
             ))}
           </section>
         )}
-        {data.unscheduled.length > 0 && (
+        {(data.unscheduled?.length ?? 0) > 0 && (
           <section>
             <div className="mb-2 flex items-baseline justify-between px-1">
               <h2 className="font-sans text-sm font-semibold tracking-tight text-fg">
@@ -74,7 +74,7 @@ export default function MeHomePage() {
                 Sem horário no calendário
               </span>
             </div>
-            <DayList items={data.unscheduled} />
+            <DayList items={data.unscheduled ?? []} />
           </section>
         )}
         {data.carryOverReflection && (

@@ -47,7 +47,10 @@ export type HomeResponse = {
     | null;
   today: HomeItem[];
   days: { label: string; date: string; items: HomeItem[] }[];
-  unscheduled: HomeItem[];
+  // Optional because API + web ship through different pipelines (EasyPanel
+  // vs Vercel), so the frontend may load a build that expects this field
+  // before the backend ships it. Treat as [] when absent.
+  unscheduled?: HomeItem[];
   streak: { current: number; last7: boolean[] };
   carryOverReflection: CarryOverReflection | null;
   topicCoverage: TopicCoverage[];
