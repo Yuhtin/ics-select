@@ -29,6 +29,19 @@ const DEFAULT_TIMEZONE = 'America/Sao_Paulo';
 // user who has not yet declared slots.
 const EMPTY_CAPS: (number | null)[] = [null, null, null, null, null, null, null];
 
+// When the admin force-publishes (or force-reschedules) over an overflow,
+// the scheduler runs against this wide-open availability instead of the
+// member's declared slots. busyBlocks from Google Calendar still apply, so
+// real commitments are respected — we just stop honoring the self-declared
+// study window. Items that don't fit even in this window stay overflow and
+// surface in the member's "Unscheduled" section.
+const FORCE_FALLBACK_SLOTS = Array.from({ length: 7 }, (_, dayOfWeek) => ({
+  dayOfWeek,
+  startMinute: 8 * 60,
+  endMinute: 22 * 60,
+}));
+const FORCE_FALLBACK_CAPS: (number | null)[] = [null, null, null, null, null, null, null];
+
 type SchedulerAvailability = {
   slots: Array<{ dayOfWeek: number; startMinute: number; endMinute: number }>;
   caps: (number | null)[];
@@ -43,11 +56,18 @@ type SchedulerAvailability = {
 async function loadSchedulerAvailability(
   prisma: { memberAvailability: any; availabilitySlot: any },
   userId: string,
+  options: { force?: boolean } = {},
 ): Promise<SchedulerAvailability> {
-  const [row, slotRows] = await Promise.all([
-    prisma.memberAvailability.findUnique({ where: { userId } }),
-    prisma.availabilitySlot.findMany({ where: { userId } }),
-  ]);
+  const row = await prisma.memberAvailability.findUnique({ where: { userId } });
+  if (options.force) {
+    return {
+      slots: FORCE_FALLBACK_SLOTS,
+      caps: FORCE_FALLBACK_CAPS,
+      preferredSessionMinutes: row?.preferredSessionMinutes ?? DEFAULT_PREFERRED_SESSION_MINUTES,
+      timezone: row?.timezone ?? DEFAULT_TIMEZONE,
+    };
+  }
+  const slotRows = await prisma.availabilitySlot.findMany({ where: { userId } });
   const caps: (number | null)[] = row
     ? [
         row.mondayMinutes ?? null,
@@ -238,8 +258,12 @@ export class PublicationService {
 
   // Admin-initiated: delete existing Calendar events for PENDING items and
   // re-schedule them into the remaining days of the week.
-  async reschedulePending(planId: string, options: { now?: Date } = {}): Promise<void> {
+  async reschedulePending(
+    planId: string,
+    options: { now?: Date; force?: boolean } = {},
+  ): Promise<void> {
     const now = options.now ?? new Date();
+    const force = options.force ?? false;
 
     const plan = await this.prisma.weeklyPlan.findUnique({
       where: { id: planId },
@@ -286,7 +310,7 @@ export class PublicationService {
 
     const result = this.scheduler.plan({
       weekStart: plan.weekStart,
-      availability: await loadSchedulerAvailability(this.prisma, plan.userId),
+      availability: await loadSchedulerAvailability(this.prisma, plan.userId, { force }),
       busyBlocks,
       items: pending.map((i) => ({
         id: i.id,
@@ -296,7 +320,7 @@ export class PublicationService {
       now,
     });
 
-    if (result.overflow.length > 0) {
+    if (result.overflow.length > 0 && !force) {
       throw new PlanOverflowError(result.overflow);
     }
 
@@ -345,6 +369,18 @@ export class PublicationService {
         },
       });
     }
+
+    // Force-reschedule may leave items in overflow even after the fallback
+    // window. Null out their scheduledAt/Minutes so stale values from a
+    // previous run don't masquerade as a real placement.
+    const placedIds = new Set(byItem.keys());
+    const unplacedIds = pending.map((p) => p.id).filter((id) => !placedIds.has(id));
+    if (unplacedIds.length > 0) {
+      await this.prisma.weeklyPlanItem.updateMany({
+        where: { id: { in: unplacedIds } },
+        data: { scheduledAt: null, scheduledMinutes: null },
+      });
+    }
   }
 
   // Member-initiated: allocate study sessions into their Google Calendar.
@@ -387,7 +423,7 @@ export class PublicationService {
 
     const input: SchedulerInput = {
       weekStart: plan.weekStart,
-      availability: await loadSchedulerAvailability(this.prisma, plan.userId),
+      availability: await loadSchedulerAvailability(this.prisma, plan.userId, { force }),
       busyBlocks,
       items: schedulableItems.map((i) => ({
         id: i.id,
@@ -574,7 +610,7 @@ export class PublicationService {
 
       const result = this.scheduler.plan({
         weekStart: plan.weekStart,
-        availability: await loadSchedulerAvailability(this.prisma, plan.userId),
+        availability: await loadSchedulerAvailability(this.prisma, plan.userId, { force }),
         busyBlocks,
         items: addedRows.map((a) => {
           const lib = libById.get(a.libraryItemId);

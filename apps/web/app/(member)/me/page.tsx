@@ -64,6 +64,19 @@ export default function MeHomePage() {
             ))}
           </section>
         )}
+        {data.unscheduled.length > 0 && (
+          <section>
+            <div className="mb-2 flex items-baseline justify-between px-1">
+              <h2 className="font-sans text-sm font-semibold tracking-tight text-fg">
+                Unscheduled
+              </h2>
+              <span className="font-mono text-[10px] font-semibold uppercase tracking-eyebrow text-fg-mute">
+                Sem horário no calendário
+              </span>
+            </div>
+            <DayList items={data.unscheduled} />
+          </section>
+        )}
         {data.carryOverReflection && (
           <CarryOverReflectionCard reflection={data.carryOverReflection} />
         )}

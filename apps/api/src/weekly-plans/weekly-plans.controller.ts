@@ -67,8 +67,11 @@ export class WeeklyPlansController {
   @Roles('ADMIN')
   @Post('plans/:id/reschedule-pending')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async reschedulePending(@Param('id') id: string) {
-    await this.publication.reschedulePending(id);
+  async reschedulePending(
+    @Param('id') id: string,
+    @Query('force') force: string | undefined,
+  ) {
+    await this.publication.reschedulePending(id, { force: force === 'true' });
   }
 
   @Post('plans/:id/auto-schedule')

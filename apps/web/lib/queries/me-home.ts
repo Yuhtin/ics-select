@@ -47,6 +47,7 @@ export type HomeResponse = {
     | null;
   today: HomeItem[];
   days: { label: string; date: string; items: HomeItem[] }[];
+  unscheduled: HomeItem[];
   streak: { current: number; last7: boolean[] };
   carryOverReflection: CarryOverReflection | null;
   topicCoverage: TopicCoverage[];

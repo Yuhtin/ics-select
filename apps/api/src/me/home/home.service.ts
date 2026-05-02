@@ -46,6 +46,7 @@ export type HomeResponse = {
   hero: HeroState | null;
   today: HomeItem[];
   days: { label: string; date: string; items: HomeItem[] }[];
+  unscheduled: HomeItem[];
   streak: { current: number; last7: boolean[] };
   carryOverReflection: CarryOverReflection | null;
   topicCoverage: TopicCoverage[];
@@ -120,6 +121,7 @@ export class HomeService {
         hero: null,
         today: [],
         days: [],
+        unscheduled: [],
         streak,
         carryOverReflection: null,
         topicCoverage: [],
@@ -146,9 +148,16 @@ export class HomeService {
 
     const today: HomeItem[] = [];
     const futureByDay = new Map<string, HomeItem[]>();
+    const unscheduled: HomeItem[] = [];
 
     for (const item of items) {
-      if (!item.scheduledAt) continue;
+      if (!item.scheduledAt) {
+        // PENDING items the scheduler couldn't place (e.g. force-publish
+        // overflow). DONE/SKIPPED items without scheduledAt are intentionally
+        // dropped — their state is the historical record, not actionable.
+        if (item.outcome === 'PENDING') unscheduled.push(item);
+        continue;
+      }
       const at = new Date(item.scheduledAt);
       if (sameUtcDay(at, now)) {
         today.push(item);
@@ -159,6 +168,8 @@ export class HomeService {
         futureByDay.set(key, arr);
       }
     }
+
+    unscheduled.sort((a, b) => a.order - b.order);
 
     today.sort((a, b) => (a.scheduledAt! < b.scheduledAt! ? -1 : 1));
 
@@ -177,7 +188,7 @@ export class HomeService {
       this.computeTopicCoverage(userId, plan.cycleId),
     ]);
 
-    return { hero, today, days, streak, carryOverReflection, topicCoverage };
+    return { hero, today, days, unscheduled, streak, carryOverReflection, topicCoverage };
   }
 
   private async pickCarryOverReflection(
