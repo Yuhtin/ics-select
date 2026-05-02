@@ -6,6 +6,7 @@ import { useAdminCockpit } from '../../../../../lib/queries/admin-cockpit';
 import { RiskBanner } from '../../../../../components/admin/member-cockpit/risk-banner';
 import { EngagementCard } from '../../../../../components/admin/member-cockpit/engagement-card';
 import { ItemsCompletedCard } from '../../../../../components/admin/member-cockpit/items-completed-card';
+import { TimeInvestedCard } from '../../../../../components/admin/member-cockpit/time-invested-card';
 import { Eyebrow } from '../../../../../components/ui/eyebrow';
 
 type Range = 'cycle' | '7d' | 'all';
@@ -83,9 +84,7 @@ export default function AdminMemberPage({ params }: { params: Promise<{ id: stri
       <div className="grid grid-cols-12 gap-5">
         <EngagementCard engagement={data.engagement} status={data.risk.status} />
         <ItemsCompletedCard itemsCompleted={data.itemsCompleted} />
-        <div className="col-span-3 bg-surface border border-rule rounded-lg p-6 flex items-center justify-center text-ink-faint font-mono text-[11px]">
-          TimeInvestedCard (T15)
-        </div>
+        <TimeInvestedCard timeInvested={data.timeInvested} />
       </div>
     </div>
   );
