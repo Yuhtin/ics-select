@@ -139,22 +139,28 @@ describe('HomeService', () => {
     expect(result.days[0]?.items[0]?.id).toBe('tomorrow');
   });
 
-  it('rolls overdue PENDING items from prior days into today', async () => {
+  it('exposes overdue PENDING items in a separate `late` bucket', async () => {
     const mockItems = [
       {
-        id: 'overdue', weeklyPlanId: 'plan-1', order: 1, outcome: 'PENDING',
+        id: 'overdue-old', weeklyPlanId: 'plan-1', order: 1, outcome: 'PENDING',
+        reflection: null, completedAt: null, carriedFromItemId: null,
+        scheduledAt: new Date('2026-04-15T19:00:00Z'), scheduledMinutes: 30,
+        libraryItem: { title: 'Two days ago', format: 'VIDEO', estimatedMinutes: 30, url: null, topics: [] },
+      },
+      {
+        id: 'overdue-recent', weeklyPlanId: 'plan-1', order: 2, outcome: 'PENDING',
         reflection: null, completedAt: null, carriedFromItemId: null,
         scheduledAt: new Date('2026-04-16T19:00:00Z'), scheduledMinutes: 30,
         libraryItem: { title: 'Yesterday', format: 'VIDEO', estimatedMinutes: 30, url: null, topics: [] },
       },
       {
-        id: 'pending-today', weeklyPlanId: 'plan-1', order: 2, outcome: 'PENDING',
+        id: 'pending-today', weeklyPlanId: 'plan-1', order: 3, outcome: 'PENDING',
         reflection: null, completedAt: null, carriedFromItemId: null,
         scheduledAt: new Date('2026-04-17T13:00:00Z'), scheduledMinutes: 30,
         libraryItem: { title: 'Today', format: 'VIDEO', estimatedMinutes: 30, url: null, topics: [] },
       },
       {
-        id: 'overdue-done', weeklyPlanId: 'plan-1', order: 3, outcome: 'DONE_EASY',
+        id: 'overdue-done', weeklyPlanId: 'plan-1', order: 4, outcome: 'DONE_EASY',
         reflection: null, completedAt: new Date(), carriedFromItemId: null,
         scheduledAt: new Date('2026-04-16T20:00:00Z'), scheduledMinutes: 30,
         libraryItem: { title: 'Done yesterday', format: 'VIDEO', estimatedMinutes: 30, url: null, topics: [] },
@@ -164,9 +170,15 @@ describe('HomeService', () => {
     prisma.__setTodayItems(mockItems);
 
     const result = await service.getHome('user-1', new Date('2026-04-17T19:00:00Z'));
-    // Overdue PENDING rolls forward; completed items from prior days do NOT.
-    expect(result.today.map((i) => i.id)).toEqual(['overdue', 'pending-today']);
+    // Overdue PENDING goes to `late`, sorted oldest-first; today is unchanged.
+    expect(result.late.map((i) => i.id)).toEqual(['overdue-old', 'overdue-recent']);
+    expect(result.today.map((i) => i.id)).toEqual(['pending-today']);
+    // Completed items from prior days are dropped (historical).
+    // running_late hero picks the oldest carry-over.
     expect(result.hero?.state).toBe('running_late');
+    if (result.hero?.state === 'running_late') {
+      expect(result.hero.item.id).toBe('overdue-old');
+    }
   });
 
   it('exposes latest DOUBTS/STUCK reflection as carryOverReflection', async () => {

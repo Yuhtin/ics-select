@@ -45,6 +45,10 @@ export type TopicCoverage = {
 export type HomeResponse = {
   hero: HeroState | null;
   today: HomeItem[];
+  /** PENDING items from prior days within the current week's plan. Surfaced
+   *  as a separate "earlier this week" bucket so members can see — and
+   *  retroactively mark — work they didn't catch up the same day. */
+  late: HomeItem[];
   days: { label: string; date: string; items: HomeItem[] }[];
   unscheduled: HomeItem[];
   streak: { current: number; last7: boolean[] };
@@ -120,6 +124,7 @@ export class HomeService {
       return {
         hero: null,
         today: [],
+        late: [],
         days: [],
         unscheduled: [],
         streak,
@@ -147,6 +152,7 @@ export class HomeService {
     const items = rawItems.map(toHomeItem);
 
     const today: HomeItem[] = [];
+    const late: HomeItem[] = [];
     const futureByDay = new Map<string, HomeItem[]>();
     const unscheduled: HomeItem[] = [];
 
@@ -167,14 +173,15 @@ export class HomeService {
         arr.push(item);
         futureByDay.set(key, arr);
       } else if (item.outcome === 'PENDING') {
-        // Overdue PENDING from a prior day — roll forward into today so the
-        // student can catch up. running_late hero will pick the earliest one.
-        today.push(item);
+        // Overdue PENDING from a prior day in the current plan — surface
+        // separately so members can catch up or retroactively mark.
+        late.push(item);
       }
+      // Else: completed/skipped items in past days are historical; drop.
     }
 
     unscheduled.sort((a, b) => a.order - b.order);
-
+    late.sort((a, b) => (a.scheduledAt! < b.scheduledAt! ? -1 : 1));
     today.sort((a, b) => (a.scheduledAt! < b.scheduledAt! ? -1 : 1));
 
     const days = [...futureByDay.entries()]
@@ -185,14 +192,14 @@ export class HomeService {
         items: dayItems.sort((a, b) => (a.scheduledAt! < b.scheduledAt! ? -1 : 1)),
       }));
 
-    const hero = this.pickHero(today, days, now);
+    const hero = this.pickHero(today, late, days, now);
     const [streak, carryOverReflection, topicCoverage] = await Promise.all([
       this.computeStreak(userId, now),
       this.pickCarryOverReflection(userId, plan.id),
       this.computeTopicCoverage(userId, plan.cycleId),
     ]);
 
-    return { hero, today, days, unscheduled, streak, carryOverReflection, topicCoverage };
+    return { hero, today, late, days, unscheduled, streak, carryOverReflection, topicCoverage };
   }
 
   private async pickCarryOverReflection(
@@ -277,6 +284,7 @@ export class HomeService {
 
   private pickHero(
     today: HomeItem[],
+    late: HomeItem[],
     days: HomeResponse['days'],
     now: Date,
   ): HeroState | null {
@@ -294,13 +302,16 @@ export class HomeService {
     });
     if (nowItem) return { state: 'now', item: nowItem };
 
-    // 2) "running_late" — pending item whose scheduled window has fully ended.
-    const lateItem = today.find((i) => {
-      if (i.outcome !== 'PENDING' || !i.scheduledAt) return false;
-      const startMs = new Date(i.scheduledAt).getTime();
-      const durationMs = (i.scheduledMinutes ?? 0) * 60_000;
-      return startMs + durationMs < nowMs;
-    });
+    // 2) "running_late" — oldest carry-over from prior days first, else
+    //    today's past-window pending items.
+    const lateItem =
+      late[0] ??
+      today.find((i) => {
+        if (i.outcome !== 'PENDING' || !i.scheduledAt) return false;
+        const startMs = new Date(i.scheduledAt).getTime();
+        const durationMs = (i.scheduledMinutes ?? 0) * 60_000;
+        return startMs + durationMs < nowMs;
+      });
     if (lateItem) {
       const endMs =
         new Date(lateItem.scheduledAt!).getTime() +
@@ -316,7 +327,7 @@ export class HomeService {
       return { state: 'up_next', item: upNext, minutesUntil };
     }
 
-    // 4) "all_done" — today has items but none PENDING
+    // 4) "all_done" — today has items but none PENDING (and no carry-over)
     if (today.length > 0) {
       const nextAt = days[0]?.items[0]?.scheduledAt ?? null;
       return { state: 'all_done', nextAt };

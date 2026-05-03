@@ -28,22 +28,43 @@ export default function MeHomePage() {
   }
 
   const activeItemId = data.hero && 'item' in data.hero ? data.hero.item.id : null;
-  const todayMinutes = data.today.reduce(
+  const lateItems = data.late ?? [];
+  // The day-ring + Today total combine carry-over and today: from the
+  // member's perspective they're all "what I need to do today".
+  const ringItems = [...lateItems, ...data.today];
+  const todayMinutes = ringItems.reduce(
     (sum, i) => sum + (i.scheduledMinutes ?? i.estimatedMinutes),
     0,
   );
-  const doneCount = data.today.filter(
+  const doneCount = ringItems.filter(
     (i) => i.outcome === 'DONE_EASY' || i.outcome === 'DONE_HARD',
   ).length;
   const todayHint =
-    data.today.length > 0
-      ? `${doneCount}/${data.today.length} done · ${formatMinutes(todayMinutes)} total`
+    ringItems.length > 0
+      ? `${doneCount}/${ringItems.length} done · ${formatMinutes(todayMinutes)} total`
       : undefined;
+  const lateMinutes = lateItems.reduce(
+    (sum, i) => sum + (i.scheduledMinutes ?? i.estimatedMinutes),
+    0,
+  );
 
   return (
     <div className="grid gap-5 lg:grid-cols-[minmax(0,1.8fr)_minmax(0,1fr)]">
       <div className="flex min-w-0 flex-col gap-6">
         <HeroScene hero={data.hero} />
+        {lateItems.length > 0 && (
+          <section>
+            <div className="mb-2 flex items-baseline justify-between px-1">
+              <h2 className="font-sans text-sm font-semibold tracking-tight text-fg">
+                Earlier this week
+              </h2>
+              <span className="font-mono text-[11px] tabular-nums text-fg-mute">
+                {`${lateItems.length} pending · ${formatMinutes(lateMinutes)} total`}
+              </span>
+            </div>
+            <DayList items={lateItems} activeItemId={activeItemId} />
+          </section>
+        )}
         <section>
           <div className="mb-2 flex items-baseline justify-between px-1">
             <h2 className="font-sans text-sm font-semibold tracking-tight text-fg">
@@ -83,7 +104,7 @@ export default function MeHomePage() {
       </div>
 
       <aside className="flex flex-col gap-5">
-        <DayRingCard items={data.today} nowItemId={activeItemId} />
+        <DayRingCard items={ringItems} nowItemId={activeItemId} />
         <StreakCard current={data.streak.current} last7={data.streak.last7} />
         {data.topicCoverage.length > 0 && (
           <section className="rounded-tile border border-border-token bg-surface p-6">

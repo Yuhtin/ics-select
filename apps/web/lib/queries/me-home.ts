@@ -46,6 +46,11 @@ export type HomeResponse = {
     | { state: 'free_day'; nextAt: string | null }
     | null;
   today: HomeItem[];
+  /** Overdue PENDING items from prior days within the current week's plan.
+   *  Optional for the same reason as `unscheduled` — the API + web ship
+   *  through different pipelines, so a frontend build may run against an
+   *  older API. Treat as [] when absent. */
+  late?: HomeItem[];
   days: { label: string; date: string; items: HomeItem[] }[];
   // Optional because API + web ship through different pipelines (EasyPanel
   // vs Vercel), so the frontend may load a build that expects this field
