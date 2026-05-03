@@ -371,3 +371,33 @@ html:has(.landing-stage) {
     display: none;
   }
 }
+
+/* ============================================================
+   Tremor / Recharts dark-mode label legibility
+   Tremor's default axis text uses gray-500 which is invisible
+   against our dark surfaces. Override SVG fills + grid strokes
+   to follow the project's --fg tokens in dark mode.
+   ============================================================ */
+
+[data-theme='dark'] .recharts-cartesian-axis-tick text,
+[data-theme='dark'] .recharts-text {
+  fill: hsl(var(--fg-mute));
+}
+
+[data-theme='dark'] .recharts-cartesian-grid line,
+[data-theme='dark'] .recharts-cartesian-axis-line {
+  stroke: hsl(var(--border));
+  opacity: 0.5;
+}
+
+[data-theme='dark'] .recharts-legend-item-text {
+  color: hsl(var(--fg-mute)) !important;
+}
+
+/* Light mode — bump Tremor's axis text from gray-500 to fg-mute for readability */
+:root .recharts-cartesian-axis-tick text,
+:root .recharts-text,
+[data-theme='light'] .recharts-cartesian-axis-tick text,
+[data-theme='light'] .recharts-text {
+  fill: hsl(var(--fg-mute));
+}

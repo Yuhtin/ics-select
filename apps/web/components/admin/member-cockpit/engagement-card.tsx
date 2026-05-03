@@ -57,7 +57,7 @@ export function EngagementCard({ engagement, status }: Props) {
       </p>
 
       <div className="mt-4 space-y-2">
-        {engagement.breakdown.slice(0, 4).map((b) => (
+        {engagement.breakdown.map((b) => (
           <div key={b.label} className="flex items-center gap-2 text-[12px]">
             <span
               className={clsx(
@@ -73,7 +73,7 @@ export function EngagementCard({ engagement, status }: Props) {
         ))}
       </div>
 
-      {engagement.scoreByWeek.length > 0 && (
+      {engagement.scoreByWeek.length >= 2 && (
         <div className="mt-auto pt-4 border-t border-rule">
           <p className="font-mono text-[10px] uppercase tracking-[0.1em] text-ink-mute mb-1.5">
             Score by week

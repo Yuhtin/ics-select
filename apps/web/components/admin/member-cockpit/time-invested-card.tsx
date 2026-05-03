@@ -3,10 +3,25 @@ import { clsx } from 'clsx';
 
 type Props = { timeInvested: CockpitResponse['timeInvested'] };
 
+// Hero display: just the integer hours. Companion unit shown below ("min" or "h").
+function heroValue(min: number): { value: string; unit: string } {
+  if (min < 60) return { value: String(min), unit: 'min' };
+  return { value: String(Math.round(min / 60)), unit: 'h' };
+}
+
+// Compact label for inline use ("12min" / "1h 30m" / "4h").
+function fmtCompact(min: number): string {
+  if (min < 60) return `${min}min`;
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return m === 0 ? `${h}h` : `${h}h ${m}m`;
+}
+
 export function TimeInvestedCard({ timeInvested }: Props) {
-  const hours = Math.round(timeInvested.actualMinutes / 60);
+  const hero = heroValue(timeInvested.actualMinutes);
   const cohortHours = Math.round(timeInvested.cohortMedianMinutes / 60);
   const scheduledHours = Math.round(timeInvested.scheduledMinutes / 60);
+  const hours = Math.round(timeInvested.actualMinutes / 60);
   const completionVsScheduled =
     timeInvested.scheduledMinutes === 0
       ? 0
@@ -38,9 +53,9 @@ export function TimeInvestedCard({ timeInvested }: Props) {
           className="font-serif-tool tabular-nums font-semibold text-ink leading-none"
           style={{ fontSize: 72 }}
         >
-          {hours}
+          {hero.value}
         </span>
-        <span className="font-serif-tool tabular-nums text-ink-faint text-2xl">h</span>
+        <span className="font-serif-tool tabular-nums text-ink-faint text-2xl">{hero.unit}</span>
       </div>
       <p
         className={clsx(
@@ -55,7 +70,7 @@ export function TimeInvestedCard({ timeInvested }: Props) {
         <div className="flex items-baseline justify-between text-[11px] font-mono mb-2">
           <span className="text-ink-mute uppercase tracking-[0.1em]">Actual / Scheduled</span>
           <span className="text-ink tabular-nums">
-            {hours}h / {scheduledHours}h <span className="text-ink-faint">({completionVsScheduled}%)</span>
+            {fmtCompact(timeInvested.actualMinutes)} / {fmtCompact(timeInvested.scheduledMinutes)} <span className="text-ink-faint">({completionVsScheduled}%)</span>
           </span>
         </div>
         <div className="relative h-3 bg-paper-warm rounded-sm overflow-hidden">

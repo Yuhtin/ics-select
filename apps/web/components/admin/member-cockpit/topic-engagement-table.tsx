@@ -2,12 +2,20 @@ import type { CockpitResponse } from '../../../lib/queries/admin-cockpit';
 import { clsx } from 'clsx';
 
 function fmtH(min: number): string {
+  if (min < 60) return `${min}min`;
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return m === 0 ? `${h}h` : `${h}h ${m}m`;
+}
+
+function fmtTotal(min: number): string {
+  if (min < 60) return `${min}min`;
   return `${Math.floor(min / 60)}h`;
 }
 
 export function TopicEngagementTable({ topics }: { topics: CockpitResponse['topicEngagement'] }) {
   const totalMin = topics.reduce((s, t) => s + t.minutes, 0);
-  const totalHours = Math.floor(totalMin / 60);
+  const totalHours = fmtTotal(totalMin);
   const touched = topics.filter((t) => t.minutes > 0).length;
   const untouched = topics.length - touched;
   const strongest = [...topics].sort((a, b) => b.minutes - a.minutes)[0];
@@ -22,7 +30,7 @@ export function TopicEngagementTable({ topics }: { topics: CockpitResponse['topi
             Topic engagement
           </p>
           <p className="font-serif-tool text-base text-ink mt-0.5">
-            <span className="font-semibold tabular-nums text-xl">{totalHours}h</span>
+            <span className="font-semibold tabular-nums text-xl">{totalHours}</span>
             <span className="text-ink-mute text-sm"> across </span>
             <span className="font-semibold tabular-nums text-xl">{touched}</span>
             <span className="text-ink-mute text-sm"> of </span>
