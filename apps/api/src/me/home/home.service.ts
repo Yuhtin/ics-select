@@ -166,6 +166,10 @@ export class HomeService {
         const arr = futureByDay.get(key) ?? [];
         arr.push(item);
         futureByDay.set(key, arr);
+      } else if (item.outcome === 'PENDING') {
+        // Overdue PENDING from a prior day — roll forward into today so the
+        // student can catch up. running_late hero will pick the earliest one.
+        today.push(item);
       }
     }
 
