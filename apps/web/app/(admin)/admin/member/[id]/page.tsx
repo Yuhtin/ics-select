@@ -8,6 +8,7 @@ import { EngagementCard } from '../../../../../components/admin/member-cockpit/e
 import { ItemsCompletedCard } from '../../../../../components/admin/member-cockpit/items-completed-card';
 import { TimeInvestedCard } from '../../../../../components/admin/member-cockpit/time-invested-card';
 import { BehaviorStrip } from '../../../../../components/admin/member-cockpit/behavior-strip';
+import { TopicEngagementTable } from '../../../../../components/admin/member-cockpit/topic-engagement-table';
 import { Eyebrow } from '../../../../../components/ui/eyebrow';
 
 type Range = 'cycle' | '7d' | 'all';
@@ -89,6 +90,21 @@ export default function AdminMemberPage({ params }: { params: Promise<{ id: stri
       </div>
 
       <BehaviorStrip behavior={data.behavior} />
+
+      <div className="grid grid-cols-12 gap-5">
+        <TopicEngagementTable topics={data.topicEngagement} />
+        <div className="col-span-4 space-y-5">
+          <div className="bg-surface border border-rule rounded-lg p-6 text-ink-faint font-mono text-[11px]">
+            SessionPatternCard (T18)
+          </div>
+          <div className="bg-surface border border-rule rounded-lg p-6 text-ink-faint font-mono text-[11px]">
+            ClassAttendanceCard (T19)
+          </div>
+          <div className="bg-surface border border-rule rounded-lg p-6 text-ink-faint font-mono text-[11px]">
+            LatestActivityCard (T20)
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
