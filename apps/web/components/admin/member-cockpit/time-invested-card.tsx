@@ -1,7 +1,10 @@
 import type { CockpitResponse } from '../../../lib/queries/admin-cockpit';
 import { clsx } from 'clsx';
 
-type Props = { timeInvested: CockpitResponse['timeInvested'] };
+type Props = {
+  timeInvested: CockpitResponse['timeInvested'];
+  weeksTotal: number;
+};
 
 // Hero display: just the integer hours. Companion unit shown below ("min" or "h").
 function heroValue(min: number): { value: string; unit: string } {
@@ -17,7 +20,7 @@ function fmtCompact(min: number): string {
   return m === 0 ? `${h}h` : `${h}h ${m}m`;
 }
 
-export function TimeInvestedCard({ timeInvested }: Props) {
+export function TimeInvestedCard({ timeInvested, weeksTotal }: Props) {
   const hero = heroValue(timeInvested.actualMinutes);
   const cohortHours = Math.round(timeInvested.cohortMedianMinutes / 60);
   const scheduledHours = Math.round(timeInvested.scheduledMinutes / 60);
@@ -98,14 +101,20 @@ export function TimeInvestedCard({ timeInvested }: Props) {
           <p className="font-mono text-[10px] text-ink-faint">target 6h/wk</p>
         </div>
         <div className="flex items-end gap-1.5 h-12">
-          {timeInvested.perWeekMinutes.map((m, i) => {
+          {Array.from({ length: weeksTotal }).map((_, i) => {
+            const m = timeInvested.perWeekMinutes[i] ?? 0;
+            const elapsed = i < timeInvested.perWeekMinutes.length;
             const pct = target === 0 ? 0 : (m / target) * 100;
             return (
               <div key={i} className="flex-1 relative h-full">
                 <div
                   className={clsx(
                     'absolute bottom-0 inset-x-0 rounded-sm',
-                    m === 0 ? 'bg-paper-warm border border-rule' : 'bg-ink-soft',
+                    !elapsed
+                      ? 'bg-paper-warm border border-rule border-dashed opacity-40'
+                      : m === 0
+                        ? 'bg-paper-warm border border-rule'
+                        : 'bg-ink-soft',
                   )}
                   style={{ height: `${Math.max(8, pct)}%` }}
                 />

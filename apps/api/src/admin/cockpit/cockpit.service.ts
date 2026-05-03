@@ -207,6 +207,7 @@ export class CockpitService {
       weeksElapsed,
       ttfvMedianHours,
       daysSinceLastSession,
+      cohortMedianItemsPlanned: cohortMedians.itemsPlanned,
     });
 
     const scoreByWeek = await this.scoreByWeek(memberId, cycle, weeksElapsed, cohortIds, now);
@@ -494,6 +495,7 @@ export class CockpitService {
       daysStudying: 0,
       ttfv: 0,
       itemsDone: 0,
+      itemsPlanned: 0,
       minutes: 0,
       carryOver: 0,
       classAttendance: 0,
@@ -726,6 +728,21 @@ export class CockpitService {
     );
     const daysElapsed = Math.max(1, Math.floor((now.getTime() - cycleStart.getTime()) / DAY_MS));
     const weeksElapsed = Math.max(1, Math.ceil(daysElapsed / 7));
+    // Median of per-user itemsPlanned across the cohort. Used both to score
+    // the target member fairly (max(personalRate, normalizedToCohortRate))
+    // and to feed the per-cohort-user score replays below.
+    const plannedSorted = [...userMetricsRows]
+      .map((r) => Number(r.itemsPlanned))
+      .sort((a, b) => a - b);
+    let itemsPlannedMedian = 0;
+    if (plannedSorted.length > 0) {
+      const midP = Math.floor(plannedSorted.length / 2);
+      itemsPlannedMedian = Math.round(
+        plannedSorted.length % 2 === 0
+          ? (plannedSorted[midP - 1]! + plannedSorted[midP]!) / 2
+          : plannedSorted[midP]!,
+      );
+    }
     const cohortScores = userMetricsRows.map((row) =>
       computeEngagementScore({
         cohortRankFromBottom: Math.floor(cohortIds.length / 2), // simplified: mid-rank for each user
@@ -757,6 +774,7 @@ export class CockpitService {
       daysStudying: daysStudyingMedian,
       ttfv: ttfvMedian,
       itemsDone: itemsDoneMedian,
+      itemsPlanned: itemsPlannedMedian,
       minutes: minutesMedian,
       carryOver: carryOverMedian,
       classAttendance: classAttMedian,

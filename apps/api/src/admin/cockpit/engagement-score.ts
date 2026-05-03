@@ -10,6 +10,10 @@ export type EngagementInput = {
   ttfvMedianHours: number;
   // Null = no events recorded yet. Recency points = 0 (neutral, no penalty).
   daysSinceLastSession: number | null;
+  // Cohort median of itemsPlanned. When provided, completion points use
+  // max(personalRate, itemsDone/cohortMedianPlanned) so a member who got a
+  // bigger plan than the cohort isn't double-penalized for completing fewer %.
+  cohortMedianItemsPlanned?: number | null;
 };
 
 export type ScoreBreakdownEntry = {
@@ -35,9 +39,17 @@ export function computeEngagementScore(input: EngagementInput): EngagementScore 
       : 0;
   const activePts = activePct * 20;
 
-  const completionPct =
+  const personalRate =
     input.itemsPlanned > 0 ? input.itemsDone / input.itemsPlanned : 0;
-  const completionPts = Math.max(0, Math.min(1, completionPct)) * 20;
+  const cohortNormalizedRate =
+    input.cohortMedianItemsPlanned && input.cohortMedianItemsPlanned > 0
+      ? Math.min(1, input.itemsDone / input.cohortMedianItemsPlanned)
+      : 0;
+  // Take the more flattering of: (a) personal completion rate, (b) what the
+  // member would have done relative to the typical cohort plan size. A member
+  // assigned 14 items in a cohort that averages 6 isn't punished for finishing
+  // "only" 6 — that's already at parity with everyone else.
+  const completionPts = Math.max(0, Math.min(1, Math.max(personalRate, cohortNormalizedRate))) * 20;
 
   const retroRate =
     input.weeksElapsed > 0

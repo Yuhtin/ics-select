@@ -108,7 +108,7 @@ export default function AdminMemberPage({ params }: { params: Promise<{ id: stri
       <div className="grid grid-cols-12 gap-5">
         <EngagementCard engagement={data.engagement} status={data.risk.status} />
         <ItemsCompletedCard itemsCompleted={data.itemsCompleted} />
-        <TimeInvestedCard timeInvested={data.timeInvested} />
+        <TimeInvestedCard timeInvested={data.timeInvested} weeksTotal={data.cycle?.weeksTotal ?? 9} />
       </div>
 
       <BehaviorStrip behavior={data.behavior} />
