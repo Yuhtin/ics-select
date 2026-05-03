@@ -1,19 +1,20 @@
 'use client';
 import Link from 'next/link';
-import { Pencil } from 'lucide-react';
+import { ExternalLink, Pencil } from 'lucide-react';
 import { clsx } from 'clsx';
 import type { MemberDetailResponse } from '../../../lib/queries/admin-member';
 
 type Plan = MemberDetailResponse['timeline'][number];
 
-const DOT_BY_OUTCOME: Record<Plan['items'][number]['outcome'], string> = {
-  PENDING: 'bg-outcome-pending',
-  DONE_EASY: 'bg-outcome-done-easy',
-  DONE_HARD: 'bg-outcome-done-hard',
-  DOUBTS: 'bg-outcome-doubts',
-  STUCK: 'bg-outcome-stuck',
-  SKIPPED: 'bg-outcome-skipped',
-};
+function dotColor(outcome: string): string {
+  switch (outcome) {
+    case 'DONE_EASY': return 'bg-outcome-done-easy';
+    case 'DONE_HARD': return 'bg-outcome-done-hard';
+    case 'DOUBTS':    return 'bg-outcome-doubts';
+    case 'STUCK':     return 'bg-outcome-stuck';
+    default:          return 'bg-outcome-pending';
+  }
+}
 
 function formatDate(iso: string): string {
   // plan.weekStart is UTC midnight Monday — render in UTC so viewers west of
@@ -71,42 +72,36 @@ export function TimelineTab({
                 Open editor
               </Link>
             </header>
-            <ul className="space-y-2">
-              {plan.items.map((item) => (
-                <li
-                  key={item.id}
-                  className="border border-rule rounded-card p-3 bg-surface"
-                >
-                  <div className="flex items-start gap-3">
-                    <span
-                      className={clsx(
-                        'mt-1.5 inline-block h-2 w-2 rounded-full',
-                        DOT_BY_OUTCOME[item.outcome],
-                      )}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-serif-tool text-sm font-semibold text-ink">
-                        {item.title}
-                      </p>
-                      <div className="mt-0.5 flex items-center gap-2 font-mono text-[10px] uppercase tracking-label text-ink-mute">
-                        <span>{item.outcome.replace('_', ' ').toLowerCase()}</span>
-                        {item.topicLabel && (
-                          <>
-                            <span>·</span>
-                            <span>{item.topicLabel}</span>
-                          </>
-                        )}
-                      </div>
-                      {item.reflection && (
-                        <p className="mt-2 font-serif italic text-sm text-ink-soft">
-                          &ldquo;{item.reflection}&rdquo;
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </li>
-              ))}
-            </ul>
+            <table className="w-full border-collapse">
+              <tbody>
+                {plan.items.map((item) => (
+                  <tr key={item.id} className="border-b border-rule/60 hover:bg-paper-warm/40">
+                    <td className="py-2 pr-3 w-3 align-middle">
+                      <span className={clsx('inline-block w-2 h-2 rounded-full', dotColor(item.outcome))} />
+                    </td>
+                    <td className="py-2 pr-4 font-serif text-[14px] text-ink truncate max-w-md align-middle">
+                      {item.title}
+                    </td>
+                    <td className="py-2 pr-4 font-mono text-[10px] uppercase tracking-[0.1em] text-ink-mute align-middle">
+                      {item.outcome.toLowerCase().replace('_', ' ')}
+                    </td>
+                    <td className="py-2 pr-4 font-mono text-[10px] uppercase tracking-[0.1em] text-ink-mute align-middle">
+                      {item.topicLabel ?? '—'}
+                    </td>
+                    <td className="py-2 text-right align-middle">
+                      <Link
+                        href={`/me/item/${item.libraryItemId}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-ink-mute hover:text-ink inline-flex"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" strokeWidth={1.5} />
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </article>
         );
       })}

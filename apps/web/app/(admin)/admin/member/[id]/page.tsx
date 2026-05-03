@@ -3,6 +3,7 @@ import { use, useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, ChevronDown, MessageCircle } from 'lucide-react';
 import { useAdminCockpit } from '../../../../../lib/queries/admin-cockpit';
+import { useAdminMember } from '../../../../../lib/queries/admin-member';
 import { RiskBanner } from '../../../../../components/admin/member-cockpit/risk-banner';
 import { EngagementCard } from '../../../../../components/admin/member-cockpit/engagement-card';
 import { ItemsCompletedCard } from '../../../../../components/admin/member-cockpit/items-completed-card';
@@ -12,6 +13,7 @@ import { TopicEngagementTable } from '../../../../../components/admin/member-coc
 import { SessionPatternCard } from '../../../../../components/admin/member-cockpit/session-pattern-card';
 import { ClassAttendanceCard } from '../../../../../components/admin/member-cockpit/class-attendance-card';
 import { LatestActivityCard } from '../../../../../components/admin/member-cockpit/latest-activity-card';
+import { RawDataAccordion } from '../../../../../components/admin/member-cockpit/raw-data-accordion';
 import { Eyebrow } from '../../../../../components/ui/eyebrow';
 
 type Range = 'cycle' | '7d' | 'all';
@@ -21,6 +23,7 @@ export default function AdminMemberPage({ params }: { params: Promise<{ id: stri
   const [selectedCycleId, setSelectedCycleId] = useState<string | null>(null);
   const [range, setRange] = useState<Range>('cycle');
   const { data, isLoading, error } = useAdminCockpit(memberId, selectedCycleId, range);
+  const { data: rawData } = useAdminMember(memberId, selectedCycleId);
 
   if (isLoading) return <p className="font-mono text-xs uppercase tracking-[0.1em] text-ink-mute">Loading…</p>;
   if (error || !data) {
@@ -102,6 +105,16 @@ export default function AdminMemberPage({ params }: { params: Promise<{ id: stri
           <LatestActivityCard events={data.recentActivity} />
         </div>
       </div>
+
+      {rawData && (
+        <RawDataAccordion
+          memberId={memberId}
+          timeline={rawData.timeline}
+          retros={rawData.retros}
+          attendance={rawData.attendance}
+          topicCoverage={rawData.topicCoverage}
+        />
+      )}
     </div>
   );
 }
