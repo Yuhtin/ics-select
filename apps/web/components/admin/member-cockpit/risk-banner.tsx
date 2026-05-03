@@ -7,7 +7,7 @@ type Props = {
 };
 
 const STYLES = {
-  AT_RISK: { border: 'border-stuck', bg: 'bg-stuck/[0.04]', text: 'text-stuck', label: 'AT RISK' },
+  AT_RISK: { border: 'border-outcome-stuck', bg: 'bg-outcome-stuck/[0.04]', text: 'text-outcome-stuck', label: 'AT RISK' },
   WATCH:   { border: 'border-accent', bg: 'bg-accent/[0.04]', text: 'text-accent', label: 'WATCH' },
 } as const;
 

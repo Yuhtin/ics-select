@@ -27,7 +27,7 @@ export function TimeInvestedCard({ timeInvested }: Props) {
           Time invested
         </p>
         {deltaPct < 0 && (
-          <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-stuck font-semibold border border-stuck/40 bg-stuck/[0.04] rounded-pill px-2 py-0.5">
+          <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-outcome-stuck font-semibold border border-outcome-stuck/40 bg-outcome-stuck/[0.04] rounded-pill px-2 py-0.5">
             Below plan
           </span>
         )}
@@ -45,7 +45,7 @@ export function TimeInvestedCard({ timeInvested }: Props) {
       <p
         className={clsx(
           'mt-2 tracking-[0.08em] uppercase font-semibold text-[11px]',
-          deltaPct < 0 ? 'text-stuck' : 'text-done-easy',
+          deltaPct < 0 ? 'text-outcome-stuck' : 'text-outcome-done-easy',
         )}
       >
         {deltaPct < 0 ? '▼' : '▲'} {Math.abs(deltaPct)}% · cohort {cohortHours}h

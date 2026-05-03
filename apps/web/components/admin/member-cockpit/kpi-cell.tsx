@@ -4,8 +4,8 @@ type BarColor = 'ink-soft' | 'stuck' | 'done-easy' | 'paper-warm';
 
 const BAR_BG_BY_COLOR: Record<BarColor, string> = {
   'ink-soft':   'bg-ink-soft',
-  'stuck':      'bg-stuck',
-  'done-easy':  'bg-done-easy',
+  'stuck':      'bg-outcome-stuck',
+  'done-easy':  'bg-outcome-done-easy',
   'paper-warm': 'bg-paper-warm',
 };
 
@@ -47,7 +47,7 @@ export function KpiCell({ label, value, fraction, delta, bars, barColors }: Prop
         <p
           className={clsx(
             'mt-2 font-mono text-[11px]',
-            delta.kind === 'down' ? 'text-stuck' : delta.kind === 'up' ? 'text-done-easy' : 'text-ink-faint',
+            delta.kind === 'down' ? 'text-outcome-stuck' : delta.kind === 'up' ? 'text-outcome-done-easy' : 'text-ink-faint',
           )}
         >
           {delta.text}

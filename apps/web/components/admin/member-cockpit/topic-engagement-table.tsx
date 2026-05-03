@@ -31,7 +31,7 @@ export function TopicEngagementTable({ topics }: { topics: CockpitResponse['topi
               {' '}active topics{untouched > 0 && <> · </>}
             </span>
             {untouched > 0 && (
-              <span className="text-stuck text-sm font-medium">{untouched} untouched</span>
+              <span className="text-outcome-stuck text-sm font-medium">{untouched} untouched</span>
             )}
           </p>
         </div>
@@ -65,7 +65,7 @@ export function TopicEngagementTable({ topics }: { topics: CockpitResponse['topi
               key={t.topicId}
               className={clsx(
                 'grid grid-cols-[160px_1fr_72px_72px_72px] items-center gap-4 py-3',
-                isUntouched && 'bg-stuck/[0.025] -mx-2 px-2 rounded',
+                isUntouched && 'bg-outcome-stuck/[0.025] -mx-2 px-2 rounded',
               )}
             >
               <span
@@ -79,14 +79,14 @@ export function TopicEngagementTable({ topics }: { topics: CockpitResponse['topi
               <div
                 className={clsx(
                   'h-5 bg-paper-warm rounded-sm overflow-hidden relative',
-                  isUntouched && 'border border-stuck/20 border-dashed',
+                  isUntouched && 'border border-outcome-stuck/20 border-dashed',
                 )}
               >
                 {!isUntouched && (
                   <div className="h-full bg-ink" style={{ width: `${pct}%` }} />
                 )}
                 {isUntouched && (
-                  <span className="absolute top-1/2 -translate-y-1/2 left-2 font-mono text-[10px] text-stuck/80 uppercase tracking-[0.1em] font-semibold">
+                  <span className="absolute top-1/2 -translate-y-1/2 left-2 font-mono text-[10px] text-outcome-stuck/80 uppercase tracking-[0.1em] font-semibold">
                     Never opened
                   </span>
                 )}
@@ -108,7 +108,7 @@ export function TopicEngagementTable({ topics }: { topics: CockpitResponse['topi
               <span
                 className={clsx(
                   'font-serif-tool tabular-nums text-sm text-right',
-                  isUntouched ? 'text-stuck' : 'text-ink',
+                  isUntouched ? 'text-outcome-stuck' : 'text-ink',
                 )}
               >
                 {t.itemsDone} / {t.itemsPlanned}
@@ -116,7 +116,7 @@ export function TopicEngagementTable({ topics }: { topics: CockpitResponse['topi
               <span
                 className={clsx(
                   'font-mono text-[11px] tabular-nums text-right',
-                  cohortDeltaMin < 0 ? 'text-stuck' : 'text-ink-mute',
+                  cohortDeltaMin < 0 ? 'text-outcome-stuck' : 'text-ink-mute',
                 )}
               >
                 {cohortDeltaMin === 0
@@ -142,7 +142,7 @@ export function TopicEngagementTable({ topics }: { topics: CockpitResponse['topi
             <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-mute font-medium">
               Concentration risk
             </p>
-            <p className={clsx('mt-1', concentrationPct >= 50 ? 'text-stuck' : 'text-ink')}>
+            <p className={clsx('mt-1', concentrationPct >= 50 ? 'text-outcome-stuck' : 'text-ink')}>
               <span className="font-serif-tool tabular-nums text-base">{concentrationPct}%</span> on 1 topic
             </p>
           </div>

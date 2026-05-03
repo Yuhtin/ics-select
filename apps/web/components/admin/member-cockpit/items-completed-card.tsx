@@ -34,7 +34,7 @@ export function ItemsCompletedCard({ itemsCompleted }: Props) {
             </span>
           </p>
           {deltaCohort !== 0 && (
-            <p className={`font-mono text-[11px] mt-1 ${deltaCohort < 0 ? 'text-stuck' : 'text-done-easy'}`}>
+            <p className={`font-mono text-[11px] mt-1 ${deltaCohort < 0 ? 'text-outcome-stuck' : 'text-outcome-done-easy'}`}>
               {deltaCohort < 0 ? '↓' : '↑'} {Math.abs(deltaCohort)} items vs cohort median {itemsCompleted.cohortMedian}
             </p>
           )}
@@ -55,10 +55,10 @@ export function ItemsCompletedCard({ itemsCompleted }: Props) {
           <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-ink-mute mb-3">By outcome</p>
           <ul className="space-y-2.5">
             {[
-              { label: 'Nailed it',     count: itemsCompleted.byOutcome.DONE_EASY ?? 0, color: 'bg-done-easy' },
-              { label: 'Got it (hard)', count: itemsCompleted.byOutcome.DONE_HARD ?? 0, color: 'bg-done-hard' },
-              { label: 'Had doubts',    count: itemsCompleted.byOutcome.DOUBTS ?? 0,    color: 'bg-doubts' },
-              { label: 'Stuck',         count: itemsCompleted.byOutcome.STUCK ?? 0,     color: 'bg-stuck' },
+              { label: 'Nailed it',     count: itemsCompleted.byOutcome.DONE_EASY ?? 0, color: 'bg-outcome-done-easy' },
+              { label: 'Got it (hard)', count: itemsCompleted.byOutcome.DONE_HARD ?? 0, color: 'bg-outcome-done-hard' },
+              { label: 'Had doubts',    count: itemsCompleted.byOutcome.DOUBTS ?? 0,    color: 'bg-outcome-doubts' },
+              { label: 'Stuck',         count: itemsCompleted.byOutcome.STUCK ?? 0,     color: 'bg-outcome-stuck' },
             ].map((row) => (
               <li key={row.label} className="flex items-center gap-2">
                 <span className={`w-2.5 h-2.5 rounded-sm shrink-0 ${row.color}`} />
@@ -67,7 +67,7 @@ export function ItemsCompletedCard({ itemsCompleted }: Props) {
               </li>
             ))}
             <li className="border-t border-rule pt-2.5 flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-sm bg-pending shrink-0" />
+              <span className="w-2.5 h-2.5 rounded-sm bg-outcome-pending shrink-0" />
               <span className="font-mono text-[11px] text-ink-mute">Pending</span>
               <span className="ml-auto font-serif-tool tabular-nums text-ink-mute text-base">
                 {itemsCompleted.byOutcome.PENDING ?? 0}
@@ -77,7 +77,7 @@ export function ItemsCompletedCard({ itemsCompleted }: Props) {
           {itemsCompleted.needsAttention.total > 0 && (
             <div className="mt-4 pt-3 border-t border-rule">
               <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-ink-mute">Needs attention</p>
-              <p className="font-mono text-[11px] text-stuck font-semibold mt-1">
+              <p className="font-mono text-[11px] text-outcome-stuck font-semibold mt-1">
                 {itemsCompleted.needsAttention.total} items · {itemsCompleted.needsAttention.stuck} stuck, {itemsCompleted.needsAttention.doubts} doubts
               </p>
             </div>

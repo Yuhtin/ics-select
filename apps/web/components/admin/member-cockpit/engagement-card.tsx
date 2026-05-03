@@ -9,9 +9,9 @@ type Props = {
 };
 
 const PILL_BY_STATUS = {
-  AT_RISK:  { label: 'AT RISK',  cls: 'text-stuck border-stuck/40 bg-stuck/[0.04]' },
+  AT_RISK:  { label: 'AT RISK',  cls: 'text-outcome-stuck border-outcome-stuck/40 bg-outcome-stuck/[0.04]' },
   WATCH:    { label: 'WATCH',    cls: 'text-accent border-accent/40 bg-accent/[0.04]' },
-  ON_TRACK: { label: 'ON TRACK', cls: 'text-done-easy border-done-easy/40 bg-done-easy/[0.04]' },
+  ON_TRACK: { label: 'ON TRACK', cls: 'text-outcome-done-easy border-outcome-done-easy/40 bg-outcome-done-easy/[0.04]' },
 } as const;
 
 export function EngagementCard({ engagement, status }: Props) {
@@ -50,7 +50,7 @@ export function EngagementCard({ engagement, status }: Props) {
       <p
         className={clsx(
           'font-mono text-[11px] font-semibold tracking-[0.08em] mt-2',
-          pct < 0 ? 'text-stuck' : 'text-done-easy',
+          pct < 0 ? 'text-outcome-stuck' : 'text-outcome-done-easy',
         )}
       >
         {pct < 0 ? '▼' : '▲'} {Math.abs(pct)}% vs cohort median {engagement.cohortMedian}
@@ -62,7 +62,7 @@ export function EngagementCard({ engagement, status }: Props) {
             <span
               className={clsx(
                 'w-1 h-1 rounded-full',
-                b.status === 'bad' ? 'bg-stuck' : b.status === 'warn' ? 'bg-accent' : 'bg-done-easy',
+                b.status === 'bad' ? 'bg-outcome-stuck' : b.status === 'warn' ? 'bg-accent' : 'bg-outcome-done-easy',
               )}
             />
             <span className="text-ink-soft">{b.label}</span>

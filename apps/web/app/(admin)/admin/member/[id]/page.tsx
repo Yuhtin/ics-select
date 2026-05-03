@@ -27,7 +27,7 @@ export default function AdminMemberPage({ params }: { params: Promise<{ id: stri
         <Link href="/admin/members" className="inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.1em] text-ink-mute hover:text-ink">
           <ArrowLeft className="w-3.5 h-3.5" strokeWidth={1.5} /> All members
         </Link>
-        <p className="font-sans text-sm text-stuck">Failed to load cockpit. {error instanceof Error ? error.message : ''}</p>
+        <p className="font-sans text-sm text-outcome-stuck">Failed to load cockpit. {error instanceof Error ? error.message : ''}</p>
       </div>
     );
   }
