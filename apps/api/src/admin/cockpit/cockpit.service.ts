@@ -73,7 +73,10 @@ export class CockpitService {
           items: {
             include: {
               libraryItem: {
-                select: { topics: { select: { topicId: true, isPrimary: true } } },
+                select: {
+                  estimatedMinutes: true,
+                  topics: { select: { topicId: true, isPrimary: true } },
+                },
               },
             },
           },
@@ -134,10 +137,13 @@ export class CockpitService {
 
     // Time invested
     const actualMinutes = completed.reduce(
-      (sum, i) => sum + (i.actualMinutes ?? i.scheduledMinutes ?? 0),
+      (sum, i) => sum + (i.actualMinutes ?? i.scheduledMinutes ?? i.libraryItem.estimatedMinutes ?? 0),
       0,
     );
-    const scheduledMinutes = allItems.reduce((sum, i) => sum + (i.scheduledMinutes ?? 0), 0);
+    const scheduledMinutes = allItems.reduce(
+      (sum, i) => sum + (i.scheduledMinutes ?? i.libraryItem.estimatedMinutes ?? 0),
+      0,
+    );
     const naoSeiCount = completed.filter(
       (i) => i.actualMinutes === null && (i.scheduledMinutes ?? 0) > 0,
     ).length;
@@ -564,9 +570,10 @@ export class CockpitService {
       `SELECT percentile_cont(0.5) WITHIN GROUP (ORDER BY COALESCE(per_user.mins, 0)) AS median
        FROM unnest($1::text[]) AS u("userId")
        LEFT JOIN (
-         SELECT wp."userId", SUM(COALESCE(wpi."actualMinutes", wpi."scheduledMinutes", 0))::int AS mins
+         SELECT wp."userId", SUM(COALESCE(wpi."actualMinutes", wpi."scheduledMinutes", li."estimatedMinutes", 0))::int AS mins
          FROM "WeeklyPlanItem" wpi
          JOIN "WeeklyPlan" wp ON wp.id = wpi."weeklyPlanId"
+         JOIN "LibraryItem" li ON li.id = wpi."libraryItemId"
          WHERE wp."cycleId" = $2
            AND wp."userId" = ANY($1::text[])
            AND wpi."outcome" <> 'PENDING'
@@ -618,9 +625,10 @@ export class CockpitService {
        CROSS JOIN unnest($1::text[]) AS u("userId")
        LEFT JOIN (
          SELECT wp."userId", lit2."topicId",
-                SUM(COALESCE(wpi."actualMinutes", wpi."scheduledMinutes", 0))::int AS mins
+                SUM(COALESCE(wpi."actualMinutes", wpi."scheduledMinutes", li."estimatedMinutes", 0))::int AS mins
          FROM "WeeklyPlanItem" wpi
          JOIN "WeeklyPlan" wp ON wp.id = wpi."weeklyPlanId"
+         JOIN "LibraryItem" li ON li.id = wpi."libraryItemId"
          JOIN "LibraryItemTopic" lit2 ON lit2."itemId" = wpi."libraryItemId"
          WHERE wp."cycleId" = $2
            AND wp."userId" = ANY($1::text[])
@@ -845,7 +853,10 @@ type PlanLike = {
     scheduledMinutes: number | null;
     actualMinutes: number | null;
     carriedFromItemId?: string | null;
-    libraryItem?: { topics: Array<{ topicId: string; isPrimary: boolean }> };
+    libraryItem?: {
+      estimatedMinutes?: number;
+      topics: Array<{ topicId: string; isPrimary: boolean }>;
+    };
   }>;
 };
 
@@ -876,7 +887,7 @@ function bucketMinutesPerWeek(
     if (!planThisWeek) return 0;
     return planThisWeek.items
       .filter((it) => it.outcome !== 'PENDING')
-      .reduce((s, it) => s + (it.actualMinutes ?? it.scheduledMinutes ?? 0), 0);
+      .reduce((s, it) => s + (it.actualMinutes ?? it.scheduledMinutes ?? it.libraryItem?.estimatedMinutes ?? 0), 0);
   });
 }
 
@@ -933,13 +944,13 @@ function computeTopicEngagement(
     outcome: ItemOutcome;
     scheduledMinutes: number | null;
     actualMinutes: number | null;
-    libraryItem?: { topics: Array<{ topicId: string; isPrimary: boolean }> };
+    libraryItem?: { estimatedMinutes?: number; topics: Array<{ topicId: string; isPrimary: boolean }> };
   }>,
   cohortByTopic: Map<string, number>,
 ) {
   const totalMinutes = items
     .filter((i) => i.outcome !== 'PENDING')
-    .reduce((s, i) => s + (i.actualMinutes ?? i.scheduledMinutes ?? 0), 0);
+    .reduce((s, i) => s + (i.actualMinutes ?? i.scheduledMinutes ?? i.libraryItem?.estimatedMinutes ?? 0), 0);
 
   return topics.map((topic) => {
     const itemsForTopic = items.filter((i) =>
@@ -947,7 +958,7 @@ function computeTopicEngagement(
     );
     const completed = itemsForTopic.filter((i) => i.outcome !== 'PENDING');
     const minutes = completed.reduce(
-      (s, i) => s + (i.actualMinutes ?? i.scheduledMinutes ?? 0),
+      (s, i) => s + (i.actualMinutes ?? i.scheduledMinutes ?? i.libraryItem?.estimatedMinutes ?? 0),
       0,
     );
     const pctOfTotal = totalMinutes === 0 ? 0 : Math.round((minutes / totalMinutes) * 100);

@@ -1,9 +1,11 @@
 'use client';
 import { use, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { ArrowLeft, ChevronDown, MessageCircle } from 'lucide-react';
 import { useAdminCockpit } from '../../../../../lib/queries/admin-cockpit';
 import { useAdminMember } from '../../../../../lib/queries/admin-member';
+import type { PlanWeekSlot } from '../../../../../lib/queries/admin-member';
 import { RiskBanner } from '../../../../../components/admin/member-cockpit/risk-banner';
 import { EngagementCard } from '../../../../../components/admin/member-cockpit/engagement-card';
 import { ItemsCompletedCard } from '../../../../../components/admin/member-cockpit/items-completed-card';
@@ -14,16 +16,29 @@ import { SessionPatternCard } from '../../../../../components/admin/member-cockp
 import { ClassAttendanceCard } from '../../../../../components/admin/member-cockpit/class-attendance-card';
 import { LatestActivityCard } from '../../../../../components/admin/member-cockpit/latest-activity-card';
 import { RawDataAccordion } from '../../../../../components/admin/member-cockpit/raw-data-accordion';
+import { PlanWeekModal } from '../../../../../components/admin/member-detail/plan-week-modal';
 import { Eyebrow } from '../../../../../components/ui/eyebrow';
 
 type Range = 'cycle' | '7d' | 'all';
 
 export default function AdminMemberPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: memberId } = use(params);
+  const router = useRouter();
   const [selectedCycleId, setSelectedCycleId] = useState<string | null>(null);
   const [range, setRange] = useState<Range>('cycle');
+  const [planWeekOpen, setPlanWeekOpen] = useState(false);
   const { data, isLoading, error } = useAdminCockpit(memberId, selectedCycleId, range);
   const { data: rawData } = useAdminMember(memberId, selectedCycleId);
+
+  function handlePickWeek(slot: PlanWeekSlot) {
+    setPlanWeekOpen(false);
+    if (slot.planId) {
+      router.push(`/admin/member/${memberId}/plan/${slot.planId}`);
+    } else {
+      const isoDate = slot.weekStart.slice(0, 10);
+      router.push(`/admin/member/${memberId}/plan/new?weekStart=${isoDate}`);
+    }
+  }
 
   if (isLoading) return <p className="font-mono text-xs uppercase tracking-[0.1em] text-ink-mute">Loading…</p>;
   if (error || !data) {
@@ -67,6 +82,7 @@ export default function AdminMemberPage({ params }: { params: Promise<{ id: stri
           <RangeSelector value={range} onChange={setRange} />
           <button
             type="button"
+            onClick={() => setPlanWeekOpen(true)}
             className="inline-flex items-center gap-2 bg-ink text-paper font-mono text-[11px] uppercase tracking-[0.1em] px-4 py-2 rounded-pill hover:opacity-90"
           >
             Plan week
@@ -113,6 +129,16 @@ export default function AdminMemberPage({ params }: { params: Promise<{ id: stri
           retros={rawData.retros}
           attendance={rawData.attendance}
           topicCoverage={rawData.topicCoverage}
+        />
+      )}
+
+      {rawData && (
+        <PlanWeekModal
+          isOpen={planWeekOpen}
+          onClose={() => setPlanWeekOpen(false)}
+          current={rawData.planWeeks.current}
+          next={rawData.planWeeks.next}
+          onPick={handlePickWeek}
         />
       )}
     </div>

@@ -8,6 +8,9 @@ const config: Config = {
     '../../node_modules/.pnpm/@heroui+theme@*/node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}',
     '../../node_modules/.pnpm/@tremor+react@*/node_modules/@tremor/react/dist/**/*.{js,ts,jsx,tsx}',
   ],
+  safelist: [
+    { pattern: /^(bg|text|border|stroke|fill)-(emerald|amber|violet|red|gray|slate|stone|neutral)-(50|100|200|300|400|500|600|700|800|900)$/ },
+  ],
   darkMode: ['class', '[data-theme="dark"]'],
   theme: {
     extend: {
