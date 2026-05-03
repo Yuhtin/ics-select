@@ -51,6 +51,7 @@ export const SetItemOutcomeSchema = z
   .object({
     outcome: z.enum(ITEM_OUTCOMES),
     reflection: z.string().max(2000).optional(),
+    actualMinutes: z.number().int().min(0).max(1440).nullable().optional(),
   })
   .strict();
 export type SetItemOutcomeInput = z.infer<typeof SetItemOutcomeSchema>;

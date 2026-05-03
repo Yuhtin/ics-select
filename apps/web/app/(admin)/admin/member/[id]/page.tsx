@@ -1,210 +1,166 @@
 'use client';
 import { use, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { ArrowLeft, ChevronDown, MessageCircle } from 'lucide-react';
-import { useAdminMember, type PlanWeekSlot } from '../../../../../lib/queries/admin-member';
-import { TopicCoverageMatrix } from '../../../../../components/admin/member-detail/topic-coverage-matrix';
-import { TimelineTab } from '../../../../../components/admin/member-detail/timeline-tab';
-import { RetrosTab } from '../../../../../components/admin/member-detail/retros-tab';
-import { DiagnoseTab } from '../../../../../components/admin/member-detail/diagnose-tab';
-import { NotesTab } from '../../../../../components/admin/member-detail/notes-tab';
-import { AttendanceTab } from '../../../../../components/admin/member-detail/attendance-tab';
-import { PlanWeekModal } from '../../../../../components/admin/member-detail/plan-week-modal';
+import { useAdminCockpit } from '../../../../../lib/queries/admin-cockpit';
+import { useAdminMember } from '../../../../../lib/queries/admin-member';
+import { RiskBanner } from '../../../../../components/admin/member-cockpit/risk-banner';
+import { EngagementCard } from '../../../../../components/admin/member-cockpit/engagement-card';
+import { ItemsCompletedCard } from '../../../../../components/admin/member-cockpit/items-completed-card';
+import { TimeInvestedCard } from '../../../../../components/admin/member-cockpit/time-invested-card';
+import { BehaviorStrip } from '../../../../../components/admin/member-cockpit/behavior-strip';
+import { TopicEngagementTable } from '../../../../../components/admin/member-cockpit/topic-engagement-table';
+import { SessionPatternCard } from '../../../../../components/admin/member-cockpit/session-pattern-card';
+import { ClassAttendanceCard } from '../../../../../components/admin/member-cockpit/class-attendance-card';
+import { LatestActivityCard } from '../../../../../components/admin/member-cockpit/latest-activity-card';
+import { RawDataAccordion } from '../../../../../components/admin/member-cockpit/raw-data-accordion';
 import { Eyebrow } from '../../../../../components/ui/eyebrow';
-import { clsx } from 'clsx';
 
-type Tab = 'timeline' | 'retros' | 'diagnose' | 'notes' | 'attendance';
-
-const TRACK_LABEL: Record<string, string> = {
-  BIG_TECH: 'Big Tech',
-  CONSULTING_TECH: 'Consulting Tech',
-  COMPETITIVE_PROGRAMMING: 'Competitive',
-  STARTUP: 'Startup',
-  OTHER: 'Other',
-};
-
-function Initials({ name, pictureUrl, size = 48 }: { name: string; pictureUrl: string | null; size?: number }) {
-  if (pictureUrl) {
-    // eslint-disable-next-line @next/next/no-img-element
-    return <img src={pictureUrl} alt="" className="rounded-full object-cover border border-rule" style={{ width: size, height: size }} />;
-  }
-  const initials = name.split(' ').filter(Boolean).slice(0, 2).map((p) => p[0]?.toUpperCase() ?? '').join('');
-  return (
-    <span className="inline-flex items-center justify-center rounded-full bg-paper-warm border border-rule font-serif text-ink text-lg font-semibold" style={{ width: size, height: size }}>
-      {initials || '—'}
-    </span>
-  );
-}
-
-function formatCycleRange(startsAt: string, endsAt: string): string {
-  const fmt = (iso: string) =>
-    new Date(iso).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      timeZone: 'UTC',
-    });
-  return `${fmt(startsAt)} → ${fmt(endsAt)}`;
-}
+type Range = 'cycle' | '7d' | 'all';
 
 export default function AdminMemberPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: memberId } = use(params);
-  const router = useRouter();
   const [selectedCycleId, setSelectedCycleId] = useState<string | null>(null);
-  const { data, isLoading, error } = useAdminMember(memberId, selectedCycleId);
-  const [tab, setTab] = useState<Tab>('timeline');
-  const [planWeekOpen, setPlanWeekOpen] = useState(false);
+  const [range, setRange] = useState<Range>('cycle');
+  const { data, isLoading, error } = useAdminCockpit(memberId, selectedCycleId, range);
+  const { data: rawData } = useAdminMember(memberId, selectedCycleId);
 
-  function handlePickWeek(slot: PlanWeekSlot) {
-    setPlanWeekOpen(false);
-    if (slot.planId) {
-      router.push(`/admin/member/${memberId}/plan/${slot.planId}`);
-    } else {
-      const isoDate = slot.weekStart.slice(0, 10);
-      router.push(`/admin/member/${memberId}/plan/new?weekStart=${isoDate}`);
-    }
-  }
-
-  if (isLoading) return <p className="font-mono text-xs uppercase tracking-label text-ink-mute">Loading…</p>;
+  if (isLoading) return <p className="font-mono text-xs uppercase tracking-[0.1em] text-ink-mute">Loading…</p>;
   if (error || !data) {
     return (
       <div className="max-w-xl space-y-4">
-        <Link href="/admin" className="inline-flex items-center gap-1.5 font-mono text-xs uppercase tracking-label text-ink-mute hover:text-ink">
-          <ArrowLeft className="h-3.5 w-3.5" strokeWidth={1.5} /> Back
+        <Link href="/admin/members" className="inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.1em] text-ink-mute hover:text-ink">
+          <ArrowLeft className="w-3.5 h-3.5" strokeWidth={1.5} /> All members
         </Link>
-        <p className="font-sans text-sm text-outcome-stuck">Failed to load member. {error instanceof Error ? error.message : ''}</p>
+        <p className="font-sans text-sm text-outcome-stuck">Failed to load cockpit. {error instanceof Error ? error.message : ''}</p>
       </div>
     );
   }
 
-  const { member, cycle, topicCoverage, memberships, attendance } = data;
-  const waLink = member.whatsappPhone ? `https://wa.me/${member.whatsappPhone.replace(/[^0-9]/g, '')}` : null;
-
-  // Determine the currently-viewed cycle for display in the meta line.
-  const currentMembership = memberships.find((m) => m.isCurrent) ?? null;
-  const isArchivedView = currentMembership?.status === 'ARCHIVED';
+  const { member, cycle, risk } = data;
+  const waLink = member.whatsappPhone
+    ? `https://wa.me/${member.whatsappPhone.replace(/[^0-9]/g, '')}`
+    : null;
 
   return (
-    <div className="max-w-5xl space-y-10">
-      <div>
-        <Link href="/admin" className="inline-flex items-center gap-1.5 font-mono text-xs uppercase tracking-label text-ink-mute hover:text-ink">
-          <ArrowLeft className="h-3.5 w-3.5" strokeWidth={1.5} /> Back
-        </Link>
-      </div>
+    <div className="space-y-6">
+      <Link href="/admin/members" className="inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.1em] text-ink-mute hover:text-ink">
+        <ArrowLeft className="w-3.5 h-3.5" strokeWidth={1.5} /> All members
+      </Link>
 
-      <header className="flex flex-wrap items-start gap-6">
-        <Initials name={member.name} pictureUrl={member.pictureUrl} />
-        <div className="flex-1 min-w-0">
-          <Eyebrow>Member · {member.role}</Eyebrow>
-          <h1 className="mt-1 font-serif-tool text-3xl font-semibold tracking-tight text-ink">{member.name}</h1>
-          <p className="mt-1 font-mono text-xs text-ink-mute">
-            {member.track ? TRACK_LABEL[member.track] ?? member.track : 'No track'}
-            {cycle && !isArchivedView && (
-              <> · {cycle.name} · week {cycle.weekNumber} of {cycle.weeksTotal}</>
-            )}
-            {cycle && isArchivedView && (
-              <> · {cycle.name} · ARCHIVED · {cycle.weeksTotal} weeks</>
-            )}
-            {' · '}{member.email}
-          </p>
-          {memberships.length > 1 && (
-            <div className="mt-2">
-              <select
-                value={selectedCycleId ?? (currentMembership?.cycleId ?? '')}
-                onChange={(e) => setSelectedCycleId(e.target.value || null)}
-                className="font-mono text-xs text-ink bg-paper border border-rule rounded-md px-2 py-1 focus:outline-none focus:border-ink-soft"
-                aria-label="Select cycle"
-              >
-                {memberships.map((m) => (
-                  <option key={m.cycleId} value={m.cycleId}>
-                    {m.cycleName} ({formatCycleRange(m.cycleStartsAt, m.cycleEndsAt)}){m.status === 'ARCHIVED' ? ' · archived' : ''}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
+      <header className="flex items-end justify-between flex-wrap gap-4 pb-5 border-b border-rule">
+        <div className="flex items-end gap-4 min-w-0">
+          <Avatar name={member.name} pictureUrl={member.pictureUrl} />
+          <div className="min-w-0">
+            <Eyebrow>Member</Eyebrow>
+            <h1 className="font-serif text-[34px] leading-[1.05] font-semibold text-ink tracking-tight">
+              {member.name}
+            </h1>
+            <p className="font-mono text-[11px] text-ink-mute mt-1.5">
+              {member.track ?? 'No track'}
+              {cycle && <> · {cycle.name} · week {cycle.weekNumber} of {cycle.weeksTotal}</>}
+              {' · '}{member.email}
+            </p>
+          </div>
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-2">
+          <RangeSelector value={range} onChange={setRange} />
           <button
             type="button"
-            onClick={() => setPlanWeekOpen(true)}
-            className="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-label px-4 py-2 bg-ink text-paper rounded-pill hover:opacity-90"
+            className="inline-flex items-center gap-2 bg-ink text-paper font-mono text-[11px] uppercase tracking-[0.1em] px-4 py-2 rounded-pill hover:opacity-90"
           >
             Plan week
-            <ChevronDown className="h-3.5 w-3.5" strokeWidth={1.5} />
+            <ChevronDown className="w-3 h-3" strokeWidth={2} />
           </button>
-          {waLink ? (
+          {waLink && (
             <a
               href={waLink}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-label px-4 py-2 bg-paper-warm text-ink-soft rounded-pill hover:bg-rule"
+              className="inline-flex items-center gap-2 bg-paper-warm text-ink-soft font-mono text-[11px] uppercase tracking-[0.1em] px-4 py-2 rounded-pill hover:bg-rule"
             >
-              <MessageCircle className="h-3.5 w-3.5" strokeWidth={1.5} />
-              WhatsApp ↗
+              <MessageCircle className="w-3 h-3" strokeWidth={1.5} /> WhatsApp
             </a>
-          ) : (
-            <button disabled className="font-mono text-xs uppercase tracking-label px-4 py-2 text-ink-faint rounded-pill opacity-40 cursor-not-allowed">
-              WhatsApp
-            </button>
           )}
-          <button
-            onClick={() => alert('Export coming in a future iteration')}
-            className="font-mono text-xs uppercase tracking-label px-4 py-2 text-ink-soft hover:bg-paper-warm rounded-pill"
-          >
-            Export data
-          </button>
         </div>
       </header>
 
-      <section>
-        <Eyebrow>Topic coverage · this cycle</Eyebrow>
-        <div className="mt-3">
-          <TopicCoverageMatrix
-            topics={topicCoverage.map((t) => ({
-              topicId: t.topicId,
-              slug: t.topicSlug,
-              label: t.topicLabel,
-              order: t.order,
-              itemsPlanned: t.itemsPlanned,
-              itemsDone: t.itemsDone,
-            }))}
-          />
-        </div>
-      </section>
+      {risk.status !== 'ON_TRACK' && (
+        <RiskBanner status={risk.status} reasons={risk.reasons} />
+      )}
 
-      <nav className="border-b border-rule flex gap-6">
-        {(['timeline', 'retros', 'diagnose', 'notes', 'attendance'] as Tab[]).map((t) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={clsx(
-              'pb-3 font-mono text-xs uppercase tracking-label transition-colors',
-              tab === t ? 'text-ink font-semibold border-b-2 border-ink -mb-[1px]' : 'text-ink-mute hover:text-ink',
-            )}
-          >
-            {t}
-          </button>
-        ))}
-      </nav>
-
-      <div>
-        {tab === 'timeline' && (
-          <TimelineTab memberId={memberId} plans={data.timeline} />
-        )}
-        {tab === 'retros' && <RetrosTab retros={data.retros} />}
-        {tab === 'diagnose' && <DiagnoseTab memberId={memberId} />}
-        {tab === 'notes' && <NotesTab memberId={memberId} />}
-        {tab === 'attendance' && <AttendanceTab attendance={attendance} />}
+      <div className="grid grid-cols-12 gap-5">
+        <EngagementCard engagement={data.engagement} status={data.risk.status} />
+        <ItemsCompletedCard itemsCompleted={data.itemsCompleted} />
+        <TimeInvestedCard timeInvested={data.timeInvested} />
       </div>
 
-      <PlanWeekModal
-        isOpen={planWeekOpen}
-        onClose={() => setPlanWeekOpen(false)}
-        current={data.planWeeks.current}
-        next={data.planWeeks.next}
-        onPick={handlePickWeek}
+      <BehaviorStrip behavior={data.behavior} />
+
+      <div className="grid grid-cols-12 gap-5">
+        <TopicEngagementTable topics={data.topicEngagement} />
+        <div className="col-span-4 space-y-5">
+          <SessionPatternCard behavior={data.behavior} />
+          <ClassAttendanceCard classAttendance={data.classAttendance} firstSession={data.firstSession} cycle={data.cycle} />
+          <LatestActivityCard events={data.recentActivity} />
+        </div>
+      </div>
+
+      {rawData && (
+        <RawDataAccordion
+          memberId={memberId}
+          timeline={rawData.timeline}
+          retros={rawData.retros}
+          attendance={rawData.attendance}
+          topicCoverage={rawData.topicCoverage}
+        />
+      )}
+    </div>
+  );
+}
+
+function Avatar({ name, pictureUrl }: { name: string; pictureUrl: string | null }) {
+  if (pictureUrl) {
+    // eslint-disable-next-line @next/next/no-img-element
+    return (
+      <img
+        src={pictureUrl}
+        alt=""
+        className="w-14 h-14 rounded-full object-cover border border-rule"
       />
+    );
+  }
+  const initials = name
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase() ?? '')
+    .join('');
+  return (
+    <div className="w-14 h-14 rounded-full bg-paper-warm border border-rule flex items-center justify-center font-serif text-ink text-xl font-semibold">
+      {initials || '—'}
+    </div>
+  );
+}
+
+function RangeSelector({ value, onChange }: { value: Range; onChange: (r: Range) => void }) {
+  const opts: Range[] = ['7d', 'cycle', 'all'];
+  return (
+    <div className="inline-flex bg-paper-warm rounded-pill p-1 font-mono text-[11px] uppercase tracking-[0.1em]">
+      {opts.map((r) => (
+        <button
+          key={r}
+          type="button"
+          onClick={() => onChange(r)}
+          className={
+            value === r
+              ? 'px-3 py-1.5 rounded-pill bg-surface text-ink shadow-[0_1px_2px_rgba(0,0,0,0.06)]'
+              : 'px-3 py-1.5 rounded-pill text-ink-mute hover:text-ink'
+          }
+        >
+          {r === '7d' ? '7d' : r === 'cycle' ? 'Cycle' : 'All'}
+        </button>
+      ))}
     </div>
   );
 }

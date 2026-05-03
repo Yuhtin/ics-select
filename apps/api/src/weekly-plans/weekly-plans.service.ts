@@ -340,7 +340,7 @@ export class WeeklyPlansService {
   async setItemOutcome(
     itemId: string,
     userId: string,
-    input: { outcome: ItemOutcome; reflection?: string | null },
+    input: { outcome: ItemOutcome; reflection?: string | null; actualMinutes: number | null },
   ) {
     const item = await this.prisma.weeklyPlanItem.findUnique({
       where: { id: itemId },
@@ -433,6 +433,7 @@ export class WeeklyPlansService {
       data: {
         outcome: input.outcome,
         reflection: input.reflection ?? undefined,
+        actualMinutes: input.actualMinutes,
         completedAt: completed ? new Date() : null,
       },
     });

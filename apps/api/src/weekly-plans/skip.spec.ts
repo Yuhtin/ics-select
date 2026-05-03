@@ -50,7 +50,7 @@ describe('WeeklyPlansService.setItemOutcome — SKIPPED', () => {
     });
     const service = build(prisma);
     await expect(
-      service.setItemOutcome('item-1', 'u1', { outcome: 'SKIPPED' }),
+      service.setItemOutcome('item-1', 'u1', { outcome: 'SKIPPED', actualMinutes: null }),
     ).rejects.toThrow(/only foundations or video items can be skipped/i);
   });
 
@@ -63,7 +63,7 @@ describe('WeeklyPlansService.setItemOutcome — SKIPPED', () => {
       format: 'VIDEO',
     });
     const service = build(prisma);
-    await service.setItemOutcome('item-1', 'u1', { outcome: 'SKIPPED' });
+    await service.setItemOutcome('item-1', 'u1', { outcome: 'SKIPPED', actualMinutes: null });
     expect(prisma.weeklyPlanItem.update).toHaveBeenCalled();
   });
 
@@ -75,7 +75,7 @@ describe('WeeklyPlansService.setItemOutcome — SKIPPED', () => {
       topicSlugs: ['foundations'],
     });
     const service = build(prisma);
-    await service.setItemOutcome('item-1', 'u1', { outcome: 'SKIPPED' });
+    await service.setItemOutcome('item-1', 'u1', { outcome: 'SKIPPED', actualMinutes: null });
     expect(calendar.deleteEvent).not.toHaveBeenCalled();
     expect(prisma.weeklyPlanItemCalendarEvent.deleteMany).not.toHaveBeenCalled();
   });
@@ -92,7 +92,7 @@ describe('WeeklyPlansService.setItemOutcome — SKIPPED', () => {
       ],
     });
     const service = build(prisma);
-    await service.setItemOutcome('item-1', 'u1', { outcome: 'SKIPPED' });
+    await service.setItemOutcome('item-1', 'u1', { outcome: 'SKIPPED', actualMinutes: null });
     expect(calendar.deleteEvent).toHaveBeenCalledWith('u1', 'evt-99');
     expect(calendar.deleteEvent).toHaveBeenCalledWith('u1', 'evt-100');
     expect(prisma.weeklyPlanItemCalendarEvent.deleteMany).toHaveBeenCalledWith({
@@ -111,7 +111,7 @@ describe('WeeklyPlansService.setItemOutcome — SKIPPED', () => {
     calendar.deleteEvent.mockRejectedValue(new Error('boom'));
     const service = build(prisma);
     await expect(
-      service.setItemOutcome('item-1', 'u1', { outcome: 'SKIPPED' }),
+      service.setItemOutcome('item-1', 'u1', { outcome: 'SKIPPED', actualMinutes: null }),
     ).resolves.toBeDefined();
     expect(prisma.weeklyPlanItemCalendarEvent.deleteMany).toHaveBeenCalled();
   });
