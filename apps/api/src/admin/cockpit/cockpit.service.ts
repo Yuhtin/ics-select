@@ -66,7 +66,10 @@ export class CockpitService {
     const [plans, retros, classes, lastEvent, recent, topics] = await Promise.all([
       this.prisma.weeklyPlan.findMany({
         where: { userId: memberId, cycleId: cycle.id },
-        include: {
+        select: {
+          id: true,
+          weekStart: true,
+          publishedAt: true,
           items: {
             include: {
               libraryItem: {
@@ -140,12 +143,12 @@ export class CockpitService {
     ).length;
     const perWeekMinutes = bucketMinutesPerWeek(plans, weeksElapsed, cycleStart);
 
-    // Cohort medians (per-metric SQL — defer real impl; spec uses percentile_cont)
+    // Cohort medians (per-metric SQL — percentile_cont across cohort users)
     const cohortMedians = await this.computeCohortMedians(
       cohortIds,
       cycle.id,
-      weeksElapsed,
-      daysElapsed,
+      cycleStart,
+      now,
     );
 
     // Behavior
@@ -200,7 +203,7 @@ export class CockpitService {
       daysSinceLastSession,
     });
 
-    const scoreByWeek = await this.scoreByWeek(memberId, cycle, weeksElapsed, cohortIds);
+    const scoreByWeek = await this.scoreByWeek(memberId, cycle, weeksElapsed, cohortIds, now);
 
     // Risk
     const completionRate = allItems.length === 0 ? 0 : completed.length / allItems.length;
@@ -472,49 +475,356 @@ export class CockpitService {
     return idx / Math.max(1, sorted.length - 1);
   }
 
-  // TODO: real impl pending — placeholder returns reasonable defaults
   private async computeCohortMedians(
     cohortIds: string[],
-    _cycleId: string,
-    _weeksElapsed: number,
-    _daysElapsed: number,
+    cycleId: string,
+    cycleStart: Date,
+    now: Date,
   ) {
-    if (cohortIds.length === 0) {
-      return {
-        engagement: 0,
-        sessions: 0,
-        daysActive: 0,
-        daysStudying: 0,
-        ttfv: 0,
-        itemsDone: 0,
-        minutes: 0,
-        carryOver: 0,
-        classAttendance: 0,
-        byTopic: new Map<string, number>(),
-      };
-    }
-    return {
-      engagement: 60,
-      sessions: 16,
-      daysActive: 12,
-      daysStudying: 11,
-      ttfv: 4,
-      itemsDone: 16,
-      minutes: 22 * 60,
-      carryOver: 1,
-      classAttendance: 5,
+    const empty = {
+      engagement: 0,
+      sessions: 0,
+      daysActive: 0,
+      daysStudying: 0,
+      ttfv: 0,
+      itemsDone: 0,
+      minutes: 0,
+      carryOver: 0,
+      classAttendance: 0,
       byTopic: new Map<string, number>(),
+    };
+    if (cohortIds.length === 0) return empty;
+
+    // --- sessions median ---
+    const sessionsRows = await this.prisma.$queryRawUnsafe<Array<{ median: number | null }>>(
+      `SELECT percentile_cont(0.5) WITHIN GROUP (ORDER BY COALESCE(per_user.cnt, 0)) AS median
+       FROM unnest($1::text[]) AS u("userId")
+       LEFT JOIN (
+         SELECT "userId", COUNT(*)::int AS cnt
+         FROM "UserEvent"
+         WHERE "userId" = ANY($1::text[])
+           AND "type" = 'SESSION_START'
+           AND "occurredAt" BETWEEN $2 AND $3
+         GROUP BY "userId"
+       ) AS per_user USING ("userId")`,
+      cohortIds, cycleStart, now,
+    );
+    const sessionsMedian = Math.round(sessionsRows[0]?.median ?? 0);
+
+    // --- daysActive median ---
+    const daysActiveRows = await this.prisma.$queryRawUnsafe<Array<{ median: number | null }>>(
+      `SELECT percentile_cont(0.5) WITHIN GROUP (ORDER BY COALESCE(per_user.cnt, 0)) AS median
+       FROM unnest($1::text[]) AS u("userId")
+       LEFT JOIN (
+         SELECT "userId", COUNT(DISTINCT date_trunc('day', "occurredAt"))::int AS cnt
+         FROM "UserEvent"
+         WHERE "userId" = ANY($1::text[])
+           AND "occurredAt" BETWEEN $2 AND $3
+         GROUP BY "userId"
+       ) AS per_user USING ("userId")`,
+      cohortIds, cycleStart, now,
+    );
+    const daysActiveMedian = Math.round(daysActiveRows[0]?.median ?? 0);
+
+    // --- daysStudying median (OUTCOME_MARKED events) ---
+    const daysStudyingRows = await this.prisma.$queryRawUnsafe<Array<{ median: number | null }>>(
+      `SELECT percentile_cont(0.5) WITHIN GROUP (ORDER BY COALESCE(per_user.cnt, 0)) AS median
+       FROM unnest($1::text[]) AS u("userId")
+       LEFT JOIN (
+         SELECT "userId", COUNT(DISTINCT date_trunc('day', "occurredAt"))::int AS cnt
+         FROM "UserEvent"
+         WHERE "userId" = ANY($1::text[])
+           AND "type" = 'OUTCOME_MARKED'
+           AND "occurredAt" BETWEEN $2 AND $3
+         GROUP BY "userId"
+       ) AS per_user USING ("userId")`,
+      cohortIds, cycleStart, now,
+    );
+    const daysStudyingMedian = Math.round(daysStudyingRows[0]?.median ?? 0);
+
+    // --- itemsDone median ---
+    const itemsDoneRows = await this.prisma.$queryRawUnsafe<Array<{ median: number | null }>>(
+      `SELECT percentile_cont(0.5) WITHIN GROUP (ORDER BY COALESCE(per_user.cnt, 0)) AS median
+       FROM unnest($1::text[]) AS u("userId")
+       LEFT JOIN (
+         SELECT wp."userId", COUNT(*)::int AS cnt
+         FROM "WeeklyPlanItem" wpi
+         JOIN "WeeklyPlan" wp ON wp.id = wpi."weeklyPlanId"
+         WHERE wp."cycleId" = $2
+           AND wp."userId" = ANY($1::text[])
+           AND wpi."outcome" <> 'PENDING'
+         GROUP BY wp."userId"
+       ) AS per_user USING ("userId")`,
+      cohortIds, cycleId,
+    );
+    const itemsDoneMedian = Math.round(itemsDoneRows[0]?.median ?? 0);
+
+    // --- minutes median ---
+    const minutesRows = await this.prisma.$queryRawUnsafe<Array<{ median: number | null }>>(
+      `SELECT percentile_cont(0.5) WITHIN GROUP (ORDER BY COALESCE(per_user.mins, 0)) AS median
+       FROM unnest($1::text[]) AS u("userId")
+       LEFT JOIN (
+         SELECT wp."userId", SUM(COALESCE(wpi."actualMinutes", wpi."scheduledMinutes", 0))::int AS mins
+         FROM "WeeklyPlanItem" wpi
+         JOIN "WeeklyPlan" wp ON wp.id = wpi."weeklyPlanId"
+         WHERE wp."cycleId" = $2
+           AND wp."userId" = ANY($1::text[])
+           AND wpi."outcome" <> 'PENDING'
+         GROUP BY wp."userId"
+       ) AS per_user USING ("userId")`,
+      cohortIds, cycleId,
+    );
+    const minutesMedian = Math.round(minutesRows[0]?.median ?? 0);
+
+    // --- carryOver median ---
+    const carryOverRows = await this.prisma.$queryRawUnsafe<Array<{ median: number | null }>>(
+      `SELECT percentile_cont(0.5) WITHIN GROUP (ORDER BY COALESCE(per_user.cnt, 0)) AS median
+       FROM unnest($1::text[]) AS u("userId")
+       LEFT JOIN (
+         SELECT wp."userId", COUNT(*)::int AS cnt
+         FROM "WeeklyPlanItem" wpi
+         JOIN "WeeklyPlan" wp ON wp.id = wpi."weeklyPlanId"
+         WHERE wp."cycleId" = $2
+           AND wp."userId" = ANY($1::text[])
+           AND wpi."carriedFromItemId" IS NOT NULL
+         GROUP BY wp."userId"
+       ) AS per_user USING ("userId")`,
+      cohortIds, cycleId,
+    );
+    const carryOverMedian = Math.round(carryOverRows[0]?.median ?? 0);
+
+    // --- classAttendance median ---
+    const classAttRows = await this.prisma.$queryRawUnsafe<Array<{ median: number | null }>>(
+      `SELECT percentile_cont(0.5) WITHIN GROUP (ORDER BY COALESCE(per_user.cnt, 0)) AS median
+       FROM unnest($1::text[]) AS u("userId")
+       LEFT JOIN (
+         SELECT ca."userId", COUNT(*)::int AS cnt
+         FROM "ClassAttendance" ca
+         JOIN "ClassSession" cs ON cs.id = ca."classSessionId"
+         WHERE cs."cycleId" = $2
+           AND ca."userId" = ANY($1::text[])
+           AND ca."status" = 'PRESENT'
+         GROUP BY ca."userId"
+       ) AS per_user USING ("userId")`,
+      cohortIds, cycleId,
+    );
+    const classAttMedian = Math.round(classAttRows[0]?.median ?? 0);
+
+    // --- byTopic median minutes per topic ---
+    const topicRows = await this.prisma.$queryRawUnsafe<Array<{ topicId: string; median: number | null }>>(
+      `SELECT lit."topicId",
+              percentile_cont(0.5) WITHIN GROUP (ORDER BY COALESCE(per_user.mins, 0)) AS median
+       FROM (SELECT DISTINCT "topicId" FROM "LibraryItemTopic") AS lit
+       CROSS JOIN unnest($1::text[]) AS u("userId")
+       LEFT JOIN (
+         SELECT wp."userId", lit2."topicId",
+                SUM(COALESCE(wpi."actualMinutes", wpi."scheduledMinutes", 0))::int AS mins
+         FROM "WeeklyPlanItem" wpi
+         JOIN "WeeklyPlan" wp ON wp.id = wpi."weeklyPlanId"
+         JOIN "LibraryItemTopic" lit2 ON lit2."itemId" = wpi."libraryItemId"
+         WHERE wp."cycleId" = $2
+           AND wp."userId" = ANY($1::text[])
+           AND wpi."outcome" <> 'PENDING'
+         GROUP BY wp."userId", lit2."topicId"
+       ) AS per_user ON per_user."userId" = u."userId" AND per_user."topicId" = lit."topicId"
+       GROUP BY lit."topicId"`,
+      cohortIds, cycleId,
+    );
+    const byTopic = new Map<string, number>(
+      topicRows.map((r) => [r.topicId, Math.round(r.median ?? 0)]),
+    );
+
+    // --- TTFv median: median of (firstView - publishedAt) hours per cohort user ---
+    // For each cohort user: gather their plans' first PLAN_VIEW events, compute hours,
+    // then take median across users (median of per-user medians).
+    const ttfvRows = await this.prisma.$queryRawUnsafe<Array<{ hours: number | null }>>(
+      `SELECT EXTRACT(EPOCH FROM (MIN(e."occurredAt") - wp."publishedAt")) / 3600.0 AS hours
+       FROM "UserEvent" e
+       JOIN "WeeklyPlan" wp ON wp.id = (e.meta->>'planId')
+       WHERE e."userId" = ANY($1::text[])
+         AND e."type" = 'PLAN_VIEW'
+         AND e.meta->>'planId' IS NOT NULL
+         AND wp."publishedAt" IS NOT NULL
+         AND wp."userId" = ANY($1::text[])
+         AND wp."cycleId" = $2
+       GROUP BY e."userId", wp.id
+       HAVING MIN(e."occurredAt") >= wp."publishedAt"`,
+      cohortIds, cycleId,
+    );
+    let ttfvMedian = 0;
+    if (ttfvRows.length > 0) {
+      const hours = ttfvRows.map((r) => r.hours ?? 0).sort((a, b) => a - b);
+      const mid = Math.floor(hours.length / 2);
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      ttfvMedian = Math.round(
+        hours.length % 2 === 0 ? (hours[mid - 1]! + hours[mid]!) / 2 : hours[mid]!,
+      );
+    }
+
+    // --- engagement median: compute score per cohort user with their metrics, then median in JS ---
+    // We gather per-user metrics from the queries above for a simplified per-user score.
+    // Using a single query to get all metrics per cohort user.
+    const userMetricsRows = await this.prisma.$queryRawUnsafe<Array<{
+      userId: string;
+      sessions: number;
+      daysActive: number;
+      daysStudying: number;
+      itemsDone: number;
+      itemsPlanned: number;
+      retrosSubmitted: number;
+    }>>(
+      `SELECT
+         u."userId",
+         COALESCE(ev_sess.cnt, 0)   AS sessions,
+         COALESCE(ev_days.cnt, 0)   AS "daysActive",
+         COALESCE(ev_study.cnt, 0)  AS "daysStudying",
+         COALESCE(wp_done.cnt, 0)   AS "itemsDone",
+         COALESCE(wp_plan.cnt, 0)   AS "itemsPlanned",
+         COALESCE(retro.cnt, 0)     AS "retrosSubmitted"
+       FROM unnest($1::text[]) AS u("userId")
+       LEFT JOIN (
+         SELECT "userId", COUNT(*)::int AS cnt FROM "UserEvent"
+         WHERE "userId" = ANY($1::text[]) AND "type" = 'SESSION_START' AND "occurredAt" BETWEEN $2 AND $3
+         GROUP BY "userId"
+       ) ev_sess ON ev_sess."userId" = u."userId"
+       LEFT JOIN (
+         SELECT "userId", COUNT(DISTINCT date_trunc('day', "occurredAt"))::int AS cnt FROM "UserEvent"
+         WHERE "userId" = ANY($1::text[]) AND "occurredAt" BETWEEN $2 AND $3
+         GROUP BY "userId"
+       ) ev_days ON ev_days."userId" = u."userId"
+       LEFT JOIN (
+         SELECT "userId", COUNT(DISTINCT date_trunc('day', "occurredAt"))::int AS cnt FROM "UserEvent"
+         WHERE "userId" = ANY($1::text[]) AND "type" = 'OUTCOME_MARKED' AND "occurredAt" BETWEEN $2 AND $3
+         GROUP BY "userId"
+       ) ev_study ON ev_study."userId" = u."userId"
+       LEFT JOIN (
+         SELECT wp."userId", COUNT(*)::int AS cnt
+         FROM "WeeklyPlanItem" wpi JOIN "WeeklyPlan" wp ON wp.id = wpi."weeklyPlanId"
+         WHERE wp."cycleId" = $4 AND wp."userId" = ANY($1::text[]) AND wpi."outcome" <> 'PENDING'
+         GROUP BY wp."userId"
+       ) wp_done ON wp_done."userId" = u."userId"
+       LEFT JOIN (
+         SELECT wp."userId", COUNT(*)::int AS cnt
+         FROM "WeeklyPlanItem" wpi JOIN "WeeklyPlan" wp ON wp.id = wpi."weeklyPlanId"
+         WHERE wp."cycleId" = $4 AND wp."userId" = ANY($1::text[])
+         GROUP BY wp."userId"
+       ) wp_plan ON wp_plan."userId" = u."userId"
+       LEFT JOIN (
+         SELECT "userId", COUNT(*)::int AS cnt FROM "WeeklyRetro"
+         WHERE "cycleId" = $4 AND "userId" = ANY($1::text[])
+         GROUP BY "userId"
+       ) retro ON retro."userId" = u."userId"`,
+      cohortIds, cycleStart, now, cycleId,
+    );
+    const daysElapsed = Math.max(1, Math.floor((now.getTime() - cycleStart.getTime()) / DAY_MS));
+    const weeksElapsed = Math.max(1, Math.ceil(daysElapsed / 7));
+    const cohortScores = userMetricsRows.map((row) =>
+      computeEngagementScore({
+        cohortRankFromBottom: Math.floor(cohortIds.length / 2), // simplified: mid-rank for each user
+        cohortSize: cohortIds.length,
+        daysActive: Number(row.daysActive),
+        daysElapsed,
+        itemsDone: Number(row.itemsDone),
+        itemsPlanned: Number(row.itemsPlanned),
+        retrosSubmitted: Number(row.retrosSubmitted),
+        weeksElapsed,
+        ttfvMedianHours: ttfvMedian,
+        daysSinceLastSession: null, // no per-user last-session in this batch query; neutral
+      }).score,
+    );
+    let engagementMedian = 0;
+    if (cohortScores.length > 0) {
+      const sorted = [...cohortScores].sort((a, b) => a - b);
+      const mid = Math.floor(sorted.length / 2);
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      engagementMedian = Math.round(
+        sorted.length % 2 === 0 ? (sorted[mid - 1]! + sorted[mid]!) / 2 : sorted[mid]!,
+      );
+    }
+
+    return {
+      engagement: engagementMedian,
+      sessions: sessionsMedian,
+      daysActive: daysActiveMedian,
+      daysStudying: daysStudyingMedian,
+      ttfv: ttfvMedian,
+      itemsDone: itemsDoneMedian,
+      minutes: minutesMedian,
+      carryOver: carryOverMedian,
+      classAttendance: classAttMedian,
+      byTopic,
     };
   }
 
-  // TODO: real impl pending — placeholder returns reasonable defaults
   private async scoreByWeek(
-    _memberId: string,
-    _cycle: { id: string; startsAt: Date; endsAt: Date },
+    memberId: string,
+    cycle: { id: string; startsAt: Date; endsAt: Date },
     weeksElapsed: number,
-    _cohortIds: string[],
+    cohortIds: string[],
+    now: Date,
   ): Promise<number[]> {
-    return Array.from({ length: weeksElapsed }, (_, i) => Math.max(0, 70 - i * 8));
+    const cycleStart = mondayUTC(cycle.startsAt);
+
+    // Load all plans and retros once; slice per week below.
+    const [memberPlans, memberRetros] = await Promise.all([
+      this.prisma.weeklyPlan.findMany({
+        where: { userId: memberId, cycleId: cycle.id },
+        select: { weekStart: true, items: { select: { outcome: true } } },
+      }),
+      this.prisma.weeklyRetro.findMany({
+        where: { userId: memberId, cycleId: cycle.id },
+        select: { weekStart: true },
+      }),
+    ]);
+
+    // Cohort rank is held constant at current rank for all historical weeks.
+    // Recomputing per-week ranks would require N×W additional queries and is
+    // not worth the cost for the sparkline use-case. Documented simplification.
+    const cohortRankFromBottom = cohortIds.length === 0 ? 0 : Math.floor(cohortIds.length / 2);
+
+    const out: number[] = [];
+    for (let w = 1; w <= weeksElapsed; w++) {
+      const weekEnd = new Date(cycleStart.getTime() + w * WEEK_MS);
+      const effectiveEnd = weekEnd < now ? weekEnd : now;
+      const daysElapsed = Math.max(
+        1,
+        Math.floor((effectiveEnd.getTime() - cycleStart.getTime()) / DAY_MS),
+      );
+
+      const plansUpToWeek = memberPlans.filter((p) => p.weekStart < weekEnd);
+      const itemsDone = plansUpToWeek
+        .flatMap((p) => p.items)
+        .filter((i) => i.outcome !== 'PENDING').length;
+      const itemsPlanned = plansUpToWeek.reduce((s, p) => s + p.items.length, 0);
+      const retrosSubmitted = memberRetros.filter((r) => r.weekStart < weekEnd).length;
+
+      const daysActive = await this.distinctDaysOfEvents(memberId, cycleStart, effectiveEnd);
+
+      const lastEvent = await this.prisma.userEvent.findFirst({
+        where: { userId: memberId, occurredAt: { lte: effectiveEnd } },
+        orderBy: { occurredAt: 'desc' },
+        select: { occurredAt: true },
+      });
+      const daysSinceLastSession: number | null = lastEvent
+        ? Math.floor((effectiveEnd.getTime() - lastEvent.occurredAt.getTime()) / DAY_MS)
+        : null;
+
+      const score = computeEngagementScore({
+        cohortRankFromBottom,
+        cohortSize: cohortIds.length,
+        daysActive,
+        daysElapsed,
+        itemsDone,
+        itemsPlanned,
+        retrosSubmitted,
+        weeksElapsed: w,
+        ttfvMedianHours: 0, // omitted for per-week sparkline (cheap simplification)
+        daysSinceLastSession,
+      });
+      out.push(score.score);
+    }
+
+    return out;
   }
 }
 
@@ -527,7 +837,9 @@ function countByOutcome(outcomes: ItemOutcome[]): Record<ItemOutcome, number> {
 }
 
 type PlanLike = {
+  id: string;
   weekStart: Date;
+  publishedAt: Date | null;
   items: Array<{
     outcome: ItemOutcome;
     scheduledMinutes: number | null;
@@ -581,12 +893,24 @@ function bucketCarryPerWeek(
   });
 }
 
-// TODO: real impl pending — placeholder returns reasonable defaults
-function computeTtfvMedian(plans: PlanLike[], _firstViewByPlan: Map<string, Date>): number {
-  // Without persisted publishedAt + first view, return placeholder. Real impl:
-  // for each plan with publishedAt, compute (firstView - publishedAt) hours, then median.
-  if (plans.length === 0) return 0;
-  return 0;
+function computeTtfvMedian(plans: PlanLike[], firstViewByPlan: Map<string, Date>): number {
+  const hoursPerPlan: number[] = [];
+  for (const plan of plans) {
+    if (!plan.publishedAt || !plan.id) continue;
+    const firstView = firstViewByPlan.get(plan.id);
+    if (!firstView) continue;
+    const hours = (firstView.getTime() - plan.publishedAt.getTime()) / 3_600_000;
+    if (hours >= 0) hoursPerPlan.push(hours);
+  }
+  if (hoursPerPlan.length === 0) return 0;
+  hoursPerPlan.sort((a, b) => a - b);
+  const mid = Math.floor(hoursPerPlan.length / 2);
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const median =
+    hoursPerPlan.length % 2 === 0
+      ? (hoursPerPlan[mid - 1]! + hoursPerPlan[mid]!) / 2
+      : hoursPerPlan[mid]!;
+  return Math.round(median);
 }
 
 async function arrayPerWeek<T>(
