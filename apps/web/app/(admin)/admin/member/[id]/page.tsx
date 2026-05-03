@@ -11,6 +11,7 @@ import { BehaviorStrip } from '../../../../../components/admin/member-cockpit/be
 import { TopicEngagementTable } from '../../../../../components/admin/member-cockpit/topic-engagement-table';
 import { SessionPatternCard } from '../../../../../components/admin/member-cockpit/session-pattern-card';
 import { ClassAttendanceCard } from '../../../../../components/admin/member-cockpit/class-attendance-card';
+import { LatestActivityCard } from '../../../../../components/admin/member-cockpit/latest-activity-card';
 import { Eyebrow } from '../../../../../components/ui/eyebrow';
 
 type Range = 'cycle' | '7d' | 'all';
@@ -98,9 +99,7 @@ export default function AdminMemberPage({ params }: { params: Promise<{ id: stri
         <div className="col-span-4 space-y-5">
           <SessionPatternCard behavior={data.behavior} />
           <ClassAttendanceCard classAttendance={data.classAttendance} firstSession={data.firstSession} cycle={data.cycle} />
-          <div className="bg-surface border border-rule rounded-lg p-6 text-ink-faint font-mono text-[11px]">
-            LatestActivityCard (T20)
-          </div>
+          <LatestActivityCard events={data.recentActivity} />
         </div>
       </div>
     </div>
