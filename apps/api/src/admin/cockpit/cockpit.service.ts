@@ -170,9 +170,13 @@ export class CockpitService {
     );
     const carryOverPerWeek = bucketCarryPerWeek(plans, weeksElapsed, cycleStart);
 
-    const daysSinceLastSession = lastEvent
+    // Null when the member has no events recorded yet (either never used the
+    // platform or activity capture only just deployed). classifyRisk and
+    // computeEngagementScore both skip the session criterion when this is null —
+    // we want "no data yet" to look neutral, not catastrophic.
+    const daysSinceLastSession: number | null = lastEvent
       ? Math.floor((now.getTime() - lastEvent.occurredAt.getTime()) / DAY_MS)
-      : 999;
+      : null;
 
     const cohortRankPct = await this.cohortRankPct(
       memberId,

@@ -8,7 +8,8 @@ export type EngagementInput = {
   retrosSubmitted: number;
   weeksElapsed: number;
   ttfvMedianHours: number;
-  daysSinceLastSession: number;
+  // Null = no events recorded yet. Recency points = 0 (neutral, no penalty).
+  daysSinceLastSession: number | null;
 };
 
 export type ScoreBreakdownEntry = {
@@ -50,7 +51,8 @@ export function computeEngagementScore(input: EngagementInput): EngagementScore 
       : (1 - input.ttfvMedianHours / 24) * 10;
 
   let recencyPts = 0;
-  if (input.daysSinceLastSession <= 3) recencyPts = 10;
+  if (input.daysSinceLastSession === null) recencyPts = 0;
+  else if (input.daysSinceLastSession <= 3) recencyPts = 10;
   else if (input.daysSinceLastSession <= 7) recencyPts = 5;
   else if (input.daysSinceLastSession <= 14) recencyPts = 2;
   else recencyPts = 0;

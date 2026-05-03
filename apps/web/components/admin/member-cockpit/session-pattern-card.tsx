@@ -35,6 +35,7 @@ export function SessionPatternCard({ behavior }: { behavior: CockpitResponse['be
             categories={['sessions']}
             colors={['gray']}
             showLegend={false}
+            showTooltip={false}
             className="h-20 mt-4"
           />
           <div className="flex items-baseline justify-between mt-2 font-mono text-[10px] text-ink-faint">

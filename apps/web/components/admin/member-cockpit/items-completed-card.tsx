@@ -50,6 +50,7 @@ export function ItemsCompletedCard({ itemsCompleted }: Props) {
           stack
           className="h-[200px]"
           showLegend={false}
+          showTooltip={false}
         />
         <div className="border-l border-rule pl-6">
           <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-ink-mute mb-3">By outcome</p>

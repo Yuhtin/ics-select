@@ -14,7 +14,9 @@ export const RISK_THRESHOLDS = {
 export type RiskStatus = 'ON_TRACK' | 'WATCH' | 'AT_RISK';
 
 export type RiskInput = {
-  daysSinceLastSession: number;
+  // Null = no events recorded yet. Session criterion is skipped (treated as
+  // not-met) so a fresh-deploy member doesn't get flagged AT_RISK on day 1.
+  daysSinceLastSession: number | null;
   completionRate: number;        // 0..1
   cohortRankPct: number;         // 0..1, where 0 = bottom of cohort, 1 = top
 };
@@ -50,7 +52,7 @@ function collectHits(
   t: ThresholdSet,
 ): Hit[] {
   const hits: Hit[] = [];
-  if (input.daysSinceLastSession >= t.daysSinceLastSession) {
+  if (input.daysSinceLastSession !== null && input.daysSinceLastSession >= t.daysSinceLastSession) {
     hits.push({ kind: 'session', value: input.daysSinceLastSession, threshold: t.daysSinceLastSession });
   }
   if (input.completionRate <= t.completionRate) {
