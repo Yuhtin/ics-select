@@ -2,7 +2,6 @@ import { computeMemberRanking, type MemberRankingUser } from './member-ranking';
 
 const WEEK_START = new Date('2026-04-13T00:00:00.000Z'); // Monday UTC
 const WEEK_END = new Date('2026-04-19T23:59:59.999Z');   // Sunday UTC end
-const NOW = new Date('2026-04-17T12:00:00.000Z');         // mid-week Friday
 
 function user(
   userId: string,
@@ -58,6 +57,22 @@ describe('computeMemberRanking', () => {
     const result = computeMemberRanking([skipped, done], WEEK_START, WEEK_END, 'me');
     expect(result[0]!.userId).toBe('u-done');    // Alpha < Bravo
     expect(result[1]!.userId).toBe('u-skipped');
+  });
+
+  it('counts DOUBTS as a positive outcome with 1.0 weight', () => {
+    const doubts = user('u-doubts', 'Doubts', [
+      { outcome: 'DOUBTS', completedAt: '2026-04-17T10:00:00Z', estimatedMinutes: 60 },
+    ]);
+    const easy = user('u-easy', 'Easy', [
+      { outcome: 'DONE_EASY', completedAt: '2026-04-17T10:00:00Z', estimatedMinutes: 60 },
+    ]);
+    const result = computeMemberRanking([doubts, easy], WEEK_START, WEEK_END, 'me');
+    // Both have identical scores (60min × 1.0 + 20 day bonus = 80 cycle, 80 week, score = 80 + 160 = 240)
+    expect(result[0]!.score).toBe(240);
+    expect(result[1]!.score).toBe(240);
+    // Tie → alphabetical → Doubts > Easy reverse-alpha (D before E)
+    expect(result[0]!.userId).toBe('u-doubts');
+    expect(result[1]!.userId).toBe('u-easy');
   });
 
   it('STUCK and PENDING contribute 0 points', () => {

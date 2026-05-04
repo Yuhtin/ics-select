@@ -1,4 +1,5 @@
 import type { ItemOutcome } from '@ics-select/prisma';
+import { isPositiveOutcome } from '@ics-select/shared';
 
 export type MemberRankingUser = {
   userId: string;
@@ -33,7 +34,7 @@ const CURRENT_WEEK_MULTIPLIER = 2;
 const TOP_N = 3;
 
 function utcDayKey(d: Date): string {
-  return `${d.getUTCFullYear()}-${d.getUTCMonth()}-${d.getUTCDate()}`;
+  return d.toISOString().slice(0, 10); // "2026-04-17"
 }
 
 type Pontos = {
@@ -61,8 +62,8 @@ export function computeMemberRanking(
 
     for (const item of u.items) {
       if (!item.completedAt) continue;
+      if (!isPositiveOutcome(item.outcome)) continue;
       const weight = OUTCOME_WEIGHT[item.outcome];
-      if (weight === 0) continue;
       const minutes = item.libraryItem.estimatedMinutes ?? 0;
       const minutesWeighted = minutes * weight;
       const dayKey = utcDayKey(item.completedAt);
@@ -99,11 +100,11 @@ export function computeMemberRanking(
       return a.user.name.localeCompare(b.user.name, 'pt-BR', { sensitivity: 'base' });
     })
     .slice(0, TOP_N)
-    .map(({ user }) => ({
+    .map(({ user, score }) => ({
       userId: user.userId,
       name: user.name,
       pictureUrl: user.pictureUrl,
-      score: scored.find((s) => s.user.userId === user.userId)!.score,
+      score,
       isMe: user.userId === currentUserId,
     }));
 }
