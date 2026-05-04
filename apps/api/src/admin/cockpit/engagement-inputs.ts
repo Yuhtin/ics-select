@@ -9,6 +9,10 @@ const DAY_MS = 24 * 60 * 60 * 1000;
  * 0 here (computing it per-user across a cohort is expensive and the cycle
  * ranking can tolerate this simplification — the cockpit individual page
  * still computes the real value via its own path).
+ *
+ * cycleStart must be Monday-normalized (use mondayUTC(cycle.startsAt) at the
+ * call site). Passing a raw cycle.startsAt that doesn't fall on a Monday
+ * skews daysActive/daysElapsed by up to 6 days.
  */
 export async function computeEngagementInputsForCohort(
   prisma: PrismaService,
@@ -21,9 +25,7 @@ export async function computeEngagementInputsForCohort(
 
   const rows = await prisma.$queryRawUnsafe<Array<{
     userId: string;
-    sessions: number;
     daysActive: number;
-    daysStudying: number;
     itemsDone: number;
     itemsPlanned: number;
     retrosSubmitted: number;
@@ -31,31 +33,17 @@ export async function computeEngagementInputsForCohort(
   }>>(
     `SELECT
        u."userId",
-       COALESCE(ev_sess.cnt, 0)   AS sessions,
        COALESCE(ev_days.cnt, 0)   AS "daysActive",
-       COALESCE(ev_study.cnt, 0)  AS "daysStudying",
        COALESCE(wp_done.cnt, 0)   AS "itemsDone",
        COALESCE(wp_plan.cnt, 0)   AS "itemsPlanned",
        COALESCE(retro.cnt, 0)     AS "retrosSubmitted",
        last_ev."daysSinceLastSession" AS "daysSinceLastSession"
      FROM unnest($1::text[]) AS u("userId")
      LEFT JOIN (
-       SELECT "userId", COUNT(*)::int AS cnt FROM "UserEvent"
-       WHERE "userId" = ANY($1::text[]) AND "type" = 'SESSION_START'
-         AND "occurredAt" BETWEEN $2 AND $3
-       GROUP BY "userId"
-     ) ev_sess ON ev_sess."userId" = u."userId"
-     LEFT JOIN (
        SELECT "userId", COUNT(DISTINCT date_trunc('day', "occurredAt"))::int AS cnt FROM "UserEvent"
        WHERE "userId" = ANY($1::text[]) AND "occurredAt" BETWEEN $2 AND $3
        GROUP BY "userId"
      ) ev_days ON ev_days."userId" = u."userId"
-     LEFT JOIN (
-       SELECT "userId", COUNT(DISTINCT date_trunc('day', "occurredAt"))::int AS cnt FROM "UserEvent"
-       WHERE "userId" = ANY($1::text[]) AND "type" = 'OUTCOME_MARKED'
-         AND "occurredAt" BETWEEN $2 AND $3
-       GROUP BY "userId"
-     ) ev_study ON ev_study."userId" = u."userId"
      LEFT JOIN (
        SELECT wp."userId", COUNT(*)::int AS cnt
        FROM "WeeklyPlanItem" wpi JOIN "WeeklyPlan" wp ON wp.id = wpi."weeklyPlanId"
