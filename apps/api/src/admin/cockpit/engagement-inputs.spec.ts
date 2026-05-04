@@ -5,9 +5,7 @@ const NOW = new Date('2026-04-17T12:00:00Z');
 
 function makePrisma(rows: Array<{
   userId: string;
-  sessions: number;
   daysActive: number;
-  daysStudying: number;
   itemsDone: number;
   itemsPlanned: number;
   retrosSubmitted: number;
@@ -17,9 +15,7 @@ function makePrisma(rows: Array<{
     $queryRawUnsafe: jest.fn(async () =>
       rows.map((r) => ({
         userId: r.userId,
-        sessions: r.sessions,
         daysActive: r.daysActive,
-        daysStudying: r.daysStudying,
         itemsDone: r.itemsDone,
         itemsPlanned: r.itemsPlanned,
         retrosSubmitted: r.retrosSubmitted,
@@ -47,9 +43,7 @@ describe('computeEngagementInputsForCohort', () => {
     const prisma = makePrisma([
       {
         userId: 'u-1',
-        sessions: 5,
         daysActive: 8,
-        daysStudying: 6,
         itemsDone: 10,
         itemsPlanned: 12,
         retrosSubmitted: 1,
@@ -77,9 +71,9 @@ describe('computeEngagementInputsForCohort', () => {
 
   it('passes cohortSize equal to other-than-self count for ranking semantics', async () => {
     const prisma = makePrisma([
-      { userId: 'u-1', sessions: 1, daysActive: 1, daysStudying: 1, itemsDone: 1, itemsPlanned: 1, retrosSubmitted: 0, daysSinceLastSession: 1 },
-      { userId: 'u-2', sessions: 2, daysActive: 2, daysStudying: 2, itemsDone: 2, itemsPlanned: 2, retrosSubmitted: 0, daysSinceLastSession: 1 },
-      { userId: 'u-3', sessions: 3, daysActive: 3, daysStudying: 3, itemsDone: 3, itemsPlanned: 3, retrosSubmitted: 0, daysSinceLastSession: 1 },
+      { userId: 'u-1', daysActive: 1, itemsDone: 1, itemsPlanned: 1, retrosSubmitted: 0, daysSinceLastSession: 1 },
+      { userId: 'u-2', daysActive: 2, itemsDone: 2, itemsPlanned: 2, retrosSubmitted: 0, daysSinceLastSession: 1 },
+      { userId: 'u-3', daysActive: 3, itemsDone: 3, itemsPlanned: 3, retrosSubmitted: 0, daysSinceLastSession: 1 },
     ]);
     const result = await computeEngagementInputsForCohort(
       prisma as any,
@@ -95,9 +89,9 @@ describe('computeEngagementInputsForCohort', () => {
 
   it('orders cohortRankFromBottom by itemsDone ascending', async () => {
     const prisma = makePrisma([
-      { userId: 'u-low', sessions: 1, daysActive: 1, daysStudying: 1, itemsDone: 1, itemsPlanned: 5, retrosSubmitted: 0, daysSinceLastSession: 1 },
-      { userId: 'u-mid', sessions: 1, daysActive: 1, daysStudying: 1, itemsDone: 5, itemsPlanned: 5, retrosSubmitted: 0, daysSinceLastSession: 1 },
-      { userId: 'u-top', sessions: 1, daysActive: 1, daysStudying: 1, itemsDone: 10, itemsPlanned: 10, retrosSubmitted: 0, daysSinceLastSession: 1 },
+      { userId: 'u-low', daysActive: 1, itemsDone: 1, itemsPlanned: 5, retrosSubmitted: 0, daysSinceLastSession: 1 },
+      { userId: 'u-mid', daysActive: 1, itemsDone: 5, itemsPlanned: 5, retrosSubmitted: 0, daysSinceLastSession: 1 },
+      { userId: 'u-top', daysActive: 1, itemsDone: 10, itemsPlanned: 10, retrosSubmitted: 0, daysSinceLastSession: 1 },
     ]);
     const result = await computeEngagementInputsForCohort(
       prisma as any,
@@ -113,9 +107,9 @@ describe('computeEngagementInputsForCohort', () => {
 
   it('computes cohortMedianItemsPlanned across cohort', async () => {
     const prisma = makePrisma([
-      { userId: 'u-a', sessions: 1, daysActive: 1, daysStudying: 1, itemsDone: 1, itemsPlanned: 4, retrosSubmitted: 0, daysSinceLastSession: 1 },
-      { userId: 'u-b', sessions: 1, daysActive: 1, daysStudying: 1, itemsDone: 1, itemsPlanned: 8, retrosSubmitted: 0, daysSinceLastSession: 1 },
-      { userId: 'u-c', sessions: 1, daysActive: 1, daysStudying: 1, itemsDone: 1, itemsPlanned: 12, retrosSubmitted: 0, daysSinceLastSession: 1 },
+      { userId: 'u-a', daysActive: 1, itemsDone: 1, itemsPlanned: 4, retrosSubmitted: 0, daysSinceLastSession: 1 },
+      { userId: 'u-b', daysActive: 1, itemsDone: 1, itemsPlanned: 8, retrosSubmitted: 0, daysSinceLastSession: 1 },
+      { userId: 'u-c', daysActive: 1, itemsDone: 1, itemsPlanned: 12, retrosSubmitted: 0, daysSinceLastSession: 1 },
     ]);
     const result = await computeEngagementInputsForCohort(
       prisma as any,
@@ -129,7 +123,7 @@ describe('computeEngagementInputsForCohort', () => {
 
   it('omits ttfvMedianHours per-user (treats it as 0 for cohort ranking)', async () => {
     const prisma = makePrisma([
-      { userId: 'u-1', sessions: 1, daysActive: 1, daysStudying: 1, itemsDone: 1, itemsPlanned: 1, retrosSubmitted: 0, daysSinceLastSession: 1 },
+      { userId: 'u-1', daysActive: 1, itemsDone: 1, itemsPlanned: 1, retrosSubmitted: 0, daysSinceLastSession: 1 },
     ]);
     const result = await computeEngagementInputsForCohort(
       prisma as any,

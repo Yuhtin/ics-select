@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service.js';
 import { computeWeekPosition } from '../../common/cycle/active-cycle.js';
-import { computeEngagementScore, type ScoreBreakdownEntry } from '../cockpit/engagement-score.js';
+import { computeEngagementScore, COHORT_RANK_LABEL, type ScoreBreakdownEntry } from '../cockpit/engagement-score.js';
 import { computeEngagementInputsForCohort } from '../cockpit/engagement-inputs.js';
 
 import {
@@ -92,7 +92,7 @@ type PlanRow = {
   userId: string;
   weekStart: Date;
   items: Array<{
-    outcome: 'PENDING' | 'DONE_EASY' | 'DONE_HARD' | 'DOUBTS' | 'STUCK';
+    outcome: 'PENDING' | 'DONE_EASY' | 'DONE_HARD' | 'DOUBTS' | 'STUCK' | 'SKIPPED';
     completedAt: Date | null;
     weeklyPlanId: string;
     libraryItem: { estimatedMinutes: number; format: string };
@@ -370,7 +370,7 @@ export class CycleOverviewService {
           };
         }
         const result = computeEngagementScore(input);
-        const cohortBreakdown = result.breakdown.find((b) => b.label === 'Cohort rank');
+        const cohortBreakdown = result.breakdown.find((b) => b.label === COHORT_RANK_LABEL);
         return {
           userId: m.userId,
           name: m.user.name,
