@@ -1,6 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service.js';
-import { isPositiveOutcome } from '@ics-select/shared';
+import { POSITIVE_OUTCOMES, isPositiveOutcome } from '@ics-select/shared';
+import type { ItemOutcome } from '@ics-select/prisma';
+
+const POSITIVE_OUTCOMES_ARR = Array.from(POSITIVE_OUTCOMES) as ItemOutcome[];
 
 type MemberCard = {
   id: string;
@@ -27,7 +30,7 @@ export class AdminDashboardService {
       const [plansCount, doneItems, skippedItems, stuckItems] = await Promise.all([
         this.prisma.weeklyPlan.count({ where: { userId: u.id, status: 'PUBLISHED' } }),
         this.prisma.weeklyPlanItem.count({
-          where: { weeklyPlan: { userId: u.id }, outcome: { in: ['DONE_EASY', 'DONE_HARD', 'SKIPPED'] } },
+          where: { weeklyPlan: { userId: u.id }, outcome: { in: POSITIVE_OUTCOMES_ARR } },
         }),
         this.prisma.weeklyPlanItem.count({
           where: { weeklyPlan: { userId: u.id }, outcome: 'SKIPPED' },

@@ -27,7 +27,7 @@ export type PlanContextResponse = {
     id: string;
     libraryItemId: string;
     title: string;
-    outcome: 'PENDING' | 'DOUBTS' | 'STUCK';
+    outcome: 'PENDING' | 'STUCK';
     reflection: string | null;
     topicId: string | null;
     topicLabel: string | null;

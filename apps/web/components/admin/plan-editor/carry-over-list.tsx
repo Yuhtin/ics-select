@@ -5,7 +5,6 @@ import type { PlanContextResponse } from '../../../lib/queries/admin-plan-contex
 type Candidate = PlanContextResponse['carryOverCandidates'][number];
 const DOT_BY_OUTCOME: Record<Candidate['outcome'], string> = {
   PENDING: 'bg-outcome-pending',
-  DOUBTS: 'bg-outcome-doubts',
   STUCK: 'bg-outcome-stuck',
 };
 

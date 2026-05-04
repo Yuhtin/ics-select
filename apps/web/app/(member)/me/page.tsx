@@ -1,5 +1,6 @@
 'use client';
 
+import { isPositiveOutcome } from '@ics-select/shared';
 import { useMeHome } from '../../../lib/queries/me-home';
 import { HeroScene } from '../../../components/member/hero-scene';
 import { DayList } from '../../../components/member/day-list';
@@ -36,9 +37,7 @@ export default function MeHomePage() {
     (sum, i) => sum + (i.scheduledMinutes ?? i.estimatedMinutes),
     0,
   );
-  const doneCount = ringItems.filter(
-    (i) => i.outcome === 'DONE_EASY' || i.outcome === 'DONE_HARD',
-  ).length;
+  const doneCount = ringItems.filter((i) => isPositiveOutcome(i.outcome)).length;
   const todayHint =
     ringItems.length > 0
       ? `${doneCount}/${ringItems.length} done · ${formatMinutes(todayMinutes)} total`

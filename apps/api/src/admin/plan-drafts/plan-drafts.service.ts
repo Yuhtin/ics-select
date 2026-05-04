@@ -106,10 +106,11 @@ export class PlanDraftsService {
     weekEnd: Date,
   ) {
     // Seed unfinished items from the previous week's PUBLISHED plan as
-    // carry-overs. Mirrors the same PENDING/DOUBTS/STUCK rule the plan-context
-    // service uses to surface candidates in the editor's left panel — keeps
-    // the two views consistent. Only happens at creation time; reopening an
-    // existing draft never re-seeds.
+    // carry-overs. Mirrors the PENDING/STUCK rule the plan-context service
+    // uses to surface candidates in the editor's left panel — keeps the two
+    // views consistent. DOUBTS is excluded: it's a positive outcome (the work
+    // was done; the dúvida is surfaced as a member note, not re-planned).
+    // Only happens at creation time; reopening an existing draft never re-seeds.
     const prevWeekStart = new Date(weekStart.getTime() - WEEK_MS);
     const prevPlan = await this.prisma.weeklyPlan.findFirst({
       where: {
@@ -119,7 +120,7 @@ export class PlanDraftsService {
       },
       select: {
         items: {
-          where: { outcome: { in: ['PENDING', 'DOUBTS', 'STUCK'] } },
+          where: { outcome: { in: ['PENDING', 'STUCK'] } },
           orderBy: { order: 'asc' },
           select: { id: true, libraryItemId: true },
         },

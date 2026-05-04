@@ -77,7 +77,10 @@ function markFor(
   historyByItem: Map<string, MemberHistoryRow['lastOutcome']>,
 ): ItemMark {
   const last = historyByItem.get(libraryItemId);
-  if (last === 'DONE_EASY' || last === 'DONE_HARD') return { kind: 'mastered' };
+  // Mastered = work the member has already finished. Per isPositiveOutcome,
+  // SKIPPED counts (member chose to skip because they already knew it).
+  if (last === 'DONE_EASY' || last === 'DONE_HARD' || last === 'SKIPPED')
+    return { kind: 'mastered' };
   if (carryOver.has(libraryItemId)) return { kind: 'carried-over' };
   if (last === 'STUCK') return { kind: 'stuck' };
   if (last === 'DOUBTS') return { kind: 'doubts' };

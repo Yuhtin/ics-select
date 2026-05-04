@@ -114,7 +114,7 @@ describe('PlanContextService', () => {
     expect(result.carryOverCandidates).toEqual([]);
   });
 
-  it('carryOverCandidates includes STUCK/DOUBTS/PENDING and excludes DONE_EASY/DONE_HARD', async () => {
+  it('carryOverCandidates includes STUCK/PENDING and excludes DOUBTS/DONE_EASY/DONE_HARD', async () => {
     const topic = {
       id: 'topic-1',
       slug: 'dp',
@@ -203,9 +203,9 @@ describe('PlanContextService', () => {
       NOW,
     );
 
-    expect(result.carryOverCandidates).toHaveLength(3);
+    expect(result.carryOverCandidates).toHaveLength(2);
     const ids = result.carryOverCandidates.map((c) => c.id).sort();
-    expect(ids).toEqual(['wpi-1', 'wpi-2', 'wpi-3']);
+    expect(ids).toEqual(['wpi-1', 'wpi-3']);
 
     const stuck = result.carryOverCandidates.find((c) => c.id === 'wpi-1')!;
     expect(stuck.outcome).toBe('STUCK');

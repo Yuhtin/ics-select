@@ -7,9 +7,10 @@ import {
 import { POSITIVE_OUTCOMES } from '@ics-select/shared';
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
-// DOUBTS is positive (counts as done) but still carries over — the study was
-// done, but the member wants a deeper follow-up next week.
-const CARRY_OUTCOMES = new Set(['PENDING', 'DOUBTS', 'STUCK']);
+// Only unfinished work carries over: PENDING (never started) and STUCK
+// (couldn't finish). DOUBTS is positive — the study was done; the dúvida is
+// surfaced as a member note in the timeline, not as a re-plan signal.
+const CARRY_OUTCOMES = new Set(['PENDING', 'STUCK']);
 
 const DEFAULT_AVAILABILITY = {
   mondayMinutes: 60,
@@ -24,7 +25,7 @@ const DEFAULT_AVAILABILITY = {
 };
 
 type Outcome = 'PENDING' | 'DONE_EASY' | 'DONE_HARD' | 'DOUBTS' | 'STUCK' | 'SKIPPED';
-type CarryOutcome = 'PENDING' | 'DOUBTS' | 'STUCK';
+type CarryOutcome = 'PENDING' | 'STUCK';
 
 export type PlanContextResponse = {
   member: {
@@ -70,8 +71,9 @@ export type PlanContextResponse = {
   /**
    * Latest non-PENDING outcome the member has logged per library item, across
    * every plan they've ever had. Lets the library picker hide items already
-   * mastered (DONE_EASY/DONE_HARD) and color the + button for items that
-   * stalled (STUCK/DOUBTS).
+   * mastered (DONE_EASY/DONE_HARD/SKIPPED — SKIPPED means the member chose
+   * to skip because they already knew it) and color the + button for items
+   * that stalled (STUCK/DOUBTS).
    */
   memberHistory: Array<{
     libraryItemId: string;

@@ -1,6 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import type { ItemOutcome } from '@ics-select/prisma';
+import { POSITIVE_OUTCOMES, isPositiveOutcome } from '@ics-select/shared';
 import { PrismaService } from '../../common/prisma/prisma.service.js';
+
+const POSITIVE_OUTCOMES_ARR = Array.from(POSITIVE_OUTCOMES) as ItemOutcome[];
 
 type HomeItem = {
   id: string;
@@ -260,7 +263,7 @@ export class HomeService {
     // coverage. Cross-topic videos "complete" every topic they touch.
     for (const it of items) {
       const topicIds = it.libraryItem?.topics?.map((t) => t.topicId) ?? [];
-      const done = it.outcome === 'DONE_EASY' || it.outcome === 'DONE_HARD';
+      const done = isPositiveOutcome(it.outcome);
       for (const topicId of topicIds) {
         const stat = byTopic.get(topicId);
         if (!stat) continue;
@@ -346,7 +349,7 @@ export class HomeService {
     const rows = await this.prisma.weeklyPlanItem.findMany({
       where: {
         weeklyPlan: { userId },
-        outcome: { in: ['DONE_EASY', 'DONE_HARD'] },
+        outcome: { in: POSITIVE_OUTCOMES_ARR },
         completedAt: { gte: thirtyDaysAgo },
       },
       select: { completedAt: true },
