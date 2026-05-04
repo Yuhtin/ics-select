@@ -16,6 +16,17 @@ function dotColor(outcome: string): string {
   }
 }
 
+function noteAccent(outcome: string): { border: string; eyebrow: string; label: string } {
+  switch (outcome) {
+    case 'STUCK':
+      return { border: 'border-outcome-stuck', eyebrow: 'text-outcome-stuck', label: 'Stuck — needs help' };
+    case 'DOUBTS':
+      return { border: 'border-outcome-doubts', eyebrow: 'text-outcome-doubts', label: 'Had doubts' };
+    default:
+      return { border: 'border-rule', eyebrow: 'text-ink-mute', label: 'Member note' };
+  }
+}
+
 function formatDate(iso: string): string {
   // plan.weekStart is UTC midnight Monday — render in UTC so viewers west of
   // UTC don't see Sunday night instead of Monday.
@@ -72,36 +83,45 @@ export function TimelineTab({
                 Open editor
               </Link>
             </header>
-            <table className="w-full border-collapse">
-              <tbody>
-                {plan.items.map((item) => (
-                  <tr key={item.id} className="border-b border-rule/60 hover:bg-paper-warm/40">
-                    <td className="py-2 pr-3 w-3 align-middle">
-                      <span className={clsx('inline-block w-2 h-2 rounded-full', dotColor(item.outcome))} />
-                    </td>
-                    <td className="py-2 pr-4 font-serif text-[14px] text-ink truncate max-w-md align-middle">
-                      {item.title}
-                    </td>
-                    <td className="py-2 pr-4 font-mono text-[10px] uppercase tracking-[0.1em] text-ink-mute align-middle">
-                      {item.outcome.toLowerCase().replace('_', ' ')}
-                    </td>
-                    <td className="py-2 pr-4 font-mono text-[10px] uppercase tracking-[0.1em] text-ink-mute align-middle">
-                      {item.topicLabel ?? '—'}
-                    </td>
-                    <td className="py-2 text-right align-middle">
+            <ul className="divide-y divide-rule/60">
+              {plan.items.map((item) => {
+                const accent = noteAccent(item.outcome);
+                return (
+                  <li key={item.id} className="py-2.5 hover:bg-paper-warm/40">
+                    <div className="flex items-center gap-3">
+                      <span className={clsx('inline-block w-2 h-2 rounded-full shrink-0', dotColor(item.outcome))} />
+                      <span className="font-serif text-[14px] text-ink truncate min-w-0 flex-1">
+                        {item.title}
+                      </span>
+                      <span className="hidden sm:inline font-mono text-[10px] uppercase tracking-[0.1em] text-ink-mute shrink-0">
+                        {item.outcome.toLowerCase().replace('_', ' ')}
+                      </span>
+                      <span className="hidden md:inline font-mono text-[10px] uppercase tracking-[0.1em] text-ink-mute shrink-0">
+                        {item.topicLabel ?? '—'}
+                      </span>
                       <Link
                         href={`/me/item/${item.libraryItemId}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-ink-mute hover:text-ink inline-flex"
+                        className="text-ink-mute hover:text-ink inline-flex shrink-0"
                       >
                         <ExternalLink className="w-3.5 h-3.5" strokeWidth={1.5} />
                       </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </div>
+                    {item.reflection && (
+                      <div className={clsx('ml-5 mt-1.5 border-l-[3px] pl-3', accent.border)}>
+                        <p className={clsx('font-mono text-[9px] uppercase tracking-[0.14em] mb-0.5', accent.eyebrow)}>
+                          {accent.label}
+                        </p>
+                        <p className="font-serif text-[13px] italic text-ink-soft leading-snug whitespace-pre-wrap break-words">
+                          &ldquo;{item.reflection}&rdquo;
+                        </p>
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
           </article>
         );
       })}
