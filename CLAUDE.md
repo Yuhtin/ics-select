@@ -150,7 +150,11 @@ There is also `resolveActiveMembership(prisma, userId)` for the member-scoped eq
 - `DOUBTS` — finished, wants to revisit later (the work *was* done; the doubt is about future depth).
 - `SKIPPED` — member chose to skip because they already knew it / didn't need to study. Counts as done.
 
-`PENDING` and `STUCK` are the only non-positive outcomes. Cohort progress, weekly completion %, topic coverage, AI ladder discipline (`computeLadder` in draft-plan), and the home "all done" state all key off `isPositiveOutcome` — never reimplement the check by listing values inline. If you find yourself writing `outcome === 'DONE_EASY' || outcome === 'DONE_HARD'`, you're shrinking the positive set without justification.
+`PENDING` and `STUCK` are the only non-positive outcomes. Cohort progress, weekly completion %, topic coverage, AI ladder discipline (`computeLadder` in draft-plan), and the home "all done" state all key off `isPositiveOutcome` — never reimplement the check by listing values inline. If you find yourself writing `outcome === 'DONE_EASY' || outcome === 'DONE_HARD'`, you're shrinking the positive set without justification. The same applies to Prisma `where: { outcome: { in: [...] } }` clauses — pull `POSITIVE_OUTCOMES` from `@ics-select/shared` and spread it (`Array.from(POSITIVE_OUTCOMES)`) instead of hand-listing values.
+
+**Carry-over scope (different from "is done?").** Carry-over only seeds the next week's draft from items that are *unfinished* — `PENDING` and `STUCK` only. `DOUBTS` is positive (the work was done; the dúvida is surfaced as a member note in the timeline, not as a re-plan signal). Both `apps/api/src/admin/plan-context/plan-context.service.ts` (`CARRY_OUTCOMES`) and `apps/api/src/admin/plan-drafts/plan-drafts.service.ts` (the seed query in `createDraft`) enforce this — if you change one, mirror the other or the editor's left-panel candidates will diverge from what actually gets seeded.
+
+**Library picker "mastered" filter.** The "Add from library" modal hides items the member has already finished — `DONE_EASY`, `DONE_HARD`, *and* `SKIPPED` (member skipped because they already knew it). `DOUBTS` and `STUCK` show as warnings, not as hidden. Lives in `apps/web/components/admin/plan-editor/library-picker-modal.tsx` (`markFor`). Don't shrink the mastered set to just the two `DONE_*` values — skipped items would re-appear and confuse the admin.
 
 ### Weekly plan flow
 
