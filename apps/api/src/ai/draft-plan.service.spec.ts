@@ -338,6 +338,8 @@ describe('DraftPlanService', () => {
     expect(system).toMatch(/Reflexões individuais são sinal de DIFICULDADE/);
     expect(system).toMatch(/OVERRIDE \(brief do admin\):/);
     expect(system).toMatch(/siga o brief/);
+    expect(system).toMatch(/Mencione no .narrative. que está seguindo o brief contra a ladder/);
+    expect(system).toMatch(/Outras regras:/);
     // Old soft rule must be gone
     expect(system).not.toMatch(/Ordem pedagógica: fundamentos antes de avançado/);
   });

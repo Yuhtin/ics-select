@@ -405,7 +405,7 @@ para o membro, considerando:
 - o track do membro
 - as últimas 4 semanas de resultados (outcomes + reflexões)
 - o retrô mais recente (se houver)
-- a cobertura de tópicos do ciclo
+- a ladder de tópicos do ciclo (solid/focus/locked via LADDER STATUS)
 - carry-overs que o admin já marcou
 - brief opcional do admin
 
