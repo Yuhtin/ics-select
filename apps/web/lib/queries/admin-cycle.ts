@@ -39,6 +39,22 @@ export type CycleOverviewFeedEvent = {
   itemId: string | null;
 };
 
+export type EngagementBreakdownEntry = {
+  label: string;
+  value: number;
+  weight: number;
+  status: 'ok' | 'warn' | 'bad';
+};
+
+export type EngagementRankingRow = {
+  userId: string;
+  name: string;
+  pictureUrl: string | null;
+  score: number;
+  breakdown: EngagementBreakdownEntry[];
+  hasAlert: boolean;
+};
+
 export type CycleOverviewResponse = {
   cycle: {
     id: string;
@@ -56,6 +72,7 @@ export type CycleOverviewResponse = {
     rows: CycleOverviewHeatmapRow[];
   };
   feed: CycleOverviewFeedEvent[];
+  ranking: EngagementRankingRow[];
 };
 
 export function useAdminCycleOverview(cycleId: string | null | undefined) {
