@@ -64,7 +64,7 @@ export function TopicEngagementTable({ topics }: { topics: CockpitResponse['topi
       </div>
 
       <div className="divide-y divide-rule">
-        {topics.map((t) => {
+        {topics.filter((t) => t.minutes > 0).map((t) => {
           const isUntouched = t.minutes === 0;
           const pct = totalMin === 0 ? 0 : Math.round((t.minutes / totalMin) * 100);
           const cohortDeltaMin = t.minutes - t.cohortMedianMinutes;
