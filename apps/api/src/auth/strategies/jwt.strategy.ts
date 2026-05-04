@@ -7,6 +7,7 @@ export type JwtStrategyPayload = {
   sub: string;
   email: string;
   role: 'ADMIN' | 'MEMBER';
+  name?: string;
 };
 
 @Injectable()

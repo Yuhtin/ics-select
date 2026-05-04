@@ -100,7 +100,12 @@ export class AuthService {
     });
     this.gcal.invalidateAuth(user.id);
 
-    const accessToken = this.jwt.sign({ sub: user.id, email: user.email, role: user.role });
+    const accessToken = this.jwt.sign({
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+      name: user.name ?? undefined,
+    });
     const refreshToken = await this.refresh.issue(user.id);
 
     return {
@@ -123,7 +128,12 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({ where: { id: existing.userId } });
     if (!user) return null;
     const rotated = await this.refresh.rotate(plaintextRefreshToken, user.id);
-    const accessToken = this.jwt.sign({ sub: user.id, email: user.email, role: user.role });
+    const accessToken = this.jwt.sign({
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+      name: user.name ?? undefined,
+    });
     return {
       user: {
         id: user.id,

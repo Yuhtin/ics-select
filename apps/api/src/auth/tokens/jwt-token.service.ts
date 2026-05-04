@@ -5,6 +5,7 @@ export type JwtPayload = {
   sub: string;
   email: string;
   role: 'ADMIN' | 'MEMBER';
+  name?: string;
 };
 
 export type DecodedJwt = JwtPayload & { iat: number; exp: number };
