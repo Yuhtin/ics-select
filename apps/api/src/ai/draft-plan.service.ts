@@ -93,6 +93,58 @@ export function computeLadder(
   return result;
 }
 
+/**
+ * Render the ladder array into a compact prompt block. Shows every sólido,
+ * the focus, the first 2 locked topics for context, and aggregates the
+ * remaining locked into a "+ N outros tópicos bloqueados (slug1, slug2, slug3)"
+ * line.
+ */
+export function renderLadderBlock(ladder: LadderEntry[]): string {
+  const header = 'LADDER STATUS (cobertura mínima = 3 DONE_* por tópico):';
+  if (ladder.length === 0) return `${header}\n(sem dados)`;
+
+  // Pad order prefix so columns align: [#-1] vs [#0] vs [#13].
+  // Minimum width of 2 ensures at least one trailing space before the label
+  // even when all orders are single-digit.
+  const maxOrderLen = Math.max(2, ...ladder.map((e) => String(e.order).length));
+  const orderTag = (n: number): string => {
+    const raw = `[#${n}]`;
+    const target = `[#${'X'.repeat(maxOrderLen)}]`.length;
+    return raw.padEnd(target, ' ');
+  };
+
+  const lines: string[] = [header];
+  const lockedQueue: LadderEntry[] = [];
+
+  for (const e of ladder) {
+    if (e.status === 'solid') {
+      lines.push(`${orderTag(e.order)} ${e.label}: ${e.done} DONE ✓ sólido`);
+    } else if (e.status === 'focus') {
+      lines.push(
+        `${orderTag(e.order)} ${e.label}: ${e.done} DONE ✗ insuficiente — FOCO ATUAL`,
+      );
+    } else {
+      lockedQueue.push(e);
+    }
+  }
+
+  const visibleLocked = lockedQueue.slice(0, 2);
+  for (const e of visibleLocked) {
+    lines.push(`${orderTag(e.order)} ${e.label}: ${e.done} DONE — bloqueado`);
+  }
+
+  const remaining = lockedQueue.slice(2);
+  if (remaining.length > 0) {
+    const sample = remaining
+      .slice(0, 3)
+      .map((e) => e.slug)
+      .join(', ');
+    lines.push(`+ ${remaining.length} outros tópicos bloqueados (${sample})`);
+  }
+
+  return lines.join('\n');
+}
+
 @Injectable()
 export class DraftPlanService {
   constructor(

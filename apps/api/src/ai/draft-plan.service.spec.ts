@@ -2,6 +2,7 @@ import {
   DraftPlanService,
   computeLadder,
   LADDER_SOLID_THRESHOLD,
+  renderLadderBlock,
 } from './draft-plan.service';
 import { searchLibraryTool } from './library-tool';
 
@@ -374,5 +375,42 @@ describe('computeLadder', () => {
     ]);
     const ladder = computeLadder(TOPICS, coverage);
     expect(ladder[1]).toMatchObject({ slug: 'array', done: 0, planned: 0, status: 'focus' });
+  });
+});
+
+describe('renderLadderBlock', () => {
+  it('renders header, sólidos, focus, 2 locked, and aggregate when many topics', () => {
+    const ladder = [
+      { order: -1, slug: 'foundations', label: 'Foundations', done: 5, planned: 5, status: 'solid' as const },
+      { order: 0, slug: 'array', label: 'Array', done: 1, planned: 4, status: 'focus' as const },
+      { order: 1, slug: 'lists', label: 'Lists', done: 0, planned: 0, status: 'locked' as const },
+      { order: 2, slug: 'tree', label: 'Tree', done: 2, planned: 4, status: 'locked' as const },
+      { order: 3, slug: 'trie', label: 'Trie', done: 0, planned: 0, status: 'locked' as const },
+      { order: 4, slug: 'heap', label: 'Heap', done: 0, planned: 0, status: 'locked' as const },
+      { order: 5, slug: 'graph', label: 'Graph', done: 0, planned: 0, status: 'locked' as const },
+    ];
+    const out = renderLadderBlock(ladder);
+    expect(out).toContain('LADDER STATUS (cobertura mínima = 3 DONE_* por tópico):');
+    expect(out).toContain('[#-1] Foundations: 5 DONE ✓ sólido');
+    expect(out).toContain('[#0]  Array: 1 DONE ✗ insuficiente — FOCO ATUAL');
+    expect(out).toContain('[#1]  Lists: 0 DONE — bloqueado');
+    expect(out).toContain('[#2]  Tree: 2 DONE — bloqueado');
+    // 3 lockeds remain after the first 2 → "+ 3 outros tópicos bloqueados"
+    expect(out).toContain('+ 3 outros tópicos bloqueados (trie, heap, graph)');
+  });
+
+  it('omits aggregate line when ≤2 locked topics', () => {
+    const ladder = [
+      { order: 0, slug: 'array', label: 'Array', done: 0, planned: 0, status: 'focus' as const },
+      { order: 1, slug: 'lists', label: 'Lists', done: 0, planned: 0, status: 'locked' as const },
+    ];
+    const out = renderLadderBlock(ladder);
+    expect(out).toContain('[#1]  Lists: 0 DONE — bloqueado');
+    expect(out).not.toMatch(/outros tópicos bloqueados/);
+  });
+
+  it('handles empty ladder with explicit fallback message', () => {
+    const out = renderLadderBlock([]);
+    expect(out).toBe('LADDER STATUS (cobertura mínima = 3 DONE_* por tópico):\n(sem dados)');
   });
 });
