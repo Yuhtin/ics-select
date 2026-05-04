@@ -1,4 +1,5 @@
 import { DraftPlanService } from './draft-plan.service';
+import { computeLadder, LADDER_SOLID_THRESHOLD } from './draft-plan.service';
 import { searchLibraryTool } from './library-tool';
 
 function makePrisma(overrides: Partial<Record<string, any>> = {}) {
@@ -301,5 +302,74 @@ describe('DraftPlanService', () => {
     expect(logArg.metadata).toEqual(
       expect.objectContaining({ carryOverCount: 0, hasBrief: false, toolCalls: 2 }),
     );
+  });
+});
+
+describe('computeLadder', () => {
+  const TOPICS = [
+    { slug: 'foundations', label: 'Foundations', order: -1 },
+    { slug: 'array', label: 'Array', order: 0 },
+    { slug: 'lists', label: 'Lists', order: 1 },
+    { slug: 'tree', label: 'Tree', order: 2 },
+  ];
+
+  it('focus = lowest-order topic when coverage is empty', () => {
+    const ladder = computeLadder(TOPICS, new Map());
+    expect(ladder.map((e) => [e.slug, e.status])).toEqual([
+      ['foundations', 'focus'],
+      ['array', 'locked'],
+      ['lists', 'locked'],
+      ['tree', 'locked'],
+    ]);
+    expect(ladder[0]!.done).toBe(0);
+  });
+
+  it('foundations sólido (3 done) → focus moves to array', () => {
+    const coverage = new Map([
+      ['Foundations', { planned: 5, done: LADDER_SOLID_THRESHOLD }],
+      ['Array', { planned: 1, done: 1 }],
+    ]);
+    const ladder = computeLadder(TOPICS, coverage);
+    expect(ladder.map((e) => [e.slug, e.status])).toEqual([
+      ['foundations', 'solid'],
+      ['array', 'focus'],
+      ['lists', 'locked'],
+      ['tree', 'locked'],
+    ]);
+    expect(ladder[1]!.done).toBe(1);
+    expect(ladder[1]!.planned).toBe(1);
+  });
+
+  it('multiple sólidos in a row → focus skips ahead', () => {
+    const coverage = new Map([
+      ['Foundations', { planned: 5, done: 5 }],
+      ['Array', { planned: 5, done: 5 }],
+      ['Lists', { planned: 5, done: 5 }],
+    ]);
+    const ladder = computeLadder(TOPICS, coverage);
+    expect(ladder.map((e) => [e.slug, e.status])).toEqual([
+      ['foundations', 'solid'],
+      ['array', 'solid'],
+      ['lists', 'solid'],
+      ['tree', 'focus'],
+    ]);
+  });
+
+  it('all topics sólidos → last topic becomes focus', () => {
+    const coverage = new Map(
+      TOPICS.map((t) => [t.label, { planned: 5, done: 5 }]),
+    );
+    const ladder = computeLadder(TOPICS, coverage);
+    expect(ladder.at(-1)!.status).toBe('focus');
+    expect(ladder.slice(0, -1).every((e) => e.status === 'solid')).toBe(true);
+  });
+
+  it('topic without coverage entry counts as done=0', () => {
+    const coverage = new Map([
+      ['Foundations', { planned: 5, done: 5 }],
+      // Array has no entry at all
+    ]);
+    const ladder = computeLadder(TOPICS, coverage);
+    expect(ladder[1]).toMatchObject({ slug: 'array', done: 0, planned: 0, status: 'focus' });
   });
 });

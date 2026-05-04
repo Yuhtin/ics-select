@@ -32,6 +32,64 @@ const TRACK_LABELS: Record<string, string> = {
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
+export const LADDER_SOLID_THRESHOLD = 3;
+
+export type LadderStatus = 'solid' | 'focus' | 'locked';
+
+export type LadderEntry = {
+  order: number;
+  slug: string;
+  label: string;
+  done: number;
+  planned: number;
+  status: LadderStatus;
+};
+
+/**
+ * Classify each topic as 'solid' (≥LADDER_SOLID_THRESHOLD DONE), 'focus'
+ * (the first topic in order that's not yet sólido), or 'locked' (everything
+ * after the focus). If every topic is sólido, the last topic becomes focus.
+ *
+ * Coverage map is keyed by topic LABEL (matches the existing topicCoverage
+ * shape in DraftPlanService.run).
+ */
+export function computeLadder(
+  topics: Array<{ slug: string; label: string; order: number }>,
+  coverage: Map<string, { planned: number; done: number }>,
+): LadderEntry[] {
+  const sorted = [...topics].sort((a, b) => a.order - b.order);
+  const result: LadderEntry[] = [];
+  let foundFocus = false;
+
+  for (const t of sorted) {
+    const counts = coverage.get(t.label) ?? { planned: 0, done: 0 };
+    let status: LadderStatus;
+    if (foundFocus) {
+      status = 'locked';
+    } else if (counts.done < LADDER_SOLID_THRESHOLD) {
+      status = 'focus';
+      foundFocus = true;
+    } else {
+      status = 'solid';
+    }
+    result.push({
+      order: t.order,
+      slug: t.slug,
+      label: t.label,
+      done: counts.done,
+      planned: counts.planned,
+      status,
+    });
+  }
+
+  // Edge case: every topic is sólido. Promote the last entry to focus.
+  if (!foundFocus && result.length > 0) {
+    result[result.length - 1]!.status = 'focus';
+  }
+
+  return result;
+}
+
 @Injectable()
 export class DraftPlanService {
   constructor(
