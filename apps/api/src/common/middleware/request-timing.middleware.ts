@@ -23,7 +23,7 @@ function actorLabel(req: Request): string {
  * old tokens that predate `name` in the JWT), or `anon` for public routes.
  */
 export function requestTiming(req: Request, res: Response, next: NextFunction): void {
-  if (SKIP_PATHS.has(req.path)) return next();
+  if (SKIP_PATHS.has(req.path) || req.method === 'OPTIONS') return next();
   const start = process.hrtime.bigint();
   res.on('finish', () => {
     const ms = Number(process.hrtime.bigint() - start) / 1_000_000;
