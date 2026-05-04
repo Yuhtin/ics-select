@@ -1,4 +1,9 @@
-import { DraftPlanService } from './draft-plan.service';
+import {
+  DraftPlanService,
+  computeLadder,
+  LADDER_SOLID_THRESHOLD,
+  renderLadderBlock,
+} from './draft-plan.service';
 import { searchLibraryTool } from './library-tool';
 
 function makePrisma(overrides: Partial<Record<string, any>> = {}) {
@@ -12,6 +17,14 @@ function makePrisma(overrides: Partial<Record<string, any>> = {}) {
       })),
     },
     user: { findUnique: jest.fn(async () => ({ id: 'u1', name: 'Davi' })) },
+    topic: {
+      findMany: jest.fn(async () => [
+        { slug: 'foundations', label: 'Foundations', order: -1 },
+        { slug: 'array', label: 'Array', order: 0 },
+        { slug: 'lists', label: 'Lists', order: 1 },
+        { slug: 'tree', label: 'Tree', order: 2 },
+      ]),
+    },
     weeklyPlan: {
       findMany: jest.fn(async () => []),
       findFirst: jest.fn(async () => null),
@@ -301,5 +314,184 @@ describe('DraftPlanService', () => {
     expect(logArg.metadata).toEqual(
       expect.objectContaining({ carryOverCount: 0, hasBrief: false, toolCalls: 2 }),
     );
+  });
+
+  it('system prompt contains LADDER DISCIPLINE and brief OVERRIDE blocks', async () => {
+    const chat = makeChat();
+    chat.callJsonWithTools.mockResolvedValueOnce({
+      data: { items: [], alternates: [], narrative: '', totalMinutes: 0 },
+      usage: { inputTokens: 1, outputTokens: 1, costUsd: 0 },
+      toolCalls: [],
+    });
+    const svc = new DraftPlanService(
+      chat as any,
+      makeLibrary() as any,
+      makePrisma() as any,
+      makeUsage() as any,
+    );
+    await svc.run({ memberId: 'u1', weekStart: WEEK_START, weekEnd: WEEK_END });
+    const system = (chat.callJsonWithTools.mock.calls[0]![0] as any).system as string;
+
+    expect(system).toMatch(/LADDER DISCIPLINE \(default\):/);
+    expect(system).toMatch(/Sugira itens APENAS do tópico marcado FOCO ATUAL/);
+    expect(system).toMatch(/Não sugira itens de tópicos "bloqueados"/);
+    expect(system).toMatch(/Reflexões individuais são sinal de DIFICULDADE/);
+    expect(system).toMatch(/OVERRIDE \(brief do admin\):/);
+    expect(system).toMatch(/siga o brief/);
+    expect(system).toMatch(/Mencione no .narrative. que está seguindo o brief contra a ladder/);
+    expect(system).toMatch(/Outras regras:/);
+    // Old soft rule must be gone
+    expect(system).not.toMatch(/Ordem pedagógica: fundamentos antes de avançado/);
+  });
+
+  it('includes LADDER STATUS block driven by topic coverage', async () => {
+    const prisma = makePrisma({
+      weeklyPlan: {
+        findMany: jest.fn(async () => [
+          // 3 DONE on Foundations → sólido
+          {
+            id: 'p-1',
+            weekStart: new Date('2026-04-13'),
+            items: [
+              { outcome: 'DONE_HARD', libraryItem: { topics: [{ topic: { label: 'Foundations' } }] } },
+              { outcome: 'DONE_EASY', libraryItem: { topics: [{ topic: { label: 'Foundations' } }] } },
+              { outcome: 'DONE_EASY', libraryItem: { topics: [{ topic: { label: 'Foundations' } }] } },
+              // 1 DONE on Array → focus must move to Array
+              { outcome: 'DONE_EASY', libraryItem: { topics: [{ topic: { label: 'Array' } }] } },
+            ],
+          },
+        ]),
+        findFirst: jest.fn(async () => null),
+        count: jest.fn(async () => 1),
+      },
+    });
+    const chat = makeChat();
+    chat.callJsonWithTools.mockResolvedValueOnce({
+      data: { items: [], alternates: [], narrative: '', totalMinutes: 0 },
+      usage: { inputTokens: 1, outputTokens: 1, costUsd: 0 },
+      toolCalls: [],
+    });
+    const svc = new DraftPlanService(
+      chat as any,
+      makeLibrary() as any,
+      prisma as any,
+      makeUsage() as any,
+    );
+    await svc.run({ memberId: 'u1', weekStart: WEEK_START, weekEnd: WEEK_END });
+    const prompt = (chat.callJsonWithTools.mock.calls[0]![0] as any).messages[0]
+      .content as string;
+
+    expect(prompt).toMatch(/LADDER STATUS \(cobertura mínima = 3 DONE_\* por tópico\):/);
+    expect(prompt).toMatch(/Foundations: 3 DONE ✓ sólido/);
+    expect(prompt).toMatch(/Array: 1 DONE ✗ insuficiente — FOCO ATUAL/);
+    expect(prompt).toMatch(/Lists: 0 DONE — bloqueado/);
+    // The old coverage block must be gone
+    expect(prompt).not.toMatch(/COBERTURA DE TÓPICOS \(ciclo atual\):/);
+  });
+});
+
+describe('computeLadder', () => {
+  const TOPICS = [
+    { slug: 'foundations', label: 'Foundations', order: -1 },
+    { slug: 'array', label: 'Array', order: 0 },
+    { slug: 'lists', label: 'Lists', order: 1 },
+    { slug: 'tree', label: 'Tree', order: 2 },
+  ];
+
+  it('focus = lowest-order topic when coverage is empty', () => {
+    const ladder = computeLadder(TOPICS, new Map());
+    expect(ladder.map((e) => [e.slug, e.status])).toEqual([
+      ['foundations', 'focus'],
+      ['array', 'locked'],
+      ['lists', 'locked'],
+      ['tree', 'locked'],
+    ]);
+    expect(ladder[0]!.done).toBe(0);
+  });
+
+  it('foundations sólido (3 done) → focus moves to array', () => {
+    const coverage = new Map([
+      ['Foundations', { planned: 5, done: LADDER_SOLID_THRESHOLD }],
+      ['Array', { planned: 1, done: 1 }],
+    ]);
+    const ladder = computeLadder(TOPICS, coverage);
+    expect(ladder.map((e) => [e.slug, e.status])).toEqual([
+      ['foundations', 'solid'],
+      ['array', 'focus'],
+      ['lists', 'locked'],
+      ['tree', 'locked'],
+    ]);
+    expect(ladder[1]!.done).toBe(1);
+    expect(ladder[1]!.planned).toBe(1);
+  });
+
+  it('multiple sólidos in a row → focus skips ahead', () => {
+    const coverage = new Map([
+      ['Foundations', { planned: 5, done: 5 }],
+      ['Array', { planned: 5, done: 5 }],
+      ['Lists', { planned: 5, done: 5 }],
+    ]);
+    const ladder = computeLadder(TOPICS, coverage);
+    expect(ladder.map((e) => [e.slug, e.status])).toEqual([
+      ['foundations', 'solid'],
+      ['array', 'solid'],
+      ['lists', 'solid'],
+      ['tree', 'focus'],
+    ]);
+  });
+
+  it('all topics sólidos → last topic becomes focus', () => {
+    const coverage = new Map(
+      TOPICS.map((t) => [t.label, { planned: 5, done: 5 }]),
+    );
+    const ladder = computeLadder(TOPICS, coverage);
+    expect(ladder.at(-1)!.status).toBe('focus');
+    expect(ladder.slice(0, -1).every((e) => e.status === 'solid')).toBe(true);
+  });
+
+  it('topic without coverage entry counts as done=0', () => {
+    const coverage = new Map([
+      ['Foundations', { planned: 5, done: 5 }],
+      // Array has no entry at all
+    ]);
+    const ladder = computeLadder(TOPICS, coverage);
+    expect(ladder[1]).toMatchObject({ slug: 'array', done: 0, planned: 0, status: 'focus' });
+  });
+});
+
+describe('renderLadderBlock', () => {
+  it('renders header, sólidos, focus, 2 locked, and aggregate when many topics', () => {
+    const ladder = [
+      { order: -1, slug: 'foundations', label: 'Foundations', done: 5, planned: 5, status: 'solid' as const },
+      { order: 0, slug: 'array', label: 'Array', done: 1, planned: 4, status: 'focus' as const },
+      { order: 1, slug: 'lists', label: 'Lists', done: 0, planned: 0, status: 'locked' as const },
+      { order: 2, slug: 'tree', label: 'Tree', done: 2, planned: 4, status: 'locked' as const },
+      { order: 3, slug: 'trie', label: 'Trie', done: 0, planned: 0, status: 'locked' as const },
+      { order: 4, slug: 'heap', label: 'Heap', done: 0, planned: 0, status: 'locked' as const },
+      { order: 5, slug: 'graph', label: 'Graph', done: 0, planned: 0, status: 'locked' as const },
+    ];
+    const out = renderLadderBlock(ladder);
+    expect(out).toContain('LADDER STATUS (cobertura mínima = 3 DONE_* por tópico):');
+    expect(out).toContain('[#-1] Foundations: 5 DONE ✓ sólido');
+    expect(out).toContain('[#0]  Array: 1 DONE ✗ insuficiente — FOCO ATUAL');
+    expect(out).toContain('[#1]  Lists: 0 DONE — bloqueado');
+    expect(out).toContain('[#2]  Tree: 2 DONE — bloqueado');
+    // 3 lockeds remain after the first 2 → "+ 3 outros tópicos bloqueados"
+    expect(out).toContain('+ 3 outros tópicos bloqueados (trie, heap, graph)');
+  });
+
+  it('omits aggregate line when ≤2 locked topics', () => {
+    const ladder = [
+      { order: 0, slug: 'array', label: 'Array', done: 0, planned: 0, status: 'focus' as const },
+      { order: 1, slug: 'lists', label: 'Lists', done: 0, planned: 0, status: 'locked' as const },
+    ];
+    const out = renderLadderBlock(ladder);
+    expect(out).toContain('[#1]  Lists: 0 DONE — bloqueado');
+    expect(out).not.toMatch(/outros tópicos bloqueados/);
+  });
+
+  it('handles empty ladder with explicit fallback message', () => {
+    const out = renderLadderBlock([]);
+    expect(out).toBe('LADDER STATUS (cobertura mínima = 3 DONE_* por tópico):\n(sem dados)');
   });
 });

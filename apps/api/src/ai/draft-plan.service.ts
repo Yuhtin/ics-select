@@ -32,6 +32,119 @@ const TRACK_LABELS: Record<string, string> = {
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
+export const LADDER_SOLID_THRESHOLD = 3;
+
+export type LadderStatus = 'solid' | 'focus' | 'locked';
+
+export type LadderEntry = {
+  order: number;
+  slug: string;
+  label: string;
+  done: number;
+  planned: number;
+  status: LadderStatus;
+};
+
+/**
+ * Classify each topic as 'solid' (≥LADDER_SOLID_THRESHOLD DONE), 'focus'
+ * (the first topic in order that's not yet sólido), or 'locked' (everything
+ * after the focus). If every topic is sólido, the last topic becomes focus.
+ *
+ * Coverage map is keyed by topic LABEL (matches the existing topicCoverage
+ * shape in DraftPlanService.run). The `done` count reflects whatever
+ * `isPositiveOutcome` from `@ics-select/shared` returns true for —
+ * DONE_EASY, DONE_HARD, DOUBTS, and SKIPPED. SKIPPED counts because the
+ * member chose to skip ("já sabia"); DOUBTS counts because the work was done.
+ */
+export function computeLadder(
+  topics: Array<{ slug: string; label: string; order: number }>,
+  coverage: Map<string, { planned: number; done: number }>,
+): LadderEntry[] {
+  const sorted = [...topics].sort((a, b) => a.order - b.order);
+  const result: LadderEntry[] = [];
+  let foundFocus = false;
+
+  for (const t of sorted) {
+    const counts = coverage.get(t.label) ?? { planned: 0, done: 0 };
+    let status: LadderStatus;
+    if (foundFocus) {
+      status = 'locked';
+    } else if (counts.done < LADDER_SOLID_THRESHOLD) {
+      status = 'focus';
+      foundFocus = true;
+    } else {
+      status = 'solid';
+    }
+    result.push({
+      order: t.order,
+      slug: t.slug,
+      label: t.label,
+      done: counts.done,
+      planned: counts.planned,
+      status,
+    });
+  }
+
+  // Edge case: every topic is sólido. Promote the last entry to focus.
+  if (!foundFocus && result.length > 0) {
+    result[result.length - 1]!.status = 'focus';
+  }
+
+  return result;
+}
+
+/**
+ * Render the ladder array into a compact prompt block. Shows every sólido,
+ * the focus, the first 2 locked topics for context, and aggregates the
+ * remaining locked into a "+ N outros tópicos bloqueados (slug1, slug2, slug3)"
+ * line.
+ */
+export function renderLadderBlock(ladder: LadderEntry[]): string {
+  const header = 'LADDER STATUS (cobertura mínima = 3 DONE_* por tópico):';
+  if (ladder.length === 0) return `${header}\n(sem dados)`;
+
+  // Pad order prefix so columns align: [#-1] vs [#0] vs [#13].
+  // Minimum width of 2 ensures at least one trailing space before the label
+  // even when all orders are single-digit.
+  const maxOrderLen = Math.max(2, ...ladder.map((e) => String(e.order).length));
+  const orderTag = (n: number): string => {
+    const raw = `[#${n}]`;
+    const target = `[#${'X'.repeat(maxOrderLen)}]`.length;
+    return raw.padEnd(target, ' ');
+  };
+
+  const lines: string[] = [header];
+  const lockedQueue: LadderEntry[] = [];
+
+  for (const e of ladder) {
+    if (e.status === 'solid') {
+      lines.push(`${orderTag(e.order)} ${e.label}: ${e.done} DONE ✓ sólido`);
+    } else if (e.status === 'focus') {
+      lines.push(
+        `${orderTag(e.order)} ${e.label}: ${e.done} DONE ✗ insuficiente — FOCO ATUAL`,
+      );
+    } else {
+      lockedQueue.push(e);
+    }
+  }
+
+  const visibleLocked = lockedQueue.slice(0, 2);
+  for (const e of visibleLocked) {
+    lines.push(`${orderTag(e.order)} ${e.label}: ${e.done} DONE — bloqueado`);
+  }
+
+  const remaining = lockedQueue.slice(2);
+  if (remaining.length > 0) {
+    const sample = remaining
+      .slice(0, 3)
+      .map((e) => e.slug)
+      .join(', ');
+    lines.push(`+ ${remaining.length} outros tópicos bloqueados (${sample})`);
+  }
+
+  return lines.join('\n');
+}
+
 @Injectable()
 export class DraftPlanService {
   constructor(
@@ -158,6 +271,15 @@ export class DraftPlanService {
       }
     }
 
+    // 5b) Ladder: classify topics as solid/focus/locked. Pre-computed so
+    //     the AI doesn't have to reason about Topic.order on its own.
+    const topicsForLadder = await this.prisma.topic.findMany({
+      orderBy: { order: 'asc' },
+      select: { slug: true, label: true, order: true },
+    });
+    const ladder = computeLadder(topicsForLadder, topicCoverage);
+    const ladderBlock = renderLadderBlock(ladder);
+
     // 6) Items already sitting in the draft for this exact week — so the
     //    LLM doesn't re-suggest them and can see what the admin has in mind.
     const currentPlan: any = await this.prisma.weeklyPlan.findFirst({
@@ -206,11 +328,12 @@ export class DraftPlanService {
       {},
     );
     const totalItems = Object.values(outcomeCounts).reduce((s, n) => s + n, 0);
-    const totalDone =
-      (outcomeCounts.DONE_EASY ?? 0) + (outcomeCounts.DONE_HARD ?? 0);
+    const totalDone = (Object.entries(outcomeCounts) as Array<[string, number]>)
+      .filter(([outcome]) => isPositiveOutcome(outcome as any))
+      .reduce((s, [, n]) => s + n, 0);
     const completionPct = totalItems === 0 ? 0 : Math.round((totalDone / totalItems) * 100);
 
-    // 6) Build user prompt sections
+    // 8) Build user prompt sections
     const memberLine = `MEMBRO: ${memberName} — track: ${trackLabel}`;
 
     const outcomeLines: string[] = [];
@@ -229,23 +352,11 @@ export class DraftPlanService {
       ? `RETRÔ (semana anterior):\n- whatClicked: ${retro.whatClicked ?? ''}\n- whatStuck: ${retro.whatStuck ?? ''}\n- nextWeekWish: ${retro.nextWeekWish ?? ''}`
       : `RETRÔ (semana anterior):\n(sem retrô submetido)`;
 
-    const coverageLines: string[] = [];
-    for (const [label, counts] of topicCoverage.entries()) {
-      const pct =
-        counts.planned === 0 ? 0 : Math.round((counts.done / counts.planned) * 100);
-      coverageLines.push(
-        `- ${label}: ${counts.done}/${counts.planned} concluídos (${pct}%)`,
-      );
-    }
-    const coverageBlock =
-      `COBERTURA DE TÓPICOS (ciclo atual):\n` +
-      (coverageLines.length > 0 ? coverageLines.join('\n') : '(sem dados)');
-
     const statsLine =
       `ESTATÍSTICAS GERAIS:\n` +
       `- Planos publicados: ${totalPlansCount}\n` +
       `- Itens totais: ${totalItems} (concluídos ${totalDone}, ${completionPct}% completos)\n` +
-      `- Outcomes: ${['DONE_EASY', 'DONE_HARD', 'DOUBTS', 'STUCK', 'PENDING']
+      `- Outcomes: ${['DONE_EASY', 'DONE_HARD', 'DOUBTS', 'SKIPPED', 'STUCK', 'PENDING']
         .map((o) => `${o}=${outcomeCounts[o] ?? 0}`)
         .join(' · ')}`;
 
@@ -295,7 +406,7 @@ para o membro, considerando:
 - o track do membro
 - as últimas 4 semanas de resultados (outcomes + reflexões)
 - o retrô mais recente (se houver)
-- a cobertura de tópicos do ciclo
+- a ladder de tópicos do ciclo (solid/focus/locked via LADDER STATUS)
 - carry-overs que o admin já marcou
 - brief opcional do admin
 
@@ -314,9 +425,20 @@ Regras:
 - Não invente IDs. Use apenas IDs retornados por search_library ou os do bloco
   CARRY-OVER RESOLVIDO.
 - Carry-overs DEVEM aparecer em "items" se o admin os marcou.
-- Ordem pedagógica: fundamentos antes de avançado, médio antes de difícil.
 - "alternates" tem até 3 itens extras.
 - "rationale" liga o item ao contexto (ex: gap do ciclo, padrão da reflexão, nível).
+
+LADDER DISCIPLINE (default):
+- O bloco LADDER STATUS pré-computa o foco da semana. Sugira itens APENAS do tópico marcado FOCO ATUAL e dos tópicos sólidos (estes pra revisão leve).
+- Não sugira itens de tópicos "bloqueados". A base não está madura.
+- Reflexões individuais são sinal de DIFICULDADE dentro do tópico atual, não de mudança de foco. Insegurança no FOCO ATUAL → itens mais fáceis no MESMO tópico. Insegurança num bloqueado → recue pro foco.
+
+OVERRIDE (brief do admin):
+- Se BRIEF DO ADMIN explicitamente pedir tópico bloqueado, siga o brief.
+  Admin tem contexto que a IA não tem.
+- Mencione no \`narrative\` que está seguindo o brief contra a ladder.
+
+Outras regras:
 - Se search_library trouxer poucos resultados pra uma query, amplia (remove filtros
   ou deixa query em branco) — NÃO desista e NÃO invente IDs.
 - Se o bloco "ITENS JÁ NO PLANO ATUAL" tiver itens, inclua-os em "items" antes
@@ -331,7 +453,7 @@ Regras:
       statsLine,
       outcomesBlock,
       retroBlock,
-      coverageBlock,
+      ladderBlock,
       currentPlanBlock,
       carryOverBlock,
       carryOverResolvedBlock,
