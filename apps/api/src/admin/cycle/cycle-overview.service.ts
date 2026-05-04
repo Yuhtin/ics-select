@@ -386,7 +386,7 @@ export class CycleOverviewService {
         if (b.cohortPts !== a.cohortPts) return b.cohortPts - a.cohortPts;
         return a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' });
       })
-      .map(({ cohortPts, ...rest }) => rest);
+      .map(({ cohortPts: _cohortPts, ...rest }) => rest);
 
     return {
       cycle: {
