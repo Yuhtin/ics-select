@@ -8,6 +8,7 @@ type PrismaMock = {
   weeklyPlanItem: { findMany: jest.Mock };
   weeklyRetro: { findMany: jest.Mock };
   memberAvailability: { findMany: jest.Mock };
+  $queryRawUnsafe: jest.Mock;
 };
 
 function makePrisma(overrides: Partial<any> = {}): PrismaMock {
@@ -17,9 +18,14 @@ function makePrisma(overrides: Partial<any> = {}): PrismaMock {
     weeklyPlanItem: { findMany: jest.fn(async () => []) },
     weeklyRetro: { findMany: jest.fn(async () => []) },
     memberAvailability: { findMany: jest.fn(async () => []) },
+    $queryRawUnsafe: jest.fn(async () => []) as any,
   };
   for (const key of Object.keys(overrides) as (keyof PrismaMock)[]) {
-    base[key] = { ...base[key], ...(overrides[key] as any) };
+    if (key === '$queryRawUnsafe') {
+      (base as any)[key] = (overrides as any)[key];
+    } else {
+      base[key] = { ...base[key], ...(overrides[key] as any) };
+    }
   }
   return base;
 }
@@ -294,5 +300,60 @@ describe('CycleOverviewService', () => {
     const service = makeService(prisma);
     const result = await service.getOverview('cycle-1', NOW);
     expect(result.cycle.weekNumber).toBe(result.cycle.weeksTotal);
+  });
+
+  it('returns engagement ranking ordered by score with breakdown and alert flag', async () => {
+    const prisma = makePrisma({
+      cycle: {
+        findUnique: jest.fn(async () => ({
+          ...baseCycle,
+          memberships: [memberA, memberB],
+        })),
+      },
+      weeklyPlanItem: {
+        findMany: jest.fn(async () => [
+          { weeklyPlan: { userId: 'user-a' } }, // STUCK proxy → alert
+        ]),
+      },
+      $queryRawUnsafe: jest.fn(async () => [
+        {
+          userId: 'user-a',
+          daysActive: 10,
+          itemsDone: 12,
+          itemsPlanned: 12,
+          retrosSubmitted: 2,
+          daysSinceLastSession: 1,
+        },
+        {
+          userId: 'user-b',
+          daysActive: 2,
+          itemsDone: 1,
+          itemsPlanned: 12,
+          retrosSubmitted: 0,
+          daysSinceLastSession: 10,
+        },
+      ]),
+    });
+    const service = makeService(prisma);
+    const result = await service.getOverview('cycle-1', NOW);
+
+    expect(result.ranking).toHaveLength(2);
+    expect(result.ranking[0]!.userId).toBe('user-a');
+    expect(result.ranking[1]!.userId).toBe('user-b');
+    expect(result.ranking[0]!.score).toBeGreaterThan(result.ranking[1]!.score);
+    expect(result.ranking[0]!.breakdown).toHaveLength(6);
+    expect(result.ranking[0]!.hasAlert).toBe(true);
+    expect(result.ranking[1]!.hasAlert).toBe(false);
+  });
+
+  it('returns empty ranking when cohort has no memberships', async () => {
+    const prisma = makePrisma({
+      cycle: {
+        findUnique: jest.fn(async () => ({ ...baseCycle, memberships: [] })),
+      },
+    });
+    const service = makeService(prisma);
+    const result = await service.getOverview('cycle-1', NOW);
+    expect(result.ranking).toEqual([]);
   });
 });

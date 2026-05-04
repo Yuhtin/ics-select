@@ -14,6 +14,7 @@ import { CohortFeed } from '../../member/cohort-feed';
 import { ClassesSection } from '../cycles/classes-section';
 import { Eyebrow } from '../../ui/eyebrow';
 import { SectionLabel } from '../../ui/section-label';
+import { EngagementRankingTable } from '../engagement-ranking-table';
 
 export function CycleOverviewView({ data }: { data: CycleOverviewResponse }) {
   const triage = useAdminTriage();
@@ -141,6 +142,13 @@ export function CycleOverviewView({ data }: { data: CycleOverviewResponse }) {
             <SectionLabel>Cohort heatmap · all weeks</SectionLabel>
             <CohortHeatmap weeks={data.heatmap.weeks} rows={data.heatmap.rows} />
           </div>
+
+          {data.ranking.length > 0 && (
+            <div className="space-y-3">
+              <SectionLabel>Engagement ranking</SectionLabel>
+              <EngagementRankingTable ranking={data.ranking} />
+            </div>
+          )}
         </div>
 
         <aside className="space-y-3 md:row-span-1">

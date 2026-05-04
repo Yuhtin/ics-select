@@ -1,6 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service.js';
 import { computeWeekPosition } from '../../common/cycle/active-cycle.js';
+import { computeEngagementScore, COHORT_RANK_LABEL, type ScoreBreakdownEntry } from '../cockpit/engagement-score.js';
+import { computeEngagementInputsForCohort } from '../cockpit/engagement-inputs.js';
 
 import {
   type ItemOutcome,
@@ -69,6 +71,14 @@ export type CycleOverviewResponse = {
     itemTitle: string | null;
     itemId: string | null;
   }>;
+  ranking: Array<{
+    userId: string;
+    name: string;
+    pictureUrl: string | null;
+    score: number;
+    breakdown: ScoreBreakdownEntry[];
+    hasAlert: boolean;
+  }>;
 };
 
 type MembershipRow = {
@@ -82,7 +92,7 @@ type PlanRow = {
   userId: string;
   weekStart: Date;
   items: Array<{
-    outcome: 'PENDING' | 'DONE_EASY' | 'DONE_HARD' | 'DOUBTS' | 'STUCK';
+    outcome: 'PENDING' | 'DONE_EASY' | 'DONE_HARD' | 'DOUBTS' | 'STUCK' | 'SKIPPED';
     completedAt: Date | null;
     weeklyPlanId: string;
     libraryItem: { estimatedMinutes: number; format: string };
@@ -338,6 +348,46 @@ export class CycleOverviewService {
 
     const pos = computeWeekPosition(cycle, now);
 
+    const engagementInputs = await computeEngagementInputsForCohort(
+      this.prisma,
+      userIds,
+      cycle.id,
+      this.mondayUTC(cycle.startsAt),
+      now,
+    );
+    const ranking = memberships
+      .map((m) => {
+        const input = engagementInputs.get(m.userId);
+        if (!input) {
+          return {
+            userId: m.userId,
+            name: m.user.name,
+            pictureUrl: m.user.pictureUrl,
+            score: 0,
+            breakdown: [],
+            hasAlert: membersWithStuck.has(m.userId),
+            cohortPts: 0,
+          };
+        }
+        const result = computeEngagementScore(input);
+        const cohortBreakdown = result.breakdown.find((b) => b.label === COHORT_RANK_LABEL);
+        return {
+          userId: m.userId,
+          name: m.user.name,
+          pictureUrl: m.user.pictureUrl,
+          score: result.score,
+          breakdown: result.breakdown,
+          hasAlert: membersWithStuck.has(m.userId),
+          cohortPts: cohortBreakdown?.value ?? 0,
+        };
+      })
+      .sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score;
+        if (b.cohortPts !== a.cohortPts) return b.cohortPts - a.cohortPts;
+        return a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' });
+      })
+      .map(({ cohortPts: _cohortPts, ...rest }) => rest);
+
     return {
       cycle: {
         id: cycle.id,
@@ -359,6 +409,7 @@ export class CycleOverviewService {
         rows: heatmapRows,
       },
       feed,
+      ranking,
     };
   }
 

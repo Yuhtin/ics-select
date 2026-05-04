@@ -1,3 +1,5 @@
+export const COHORT_RANK_LABEL = 'Cohort rank';
+
 export type EngagementInput = {
   cohortRankFromBottom: number; // 0 = worst, cohortSize = best
   cohortSize: number;
@@ -72,7 +74,7 @@ export function computeEngagementScore(input: EngagementInput): EngagementScore 
   const total = cohortPts + activePts + completionPts + retroPts + ttfvPts + recencyPts;
 
   const breakdown: ScoreBreakdownEntry[] = [
-    { label: 'Cohort rank',         value: round(cohortPts),     weight: 25, status: statusFor(cohortPts, 25) },
+    { label: COHORT_RANK_LABEL,     value: round(cohortPts),     weight: 25, status: statusFor(cohortPts, 25) },
     { label: 'Days active',         value: round(activePts),     weight: 20, status: statusFor(activePts, 20) },
     { label: 'Plan completion',     value: round(completionPts), weight: 20, status: statusFor(completionPts, 20) },
     { label: 'Retros submitted',    value: round(retroPts),      weight: 15, status: statusFor(retroPts, 15) },
