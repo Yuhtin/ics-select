@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { Select, SelectItem } from '@heroui/react';
+import { addToast, Select, SelectItem } from '@heroui/react';
 import type { RetroCurrentResponse, WeekRecapItem } from '../../lib/queries/me-retro';
 import { useSubmitRetro } from '../../lib/queries/me-retro';
 import { Eyebrow } from '../ui/eyebrow';
@@ -32,15 +32,30 @@ export function RetroForm({ data }: RetroFormProps) {
   // Q2 renders whenever there is a recap (even if 0 valued items — picker shows "Nenhum" only).
   const showValuedQuestion = recap !== null;
 
+  const isUpdate = data.retro !== null;
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    await submit.mutateAsync({
-      whatClicked: whatClicked.trim() || undefined,
-      whatStuck:   whatStuck.trim()   || undefined,
-      nextWeekWish: nextWeekWish.trim() || undefined,
-      valuedItemId: valuedItemId,
-      stuckItemId:  stuckItemId,
-    });
+    try {
+      await submit.mutateAsync({
+        whatClicked: whatClicked.trim() || undefined,
+        whatStuck:   whatStuck.trim()   || undefined,
+        nextWeekWish: nextWeekWish.trim() || undefined,
+        valuedItemId: valuedItemId,
+        stuckItemId:  stuckItemId,
+      });
+      addToast({
+        title: isUpdate ? 'Retro updated' : 'Retro saved',
+        description: 'Your notes are with the program director.',
+        color: 'success',
+      });
+    } catch (err) {
+      addToast({
+        title: 'Could not save retro',
+        description: err instanceof Error ? err.message : 'Try again in a moment.',
+        color: 'danger',
+      });
+    }
   }
 
   return (
