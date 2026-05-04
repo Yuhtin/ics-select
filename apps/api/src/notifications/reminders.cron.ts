@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../common/prisma/prisma.service.js';
 import { WhatsappService } from '../whatsapp/whatsapp.service.js';
@@ -22,8 +22,15 @@ export class RemindersCron {
     const timeMin = new Date(now.getTime() + 9 * 60_000);
     const timeMax = new Date(now.getTime() + 11 * 60_000);
 
+    // Only members with a connected Google account can receive calendar-based
+    // reminders. Filtering at the query level keeps the cron silent for
+    // members who haven't linked Google yet (was spamming WARN every minute).
     const members = await this.prisma.user.findMany({
-      where: { role: 'MEMBER', whatsappPhone: { not: null } },
+      where: {
+        role: 'MEMBER',
+        whatsappPhone: { not: null },
+        googleAccount: { isNot: null },
+      },
       select: { id: true, name: true, whatsappPhone: true },
     });
 
@@ -54,6 +61,7 @@ export class RemindersCron {
             .catch(() => undefined);
         }
       } catch (err) {
+        if (err instanceof NotFoundException) continue;
         this.logger.warn(`reminders: skipped member ${member.id}: ${String(err)}`);
       }
     }
