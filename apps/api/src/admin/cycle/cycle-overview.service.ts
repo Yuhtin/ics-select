@@ -1,6 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service.js';
 import { computeWeekPosition } from '../../common/cycle/active-cycle.js';
+import { computeEngagementScore, type ScoreBreakdownEntry } from '../cockpit/engagement-score.js';
+import { computeEngagementInputsForCohort } from '../cockpit/engagement-inputs.js';
 
 import {
   type ItemOutcome,
@@ -68,6 +70,14 @@ export type CycleOverviewResponse = {
     member: { id: string; name: string; pictureUrl: string | null };
     itemTitle: string | null;
     itemId: string | null;
+  }>;
+  ranking: Array<{
+    userId: string;
+    name: string;
+    pictureUrl: string | null;
+    score: number;
+    breakdown: ScoreBreakdownEntry[];
+    hasAlert: boolean;
   }>;
 };
 
@@ -338,6 +348,46 @@ export class CycleOverviewService {
 
     const pos = computeWeekPosition(cycle, now);
 
+    const engagementInputs = await computeEngagementInputsForCohort(
+      this.prisma,
+      userIds,
+      cycle.id,
+      this.mondayUTC(cycle.startsAt),
+      now,
+    );
+    const ranking = memberships
+      .map((m) => {
+        const input = engagementInputs.get(m.userId);
+        if (!input) {
+          return {
+            userId: m.userId,
+            name: m.user.name,
+            pictureUrl: m.user.pictureUrl,
+            score: 0,
+            breakdown: [],
+            hasAlert: membersWithStuck.has(m.userId),
+            cohortPts: 0,
+          };
+        }
+        const result = computeEngagementScore(input);
+        const cohortBreakdown = result.breakdown.find((b) => b.label === 'Cohort rank');
+        return {
+          userId: m.userId,
+          name: m.user.name,
+          pictureUrl: m.user.pictureUrl,
+          score: result.score,
+          breakdown: result.breakdown,
+          hasAlert: membersWithStuck.has(m.userId),
+          cohortPts: cohortBreakdown?.value ?? 0,
+        };
+      })
+      .sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score;
+        if (b.cohortPts !== a.cohortPts) return b.cohortPts - a.cohortPts;
+        return a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' });
+      })
+      .map(({ cohortPts, ...rest }) => rest);
+
     return {
       cycle: {
         id: cycle.id,
@@ -359,6 +409,7 @@ export class CycleOverviewService {
         rows: heatmapRows,
       },
       feed,
+      ranking,
     };
   }
 
