@@ -72,9 +72,11 @@ export function ItemFocus({ item }: ItemFocusProps) {
 
   const eyebrowClass = isRunningLate ? '!text-outcome-stuck' : '';
 
-  async function handleSave() {
+  function handleSave() {
     if (!outcome) return;
-    await mutation.mutateAsync({
+    // Optimistic update flips the cache immediately, so we can close the form
+    // synchronously instead of awaiting the slow backend round-trip.
+    mutation.mutate({
       planId: item.planId,
       itemId: item.id,
       outcome,
@@ -85,8 +87,8 @@ export function ItemFocus({ item }: ItemFocusProps) {
     setEditing(false);
   }
 
-  async function applyOutcome(o: ItemOutcome) {
-    await mutation.mutateAsync({ planId: item.planId, itemId: item.id, outcome: o });
+  function applyOutcome(o: ItemOutcome) {
+    mutation.mutate({ planId: item.planId, itemId: item.id, outcome: o });
   }
 
   return (
