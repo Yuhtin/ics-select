@@ -132,7 +132,7 @@ export class RetroService {
     const tz = availability?.timezone ?? 'America/Sao_Paulo';
     const { open, weekStart } = this.computeWindow(now, tz);
     if (!open) {
-      throw new ConflictException('Retro window is closed — try again Fri 18:00 to Sun 23:59 local time.');
+      throw new ConflictException('Retro window is closed — try again Fri 18:00 to Wed 23:59 local time.');
     }
 
     const membership = await resolveActiveMembership(this.prisma, userId, now);
@@ -201,22 +201,30 @@ export class RetroService {
     const localDay = dayCode[weekdayPart] ?? 1;
     const localHour = parseInt(hourPart === '24' ? '0' : hourPart, 10);
 
-    const inWindow =
-      (localDay === 5 && localHour >= 18) ||   // Fri 18:00+
-      localDay === 6 ||                         // All of Sat
-      localDay === 0;                           // Sun (until 23:59 — end-of-day handled naturally)
+    // Window covers a single retro week W:
+    //   opens Fri 18:00 local of week W → closes Wed 23:59 local of week W+1.
+    // Mon/Tue/Wed land in the carry-over portion that targets the *previous*
+    // week's plan; Fri 18:00 / Sat / Sun land on the same week. Thu is the
+    // only fully-closed day. Friday before 18:00 is also closed.
+    const isCarryover = localDay >= 1 && localDay <= 3;            // Mon, Tue, Wed
+    const isSameWeek =
+      (localDay === 5 && localHour >= 18) ||                        // Fri 18:00+
+      localDay === 6 ||                                              // All of Sat
+      localDay === 0;                                                // Sun (until 23:59)
+    const inWindow = isCarryover || isSameWeek;
 
-    // weekStart: UTC Monday of the current user-local week.
+    // weekStart: Monday of the user-local week the retro is *for*.
+    // Carry-over (Mon/Tue/Wed) targets the previous week, so subtract 7 days.
     const localDate = new Date(`${parts.year}-${parts.month}-${parts.day}T00:00:00Z`);
-    const mondayOffset = (localDay + 6) % 7;   // days since Monday
+    const mondayOffset = (localDay + 6) % 7;   // days since this-week Monday
     const weekStart = new Date(localDate);
-    weekStart.setUTCDate(weekStart.getUTCDate() - mondayOffset);
+    weekStart.setUTCDate(weekStart.getUTCDate() - mondayOffset - (isCarryover ? 7 : 0));
 
     const windowOpensAt = new Date(weekStart);
-    windowOpensAt.setUTCDate(windowOpensAt.getUTCDate() + 4);   // Friday
+    windowOpensAt.setUTCDate(windowOpensAt.getUTCDate() + 4);   // Friday of week W
     windowOpensAt.setUTCHours(18, 0, 0, 0);
     const windowClosesAt = new Date(weekStart);
-    windowClosesAt.setUTCDate(windowClosesAt.getUTCDate() + 6);   // Sunday
+    windowClosesAt.setUTCDate(windowClosesAt.getUTCDate() + 9);   // Wed of week W+1
     windowClosesAt.setUTCHours(23, 59, 59, 999);
 
     return { open: inWindow, weekStart, windowOpensAt, windowClosesAt };

@@ -109,15 +109,67 @@ describe('RetroService', () => {
     });
   });
 
-  it('submit throws ConflictException outside window', async () => {
+  it('submit throws ConflictException outside window (Thu is the only fully-closed day)', async () => {
     prisma.memberAvailability.findUnique.mockResolvedValue({ timezone: 'America/Sao_Paulo' });
     await expect(
       service.submit(
         'u-1',
         { whatClicked: 'x' },
-        new Date('2026-04-15T22:00:00Z'),   // Wed, not a retro day
+        new Date('2026-04-16T22:00:00Z'),   // Thu 19:00 BRT — gap day between windows
       ),
     ).rejects.toThrow(ConflictException);
+  });
+
+  it('open=true on Wed (carry-over) and weekStart points to the previous Monday', async () => {
+    prisma.memberAvailability.findUnique.mockResolvedValue({ timezone: 'America/Sao_Paulo' });
+    prisma.weeklyRetro.findUnique.mockResolvedValue(null);
+    prisma.weeklyPlan.findFirst.mockResolvedValue(null);
+    // Wed Apr 22 at 22:00 UTC = 19:00 BRT — inside the carry-over window for the
+    // previous week (Apr 13 Monday). Last week's weekStart is 2026-04-13.
+    const result = await service.getCurrent('u-1', new Date('2026-04-22T22:00:00Z'));
+    expect(result.open).toBe(true);
+    expect(prisma.weeklyPlan.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ weekStart: new Date('2026-04-13T00:00:00.000Z') }),
+      }),
+    );
+    // windowClosesAt is Wed 23:59 of the week after weekStart Monday (Apr 13 + 9 = Apr 22).
+    expect(result.windowClosesAt).toBe('2026-04-22T23:59:59.999Z');
+  });
+
+  it('open=false on Thu (gap day between carry-over close and Fri reopen)', async () => {
+    prisma.memberAvailability.findUnique.mockResolvedValue({ timezone: 'America/Sao_Paulo' });
+    prisma.weeklyRetro.findUnique.mockResolvedValue(null);
+    prisma.weeklyPlan.findFirst.mockResolvedValue(null);
+    const result = await service.getCurrent('u-1', new Date('2026-04-23T22:00:00Z')); // Thu 19:00 BRT
+    expect(result.open).toBe(false);
+  });
+
+  it('submit on Tue upserts the previous-week retro (carry-over)', async () => {
+    prisma.memberAvailability.findUnique.mockResolvedValue({ timezone: 'America/Sao_Paulo' });
+    prisma.cycleMembership.findFirst.mockResolvedValue({ cycleId: 'c-1' });
+    prisma.weeklyRetro.upsert.mockResolvedValue({
+      id: 'r-late',
+      userId: 'u-1',
+      cycleId: 'c-1',
+      weekStart: new Date('2026-04-13T00:00:00Z'),
+      whatClicked: 'late note',
+      whatStuck: null,
+      nextWeekWish: null,
+      submittedAt: new Date(),
+    });
+    // Tue Apr 21 at 22:00 UTC = 19:00 BRT → carry-over for week of Apr 13.
+    const result = await service.submit(
+      'u-1',
+      { whatClicked: 'late note' },
+      new Date('2026-04-21T22:00:00Z'),
+    );
+    expect(prisma.weeklyRetro.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { userId_weekStart: { userId: 'u-1', weekStart: new Date('2026-04-13T00:00:00.000Z') } },
+      }),
+    );
+    expect(result.whatClicked).toBe('late note');
   });
 
   it('submit upserts when inside window', async () => {

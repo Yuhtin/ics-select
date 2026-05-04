@@ -55,7 +55,7 @@ export function RetroForm({ data }: RetroFormProps) {
         </p>
         {!data.open && (
           <p className="mt-3 border-l-4 border-outcome-done-hard pl-4 font-mono text-xs uppercase tracking-label text-outcome-done-hard">
-            Retro closed — window reopens Fri 18:00 local.
+            Retro closed — reopens Fri 18:00 local (window runs through Wed 23:59 of the next week).
           </p>
         )}
       </header>
