@@ -5136,6 +5136,47 @@ const ITEMS: ItemSeed[] = [
     source: 'Medium — Davi Duarte',
     tags: ['concept', 'hashing', 'sha-256', 'bcrypt', 'argon2', 'tls', 'password-storage'],
   },
+
+  // --- hashmap intro + Python dict — 2026-05-04 ---
+  {
+    title: 'What is a HashTable Data Structure — Introduction to Hash Tables, Part 0',
+    url: 'https://www.youtube.com/watch?v=MfhjkfocRR0',
+    description:
+      'mycodeschool — o que é uma hash table: array indexado por string, função de hash, e por que colisões acontecem. Whiteboard, parte 0 da série.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 8,
+    topicSlugs: ['hashmap'],
+    tracks: [],
+    source: 'YouTube — mycodeschool',
+    tags: ['concept', 'hashmap', 'introduction', 'hash-function', 'collision', 'mycodeschool'],
+  },
+  {
+    title: 'Dictionaries in Python',
+    url: 'https://realpython.com/python-dicts/',
+    description:
+      'Real Python — dict em Python na prática: literals, dict(), get/setdefault/update, iteração e padrões comuns de uso.',
+    format: 'ARTICLE',
+    difficulty: 'EASY',
+    estimatedMinutes: 25,
+    topicSlugs: ['hashmap'],
+    tracks: [],
+    source: 'Blog — Real Python',
+    tags: ['concept', 'hashmap', 'python', 'dict', 'real-python'],
+  },
+  {
+    title: 'Python behind the scenes #10: how Python dictionaries work',
+    url: 'https://tenthousandmeters.com/blog/python-behind-the-scenes-10-how-python-dictionaries-work/',
+    description:
+      'Ten Thousand Meters — como o dict do CPython funciona por dentro: open addressing com perturbação, resize em 2/3 de load, layout do PyDictObject.',
+    format: 'ARTICLE',
+    difficulty: 'HARD',
+    estimatedMinutes: 30,
+    topicSlugs: ['hashmap'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'Blog — Ten Thousand Meters',
+    tags: ['concept', 'hashmap', 'python', 'dict', 'cpython', 'internals', 'open-addressing'],
+  },
 ];
 
 // -----------------------------------------------------------------------------
