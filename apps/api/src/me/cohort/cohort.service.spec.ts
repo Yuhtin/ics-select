@@ -60,7 +60,7 @@ describe('CohortService', () => {
     expect(result.memberCount).toBe(2);
   });
 
-  it('includes sorted top-3 ranking with isMe flag when visible', async () => {
+  it('includes sorted score-based ranking with isMe flag when visible', async () => {
     prisma.cycleMembership.findFirst.mockResolvedValue({
       cycleId: 'c-1',
       cycle: {
