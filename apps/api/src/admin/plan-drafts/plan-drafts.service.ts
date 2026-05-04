@@ -99,12 +99,34 @@ export class PlanDraftsService {
     return this.createDraft(memberId, cycle.id, weekStart, weekEnd);
   }
 
-  private createDraft(
+  private async createDraft(
     memberId: string,
     cycleId: string,
     weekStart: Date,
     weekEnd: Date,
   ) {
+    // Seed unfinished items from the previous week's PUBLISHED plan as
+    // carry-overs. Mirrors the same PENDING/DOUBTS/STUCK rule the plan-context
+    // service uses to surface candidates in the editor's left panel — keeps
+    // the two views consistent. Only happens at creation time; reopening an
+    // existing draft never re-seeds.
+    const prevWeekStart = new Date(weekStart.getTime() - WEEK_MS);
+    const prevPlan = await this.prisma.weeklyPlan.findFirst({
+      where: {
+        userId: memberId,
+        weekStart: prevWeekStart,
+        status: 'PUBLISHED',
+      },
+      select: {
+        items: {
+          where: { outcome: { in: ['PENDING', 'DOUBTS', 'STUCK'] } },
+          orderBy: { order: 'asc' },
+          select: { id: true, libraryItemId: true },
+        },
+      },
+    });
+    const carryItems = prevPlan?.items ?? [];
+
     return this.prisma.weeklyPlan.create({
       data: {
         userId: memberId,
@@ -112,6 +134,16 @@ export class PlanDraftsService {
         weekStart,
         weekEnd,
         status: 'DRAFT',
+        ...(carryItems.length > 0 && {
+          items: {
+            create: carryItems.map((src, idx) => ({
+              libraryItemId: src.libraryItemId,
+              order: idx,
+              outcome: 'PENDING' as const,
+              carriedFromItemId: src.id,
+            })),
+          },
+        }),
       },
       include: { items: { include: { libraryItem: true }, orderBy: { order: 'asc' } } },
     });

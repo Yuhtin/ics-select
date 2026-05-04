@@ -79,6 +79,48 @@ describe('PlanDraftsService', () => {
     expect(result.id).toBe('new-plan');
   });
 
+  it('seeds carry-overs from the previous week PUBLISHED plan into the new draft', async () => {
+    const prisma = makePrisma();
+    prisma.cycleMembership.findFirst.mockResolvedValue({
+      cycle: { id: 'c1', startsAt: new Date('2026-04-01'), endsAt: new Date('2026-07-31') },
+    });
+    // 1st findFirst → no existing plan for the target week.
+    // 2nd findFirst → previous week's PUBLISHED plan with three unfinished items.
+    prisma.weeklyPlan.findFirst
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({
+        items: [
+          { id: 'src-1', libraryItemId: 'lib-1' },
+          { id: 'src-2', libraryItemId: 'lib-2' },
+          { id: 'src-3', libraryItemId: 'lib-3' },
+        ],
+      });
+    prisma.weeklyPlan.create.mockResolvedValue({ id: 'new-plan', status: 'DRAFT', items: [] });
+    const svc = new PlanDraftsService(prisma as any);
+    await svc.getOrCreateDraft({ memberId: 'm1', weekStart: WEEK_START });
+    const created = prisma.weeklyPlan.create.mock.calls[0][0];
+    expect(created.data.items.create).toEqual([
+      { libraryItemId: 'lib-1', order: 0, outcome: 'PENDING', carriedFromItemId: 'src-1' },
+      { libraryItemId: 'lib-2', order: 1, outcome: 'PENDING', carriedFromItemId: 'src-2' },
+      { libraryItemId: 'lib-3', order: 2, outcome: 'PENDING', carriedFromItemId: 'src-3' },
+    ]);
+  });
+
+  it('creates an empty draft when the previous week has no carry-over candidates', async () => {
+    const prisma = makePrisma();
+    prisma.cycleMembership.findFirst.mockResolvedValue({
+      cycle: { id: 'c1', startsAt: new Date('2026-04-01'), endsAt: new Date('2026-07-31') },
+    });
+    // No existing plan for the target week, and no previous-week PUBLISHED plan.
+    prisma.weeklyPlan.findFirst.mockResolvedValue(null);
+    prisma.weeklyPlan.create.mockResolvedValue({ id: 'new-plan', status: 'DRAFT', items: [] });
+    const svc = new PlanDraftsService(prisma as any);
+    await svc.getOrCreateDraft({ memberId: 'm1', weekStart: WEEK_START });
+    // No `items` key on data — empty draft, nothing seeded.
+    const created = prisma.weeklyPlan.create.mock.calls[0][0];
+    expect(created.data.items).toBeUndefined();
+  });
+
   describe('auto-pick (no weekStart)', () => {
     // Cycle: Apr 23 – Jun 26 (Thu through Fri for easy Monday math)
     const cycle = {
