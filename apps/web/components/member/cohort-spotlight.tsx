@@ -16,7 +16,7 @@ function dotsForIntensity(intensity: number): { filled: number; empty: number } 
 
 function Dots({ filled, empty }: { filled: number; empty: number }) {
   return (
-    <div className="flex gap-1" aria-hidden>
+    <div className="flex gap-1" aria-hidden="true">
       {Array.from({ length: filled }).map((_, i) => (
         <span key={`f-${i}`} className="text-focus">●</span>
       ))}
@@ -24,6 +24,28 @@ function Dots({ filled, empty }: { filled: number; empty: number }) {
         <span key={`e-${i}`} className="text-rule">○</span>
       ))}
     </div>
+  );
+}
+
+function Avatar({ name, pictureUrl }: { name: string; pictureUrl: string | null }) {
+  if (pictureUrl) {
+    return (
+      <div className="h-12 w-12 overflow-hidden rounded-full bg-paper-warm">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={pictureUrl} alt="" className="h-full w-full object-cover" />
+      </div>
+    );
+  }
+  const initials = name
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? '')
+    .join('');
+  return (
+    <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-paper-warm font-sans text-sm font-semibold text-ink-soft">
+      {initials || '—'}
+    </span>
   );
 }
 
@@ -47,16 +69,7 @@ export function CohortSpotlight({ ranking, className }: CohortSpotlightProps) {
                 entry.isMe ? 'border-ink' : 'border-rule',
               )}
             >
-              <div className="h-12 w-12 overflow-hidden rounded-full bg-paper-warm">
-                {entry.pictureUrl && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={entry.pictureUrl}
-                    alt=""
-                    className="h-full w-full object-cover"
-                  />
-                )}
-              </div>
+              <Avatar name={entry.name} pictureUrl={entry.pictureUrl} />
               <p className="font-serif text-base font-medium text-ink">
                 {entry.name}
                 {entry.isMe && <span className="ml-1 text-ink-mute">(you)</span>}
