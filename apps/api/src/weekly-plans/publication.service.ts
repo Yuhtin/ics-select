@@ -274,9 +274,11 @@ export class PublicationService {
     planId: string,
     options: { now?: Date; force?: boolean } = {},
   ): Promise<void> {
+    const tTotal = Date.now();
     const now = options.now ?? new Date();
     const force = options.force ?? false;
 
+    const tFind = Date.now();
     const plan = await this.prisma.weeklyPlan.findUnique({
       where: { id: planId },
       include: {
@@ -286,6 +288,7 @@ export class PublicationService {
         },
       },
     });
+    const findMs = Date.now() - tFind;
     if (!plan) throw new NotFoundException('plan not found');
     if (plan.status !== 'PUBLISHED') {
       throw new ConflictException('Only PUBLISHED plans can be rescheduled');
@@ -298,7 +301,10 @@ export class PublicationService {
     // from our own DB instead of scanning the member's whole calendar.
     const pendingItemIds = pending.map((i) => i.id);
     const staleEvents = pending.flatMap((i) => i.calendarEvents);
+    let deleteEventsMs = 0;
+    let deleteRowsMs = 0;
     if (staleEvents.length > 0) {
+      const tDel = Date.now();
       await Promise.all(
         staleEvents.map((ev) =>
           this.calendar.deleteEvent(plan.userId, ev.googleEventId).catch((err) => {
@@ -308,21 +314,31 @@ export class PublicationService {
           }),
         ),
       );
+      deleteEventsMs = Date.now() - tDel;
+      const tDelRows = Date.now();
       await this.prisma.weeklyPlanItemCalendarEvent.deleteMany({
         where: { weeklyPlanItemId: { in: pendingItemIds } },
       });
+      deleteRowsMs = Date.now() - tDelRows;
     }
 
     // 2. Re-schedule PENDING items into remaining window.
     // The scheduler already skips past days when `now` is provided; passing
     // `now` here is sufficient to clamp to the remaining window.
+    const tFreeBusy = Date.now();
     const busyBlocks = await this.calendar
       .getFreeBusy(plan.userId, now, plan.weekEnd)
       .catch(() => [] as Array<{ start: Date; end: Date }>);
+    const freeBusyMs = Date.now() - tFreeBusy;
 
+    const tAvail = Date.now();
+    const availability = await loadSchedulerAvailability(this.prisma, plan.userId, { force });
+    const availMs = Date.now() - tAvail;
+
+    const tScheduler = Date.now();
     const result = this.scheduler.plan({
       weekStart: plan.weekStart,
-      availability: await loadSchedulerAvailability(this.prisma, plan.userId, { force }),
+      availability,
       busyBlocks,
       items: pending.map((i) => ({
         id: i.id,
@@ -331,38 +347,54 @@ export class PublicationService {
       })),
       now,
     });
+    const schedulerMs = Date.now() - tScheduler;
 
     if (result.overflow.length > 0 && !force) {
       throw new PlanOverflowError(result.overflow);
     }
 
-    // 3. Create new Calendar events and persist their ids so future deletes
-    // don't need events.list.
-    for (const session of result.sessions) {
-      const item = pending.find((p) => p.id === session.itemId)!;
-      const eventEnd = new Date(session.scheduledAt.getTime() + session.durationMinutes * 60 * 1000);
-      try {
-        const googleEventId = await this.calendar.createEvent(plan.userId, {
-          summary: `ICS Select — ${item.libraryItem.title}`,
-          description: item.libraryItem.url
-            ? `Link: ${item.libraryItem.url}`
-            : 'ICS Select study session',
-          start: session.scheduledAt,
-          end: eventEnd,
-          icsId: { planId: plan.id, itemId: item.id },
-        });
-        await this.prisma.weeklyPlanItemCalendarEvent.create({
-          data: { weeklyPlanItemId: item.id, googleEventId },
-        });
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        this.logger.warn(
-          `calendar.createEvent failed · user=${plan.userId} plan=${plan.id} item=${item.id} · ${msg}`,
-        );
-      }
+    // 3. Create new Calendar events in parallel — HTTP/2 multiplexes them on a
+    // single TLS socket so wall time ≈ 1× latency, not N×. Persist the ids in
+    // a single createMany to avoid N round-trips to Postgres too.
+    const tCreate = Date.now();
+    const createResults = await Promise.all(
+      result.sessions.map(async (session) => {
+        const item = pending.find((p) => p.id === session.itemId)!;
+        const eventEnd = new Date(session.scheduledAt.getTime() + session.durationMinutes * 60 * 1000);
+        try {
+          const googleEventId = await this.calendar.createEvent(plan.userId, {
+            summary: `ICS Select — ${item.libraryItem.title}`,
+            description: item.libraryItem.url
+              ? `Link: ${item.libraryItem.url}`
+              : 'ICS Select study session',
+            start: session.scheduledAt,
+            end: eventEnd,
+            icsId: { planId: plan.id, itemId: item.id },
+          });
+          return { ok: true as const, itemId: item.id, googleEventId };
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          this.logger.warn(
+            `calendar.createEvent failed · user=${plan.userId} plan=${plan.id} item=${item.id} · ${msg}`,
+          );
+          return { ok: false as const };
+        }
+      }),
+    );
+    const createMs = Date.now() - tCreate;
+    const sessionsFailed = createResults.filter((r) => !r.ok).length;
+    const persistEvents = createResults
+      .filter((r): r is { ok: true; itemId: string; googleEventId: string } => r.ok)
+      .map((r) => ({ weeklyPlanItemId: r.itemId, googleEventId: r.googleEventId }));
+    let persistMs = 0;
+    if (persistEvents.length > 0) {
+      const tPersist = Date.now();
+      await this.prisma.weeklyPlanItemCalendarEvent.createMany({ data: persistEvents });
+      persistMs = Date.now() - tPersist;
     }
 
-    // Persist updated scheduling fields on each rescheduled item
+    // Persist updated scheduling fields on each rescheduled item, batched into
+    // one transaction.
     const byItem = new Map<string, { startAt: Date; minutes: number }[]>();
     for (const session of result.sessions) {
       const list = byItem.get(session.itemId) ?? [];
@@ -370,29 +402,51 @@ export class PublicationService {
       byItem.set(session.itemId, list);
     }
 
-    for (const [itemId, chunks] of byItem) {
+    const placedUpdates = Array.from(byItem).map(([itemId, chunks]) => {
       chunks.sort((a, b) => a.startAt.getTime() - b.startAt.getTime());
       const earliest = chunks[0]!;
-      await this.prisma.weeklyPlanItem.update({
+      return this.prisma.weeklyPlanItem.update({
         where: { id: itemId },
         data: {
           scheduledAt: earliest.startAt,
           scheduledMinutes: chunks.reduce((s, c) => s + c.minutes, 0),
         },
       });
-    }
+    });
 
     // Force-reschedule may leave items in overflow even after the fallback
     // window. Null out their scheduledAt/Minutes so stale values from a
     // previous run don't masquerade as a real placement.
     const placedIds = new Set(byItem.keys());
     const unplacedIds = pending.map((p) => p.id).filter((id) => !placedIds.has(id));
-    if (unplacedIds.length > 0) {
-      await this.prisma.weeklyPlanItem.updateMany({
-        where: { id: { in: unplacedIds } },
-        data: { scheduledAt: null, scheduledMinutes: null },
-      });
+    const overflowUpdate = unplacedIds.length > 0
+      ? [
+          this.prisma.weeklyPlanItem.updateMany({
+            where: { id: { in: unplacedIds } },
+            data: { scheduledAt: null, scheduledMinutes: null },
+          }),
+        ]
+      : [];
+
+    let txMs = 0;
+    if (placedUpdates.length > 0 || overflowUpdate.length > 0) {
+      const tTx = Date.now();
+      await this.prisma.$transaction([...placedUpdates, ...overflowUpdate]);
+      txMs = Date.now() - tTx;
     }
+
+    this.logger.log(
+      `[bench] reschedulePending total=${Date.now() - tTotal}ms · ` +
+      `find=${findMs}ms ` +
+      `delEvents=${deleteEventsMs}ms(n=${staleEvents.length}) ` +
+      `delRows=${deleteRowsMs}ms ` +
+      `freeBusy=${freeBusyMs}ms ` +
+      `avail=${availMs}ms ` +
+      `scheduler=${schedulerMs}ms ` +
+      `createEvents=${createMs}ms(n=${result.sessions.length},failed=${sessionsFailed}) ` +
+      `persistRows=${persistMs}ms ` +
+      `tx=${txMs}ms(updates=${placedUpdates.length + overflowUpdate.length})`,
+    );
   }
 
   // Member-initiated: allocate study sessions into their Google Calendar.

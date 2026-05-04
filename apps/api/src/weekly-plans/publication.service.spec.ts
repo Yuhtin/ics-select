@@ -472,11 +472,13 @@ describe('PublicationService.reschedulePending', () => {
       'u-1',
       expect.objectContaining({ icsId: { planId: 'p-1', itemId: 'wpi-pending' } }),
     );
-    expect(prisma.weeklyPlanItemCalendarEvent.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({
-        weeklyPlanItemId: 'wpi-pending',
-        googleEventId: expect.any(String),
-      }),
+    expect(prisma.weeklyPlanItemCalendarEvent.createMany).toHaveBeenCalledWith({
+      data: expect.arrayContaining([
+        expect.objectContaining({
+          weeklyPlanItemId: 'wpi-pending',
+          googleEventId: expect.any(String),
+        }),
+      ]),
     });
   });
 

@@ -5,6 +5,14 @@ import { PrismaService } from '../common/prisma/prisma.service.js';
 import { AesGcmService } from '../common/crypto/aes-gcm.service.js';
 import { embedIcsId } from '../common/ics-id/ics-id.js';
 
+// Multiplex multiple concurrent Calendar requests over a single TLS socket.
+// Without this, Promise.all of N createEvent calls bottlenecks on HTTP/1.1
+// connection limits + per-connection serialization, taking ~N×latency wall
+// time even though we awaited them in parallel. With HTTP/2, googleapis sends
+// them as concurrent streams on one connection — wall time collapses to ~1×
+// latency for the whole batch.
+google.options({ http2: true });
+
 export type CreateEventInput = {
   summary: string;
   description: string;
