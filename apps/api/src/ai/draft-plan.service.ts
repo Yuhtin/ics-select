@@ -424,9 +424,20 @@ Regras:
 - Não invente IDs. Use apenas IDs retornados por search_library ou os do bloco
   CARRY-OVER RESOLVIDO.
 - Carry-overs DEVEM aparecer em "items" se o admin os marcou.
-- Ordem pedagógica: fundamentos antes de avançado, médio antes de difícil.
 - "alternates" tem até 3 itens extras.
 - "rationale" liga o item ao contexto (ex: gap do ciclo, padrão da reflexão, nível).
+
+LADDER DISCIPLINE (default):
+- O bloco LADDER STATUS pré-computa o foco da semana. Sugira itens APENAS do tópico marcado FOCO ATUAL e dos tópicos sólidos (estes pra revisão leve).
+- Não sugira itens de tópicos "bloqueados". A base não está madura.
+- Reflexões individuais são sinal de DIFICULDADE dentro do tópico atual, não de mudança de foco. Insegurança no FOCO ATUAL → itens mais fáceis no MESMO tópico. Insegurança num bloqueado → recue pro foco.
+
+OVERRIDE (brief do admin):
+- Se BRIEF DO ADMIN explicitamente pedir tópico bloqueado, siga o brief.
+  Admin tem contexto que a IA não tem.
+- Mencione no \`narrative\` que está seguindo o brief contra a ladder.
+
+Outras regras:
 - Se search_library trouxer poucos resultados pra uma query, amplia (remove filtros
   ou deixa query em branco) — NÃO desista e NÃO invente IDs.
 - Se o bloco "ITENS JÁ NO PLANO ATUAL" tiver itens, inclua-os em "items" antes

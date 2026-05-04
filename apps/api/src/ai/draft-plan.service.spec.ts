@@ -316,6 +316,32 @@ describe('DraftPlanService', () => {
     );
   });
 
+  it('system prompt contains LADDER DISCIPLINE and brief OVERRIDE blocks', async () => {
+    const chat = makeChat();
+    chat.callJsonWithTools.mockResolvedValueOnce({
+      data: { items: [], alternates: [], narrative: '', totalMinutes: 0 },
+      usage: { inputTokens: 1, outputTokens: 1, costUsd: 0 },
+      toolCalls: [],
+    });
+    const svc = new DraftPlanService(
+      chat as any,
+      makeLibrary() as any,
+      makePrisma() as any,
+      makeUsage() as any,
+    );
+    await svc.run({ memberId: 'u1', weekStart: WEEK_START, weekEnd: WEEK_END });
+    const system = (chat.callJsonWithTools.mock.calls[0]![0] as any).system as string;
+
+    expect(system).toMatch(/LADDER DISCIPLINE \(default\):/);
+    expect(system).toMatch(/Sugira itens APENAS do tópico marcado FOCO ATUAL/);
+    expect(system).toMatch(/Não sugira itens de tópicos "bloqueados"/);
+    expect(system).toMatch(/Reflexões individuais são sinal de DIFICULDADE/);
+    expect(system).toMatch(/OVERRIDE \(brief do admin\):/);
+    expect(system).toMatch(/siga o brief/);
+    // Old soft rule must be gone
+    expect(system).not.toMatch(/Ordem pedagógica: fundamentos antes de avançado/);
+  });
+
   it('includes LADDER STATUS block driven by topic coverage', async () => {
     const prisma = makePrisma({
       weeklyPlan: {
