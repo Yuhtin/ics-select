@@ -271,6 +271,15 @@ export class DraftPlanService {
       }
     }
 
+    // 5b) Ladder: classify topics as solid/focus/locked. Pre-computed so
+    //     the AI doesn't have to reason about Topic.order on its own.
+    const topicsForLadder = await this.prisma.topic.findMany({
+      orderBy: { order: 'asc' },
+      select: { slug: true, label: true, order: true },
+    });
+    const ladder = computeLadder(topicsForLadder, topicCoverage);
+    const ladderBlock = renderLadderBlock(ladder);
+
     // 6) Items already sitting in the draft for this exact week — so the
     //    LLM doesn't re-suggest them and can see what the admin has in mind.
     const currentPlan: any = await this.prisma.weeklyPlan.findFirst({
@@ -341,18 +350,6 @@ export class DraftPlanService {
     const retroBlock = retro
       ? `RETRÔ (semana anterior):\n- whatClicked: ${retro.whatClicked ?? ''}\n- whatStuck: ${retro.whatStuck ?? ''}\n- nextWeekWish: ${retro.nextWeekWish ?? ''}`
       : `RETRÔ (semana anterior):\n(sem retrô submetido)`;
-
-    const coverageLines: string[] = [];
-    for (const [label, counts] of topicCoverage.entries()) {
-      const pct =
-        counts.planned === 0 ? 0 : Math.round((counts.done / counts.planned) * 100);
-      coverageLines.push(
-        `- ${label}: ${counts.done}/${counts.planned} concluídos (${pct}%)`,
-      );
-    }
-    const coverageBlock =
-      `COBERTURA DE TÓPICOS (ciclo atual):\n` +
-      (coverageLines.length > 0 ? coverageLines.join('\n') : '(sem dados)');
 
     const statsLine =
       `ESTATÍSTICAS GERAIS:\n` +
@@ -444,7 +441,7 @@ Regras:
       statsLine,
       outcomesBlock,
       retroBlock,
-      coverageBlock,
+      ladderBlock,
       currentPlanBlock,
       carryOverBlock,
       carryOverResolvedBlock,

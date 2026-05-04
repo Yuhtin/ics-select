@@ -17,6 +17,14 @@ function makePrisma(overrides: Partial<Record<string, any>> = {}) {
       })),
     },
     user: { findUnique: jest.fn(async () => ({ id: 'u1', name: 'Davi' })) },
+    topic: {
+      findMany: jest.fn(async () => [
+        { slug: 'foundations', label: 'Foundations', order: -1 },
+        { slug: 'array', label: 'Array', order: 0 },
+        { slug: 'lists', label: 'Lists', order: 1 },
+        { slug: 'tree', label: 'Tree', order: 2 },
+      ]),
+    },
     weeklyPlan: {
       findMany: jest.fn(async () => []),
       findFirst: jest.fn(async () => null),
@@ -306,6 +314,51 @@ describe('DraftPlanService', () => {
     expect(logArg.metadata).toEqual(
       expect.objectContaining({ carryOverCount: 0, hasBrief: false, toolCalls: 2 }),
     );
+  });
+
+  it('includes LADDER STATUS block driven by topic coverage', async () => {
+    const prisma = makePrisma({
+      weeklyPlan: {
+        findMany: jest.fn(async () => [
+          // 3 DONE on Foundations → sólido
+          {
+            id: 'p-1',
+            weekStart: new Date('2026-04-13'),
+            items: [
+              { outcome: 'DONE_HARD', libraryItem: { topics: [{ topic: { label: 'Foundations' } }] } },
+              { outcome: 'DONE_EASY', libraryItem: { topics: [{ topic: { label: 'Foundations' } }] } },
+              { outcome: 'DONE_EASY', libraryItem: { topics: [{ topic: { label: 'Foundations' } }] } },
+              // 1 DONE on Array → focus must move to Array
+              { outcome: 'DONE_EASY', libraryItem: { topics: [{ topic: { label: 'Array' } }] } },
+            ],
+          },
+        ]),
+        findFirst: jest.fn(async () => null),
+        count: jest.fn(async () => 1),
+      },
+    });
+    const chat = makeChat();
+    chat.callJsonWithTools.mockResolvedValueOnce({
+      data: { items: [], alternates: [], narrative: '', totalMinutes: 0 },
+      usage: { inputTokens: 1, outputTokens: 1, costUsd: 0 },
+      toolCalls: [],
+    });
+    const svc = new DraftPlanService(
+      chat as any,
+      makeLibrary() as any,
+      prisma as any,
+      makeUsage() as any,
+    );
+    await svc.run({ memberId: 'u1', weekStart: WEEK_START, weekEnd: WEEK_END });
+    const prompt = (chat.callJsonWithTools.mock.calls[0]![0] as any).messages[0]
+      .content as string;
+
+    expect(prompt).toMatch(/LADDER STATUS \(cobertura mínima = 3 DONE_\* por tópico\):/);
+    expect(prompt).toMatch(/Foundations: 3 DONE ✓ sólido/);
+    expect(prompt).toMatch(/Array: 1 DONE ✗ insuficiente — FOCO ATUAL/);
+    expect(prompt).toMatch(/Lists: 0 DONE — bloqueado/);
+    // The old coverage block must be gone
+    expect(prompt).not.toMatch(/COBERTURA DE TÓPICOS \(ciclo atual\):/);
   });
 });
 
