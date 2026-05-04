@@ -328,11 +328,12 @@ export class DraftPlanService {
       {},
     );
     const totalItems = Object.values(outcomeCounts).reduce((s, n) => s + n, 0);
-    const totalDone =
-      (outcomeCounts.DONE_EASY ?? 0) + (outcomeCounts.DONE_HARD ?? 0);
+    const totalDone = (Object.entries(outcomeCounts) as Array<[string, number]>)
+      .filter(([outcome]) => isPositiveOutcome(outcome as any))
+      .reduce((s, [, n]) => s + n, 0);
     const completionPct = totalItems === 0 ? 0 : Math.round((totalDone / totalItems) * 100);
 
-    // 6) Build user prompt sections
+    // 8) Build user prompt sections
     const memberLine = `MEMBRO: ${memberName} — track: ${trackLabel}`;
 
     const outcomeLines: string[] = [];
@@ -355,7 +356,7 @@ export class DraftPlanService {
       `ESTATÍSTICAS GERAIS:\n` +
       `- Planos publicados: ${totalPlansCount}\n` +
       `- Itens totais: ${totalItems} (concluídos ${totalDone}, ${completionPct}% completos)\n` +
-      `- Outcomes: ${['DONE_EASY', 'DONE_HARD', 'DOUBTS', 'STUCK', 'PENDING']
+      `- Outcomes: ${['DONE_EASY', 'DONE_HARD', 'DOUBTS', 'SKIPPED', 'STUCK', 'PENDING']
         .map((o) => `${o}=${outcomeCounts[o] ?? 0}`)
         .join(' · ')}`;
 
