@@ -41,7 +41,9 @@ export class GoogleCalendarService {
   }
 
   async getFreeBusy(userId: string, timeMin: Date, timeMax: Date): Promise<FreeBusyBlock[]> {
+    const t0 = Date.now();
     const client = await this.clientFor(userId);
+    const tApi = Date.now();
     const res = await client.freebusy.query({
       requestBody: {
         timeMin: timeMin.toISOString(),
@@ -49,10 +51,15 @@ export class GoogleCalendarService {
         items: [{ id: 'primary' }],
       },
     });
+    const apiMs = Date.now() - tApi;
     const busy = res.data.calendars?.primary?.busy ?? [];
-    return busy
+    const out = busy
       .filter((b) => b.start && b.end)
       .map((b) => ({ start: new Date(b.start!), end: new Date(b.end!) }));
+    this.logger.log(
+      `[bench] calendar.getFreeBusy total=${Date.now() - t0}ms · api=${apiMs}ms n=${out.length}`,
+    );
+    return out;
   }
 
   async listEventsInRange(
@@ -132,7 +139,9 @@ export class GoogleCalendarService {
           },
         }
       : undefined;
+    const t0 = Date.now();
     const client = await this.clientFor(userId);
+    const tApi = Date.now();
     const res = await client.events.insert({
       calendarId: 'primary',
       requestBody: {
@@ -143,8 +152,12 @@ export class GoogleCalendarService {
         extendedProperties,
       },
     });
+    const apiMs = Date.now() - tApi;
     const id = res.data.id;
     if (!id) throw new Error('Google Calendar did not return an event id');
+    this.logger.log(
+      `[bench] calendar.createEvent total=${Date.now() - t0}ms · api=${apiMs}ms`,
+    );
     return id;
   }
 
@@ -180,8 +193,13 @@ export class GoogleCalendarService {
   }
 
   async deleteEvent(userId: string, eventId: string): Promise<void> {
+    const t0 = Date.now();
     const client = await this.clientFor(userId);
+    const tApi = Date.now();
     await client.events.delete({ calendarId: 'primary', eventId });
+    this.logger.log(
+      `[bench] calendar.deleteEvent total=${Date.now() - t0}ms · api=${Date.now() - tApi}ms`,
+    );
   }
 
   private async clientFor(userId: string): Promise<calendar_v3.Calendar> {
@@ -193,8 +211,10 @@ export class GoogleCalendarService {
     const inflight = this.inflightAuth.get(userId);
     if (inflight) return inflight;
 
+    const t0 = Date.now();
     const promise = this.buildClient(userId).finally(() => {
       this.inflightAuth.delete(userId);
+      this.logger.log(`[bench] calendar.clientFor (cache miss) total=${Date.now() - t0}ms`);
     });
     this.inflightAuth.set(userId, promise);
     return promise;

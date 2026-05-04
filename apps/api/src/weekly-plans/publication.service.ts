@@ -171,11 +171,14 @@ export class PublicationService {
       now?: Date;
     } = {},
   ) {
+    const tTotal = Date.now();
     const now = options.now ?? new Date();
+    const tFind = Date.now();
     const plan = await this.prisma.weeklyPlan.findUnique({
       where: { id: planId },
       include: { user: { select: { name: true, whatsappPhone: true } } },
     });
+    const findMs = Date.now() - tFind;
     if (!plan) throw new NotFoundException('plan not found');
     if (plan.status !== 'DRAFT' && plan.status !== 'SCHEDULED') {
       throw new ConflictException('only DRAFT/SCHEDULED plans can be published');
@@ -186,6 +189,7 @@ export class PublicationService {
     const publishAt = options.publishAt ?? null;
 
     if (publishAt && publishAt.getTime() > now.getTime()) {
+      const tUpdate = Date.now();
       const updated = await this.prisma.weeklyPlan.update({
         where: { id: planId },
         data: {
@@ -195,9 +199,13 @@ export class PublicationService {
           autoSchedule,
         },
       });
+      this.logger.log(
+        `[bench] publish (deferred) total=${Date.now() - tTotal}ms · find=${findMs}ms update=${Date.now() - tUpdate}ms`,
+      );
       return { plan: updated, deferred: true as const };
     }
 
+    const tUpdate = Date.now();
     const updated = await this.prisma.weeklyPlan.update({
       where: { id: planId },
       data: {
@@ -208,6 +216,7 @@ export class PublicationService {
         autoSchedule,
       },
     });
+    const updateMs = Date.now() - tUpdate;
 
     // Fire-and-forget: "Publish now" shouldn't block on Evolution API
     // (seconds of latency). sendPlanPublishedNotification logs start/sent/fail
@@ -220,6 +229,9 @@ export class PublicationService {
       });
     }
 
+    this.logger.log(
+      `[bench] publish total=${Date.now() - tTotal}ms · find=${findMs}ms update=${updateMs}ms whatsapp=fire-and-forget`,
+    );
     return { plan: updated, deferred: false as const };
   }
 
@@ -385,6 +397,9 @@ export class PublicationService {
 
   // Member-initiated: allocate study sessions into their Google Calendar.
   async autoSchedule(planId: string, force: boolean) {
+    const tTotal = Date.now();
+
+    const tFind = Date.now();
     const plan = await this.prisma.weeklyPlan.findUnique({
       where: { id: planId },
       include: {
@@ -394,13 +409,17 @@ export class PublicationService {
         },
       },
     });
+    const findMs = Date.now() - tFind;
     if (!plan) throw new NotFoundException('plan not found');
 
     // Wipe any events that a previous autoSchedule run created. Without this,
     // re-running autoSchedule on a PUBLISHED plan duplicates events on the
     // member's calendar.
     const existingEvents = plan.items.flatMap((i) => i.calendarEvents);
+    let deleteEventsMs = 0;
+    let deleteRowsMs = 0;
     if (existingEvents.length > 0) {
+      const tDel = Date.now();
       await Promise.all(
         existingEvents.map((ev) =>
           this.calendar.deleteEvent(plan.userId, ev.googleEventId).catch((err) => {
@@ -410,20 +429,29 @@ export class PublicationService {
           }),
         ),
       );
+      deleteEventsMs = Date.now() - tDel;
+      const tDelRows = Date.now();
       await this.prisma.weeklyPlanItemCalendarEvent.deleteMany({
         where: { weeklyPlanItemId: { in: plan.items.map((i) => i.id) } },
       });
+      deleteRowsMs = Date.now() - tDelRows;
     }
 
+    const tFreeBusy = Date.now();
     const busyBlocks = await this.calendar
       .getFreeBusy(plan.userId, plan.weekStart, plan.weekEnd)
       .catch(() => [] as Array<{ start: Date; end: Date }>);
+    const freeBusyMs = Date.now() - tFreeBusy;
 
     const schedulableItems = plan.items.filter((i) => i.outcome !== 'SKIPPED');
 
+    const tAvail = Date.now();
+    const availability = await loadSchedulerAvailability(this.prisma, plan.userId, { force });
+    const availMs = Date.now() - tAvail;
+
     const input: SchedulerInput = {
       weekStart: plan.weekStart,
-      availability: await loadSchedulerAvailability(this.prisma, plan.userId, { force }),
+      availability,
       busyBlocks,
       items: schedulableItems.map((i) => ({
         id: i.id,
@@ -433,12 +461,21 @@ export class PublicationService {
       now: new Date(),
     };
 
+    const tScheduler = Date.now();
     const result = this.scheduler.plan(input);
+    const schedulerMs = Date.now() - tScheduler;
     if (result.overflow.length > 0 && !force) {
+      this.logger.log(
+        `[bench] autoSchedule overflow-abort total=${Date.now() - tTotal}ms · ` +
+        `find=${findMs}ms delEvents=${deleteEventsMs}ms(n=${existingEvents.length}) ` +
+        `delRows=${deleteRowsMs}ms freeBusy=${freeBusyMs}ms avail=${availMs}ms ` +
+        `scheduler=${schedulerMs}ms`,
+      );
       throw new PlanOverflowError(result.overflow);
     }
 
     const itemById = new Map(plan.items.map((i) => [i.id, i]));
+    const tCreate = Date.now();
     const createResults = await Promise.all(
       result.sessions.map(async (session) => {
         const item = itemById.get(session.itemId)!;
@@ -463,12 +500,16 @@ export class PublicationService {
         }
       }),
     );
+    const createMs = Date.now() - tCreate;
     const sessionsFailed = createResults.filter((r) => !r.ok).length;
     const persistEvents = createResults
       .filter((r): r is { ok: true; itemId: string; googleEventId: string } => r.ok)
       .map((r) => ({ weeklyPlanItemId: r.itemId, googleEventId: r.googleEventId }));
+    let persistMs = 0;
     if (persistEvents.length > 0) {
+      const tPersist = Date.now();
       await this.prisma.weeklyPlanItemCalendarEvent.createMany({ data: persistEvents });
+      persistMs = Date.now() - tPersist;
     }
 
     // Persist the scheduler's plan on each item so the /me/home endpoint
@@ -505,7 +546,22 @@ export class PublicationService {
         ]
       : [];
 
+    const tTx = Date.now();
     await this.prisma.$transaction([...placedUpdates, ...overflowUpdate]);
+    const txMs = Date.now() - tTx;
+
+    this.logger.log(
+      `[bench] autoSchedule total=${Date.now() - tTotal}ms · ` +
+      `find=${findMs}ms ` +
+      `delEvents=${deleteEventsMs}ms(n=${existingEvents.length}) ` +
+      `delRows=${deleteRowsMs}ms ` +
+      `freeBusy=${freeBusyMs}ms ` +
+      `avail=${availMs}ms ` +
+      `scheduler=${schedulerMs}ms ` +
+      `createEvents=${createMs}ms(n=${result.sessions.length},failed=${sessionsFailed}) ` +
+      `persistRows=${persistMs}ms ` +
+      `tx=${txMs}ms(updates=${placedUpdates.length + overflowUpdate.length})`,
+    );
 
     return {
       sessionsCreated: result.sessions.length - sessionsFailed,
