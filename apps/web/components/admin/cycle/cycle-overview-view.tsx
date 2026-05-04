@@ -75,11 +75,18 @@ export function CycleOverviewView({ data }: { data: CycleOverviewResponse }) {
         <CycleMembersGrid members={data.members} />
       </section>
 
-      {/* Triage stacks above the heatmap on the left; Activity is one tall
-          column on the right that spans both rows so the admin can scan
-          alerts and the heatmap while the feed stays anchored. */}
+      {/* Left column stacks Engagement ranking → Triage → Heatmap so the
+          admin lands on cohort engagement first; Activity is a tall column
+          on the right anchored across the section. */}
       <section className="grid gap-8 md:grid-cols-[minmax(0,1fr)_320px]">
         <div className="min-w-0 space-y-10">
+          {data.ranking.length > 0 && (
+            <div className="space-y-3">
+              <SectionLabel>Engagement ranking</SectionLabel>
+              <EngagementRankingTable ranking={data.ranking} />
+            </div>
+          )}
+
           {!triage.isLoading && (
             <div className="space-y-6">
               <div className="flex items-baseline justify-between gap-3">
@@ -142,13 +149,6 @@ export function CycleOverviewView({ data }: { data: CycleOverviewResponse }) {
             <SectionLabel>Cohort heatmap · all weeks</SectionLabel>
             <CohortHeatmap weeks={data.heatmap.weeks} rows={data.heatmap.rows} />
           </div>
-
-          {data.ranking.length > 0 && (
-            <div className="space-y-3">
-              <SectionLabel>Engagement ranking</SectionLabel>
-              <EngagementRankingTable ranking={data.ranking} />
-            </div>
-          )}
         </div>
 
         <aside className="space-y-3 md:row-span-1">
