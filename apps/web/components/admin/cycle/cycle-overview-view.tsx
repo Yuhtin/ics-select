@@ -143,10 +143,12 @@ export function CycleOverviewView({ data }: { data: CycleOverviewResponse }) {
             <CohortHeatmap weeks={data.heatmap.weeks} rows={data.heatmap.rows} />
           </div>
 
-          <div className="space-y-3">
-            <SectionLabel>Engagement ranking</SectionLabel>
-            <EngagementRankingTable ranking={data.ranking} />
-          </div>
+          {data.ranking.length > 0 && (
+            <div className="space-y-3">
+              <SectionLabel>Engagement ranking</SectionLabel>
+              <EngagementRankingTable ranking={data.ranking} />
+            </div>
+          )}
         </div>
 
         <aside className="space-y-3 md:row-span-1">
