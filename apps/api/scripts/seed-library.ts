@@ -394,18 +394,18 @@ const ITEMS: ItemSeed[] = [
   },
   {
     title: '10 Key Data Structures We Use Every Day',
-    url: 'https://blog.bytebytego.com/p/ep58-10-key-data-structures-we-use',
+    url: 'https://www.youtube.com/watch?v=ouipSd_5ivQ',
     description:
-      'ByteByteGo — as 10 ED que todo dev bate na semana: array, hashmap, linked list, stack, queue, tree, graph, e mais.',
-    format: 'ARTICLE',
+      'Pequeno resumo de quais estruturas existem, mais um reforço apenas para consolidar quais vamos estudar em breve.',
+    format: 'VIDEO',
     difficulty: 'EASY',
-    estimatedMinutes: 10,
-    // First cross-topic item: primary = array (indexed/keyed family), cover = lists.
-    // Once `tree` and `graph` are populated, add them as covers too.
-    topicSlugs: ['array', 'lists'],
+    estimatedMinutes: 9,
+    // Cross-topic overview: primary = array (foundation everyone hits first),
+    // covers the rest of the families mentioned in the video.
+    topicSlugs: ['array', 'lists', 'hashmap', 'tree', 'graph'],
     tracks: [],
-    source: 'Blog — ByteByteGo',
-    tags: ['concept', 'data-structures', 'overview', 'hashmap'],
+    source: 'YouTube — ByteByteGo',
+    tags: ['concept', 'data-structures', 'overview'],
   },
   {
     title: 'Grokking Data Structures — Arrays (chapter)',
