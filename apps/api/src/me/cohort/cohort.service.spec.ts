@@ -60,7 +60,7 @@ describe('CohortService', () => {
     expect(result.memberCount).toBe(2);
   });
 
-  it('includes sorted ranking with isMe flag when visible', async () => {
+  it('includes sorted top-3 ranking with isMe flag when visible', async () => {
     prisma.cycleMembership.findFirst.mockResolvedValue({
       cycleId: 'c-1',
       cycle: {
@@ -82,18 +82,69 @@ describe('CohortService', () => {
         { userId: 'user-2', user: { id: 'user-2', name: 'Alice', email: 'alice@inteli.edu.br', pictureUrl: null } },
       ],
     } as any);
+    // user-2 (Alice) — 60min DONE_EASY this week
+    // user-1 (Me)    — 30min DONE_EASY this week
     prisma.weeklyPlan.findMany.mockResolvedValue([
-      { id: 'plan-me', userId: 'user-1', items: [{ outcome: 'DONE_EASY' }, { outcome: 'PENDING' }] },
-      { id: 'plan-alice', userId: 'user-2', items: [{ outcome: 'DONE_EASY' }, { outcome: 'DONE_HARD' }] },
+      {
+        id: 'plan-me',
+        userId: 'user-1',
+        items: [
+          {
+            outcome: 'DONE_EASY',
+            completedAt: new Date('2026-04-15T10:00:00Z'),
+            libraryItem: { estimatedMinutes: 30 },
+          },
+        ],
+      },
+      {
+        id: 'plan-alice',
+        userId: 'user-2',
+        items: [
+          {
+            outcome: 'DONE_EASY',
+            completedAt: new Date('2026-04-15T10:00:00Z'),
+            libraryItem: { estimatedMinutes: 60 },
+          },
+        ],
+      },
     ] as any);
     prisma.weeklyPlanItem.findMany.mockResolvedValue([]);
     prisma.weeklyRetro.findMany.mockResolvedValue([]);
 
     const result = await service.getCohort('user-1', new Date('2026-04-17T19:00:00Z'));
     expect(result.ranking).toHaveLength(2);
-    expect(result.ranking![0]!.userId).toBe('user-2');   // Alice: 100%
-    expect(result.ranking![1]!.userId).toBe('user-1');   // Me: 50%
+    expect(result.ranking![0]!.userId).toBe('user-2');   // Alice (60min) → higher score
+    expect(result.ranking![1]!.userId).toBe('user-1');   // Me (30min)
     expect(result.ranking!.find((r) => r.isMe)?.userId).toBe('user-1');
+  });
+
+  it('returns empty ranking when ranking is visible but no member has score > 0', async () => {
+    prisma.cycleMembership.findFirst.mockResolvedValue({
+      cycleId: 'c-1',
+      cycle: {
+        id: 'c-1',
+        name: '2026.1',
+        rankingVisibleToMembers: true,
+        startsAt: new Date('2026-04-01T00:00:00Z'),
+        endsAt: new Date('2026-06-30T00:00:00Z'),
+      },
+    } as any);
+    prisma.cycle.findUnique.mockResolvedValue({
+      id: 'c-1',
+      name: '2026.1',
+      rankingVisibleToMembers: true,
+      startsAt: new Date('2026-04-01T00:00:00Z'),
+      endsAt: new Date('2026-06-30T00:00:00Z'),
+      memberships: [
+        { userId: 'user-1', user: { id: 'user-1', name: 'Me', email: 'me@inteli.edu.br', pictureUrl: null } },
+      ],
+    } as any);
+    prisma.weeklyPlan.findMany.mockResolvedValue([]);
+    prisma.weeklyPlanItem.findMany.mockResolvedValue([]);
+    prisma.weeklyRetro.findMany.mockResolvedValue([]);
+
+    const result = await service.getCohort('user-1', new Date('2026-04-17T19:00:00Z'));
+    expect(result.ranking).toEqual([]);
   });
 
   it('builds feed from recent item outcomes + retros (last 24h)', async () => {

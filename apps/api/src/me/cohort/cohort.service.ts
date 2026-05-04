@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { resolveActiveMembership } from '../../common/cycle/active-cycle';
-import { type ItemOutcome, isPositiveOutcome, POSITIVE_OUTCOMES } from '@ics-select/shared';
+import { type ItemOutcome, isPositiveOutcome } from '@ics-select/shared';
+import { computeMemberRanking, type MemberRankingUser } from './member-ranking';
 
 type CohortEvent = {
   id: string;
@@ -16,9 +17,7 @@ type MemberRank = {
   userId: string;
   name: string;
   pictureUrl: string | null;
-  percent: number;
-  done: number;
-  total: number;
+  score: number;
   isMe: boolean;
 };
 
@@ -159,34 +158,36 @@ export class CohortService {
         where: {
           userId: { in: userIds },
           status: 'PUBLISHED',
-          weekStart: { gte: weekStart, lte: weekEnd },
+          weekStart: { gte: cycle.startsAt, lte: now },
         },
-        include: { items: { select: { outcome: true } } },
+        include: {
+          items: {
+            select: {
+              outcome: true,
+              completedAt: true,
+              libraryItem: { select: { estimatedMinutes: true } },
+            },
+          },
+        },
       });
 
-      const byUser = new Map<string, { done: number; total: number }>();
+      const itemsByUser = new Map<string, MemberRankingUser['items']>();
       for (const plan of plans) {
-        const tally = byUser.get(plan.userId) ?? { done: 0, total: 0 };
-        tally.total += (plan as any).items.length;
-        tally.done += (plan as any).items.filter((i: any) => POSITIVE_OUTCOMES.has(i.outcome)).length;
-        byUser.set(plan.userId, tally);
+        const bucket = itemsByUser.get(plan.userId) ?? [];
+        bucket.push(...((plan as any).items as MemberRankingUser['items']));
+        itemsByUser.set(plan.userId, bucket);
       }
 
-      ranking = (cycle as any).memberships
-        .map((m: any) => {
-          const tally = byUser.get(m.userId) ?? { done: 0, total: 0 };
-          const percent = tally.total === 0 ? 0 : Math.round((tally.done / tally.total) * 100);
-          return {
-            userId: m.userId,
-            name: m.user.name,
-            pictureUrl: m.user.pictureUrl,
-            percent,
-            done: tally.done,
-            total: tally.total,
-            isMe: m.userId === userId,
-          };
-        })
-        .sort((a: MemberRank, b: MemberRank) => b.percent - a.percent);
+      const rankingInput: MemberRankingUser[] = (cycle as any).memberships.map(
+        (m: any) => ({
+          userId: m.userId,
+          name: m.user.name,
+          pictureUrl: m.user.pictureUrl ?? null,
+          items: itemsByUser.get(m.userId) ?? [],
+        }),
+      );
+
+      ranking = computeMemberRanking(rankingInput, weekStart, weekEnd, userId);
     }
 
     const members: CohortMember[] = (cycle as any).memberships
