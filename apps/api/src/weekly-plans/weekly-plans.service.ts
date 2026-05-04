@@ -354,81 +354,18 @@ export class WeeklyPlansService {
     if (item.weeklyPlan.userId !== userId) {
       throw new ForbiddenException("Forbidden: cannot change someone else's item");
     }
-
-    const now = new Date();
-
-    if (input.outcome === 'SKIPPED') {
-      if (!isItemSkippable(item.libraryItem)) {
-        throw new ForbiddenException('Only foundations or video items can be skipped');
-      }
-      if (item.calendarEvents.length > 0) {
-        await Promise.all(
-          item.calendarEvents.map((ev) =>
-            this.calendar.deleteEvent(userId, ev.googleEventId).catch((err) => {
-              this.logger.warn(
-                `calendar.deleteEvent failed on SKIPPED · user=${userId} item=${item.id} event=${ev.googleEventId} · ${String(err)}`,
-              );
-            }),
-          ),
-        );
-        await this.prisma.weeklyPlanItemCalendarEvent.deleteMany({
-          where: { weeklyPlanItemId: item.id },
-        });
-      }
-    } else if (
-      input.outcome !== 'PENDING' &&
-      item.scheduledAt &&
-      item.scheduledAt.getTime() > now.getTime() &&
-      item.calendarEvents.length > 0
-    ) {
-      // Member completed early. Move the Calendar block to "now" so the future
-      // slot is freed up — the admin can fit more work in the freed window,
-      // and the member's calendar reflects when they actually did the study.
-      // Also corrects drift if the member moved the event manually in Google
-      // (we don't watch Calendar for changes, so DB scheduledAt can lag).
-      const totalMinutes =
-        item.scheduledMinutes ?? allocatedMinutes(item.libraryItem.estimatedMinutes, item.libraryItem.format);
-      const SLOT_MS = 15 * 60 * 1000;
-      const endMs = Math.ceil(now.getTime() / SLOT_MS) * SLOT_MS;
-      const startMs = endMs - totalMinutes * 60 * 1000;
-      const newStart = new Date(startMs);
-      const newEnd = new Date(endMs);
-
-      // Collapse multi-chunk items into one event at now-slot — keeping the
-      // first event, dropping the rest. Most items are single-chunk anyway.
-      const [first, ...rest] = item.calendarEvents;
-      if (first) {
-        await this.calendar
-          .rescheduleEvent(userId, first.googleEventId, newStart, newEnd)
-          .catch((err) => {
-            this.logger.warn(
-              `calendar.rescheduleEvent failed on outcome=${input.outcome} · user=${userId} item=${item.id} event=${first.googleEventId} · ${String(err)}`,
-            );
-          });
-      }
-      if (rest.length > 0) {
-        await Promise.all(
-          rest.map((ev) =>
-            this.calendar.deleteEvent(userId, ev.googleEventId).catch((err) => {
-              this.logger.warn(
-                `calendar.deleteEvent failed on outcome collapse · user=${userId} item=${item.id} event=${ev.googleEventId} · ${String(err)}`,
-              );
-            }),
-          ),
-        );
-        await this.prisma.weeklyPlanItemCalendarEvent.deleteMany({
-          where: { id: { in: rest.map((r) => r.id) } },
-        });
-      }
-      await this.prisma.weeklyPlanItem.update({
-        where: { id: itemId },
-        data: { scheduledAt: newStart, scheduledMinutes: totalMinutes },
-      });
+    if (input.outcome === 'SKIPPED' && !isItemSkippable(item.libraryItem)) {
+      throw new ForbiddenException('Only foundations or video items can be skipped');
     }
 
+    // Apply the outcome immediately — this is what the user actually clicked.
+    // Calendar reconciliation (delete events on SKIPPED, reschedule-to-now on
+    // early completion) is fire-and-forget so the member doesn't wait on
+    // Google round-trips. Errors there were already swallowed (warn-only),
+    // so backgrounding doesn't change the contract. See
+    // docs/calendar-durable-queue.md for the planned move to a Redis queue.
     const completed = input.outcome !== 'PENDING';
-
-    return this.prisma.weeklyPlanItem.update({
+    const updated = await this.prisma.weeklyPlanItem.update({
       where: { id: itemId },
       data: {
         outcome: input.outcome,
@@ -436,6 +373,101 @@ export class WeeklyPlansService {
         actualMinutes: input.actualMinutes,
         completedAt: completed ? new Date() : null,
       },
+    });
+
+    void this.reconcileCalendarAfterOutcome(item, input.outcome, userId).catch((err) => {
+      this.logger.warn(
+        `calendar reconcile failed · user=${userId} item=${item.id} outcome=${input.outcome} · ${String(err)}`,
+      );
+    });
+
+    return updated;
+  }
+
+  /**
+   * Background calendar reconciliation triggered by an outcome change.
+   * - SKIPPED → delete every calendar event tied to the item (and its DB rows).
+   * - completed-early (non-PENDING outcome with `scheduledAt` still in the
+   *   future) → collapse multi-chunk events into one and reschedule to "now",
+   *   freeing the future slot.
+   * Returns void; callers MUST `void` this and never await — outcome write
+   * already returned to the user. Each Google call has its own catch so a
+   * partial failure doesn't abort the rest.
+   */
+  private async reconcileCalendarAfterOutcome(
+    item: {
+      id: string;
+      scheduledAt: Date | null;
+      scheduledMinutes: number | null;
+      libraryItem: { estimatedMinutes: number; format: string };
+      calendarEvents: ReadonlyArray<{ id: string; googleEventId: string }>;
+    },
+    outcome: ItemOutcome,
+    userId: string,
+  ): Promise<void> {
+    const now = new Date();
+
+    if (outcome === 'SKIPPED') {
+      if (item.calendarEvents.length === 0) return;
+      await Promise.all(
+        item.calendarEvents.map((ev) =>
+          this.calendar.deleteEvent(userId, ev.googleEventId).catch((err) => {
+            this.logger.warn(
+              `calendar.deleteEvent failed on SKIPPED · user=${userId} item=${item.id} event=${ev.googleEventId} · ${String(err)}`,
+            );
+          }),
+        ),
+      );
+      await this.prisma.weeklyPlanItemCalendarEvent.deleteMany({
+        where: { weeklyPlanItemId: item.id },
+      });
+      return;
+    }
+
+    if (
+      outcome === 'PENDING' ||
+      !item.scheduledAt ||
+      item.scheduledAt.getTime() <= now.getTime() ||
+      item.calendarEvents.length === 0
+    ) {
+      return;
+    }
+
+    const totalMinutes =
+      item.scheduledMinutes ?? allocatedMinutes(item.libraryItem.estimatedMinutes, item.libraryItem.format);
+    const SLOT_MS = 15 * 60 * 1000;
+    const endMs = Math.ceil(now.getTime() / SLOT_MS) * SLOT_MS;
+    const startMs = endMs - totalMinutes * 60 * 1000;
+    const newStart = new Date(startMs);
+    const newEnd = new Date(endMs);
+
+    const [first, ...rest] = item.calendarEvents;
+    if (first) {
+      await this.calendar
+        .rescheduleEvent(userId, first.googleEventId, newStart, newEnd)
+        .catch((err) => {
+          this.logger.warn(
+            `calendar.rescheduleEvent failed on outcome=${outcome} · user=${userId} item=${item.id} event=${first.googleEventId} · ${String(err)}`,
+          );
+        });
+    }
+    if (rest.length > 0) {
+      await Promise.all(
+        rest.map((ev) =>
+          this.calendar.deleteEvent(userId, ev.googleEventId).catch((err) => {
+            this.logger.warn(
+              `calendar.deleteEvent failed on outcome collapse · user=${userId} item=${item.id} event=${ev.googleEventId} · ${String(err)}`,
+            );
+          }),
+        ),
+      );
+      await this.prisma.weeklyPlanItemCalendarEvent.deleteMany({
+        where: { id: { in: rest.map((r) => r.id) } },
+      });
+    }
+    await this.prisma.weeklyPlanItem.update({
+      where: { id: item.id },
+      data: { scheduledAt: newStart, scheduledMinutes: totalMinutes },
     });
   }
 }

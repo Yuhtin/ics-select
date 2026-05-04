@@ -4,6 +4,10 @@ import { WeeklyPlansService } from './weekly-plans.service';
 
 describe('WeeklyPlansService.setItemOutcome — SKIPPED', () => {
   const calendar = { deleteEvent: jest.fn() };
+  // Calendar reconciliation runs fire-and-forget after the outcome update
+  // returns, so assertions on calendar.deleteEvent / deleteMany must await
+  // a microtask flush. Same pattern as the `remove` tests below.
+  const flushMicrotasks = () => new Promise((r) => setImmediate(r));
 
   const buildPrisma = (item: {
     planId: string;
@@ -93,6 +97,7 @@ describe('WeeklyPlansService.setItemOutcome — SKIPPED', () => {
     });
     const service = build(prisma);
     await service.setItemOutcome('item-1', 'u1', { outcome: 'SKIPPED', actualMinutes: null });
+    await flushMicrotasks();
     expect(calendar.deleteEvent).toHaveBeenCalledWith('u1', 'evt-99');
     expect(calendar.deleteEvent).toHaveBeenCalledWith('u1', 'evt-100');
     expect(prisma.weeklyPlanItemCalendarEvent.deleteMany).toHaveBeenCalledWith({
@@ -113,6 +118,7 @@ describe('WeeklyPlansService.setItemOutcome — SKIPPED', () => {
     await expect(
       service.setItemOutcome('item-1', 'u1', { outcome: 'SKIPPED', actualMinutes: null }),
     ).resolves.toBeDefined();
+    await flushMicrotasks();
     expect(prisma.weeklyPlanItemCalendarEvent.deleteMany).toHaveBeenCalled();
   });
 });
