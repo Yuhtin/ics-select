@@ -2,7 +2,7 @@
 import { clsx } from 'clsx';
 import { useMeCohort } from '../../../../lib/queries/me-cohort';
 import { CohortFeed } from '../../../../components/member/cohort-feed';
-import { CohortRanking } from '../../../../components/member/cohort-ranking';
+import { CohortSpotlight } from '../../../../components/member/cohort-spotlight';
 import { CohortRoster } from '../../../../components/member/cohort-roster';
 import { Eyebrow } from '../../../../components/ui/eyebrow';
 import { SectionLabel } from '../../../../components/ui/section-label';
@@ -37,16 +37,16 @@ export default function MeCohortPage() {
         )}
       >
         <div className="min-w-0 space-y-10 md:order-1">
+          {hasRanking && (
+            <section>
+              <CohortSpotlight ranking={data.ranking!} />
+            </section>
+          )}
+
           <section className="space-y-4">
             <SectionLabel>Activity · last 7d</SectionLabel>
             <CohortFeed feed={data.feed} />
           </section>
-
-          {hasRanking && (
-            <section>
-              <CohortRanking ranking={data.ranking!} weekEndsAt={data.weekEndsAt} />
-            </section>
-          )}
         </div>
 
         {hasMembers && (

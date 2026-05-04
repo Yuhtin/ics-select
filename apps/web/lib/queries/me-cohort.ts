@@ -15,9 +15,7 @@ export type MemberRank = {
   userId: string;
   name: string;
   pictureUrl: string | null;
-  percent: number;
-  done: number;
-  total: number;
+  score: number;
   isMe: boolean;
 };
 
