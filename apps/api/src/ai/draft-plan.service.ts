@@ -51,7 +51,10 @@ export type LadderEntry = {
  * after the focus). If every topic is sólido, the last topic becomes focus.
  *
  * Coverage map is keyed by topic LABEL (matches the existing topicCoverage
- * shape in DraftPlanService.run).
+ * shape in DraftPlanService.run). The `done` count reflects whatever
+ * `isPositiveOutcome` from `@ics-select/shared` returns true for —
+ * DONE_EASY, DONE_HARD, DOUBTS, and SKIPPED. SKIPPED counts because the
+ * member chose to skip ("já sabia"); DOUBTS counts because the work was done.
  */
 export function computeLadder(
   topics: Array<{ slug: string; label: string; order: number }>,

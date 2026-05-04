@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **ICS Select** is a private platform for the Inteli Consulting Society's selective program. It prepares students for technical interviews across the full spectrum of tech careers, not just Big Tech. The canonical scope is the `Track` enum on `User`: `BIG_TECH | CONSULTING_TECH | COMPETITIVE_PROGRAMMING | STARTUP | OTHER` — a member who is grinding ICPC and a member who wants Stripe are both in-scope. **Never reduce the program's framing to "Big Techs only" in copy, metadata, OG tags, or member-facing UI.** The landing uses "tech de elite" as the umbrella chip-word; the bigtechs section lists representative companies (Apple/Google/Meta/Netflix/LinkedIn + Discord/Stripe/xAI/Anthropic/OpenAI) but explicitly labels them as "alvos", not the whole scope.
 
-The admin (`Diretor Educacional`) builds personalized weekly study plans from a searchable library of materials; selected members (≤12 per cycle) follow the plans, auto-schedule study sessions against their Google Calendar, mark items with one of five outcomes (`Nailed it` / `Got it (hard)` / `Had doubts` / `Stuck` / `Not yet`), and the admin sees cohort progress + AI-assisted insights.
+The admin (`Diretor Educacional`) builds personalized weekly study plans from a searchable library of materials; selected members (≤12 per cycle) follow the plans, auto-schedule study sessions against their Google Calendar, mark items with one of six outcomes (`Nailed it` / `Got it (hard)` / `Had doubts` / `Stuck` / `Skipped (já sabia)` / `Not yet`), and the admin sees cohort progress + AI-assisted insights.
 
 Full product spec lives at `docs/superpowers/specs/2026-04-11-ics-select-design.md`. Per-phase implementation plans live in `docs/superpowers/plans/`.
 
@@ -141,6 +141,17 @@ There is always exactly one "active cycle" at a time, and the rule is **not** "l
 
 There is also `resolveActiveMembership(prisma, userId)` for the member-scoped equivalent and `computeWeekPosition(cycle, now)` for "week X of N · Y days until week ends" labels. Any new endpoint that answers "which cycle is the user / landing / admin looking at right now?" must go through these helpers — hand-rolled `findFirst({ status: 'ACTIVE', orderBy: { startsAt: 'desc' } })` is wrong and will regress in the month between two cycles.
 
+### Item outcomes — what counts as "done"
+
+`WeeklyPlanItem.outcome` is `ItemOutcome` (`PENDING | DONE_EASY | DONE_HARD | DOUBTS | STUCK | SKIPPED`). The single source of truth for "is this item done?" is `isPositiveOutcome(o)` from `@ics-select/shared/domain/outcome`. It returns `true` for **four** outcomes:
+
+- `DONE_EASY` — nailed it.
+- `DONE_HARD` — got it but struggled.
+- `DOUBTS` — finished, wants to revisit later (the work *was* done; the doubt is about future depth).
+- `SKIPPED` — member chose to skip because they already knew it / didn't need to study. Counts as done.
+
+`PENDING` and `STUCK` are the only non-positive outcomes. Cohort progress, weekly completion %, topic coverage, AI ladder discipline (`computeLadder` in draft-plan), and the home "all done" state all key off `isPositiveOutcome` — never reimplement the check by listing values inline. If you find yourself writing `outcome === 'DONE_EASY' || outcome === 'DONE_HARD'`, you're shrinking the positive set without justification.
+
 ### Weekly plan flow
 
 The critical path is `apps/api/src/weekly-plans/` + `apps/api/src/scheduler/`. `WeeklyPlansService` handles CRUD on plan drafts; `PublicationService.publish` wires the scheduler + Google Calendar:
@@ -265,7 +276,7 @@ Platform colors appear as **3px vertical stripes** before item titles in list ro
 
 - 3D map (`components/member/map-3d/`) and 2D map (`components/member/map-2d/`) — learning-path metaphor replaced by daily list + cohort feed.
 - `StudySession` entity — progress tracked on `WeeklyPlanItem.outcome`; Google Calendar events are source-of-truth for time blocks via `ICS ID:` markers in the description.
-- Legacy `status + stuck + difficultyRating` fields on `WeeklyPlanItem` — unified as `ItemOutcome` enum (`PENDING | DONE_EASY | DONE_HARD | DOUBTS | STUCK`).
+- Legacy `status + stuck + difficultyRating` fields on `WeeklyPlanItem` — unified as `ItemOutcome` enum (`PENDING | DONE_EASY | DONE_HARD | DOUBTS | STUCK | SKIPPED`).
 
 ## Conventions worth preserving
 

@@ -13,7 +13,7 @@ Caso real: Cauan (calouro, ~2 semanas no programa) recebeu sugestão de Trees+Le
 
 ## Decisões travadas
 
-1. **Base sólida = ≥3 itens com outcome positivo** (`DONE_EASY` ou `DONE_HARD`) por tópico.
+1. **Base sólida = ≥3 itens com outcome positivo** por tópico, conforme `isPositiveOutcome` (`DONE_EASY`, `DONE_HARD`, `DOUBTS`, `SKIPPED`). `SKIPPED` conta porque o membro avaliou que já sabia / não precisava estudar; `DOUBTS` conta porque o trabalho foi feito (a dúvida é sobre profundidade futura).
 2. **Brief do admin sempre override.** Se brief pede tópico bloqueado, IA segue o brief — admin tem contexto que a IA não tem.
 3. **Sem heurística de tenure.** Calouro é o default (maioria dos membros). Veterano "desbloqueia" tópicos avançados naturalmente via DONE counts.
 4. **Coverage scope = ciclo atual.** Mantém o comportamento existente de `coverageSource`.
