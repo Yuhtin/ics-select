@@ -36,7 +36,8 @@ export function TopbarMember() {
   const pathname = usePathname();
   const { data: retro } = useMeRetroCurrent();
   const { user, logout } = useAuth();
-  const retroOpen = retro?.open === true && !retro.retro;
+  const retroOpen = retro?.open === true;
+  const retroLabel = retro?.retro ? 'Update retro' : 'Retro open';
   return (
     <header className="sticky top-0 z-40 hidden border-b border-border-token/60 bg-bg/80 backdrop-blur md:block">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6">
@@ -78,7 +79,7 @@ export function TopbarMember() {
               href="/me/retro"
               className="inline-flex h-[22px] items-center rounded-pill bg-reflect-soft px-2.5 font-mono text-[10px] font-semibold uppercase tracking-eyebrow text-reflect hover:bg-reflect-soft/80"
             >
-              Retro open
+              {retroLabel}
             </Link>
           )}
           <ThemeToggle />
