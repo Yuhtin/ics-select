@@ -50,21 +50,27 @@ const TOPICS: TopicSeed[] = [
   // Entry point for any member before starting their track-specific ladder.
   { slug: 'foundations', label: 'Foundations', order: -1 },
 
-  // Algorithms & Data Structures (order 0–12)
+  // Algorithms & Data Structures (order 0–14)
+  // Order reflects pedagogical flow: foundational DS first (array/hashmap/lists),
+  // then algorithmic concepts that come up in interview reasoning (sorting,
+  // searching, recursion), then hierarchical structures (tree/trie/heap/graph),
+  // then advanced patterns. Sorting/Searching come early because they're
+  // conceitos-chave (Big-O, estabilidade, "quando ordenar?") mesmo sem LC heavy.
+  // Reordered 2026-05-04 from the layout that left hashmap at 13.
   { slug: 'array', label: 'Array', order: 0 },
-  { slug: 'lists', label: 'Lists', order: 1 },
-  { slug: 'tree', label: 'Tree', order: 2 },
-  { slug: 'trie', label: 'Trie', order: 3 },
-  { slug: 'heap', label: 'Heap', order: 4 },
-  { slug: 'graph', label: 'Graph', order: 5 },
-  { slug: 'sorting', label: 'Sorting', order: 6 },
-  { slug: 'searching', label: 'Searching', order: 7 },
-  { slug: 'recursion', label: 'Recursion & Backtracking', order: 8 },
-  { slug: 'dp', label: 'Dynamic Programming', order: 9 },
-  { slug: 'greedy', label: 'Greedy', order: 10 },
-  { slug: 'bit-manipulation', label: 'Bit Manipulation', order: 11 },
-  { slug: 'math', label: 'Math (foundations for ML/DS)', order: 12 },
-  { slug: 'hashmap', label: 'Hash Map', order: 13 },
+  { slug: 'hashmap', label: 'Hash Map', order: 1 },
+  { slug: 'lists', label: 'Lists', order: 2 },
+  { slug: 'sorting', label: 'Sorting', order: 3 },
+  { slug: 'searching', label: 'Searching', order: 4 },
+  { slug: 'recursion', label: 'Recursion & Backtracking', order: 5 },
+  { slug: 'tree', label: 'Tree', order: 6 },
+  { slug: 'trie', label: 'Trie', order: 7 },
+  { slug: 'heap', label: 'Heap', order: 8 },
+  { slug: 'graph', label: 'Graph', order: 9 },
+  { slug: 'dp', label: 'Dynamic Programming', order: 10 },
+  { slug: 'greedy', label: 'Greedy', order: 11 },
+  { slug: 'bit-manipulation', label: 'Bit Manipulation', order: 12 },
+  { slug: 'math', label: 'Math (foundations for ML/DS)', order: 13 },
   { slug: 'data-science', label: 'Data Science & ML', order: 14 },
 
   // Fundamentos de Engenharia (order 20–27) — universais, tracks múltiplas
