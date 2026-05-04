@@ -12,15 +12,18 @@ export function chunkItems(items: ItemInput[], pref: number): Chunk[] {
   const chunks: Chunk[] = [];
   for (const item of items) {
     let remaining = item.estimatedMinutes;
+    let seq = 0;
     while (remaining > 0) {
       const size = Math.min(remaining, pref);
       chunks.push({
         itemId: item.id,
         order: item.order,
+        seq,
         minutes: size,
         isResidue: size < pref,
       });
       remaining -= size;
+      seq += 1;
     }
   }
   return chunks;

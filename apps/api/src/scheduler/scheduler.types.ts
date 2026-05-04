@@ -34,10 +34,7 @@ export type PlannedSession = {
 export type OverflowChunk = { itemId: string; minutesRequired: number };
 
 export type SchedulerDiagnostics = {
-  phase1Cost: number;
-  finalCost: number;
-  nodesExplored: number;
-  timedOut: boolean;
+  cost: number;
   durationMs: number;
 };
 
@@ -58,7 +55,8 @@ export type EffectiveInterval = {
 
 export type Chunk = {
   itemId: string;
-  order: number;
+  order: number;       // item.order — hard placement constraint
+  seq: number;         // 0-based index within the item's chunk sequence
   minutes: number;
   isResidue: boolean;  // true iff this chunk is < preferredSessionMinutes AND is a tail chunk
 };

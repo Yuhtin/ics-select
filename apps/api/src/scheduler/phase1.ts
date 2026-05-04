@@ -8,20 +8,25 @@ import type {
 const BUFFER_MINUTES = 10;
 
 type IntervalState = {
-  idx: number;
-  cursor: number;      // next session start offset within interval (includes inter-session buffers)
-  usedMinutes: number; // pure study content placed (excludes buffers) — used for capacity check
+  cursorOffset: number; // next free offset within interval (includes inter-session buffer)
+  usedMinutes: number;  // pure study content placed (excludes buffers)
 };
 
 /**
- * Phase 1: First-Fit-Decreasing greedy construction.
+ * Order-strict greedy placement.
  *
- * Rank candidate (day, interval) placements by:
- *   1. dayLoad[day] asc          — prefer least-loaded day (balance)
- *   2. |interval_size - chunk_size| asc — smallest-fit wins (preserves big slots)
- *   3. interval_start asc        — deterministic tiebreak
+ * Hard constraint: chunks are placed in strict (item.order, seq) order, and
+ * each placement starts at or after the wall-clock end of the previous one.
+ * Within that constraint, candidates are scored to pack the week tightly:
  *
- * Rule iii: an interval is unusable iff interval.size < pref AND slot.size >= pref.
+ *   1. placement wall-clock asc        — earliest first; never skip capacity.
+ *   2. residue-in-big-slot asc         — avoid burning a big slot with a small chunk.
+ *   3. |interval_size - chunk_size| asc — prefer tight fit.
+ *   4. interval_start asc              — deterministic tiebreak.
+ *
+ * Rule iii (preserved): an interval is unusable iff
+ *   interval.size < pref AND slot.size >= pref
+ * (i.e., a busy block carved a sub-pref remnant out of a big slot).
  */
 export function phase1(
   chunks: Chunk[],
@@ -30,55 +35,84 @@ export function phase1(
   pref: number,
 ): Solution {
   const ordered = [...chunks].sort((a, b) =>
-    b.minutes - a.minutes || a.order - b.order,
+    a.order - b.order || a.seq - b.seq,
   );
 
-  const states: IntervalState[] = intervals.map((iv, idx) => ({
-    idx,
-    cursor: 0,
+  const states: IntervalState[] = intervals.map(() => ({
+    cursorOffset: 0,
     usedMinutes: 0,
   }));
   const dayLoad = [0, 0, 0, 0, 0, 0, 0];
+
+  // Wall-clock cursor as minute-of-week. Initialized below the earliest possible
+  // placement so the first chunk is unconstrained.
+  let cursorMOW = -1;
 
   const placements: Placement[] = [];
   const unplaced: Chunk[] = [];
 
   for (const chunk of ordered) {
-    type Cand = { idx: number; score: [number, number, number] };
+    type Cand = {
+      idx: number;
+      offset: number;
+      placementMOW: number;
+      score: [number, number, number, number];
+    };
     const candidates: Cand[] = [];
-    for (const st of states) {
-      const iv = intervals[st.idx]!;
-      // Usability (rule iii)
-      if (iv.endMinute - iv.startMinute < pref && iv.slotSize >= pref) continue;
-      if (iv.endMinute - iv.startMinute - st.usedMinutes < chunk.minutes) continue;
+
+    for (let idx = 0; idx < intervals.length; idx++) {
+      const iv = intervals[idx]!;
+      const intervalSize = iv.endMinute - iv.startMinute;
+
+      // Rule iii.
+      if (intervalSize < pref && iv.slotSize >= pref) continue;
+
+      const intervalStartMOW = iv.dayIdx * 1440 + iv.startMinute;
+
+      // Earliest offset honoring (a) what's already placed in this interval and
+      // (b) the global wall-clock cursor (no chunk may start before the previous
+      // chunk's end).
+      const minOffsetByCursor = Math.max(0, cursorMOW - intervalStartMOW);
+      const offset = Math.max(states[idx]!.cursorOffset, minOffsetByCursor);
+
+      if (offset + chunk.minutes > intervalSize) continue;
+
       const cap = caps[iv.dayIdx];
       if (cap !== null && cap !== undefined && dayLoad[iv.dayIdx]! + chunk.minutes > cap) continue;
-      const intervalSize = iv.endMinute - iv.startMinute;
+
+      const placementMOW = intervalStartMOW + offset;
+      const residueInBig = chunk.isResidue && iv.slotSize >= pref ? 1 : 0;
       candidates.push({
-        idx: st.idx,
-        score: [dayLoad[iv.dayIdx]!, Math.abs(intervalSize - chunk.minutes), iv.startMinute],
+        idx,
+        offset,
+        placementMOW,
+        score: [placementMOW, residueInBig, Math.abs(intervalSize - chunk.minutes), iv.startMinute],
       });
     }
+
     if (candidates.length === 0) {
       unplaced.push(chunk);
       continue;
     }
+
     candidates.sort((a, b) => {
-      for (let i = 0; i < 3; i++) if (a.score[i]! !== b.score[i]!) return a.score[i]! - b.score[i]!;
+      for (let i = 0; i < 4; i++) if (a.score[i]! !== b.score[i]!) return a.score[i]! - b.score[i]!;
       return 0;
     });
     const pick = candidates[0]!;
-    const st = states.find((s) => s.idx === pick.idx)!;
     const iv = intervals[pick.idx]!;
+    const intervalSize = iv.endMinute - iv.startMinute;
+    const st = states[pick.idx]!;
+
     placements.push({
       chunk,
       intervalIdx: pick.idx,
-      offsetInInterval: st.cursor,
+      offsetInInterval: pick.offset,
     });
     st.usedMinutes += chunk.minutes;
-    // cursor advances by content + buffer so the next session starts after a gap
-    st.cursor = Math.min(st.cursor + chunk.minutes + BUFFER_MINUTES, iv.endMinute - iv.startMinute);
+    st.cursorOffset = Math.min(pick.offset + chunk.minutes + BUFFER_MINUTES, intervalSize);
     dayLoad[iv.dayIdx]! += chunk.minutes;
+    cursorMOW = pick.placementMOW + chunk.minutes;
   }
 
   return { placements, unplaced };

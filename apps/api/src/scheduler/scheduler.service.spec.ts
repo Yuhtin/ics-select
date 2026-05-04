@@ -29,7 +29,7 @@ function input(overrides: Partial<SchedulerInput> = {}): SchedulerInput {
 describe('SchedulerService.plan — canonical cases', () => {
   const svc = new SchedulerService();
 
-  it('1. consolidates 3h of work into the larger of two slots on the same day', () => {
+  it('1. packs 3h of ordered work forward onto the same day, respecting order', () => {
     const result = svc.plan(
       input({
         availability: {
@@ -50,15 +50,14 @@ describe('SchedulerService.plan — canonical cases', () => {
     );
     expect(result.overflow).toHaveLength(0);
     expect(result.sessions).toHaveLength(3);
-    // All sessions at or after 21:00 BRT = 00:00 UTC next day (Apr 14)
-    for (const s of result.sessions) {
-      expect(s.scheduledAt.getTime()).toBeGreaterThanOrEqual(
-        new Date('2026-04-14T00:00:00Z').getTime(),
-      );
-    }
+    // Strict order in time: a < b < c.
+    const t = (id: string) =>
+      result.sessions.find((s) => s.itemId === id)!.scheduledAt.getTime();
+    expect(t('a')).toBeLessThan(t('b'));
+    expect(t('b')).toBeLessThan(t('c'));
   });
 
-  it('2. distributes evenly across 5 weekdays when capacity is abundant', () => {
+  it('2. packs ordered items forward when capacity is abundant', () => {
     const result = svc.plan(
       input({
         availability: {
@@ -71,8 +70,14 @@ describe('SchedulerService.plan — canonical cases', () => {
       }),
     );
     expect(result.overflow).toHaveLength(0);
-    const daysHit = new Set(result.sessions.map((s) => s.scheduledAt.getUTCDate()));
-    expect(daysHit.size).toBeGreaterThanOrEqual(3);
+    expect(result.sessions).toHaveLength(3);
+    // Order is preserved; the scheduler packs forward, so multiple items can
+    // share the earliest day until that day's slot is exhausted.
+    const ts = result.sessions
+      .slice()
+      .sort((a, b) => a.scheduledAt.getTime() - b.scheduledAt.getTime())
+      .map((s) => s.itemId);
+    expect(ts).toEqual(['i1', 'i2', 'i3']);
   });
 
   it('3. cap overrides slot capacity', () => {
@@ -178,7 +183,7 @@ describe('SchedulerService.plan — canonical cases', () => {
     expect(onMonday).toHaveLength(0);
   });
 
-  it('9. solver diagnostics are returned for a patological-size input', () => {
+  it('9. diagnostics are returned for a large input', () => {
     const slots: AvailabilitySlotInput[] = [];
     for (let d = 0; d < 7; d++) slots.push({ dayOfWeek: d, startMinute: 480, endMinute: 720 });
     const items = [];
@@ -191,7 +196,38 @@ describe('SchedulerService.plan — canonical cases', () => {
     }));
     expect(result.sessions.length + result.overflow.length).toBeGreaterThan(0);
     expect(result.diagnostics).toBeDefined();
-    expect(typeof result.diagnostics.timedOut).toBe('boolean');
+    expect(typeof result.diagnostics.cost).toBe('number');
+    expect(typeof result.diagnostics.durationMs).toBe('number');
+  });
+
+  it('11. hard-order regression: short items never jump ahead of earlier-order long items', () => {
+    // Mirrors Cauan's plan cmor7o4s where order=4 (8min) was scheduled on Mon
+    // before order=2 (13min) and order=3 (18min). Under hard ordering, every
+    // item must start strictly before the next one in admin-defined order.
+    const result = svc.plan(
+      input({
+        availability: {
+          slots: [0, 1, 2, 3, 4].map((d) => ({ dayOfWeek: d, startMinute: 480, endMinute: 600 })),
+          caps: NO_CAPS,
+          preferredSessionMinutes: 60,
+          timezone: 'America/Sao_Paulo',
+        },
+        items: [
+          { id: 'i0', estimatedMinutes: 60, order: 0 },
+          { id: 'i1', estimatedMinutes: 60, order: 1 },
+          { id: 'i2', estimatedMinutes: 13, order: 2 },
+          { id: 'i3', estimatedMinutes: 18, order: 3 },
+          { id: 'i4', estimatedMinutes: 8,  order: 4 },
+        ],
+      }),
+    );
+    expect(result.overflow).toHaveLength(0);
+    const ts = ['i0', 'i1', 'i2', 'i3', 'i4'].map((id) =>
+      result.sessions.find((s) => s.itemId === id)!.scheduledAt.getTime(),
+    );
+    for (let i = 0; i < ts.length - 1; i++) {
+      expect(ts[i]!).toBeLessThan(ts[i + 1]!);
+    }
   });
 
   it('10. deterministic: same input → byte-equal session list', () => {

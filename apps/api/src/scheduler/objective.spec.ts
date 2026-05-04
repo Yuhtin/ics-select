@@ -2,7 +2,7 @@ import { computeCost, WEIGHTS } from './objective';
 import type { Chunk, EffectiveInterval, Solution } from './scheduler.types';
 
 function chunk(id: string, minutes: number, order: number, isResidue = false): Chunk {
-  return { itemId: id, order, minutes, isResidue };
+  return { itemId: id, order, seq: 0, minutes, isResidue };
 }
 function interval(idx: number, start: number, end: number, slotSize: number): EffectiveInterval {
   return { dayIdx: idx, startMinute: start, endMinute: end, slotSize };
@@ -51,22 +51,6 @@ describe('computeCost', () => {
     };
     const cost = computeCost(sol, intervals, pref);
     expect(cost).toBeGreaterThanOrEqual(WEIGHTS.SMALL_SLOT_WEIGHT * 30);
-  });
-
-  it('penalizes order inversion (higher-order chunk scheduled earlier)', () => {
-    const intervals = [
-      interval(0, 480, 600, 120), // Monday 08-10
-      interval(1, 480, 600, 120), // Tuesday 08-10
-    ];
-    const sol: Solution = {
-      placements: [
-        { chunk: chunk('b', 60, 2), intervalIdx: 0, offsetInInterval: 0 }, // Mon
-        { chunk: chunk('a', 60, 1), intervalIdx: 1, offsetInInterval: 0 }, // Tue
-      ],
-      unplaced: [],
-    };
-    const cost = computeCost(sol, intervals, pref);
-    expect(cost).toBeGreaterThanOrEqual(WEIGHTS.ORDER_VIOLATION_WEIGHT);
   });
 
   it('penalizes day imbalance: 3h on one day vs evenly spread', () => {

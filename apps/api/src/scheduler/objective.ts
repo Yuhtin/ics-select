@@ -1,5 +1,4 @@
 import type {
-  Chunk,
   EffectiveInterval,
   Solution,
 } from './scheduler.types.js';
@@ -10,10 +9,14 @@ export const WEIGHTS = {
   SLOT_COUNT_WEIGHT: 100,
   RESIDUE_IN_BIG_WEIGHT: 50,
   SMALL_SLOT_WEIGHT: 20,
-  ORDER_VIOLATION_WEIGHT: 5,
   WASTE_WEIGHT: 1,
 } as const;
 
+/**
+ * Cost is reported as a diagnostic only. Order is now a hard invariant of the
+ * placement algorithm — it cannot be violated by construction, so it doesn't
+ * appear here.
+ */
 export function computeCost(
   solution: Solution,
   intervals: EffectiveInterval[],
@@ -63,25 +66,7 @@ export function computeCost(
   }
   cost += WEIGHTS.SMALL_SLOT_WEIGHT * inSmall;
 
-  // 6) Order violation: pair of placements (a, b) with a.order < b.order
-  //    AND wall-clock(a) > wall-clock(b).
-  const withTime = solution.placements.map((p) => ({
-    p,
-    t: intervals[p.intervalIdx]!.dayIdx * 1440 +
-       intervals[p.intervalIdx]!.startMinute + p.offsetInInterval,
-  }));
-  let inversions = 0;
-  for (let i = 0; i < withTime.length; i++) {
-    for (let j = 0; j < withTime.length; j++) {
-      if (i === j) continue;
-      const a = withTime[i]!, b = withTime[j]!;
-      if (a.p.chunk.order < b.p.chunk.order && a.t > b.t) inversions += 1;
-    }
-  }
-  // Each inversion is counted once per direction — divide by 2.
-  cost += WEIGHTS.ORDER_VIOLATION_WEIGHT * (inversions / 2);
-
-  // 7) Waste = unused minutes inside touched intervals
+  // 6) Waste = unused minutes inside touched intervals
   const usedPerInterval = new Map<number, number>();
   for (const p of solution.placements) {
     usedPerInterval.set(
@@ -97,14 +82,4 @@ export function computeCost(
   cost += WEIGHTS.WASTE_WEIGHT * waste;
 
   return cost;
-}
-
-export function minCostRemaining(
-  _remainingChunks: Chunk[],
-  _intervals: EffectiveInterval[],
-  _pref: number,
-): number {
-  // Conservative lower bound: 0 is always valid (cost can only grow).
-  // Tight enough for our scale — a more sophisticated bound is a follow-up.
-  return 0;
 }

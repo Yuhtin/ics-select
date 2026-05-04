@@ -2,7 +2,6 @@ import { Injectable, Logger } from '@nestjs/common';
 import { buildEffectiveIntervals, chunkItems, localMinuteToUtc } from './intervals.js';
 import { computeCost } from './objective.js';
 import { phase1 } from './phase1.js';
-import { phase2 } from './phase2.js';
 import type {
   SchedulerInput,
   SchedulerOutput,
@@ -17,9 +16,6 @@ export type {
   AvailabilitySlotInput,
   BusyBlock,
 } from './scheduler.types.js';
-
-const TIME_BUDGET_MS = 500;
-const NODE_BUDGET = 50_000;
 
 @Injectable()
 export class SchedulerService {
@@ -40,15 +36,10 @@ export class SchedulerService {
     );
     const chunks = chunkItems(input.items, pref);
 
-    const s1 = phase1(chunks, intervals, input.availability.caps, pref);
-    const phase1Cost = computeCost(s1, intervals, pref);
+    const solution = phase1(chunks, intervals, input.availability.caps, pref);
+    const cost = computeCost(solution, intervals, pref);
 
-    const p2 = phase2(chunks, intervals, input.availability.caps, pref, s1, {
-      timeBudgetMs: TIME_BUDGET_MS,
-      nodeBudget: NODE_BUDGET,
-    });
-
-    const sessions: PlannedSession[] = p2.solution.placements.map((pl) => {
+    const sessions: PlannedSession[] = solution.placements.map((pl) => {
       const iv = intervals[pl.intervalIdx]!;
       const scheduledAt = localMinuteToUtc(
         input.weekStart,
@@ -63,25 +54,18 @@ export class SchedulerService {
       };
     });
 
-    const overflow: OverflowChunk[] = p2.solution.unplaced.map((c) => ({
+    const overflow: OverflowChunk[] = solution.unplaced.map((c) => ({
       itemId: c.itemId,
       minutesRequired: c.minutes,
     }));
 
     const durationMs = Date.now() - startedAt;
-    const diagnostics = {
-      phase1Cost,
-      finalCost: p2.cost,
-      nodesExplored: p2.nodesExplored,
-      timedOut: p2.timedOut,
-      durationMs,
-    };
+    const diagnostics = { cost, durationMs };
 
     this.logger.debug(
       `plan computed · chunks=${chunks.length} intervals=${intervals.length} ` +
       `sessions=${sessions.length} overflow=${overflow.length} ` +
-      `phase1=${phase1Cost} final=${p2.cost} nodes=${p2.nodesExplored} ` +
-      `timedOut=${p2.timedOut} ${durationMs}ms`,
+      `cost=${cost} ${durationMs}ms`,
     );
 
     return { sessions, overflow, diagnostics };
