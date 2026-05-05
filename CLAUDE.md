@@ -16,7 +16,7 @@ Monorepo (pnpm 9 + Turborepo 2), Node 20:
 
 - `apps/api` — **NestJS 10** + **Prisma 5** + **PostgreSQL 16 + pgvector**. Google OAuth via passport, short-lived JWT + rotating refresh tokens in cookies, AES-256-GCM-encrypted Google tokens. Modules live under `src/<feature>/` (auth, users, cycles, library, availability, weekly-plans, scheduler, classes, admin-dashboard, ai, whatsapp, notifications, google-calendar, me, reports, privacy, health).
 - `apps/web` — **Next.js 15 App Router** + **HeroUI** + **Tailwind 3** + **Framer Motion** + **next-themes** + **TanStack Query** + **lucide-react**. Route group `(app)` holds the admin shell; route group `(member)` holds the gamified member experience; unauthenticated routes are `/login`, `/privacy`, `/auth/callback`.
-- `packages/prisma` — `schema.prisma` (nine numbered migrations, pgvector + tsvector managed via raw SQL), re-exports the generated client. The runtime image points `main` at `generated/client/index.js` directly — no TS wrapper.
+- `packages/prisma` — `schema.prisma` (~30 migrations: numbered `0–10` for the foundational set, then letter-prefixed `b–j` once the digit space ran into ordering conflicts; pgvector + tsvector managed via raw SQL), re-exports the generated client. The runtime image points `main` at `generated/client/index.js` directly — no TS wrapper.
 - `packages/shared` — Compiled with tsc to `dist/` as CommonJS (required because `apps/api` resolves it at runtime, not via ts-jest). Holds `APP_VERSION` and (future) Zod contract schemas.
 
 AI features use **OpenAI `gpt-5.4-mini`** via `apps/api/src/common/openai/openai-chat.provider.ts` (`callJson`, `callText`, async-generator `stream`). Embeddings use the same client with `text-embedding-3-small`. There is no Anthropic dependency.
@@ -92,6 +92,14 @@ docker compose up -d postgres                 # pgvector/pgvector:pg16 on :5432
 2. Never confirm an interactive `prisma migrate dev` / `migrate reset` reset prompt without the user's explicit go-ahead for that prompt. Treat any P3005 against prod as a hard stop.
 3. Subagents implementing plan tasks must inherit this rule via their prompt; pass an explicit "do not run destructive DB commands; if a step appears to require one, escalate." constraint.
 4. Production-data write operations (seed scripts, recovery imports, schema fixes) should always be shown to the user as a dry preview (or at least a one-line summary of what's about to change) **before** execution. The user OKs each one separately.
+5. **The project is in production with real user data.** Migrations MUST be additive and non-destructive on populated tables. **NEVER** generate or commit migrations that:
+   - `DROP TABLE` / `DROP COLUMN` on tables that hold member data (User, Cycle, Membership, WeeklyPlan, WeeklyPlanItem, LibraryItem, LibraryItemTopic, Topic, MemberAvailability, WeeklyRetro, AdminNote, UserEvent, Class, ClassAttendance, AiGeneration, etc.)
+   - Change a column type in a way that loses data (e.g. `TEXT → VARCHAR(50)` when content may be longer; `JSONB → TEXT`)
+   - Rename a column without a paired data-copy step
+   - Change a default value retroactively for existing rows in a way that overwrites real data
+   - Drop or recreate an index/constraint while the column it references could be NULL during the gap
+   When `prisma migrate diff` produces a destructive SQL fragment (frequent: `Unsupported("tsvector")` columns, raw-SQL-managed columns, or schema drift), **rewrite the migration by hand** to keep only the additive parts. Confirm with the user before committing if any destructive line appears in the diff. If a feature genuinely requires removing a column/table, do it in two PRs: (1) stop writing to the column + ship the code, (2) drop the column in a follow-up after the deploy stabilizes.
+6. **Prod migrations ship via container redeploy, not direct `migrate deploy`.** Create the migration file locally, commit, push to `main`. The deploy workflow builds the image; EasyPanel pulls it; the container's `docker-entrypoint.sh` runs `prisma migrate deploy` on startup. Never run `prisma migrate deploy` against the prod URL from your laptop — the container is the single source of truth for migration application order.
 
 ## Architecture notes that matter
 
@@ -125,7 +133,11 @@ The library is populated via **`apps/api/scripts/seed-library.ts`** (entry `pnpm
 
 **Curation workflow.** The project-local skill `.claude/skills/ics-library-curate/SKILL.md` encodes the layered EASY/MEDIUM/HARD ladder, approved-channels whitelist, kind-tag vocabulary (`concept`/`tradeoffs`/`practice`/`case-study`), exact-YouTube-duration rule (scrape `lengthSeconds` via `curl`), and book whitelist (Grokking Data Structures / Algorithms / Deep Learning only). When adding a new item manually, set `topicSlugs: [primary, ...covers]` in the seed — the first slug is the primary, the rest are covers.
 
-**Browse order.** `GET /library` returns rows `ORDER BY createdAt DESC` (admin CRUD convenience), so any surface that presents items to learners must re-sort client-side. `/admin/library` (and the future member view it clones) sort each shelf/grid via `sortLibraryItems` in `apps/web/app/(admin)/admin/library/page.tsx`: primary `Topic.order` → difficulty ladder (`EASY → MEDIUM → HARD`, mirroring the SKILL's entry-point → practical → deep-dive ladder) → title A-Z as a neutral tiebreaker. Fuse search results keep their relevance ranking and bypass this sort. If you add a new library-browse surface, use the same helper — don't invent another order.
+**Browse order.** `GET /library` returns rows `ORDER BY createdAt DESC` (admin CRUD convenience), so any surface that presents items to learners must re-sort client-side. `/admin/library` and the "Add from library" picker (`apps/web/components/admin/plan-editor/library-picker-modal.tsx`) sort each shelf/grid through `sortLibraryItems` (`apps/web/app/(admin)/admin/library/page.tsx`) and `sortItems` (the picker's local copy, kept in sync). The order is: primary `Topic.order` → **`LibraryItemTopic.order` ASC NULLS LAST** (per-topic manual pedagogical order, see below) → difficulty ladder (`EASY → MEDIUM → HARD`, mirroring the SKILL's entry-point → practical → deep-dive ladder) → title A-Z as a neutral tiebreaker. Fuse search results keep their relevance ranking and bypass this sort. If you add a new library-browse surface, use the same helper — don't invent another order.
+
+**Per-topic pedagogical order.** `LibraryItemTopic.order` is a nullable `Int` (migration `t_library_item_topic_order`) that lets us order items WITHIN a topic in pedagogical study sequence — independent of difficulty. Cross-topic items can have different orders in different topics (e.g. a video might be `order=1` under `tree` but `order=5` under `array` — the same item plays a different role in each topic's ladder). Both `sortLibraryItems` and `sortItems` are **topic-aware**: when a topic filter is active (URL `?topic=` on the library page, or the topic combobox in the picker), the sort uses `order` from THAT topic's join row, not the primary topic's. When no topic filter is active, primary's order is used.
+
+Authored via the seed script: each `ItemSeed` accepts an optional `topicOrder?: Record<slug, number>` map. Items missing from the map (or items whose primary slug isn't keyed) get `order = NULL` and fall back to difficulty + title. The admin UI doesn't currently expose order editing; `LibraryService.replaceTopics` preserves existing `order` values when admin edits topic membership, so seed-authored ordering is sticky across UI edits.
 
 ### Global guards
 
@@ -156,6 +168,29 @@ There is also `resolveActiveMembership(prisma, userId)` for the member-scoped eq
 
 **Library picker "mastered" filter.** The "Add from library" modal hides items the member has already finished — `DONE_EASY`, `DONE_HARD`, *and* `SKIPPED` (member skipped because they already knew it). `DOUBTS` and `STUCK` show as warnings, not as hidden. Lives in `apps/web/components/admin/plan-editor/library-picker-modal.tsx` (`markFor`). Don't shrink the mastered set to just the two `DONE_*` values — skipped items would re-appear and confuse the admin.
 
+### Engagement score & cohort ranking
+
+The engagement score is the **single source of truth** for "how engaged is this member" across both the admin cockpit (`/admin/cycle/[id]` ranking + per-member cockpit) and the member-facing cohort ranking (`/me/cohort`). Computed in `apps/api/src/admin/cockpit/engagement-score.ts` as `computeEngagementScore(input): { score: 0–100, breakdown: ScoreBreakdownEntry[] }`. Six criteria summing to 100:
+
+| Criterion | Pts | What it measures |
+|---|---|---|
+| Cohort rank | 20 | Position in cohort by `itemsDone` (any non-PENDING outcome). Only **comparative** criterion. `(cohortRankFromBottom / cohortSize) × 20`. |
+| Days active | 22 | Distinct days with an `OUTCOME_MARKED` UserEvent. Ceiling = 50% of cycle days (`min(1, daysActive / (daysElapsed × 0.5)) × 22`), so ≈4 days/week maxes the score. |
+| Plan completion | 20 | `max(personalRate, itemsDone / cohortMedianPlanned) × 20` — the more flattering of personal % and progress vs. typical cohort plan size. |
+| Retros submitted | 21 | `min(1, retros / weeksElapsed) × 21`. |
+| Class attendance | 5 | `(classesAttended / classesHeld) × 5` where `classesHeld` filters `scheduledAt < now`, and only `PRESENT` counts (matches existing pattern in `cockpit.service.ts`). 0 when no classes have happened yet. **Caveat:** if the admin bulk-marks everyone PRESENT, every member gets the full 5 and the criterion stops differentiating — by design (we trust the admin's marks), but keep in mind when reading rankings. |
+| Recency | 12 | Tiered by `daysSinceLastSession`: ≤1d → 12, ≤3d → 8, ≤7d → 4, >7d or null → 0. |
+
+**Inputs are batched per-cohort.** `computeEngagementInputsForCohort(prisma, userIds, cycleId, cycleStart, now)` in `apps/api/src/admin/cockpit/engagement-inputs.ts` runs ONE `$queryRawUnsafe` with LEFT JOINs (`ev_days`, `wp_done`, `wp_plan`, `retro`, `last_ev`, `cls_held`, `cls_present`) and returns `Map<userId, EngagementInput>`. Used by both `CycleOverviewService` (admin ranking) and `CohortService` (member ranking). The per-member `CockpitService.getCockpit` does NOT consume this helper yet — it computes inputs inline (deferred refactor noted in the original ranking spec).
+
+**`cycleStart` MUST be Monday-normalized** when calling `computeEngagementInputsForCohort` (use `mondayUTC(cycle.startsAt)`). Passing a raw `cycle.startsAt` that isn't a Monday skews `daysActive`/`daysElapsed` by up to 6 days. The JSDoc on the helper documents this.
+
+**Hardcoded label string risk.** The breakdown row whose label is `'Cohort rank'` is referenced as a tie-break key in `CycleOverviewService.computeEngagementRanking`. The string is exported as `COHORT_RANK_LABEL` from `engagement-score.ts` — use the constant when reading the breakdown, never the raw string. The frontend `engagement-ranking-table.tsx` `COLUMN_LABELS` array also uses these label strings as match keys; if you rename a label, the column silently shows 0 until you update both call sites.
+
+**Member ranking response shape.** `GET /me/cohort` returns `ranking?: { userId, name, pictureUrl, score, isMe }[]` — only the **final 0–100 score**, no breakdown (privacy: members shouldn't see how their plan-completion rate compares to peers, only the headline number). Sorted by score desc, alphabetical tie-break. Gated by `cycle.rankingVisibleToMembers` (admin toggle); when off, `ranking` is `undefined` and the cohort page falls back to alphabetical roster with no score column. There is **no** top-N cap — the full cohort ranking is sent because the frontend renders all members in a single list.
+
+**Admin ranking response shape.** `GET /admin/cycle/:id` returns `ranking: { userId, name, pictureUrl, score, breakdown, hasAlert }[]` — admin gets the full 6-entry breakdown for diagnostics. `hasAlert` mirrors `members[].hasAlert` (STUCK proxy in last 72h).
+
 ### Weekly plan flow
 
 The critical path is `apps/api/src/weekly-plans/` + `apps/api/src/scheduler/`. `WeeklyPlansService` handles CRUD on plan drafts; `PublicationService.publish` wires the scheduler + Google Calendar:
@@ -183,7 +218,7 @@ Global `HttpExceptionFilter` in `apps/api/src/common/filters/` maps NestJS excep
 Two route groups for authenticated users:
 
 - `(app)` — Admin shell with sidebar nav. Used by all `/admin/*` routes and `/me/availability`. Layout: `AppShell` with `Sidebar` + `Topbar`.
-- `(member)` — Placeholder shell post-revamp PR 1. Single route `/home` with a minimal layout. PR 2 rebuilds the real Magazine Editorial shell (floating topbar: *Today · Cohort · Calendar · avatar*; bottom tab bar on mobile) along with `/me`, `/me/plan`, `/me/item/[id]`, `/me/cohort`, `/me/retro`, `/me/settings`.
+- `(member)` — Magazine Editorial shell with floating topbar (*Today · Plan · Cohort · Calendar · avatar*) and bottom tab bar on mobile. Live routes: `/me` (home), `/me/plan`, `/me/item/[id]`, `/me/cohort`, `/me/calendar`, `/me/retro`, `/me/settings`, `/me/onboarding`.
 
 **Never add `page.tsx` at a route group root** (`(app)/page.tsx` or `(member)/page.tsx`) — it collides with `app/page.tsx` and breaks Next.js 15's client-reference-manifest generation during static export. Use a subpath like `(member)/home/page.tsx` (as PR 1 does).
 
@@ -281,10 +316,19 @@ Platform colors appear as **3px vertical stripes** before item titles in list ro
 - 3D map (`components/member/map-3d/`) and 2D map (`components/member/map-2d/`) — learning-path metaphor replaced by daily list + cohort feed.
 - `StudySession` entity — progress tracked on `WeeklyPlanItem.outcome`; Google Calendar events are source-of-truth for time blocks via `ICS ID:` markers in the description.
 - Legacy `status + stuck + difficultyRating` fields on `WeeklyPlanItem` — unified as `ItemOutcome` enum (`PENDING | DONE_EASY | DONE_HARD | DOUBTS | STUCK | SKIPPED`).
+- TTFV (Time To First View) engagement criterion — was bugged in practice and low-signal; removed and the 10pts redistributed (final weights live in the engagement-score table above).
+- Bespoke member ranking helper (`apps/api/src/me/cohort/member-ranking.ts`, formula `pontos_ciclo + 2 × pontos_semana`) — replaced by the engagement score so `/me/cohort` and `/admin/cycle/[id]` share one number. The "On fire" top-3 spotlight component (`cohort-spotlight.tsx`) was also removed; the cohort page now shows a single ranked list.
+
+### Admin cycle overview layout
+
+`/admin/cycle/[id]` left column stacks **Engagement ranking → Triage → Cohort heatmap → Classes** in that order; the right aside is just `Activity · last 7d` (capped to 35 events via `data.feed.slice(0, 35)`). The `Engagement ranking` section unmounts entirely when `data.ranking.length === 0` — gate the wrapper, not just the inner component, otherwise an orphaned `SectionLabel` leaks. Lives in `apps/web/components/admin/cycle/cycle-overview-view.tsx`.
 
 ## Conventions worth preserving
 
-- UI chrome in English (`Today`, `Up next`, `Cohort`, `Streak`, etc.) and user-generated content in pt-BR (reflections, retros, admin notes, feedback). Never use emojis — use `lucide-react` icons (stroke 1.5).
+- UI chrome in English (`Today`, `Up next`, `Cohort`, `Streak`, etc.) and user-generated content in pt-BR (reflections, retros, admin notes, feedback). Never use emojis — use `lucide-react` icons (stroke 1.5). The `⚠` (U+26A0) glyph counts as emoji on most platforms; use `<AlertTriangle>` instead.
+- Tailwind outcome/status color tokens are prefixed with `outcome-` (e.g. `text-outcome-done-easy`, `text-outcome-stuck`, `text-outcome-done-hard`). Bare names (`text-done-easy`, `text-stuck`) **do not exist** — Tailwind drops them silently and the element renders with inherited color. Always grep `tailwind.config.ts` before using a color class you didn't write.
 - All admin endpoints use `@Roles('ADMIN')`; ownership checks for member-owned resources are inline in controllers (look for `if (user.role !== 'ADMIN' && plan.userId !== user.sub)`).
+- **Service methods that complete an action must return something JSON-serializable** (e.g. `{ ok: true, count }`). NestJS responds 200 OK with an empty body for `Promise<void>` returns, and the frontend `apiFetch` calls `res.json()` which throws `SyntaxError: Unexpected end of JSON input`. Either return a payload or annotate the controller with `@HttpCode(204)` so the client skips parsing. The attendance bulk-mark bug was caused by exactly this.
 - Commit messages follow `type(scope): subject` (see `git log`). Merges to `main` use `--no-ff` and the release tags follow `vX.Y.Z`.
+- **Never `git add -A` / `git add .`** when committing. The repo regularly carries uncommitted WIP across unrelated paths; sweeping it all into a focused commit produces a misleading message and ships unreviewed work. Always stage by explicit path, then `git status` to confirm before committing. (This burned us once; the fix isn't worth force-pushing.)
 - The three PDFs at the repo root (`Apresentação.pdf`, `Plano Educacional.pdf`, `Proposta.pdf`) are program reference material only; they are gitignored and never committed (the Apresentação exceeds GitHub's 100MB hard limit).

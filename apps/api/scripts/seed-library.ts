@@ -30,6 +30,11 @@ type ItemSeed = {
   tracks: Track[];
   source: string | null;
   tags: string[];
+  // Optional per-topic pedagogical order. Map of slug → integer. Items
+  // shown under a topic are sorted by this order ASC NULLS LAST, then by
+  // difficulty (E→M→H), then title. Cross-topic items can have different
+  // orders in different topics. Use sequential 1, 2, 3... within a topic.
+  topicOrder?: Record<string, number>;
 };
 
 // -----------------------------------------------------------------------------
@@ -391,6 +396,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'YouTube — Augusto Galego',
     tags: ['practice', 'hashmap', 'python', 'implementation', 'collision', 'galego'],
+    topicOrder: { hashmap: 3 },
   },
   {
     title: '10 Key Data Structures We Use Every Day',
@@ -406,6 +412,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'YouTube — ByteByteGo',
     tags: ['concept', 'data-structures', 'overview'],
+    topicOrder: { hashmap: 10 },
   },
   {
     title: 'Grokking Data Structures — Arrays (chapter)',
@@ -980,6 +987,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'YouTube — NeetCode',
     tags: ['concept', 'hashmap', 'two-sum', 'leetcode', 'neetcode'],
+    topicOrder: { hashmap: 6 },
   },
   {
     title: 'I ACED my Technical Interviews knowing these System Design Basics',
@@ -1594,6 +1602,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'Site — AlgoViz (Davi Duarte)',
     tags: ['concept', 'hashmap', 'two-sum', 'leetcode-1', 'algoviz', 'visualization', 'pt-br'],
+    topicOrder: { hashmap: 7 },
   },
   {
     title: 'AlgoViz — LRU Cache',
@@ -1607,6 +1616,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'Site — AlgoViz (Davi Duarte)',
     tags: ['concept', 'caching', 'lru', 'doubly-linked-list', 'hashmap', 'algoviz', 'visualization', 'pt-br'],
+    topicOrder: { hashmap: 11 },
   },
   {
     title: 'AlgoViz — Trie (Prefix Tree)',
@@ -1637,6 +1647,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — ByteByteGo',
     tags: ['concept', 'hashmap', 'consistent-hashing', 'sharding', 'distributed', 'bytebytego'],
+    topicOrder: { hashmap: 13 },
   },
   {
     title: 'Grokking Algorithms — Hash Tables (chapter 5)',
@@ -1650,6 +1661,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'Book — Grokking Algorithms',
     tags: ['concept', 'book', 'grokking', 'hashmap', 'hash-function'],
+    topicOrder: { hashmap: 9 },
   },
   {
     title: 'Group Anagrams — Categorize Strings by Count — Leetcode 49',
@@ -1663,6 +1675,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'YouTube — NeetCode',
     tags: ['practice', 'hashmap', 'leetcode-49', 'group-anagrams', 'neetcode'],
+    topicOrder: { hashmap: 8 },
   },
 
   // ---------------------------------------------------------------------------
@@ -5141,6 +5154,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'Medium — Davi Duarte',
     tags: ['concept', 'hashing', 'sha-256', 'bcrypt', 'argon2', 'tls', 'password-storage'],
+    topicOrder: { hashmap: 4 },
   },
 
   // --- hashmap intro + Python dict — 2026-05-04 ---
@@ -5156,6 +5170,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'YouTube — mycodeschool',
     tags: ['concept', 'hashmap', 'introduction', 'hash-function', 'collision', 'mycodeschool'],
+    topicOrder: { hashmap: 2 },
   },
   {
     title: 'Dictionaries in Python',
@@ -5169,6 +5184,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'Blog — Real Python',
     tags: ['concept', 'hashmap', 'python', 'dict', 'real-python'],
+    topicOrder: { hashmap: 5 },
   },
   {
     title: 'Python behind the scenes #10: how Python dictionaries work',
@@ -5182,6 +5198,23 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'Blog — Ten Thousand Meters',
     tags: ['concept', 'hashmap', 'python', 'dict', 'cpython', 'internals', 'open-addressing'],
+    topicOrder: { hashmap: 12 },
+  },
+
+  // --- hashmap entry-point: hash function explained — 2026-05-05 ---
+  {
+    title: 'What is Hashing? Hashing Algorithm, Hash Collisions & Hash Functions',
+    url: 'https://www.youtube.com/watch?v=pMM9cIAFAug',
+    description:
+      'Monis Yousuf — o que é uma função de hash, propriedades (determinística, output fixo, irreversível) e por que colisões acontecem.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 10,
+    topicSlugs: ['hashmap'],
+    tracks: [],
+    source: 'YouTube — Monis Yousuf',
+    tags: ['concept', 'hashmap', 'hash-function', 'collision'],
+    topicOrder: { hashmap: 1 },
   },
 ];
 
@@ -5290,6 +5323,7 @@ async function main() {
             itemId: saved.id,
             topicId: t.id,
             isPrimary: idx === 0,
+            order: item.topicOrder?.[t.slug] ?? null,
           },
         }),
       ),

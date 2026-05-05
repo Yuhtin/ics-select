@@ -7,6 +7,7 @@ export type AdminTopicOnItem = {
   slug: string;
   label: string;
   isPrimary: boolean;
+  order: number | null;
 };
 
 export type AdminLibraryItem = {

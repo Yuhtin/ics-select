@@ -32,13 +32,33 @@ const DIFFICULTY_OPTIONS: MultiFilterOption[] = [
 
 const DIFFICULTY_RANK: Record<string, number> = { EASY: 0, MEDIUM: 1, HARD: 2 };
 
-function sortItems(items: AdminLibraryItem[], order: Record<string, number>) {
+// When `focusedTopicId` is set (a topic filter is active), use the per-item
+// order under THAT topic — cross-topic items can have different orders in
+// different topics. When unfocused, fall back to the primary topic's order.
+function sortItems(
+  items: AdminLibraryItem[],
+  order: Record<string, number>,
+  focusedTopicId: string | null,
+) {
+  const topicRow = (item: AdminLibraryItem) =>
+    focusedTopicId
+      ? item.topics.find((t) => t.id === focusedTopicId) ??
+        item.topics.find((t) => t.isPrimary) ??
+        item.topics[0]
+      : item.topics.find((t) => t.isPrimary) ?? item.topics[0];
   return [...items].sort((a, b) => {
-    const aPrimary = a.topics.find((t) => t.isPrimary) ?? a.topics[0];
-    const bPrimary = b.topics.find((t) => t.isPrimary) ?? b.topics[0];
-    const aOrder = aPrimary ? order[aPrimary.slug] ?? 999 : 999;
-    const bOrder = bPrimary ? order[bPrimary.slug] ?? 999 : 999;
+    const aRow = topicRow(a);
+    const bRow = topicRow(b);
+    const aOrder = aRow ? order[aRow.slug] ?? 999 : 999;
+    const bOrder = bRow ? order[bRow.slug] ?? 999 : 999;
     if (aOrder !== bOrder) return aOrder - bOrder;
+    const aManual = aRow?.order ?? null;
+    const bManual = bRow?.order ?? null;
+    if (aManual !== bManual) {
+      if (aManual === null) return 1;
+      if (bManual === null) return -1;
+      return aManual - bManual;
+    }
     const aDiff = DIFFICULTY_RANK[a.difficulty] ?? 9;
     const bDiff = DIFFICULTY_RANK[b.difficulty] ?? 9;
     if (aDiff !== bDiff) return aDiff - bDiff;
@@ -148,7 +168,7 @@ export function LibraryPickerModal({
     if (formats.length > 0) list = list.filter((i) => formats.includes(i.format));
     if (difficulties.length > 0) list = list.filter((i) => difficulties.includes(i.difficulty));
     if (query.trim().length >= 2) return fuseFilter(list, query);
-    return sortItems(list, topicOrder);
+    return sortItems(list, topicOrder, topicId);
   }, [
     items,
     memberTrack,

@@ -56,21 +56,37 @@ const DIFFICULTY_RANK: Record<string, number> = {
   HARD: 2,
 };
 
-// Learning order within a shelf / grid, matching the curation ladder
-// documented in .claude/skills/ics-library-curate/SKILL.md: primary topic's
-// Topic.order (pedagogical sequence of topics per phase), then the
-// EASY → MEDIUM → HARD ladder (entry-point → practical → deep-dive), then
-// title A-Z as a neutral tiebreaker.
+// Learning order within a shelf / grid: primary Topic.order (pedagogical
+// sequence across topics) → per-topic LibraryItemTopic.order (manual
+// pedagogical ordering, NULLS LAST) → EASY → MEDIUM → HARD ladder →
+// title A-Z as final tiebreaker.
 function sortLibraryItems(
   items: AdminLibraryItem[],
   order: Record<string, number>,
+  focusedTopicId: string | null = null,
 ): AdminLibraryItem[] {
+  // When a topic filter is active, use the per-item order under THAT topic
+  // (cross-topic items can have different orders in different topics).
+  // Unfocused, fall back to the primary topic's order.
+  const topicRow = (item: AdminLibraryItem) =>
+    focusedTopicId
+      ? item.topics.find((t) => t.id === focusedTopicId) ??
+        item.topics.find((t) => t.isPrimary) ??
+        item.topics[0]
+      : item.topics.find((t) => t.isPrimary) ?? item.topics[0];
   return [...items].sort((a, b) => {
-    const aPrimary = a.topics.find((t) => t.isPrimary) ?? a.topics[0];
-    const bPrimary = b.topics.find((t) => t.isPrimary) ?? b.topics[0];
-    const aOrder = aPrimary ? order[aPrimary.slug] ?? 999 : 999;
-    const bOrder = bPrimary ? order[bPrimary.slug] ?? 999 : 999;
+    const aRow = topicRow(a);
+    const bRow = topicRow(b);
+    const aOrder = aRow ? order[aRow.slug] ?? 999 : 999;
+    const bOrder = bRow ? order[bRow.slug] ?? 999 : 999;
     if (aOrder !== bOrder) return aOrder - bOrder;
+    const aManual = aRow?.order ?? null;
+    const bManual = bRow?.order ?? null;
+    if (aManual !== bManual) {
+      if (aManual === null) return 1;
+      if (bManual === null) return -1;
+      return aManual - bManual;
+    }
     const aDiff = DIFFICULTY_RANK[a.difficulty] ?? 9;
     const bDiff = DIFFICULTY_RANK[b.difficulty] ?? 9;
     if (aDiff !== bDiff) return aDiff - bDiff;
@@ -186,7 +202,7 @@ export default function AdminLibraryPage() {
     }
     // Search relevance wins over learning order — only sort when not searching.
     if (query.trim().length >= 2) return fuseFilter(list, query);
-    return sortLibraryItems(list, topicOrder);
+    return sortLibraryItems(list, topicOrder, topicId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     allItems,

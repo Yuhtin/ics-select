@@ -8,6 +8,7 @@ export type TopicRef = {
   slug: string;
   label: string;
   isPrimary: boolean;
+  order: number | null;
 };
 
 export type CreateLibraryItemInput = {
@@ -54,6 +55,7 @@ const TOPIC_INCLUDE = {
 type TopicRow = {
   topicId: string;
   isPrimary: boolean;
+  order: number | null;
   topic: { id: string; slug: string; label: string };
 };
 
@@ -72,6 +74,7 @@ function shapeItem<T extends RawItemWithTopics>(raw: T) {
     slug: tr.topic.slug,
     label: tr.topic.label,
     isPrimary: tr.isPrimary,
+    order: tr.order ?? null,
   }));
   const primary = topics.find((t) => t.isPrimary) ?? null;
   const { topics: _drop, ...rest } = raw;
@@ -312,6 +315,7 @@ export class LibraryService {
         slug: r.topic.slug,
         label: r.topic.label,
         isPrimary: r.isPrimary,
+        order: r.order ?? null,
       });
       byItem.set(r.itemId, arr);
     }
@@ -330,6 +334,10 @@ export class LibraryService {
    * Replace the full topic set on an item in one transaction. `topicSlugs[0]`
    * is the primary topic; the rest are secondary covers. An empty array
    * clears all topics.
+   *
+   * Preserves the per-topic `order` for slugs that already existed on the
+   * item — admin edits to topic membership shouldn't wipe pedagogical
+   * ordering set by the seed or another admin.
    */
   private async replaceTopics(itemId: string, topicSlugs: string[]): Promise<void> {
     const uniqueSlugs = [...new Set(topicSlugs)].filter((s) => s.length > 0);
@@ -345,6 +353,11 @@ export class LibraryService {
     if (missing.length > 0) {
       throw new NotFoundException(`unknown topic slug(s): ${missing.join(', ')}`);
     }
+    const existing = await this.prisma.libraryItemTopic.findMany({
+      where: { itemId },
+      select: { topicId: true, order: true },
+    });
+    const orderByTopicId = new Map(existing.map((r) => [r.topicId, r.order]));
     await this.prisma.$transaction([
       this.prisma.libraryItemTopic.deleteMany({ where: { itemId } }),
       ...uniqueSlugs.map((slug, idx) =>
@@ -353,6 +366,7 @@ export class LibraryService {
             itemId,
             topicId: idBySlug.get(slug)!,
             isPrimary: idx === 0,
+            order: orderByTopicId.get(idBySlug.get(slug)!) ?? null,
           },
         }),
       ),

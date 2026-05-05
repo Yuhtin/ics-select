@@ -278,6 +278,11 @@ model LibraryItemTopic {
   itemId    String
   topicId   String
   isPrimary Boolean  @default(false)
+  // Pedagogical order of the item within this specific topic. Null = no
+  // explicit order; sort falls back to difficulty (E→M→H) then title A-Z.
+  // Cross-topic items can have different orders in different topics
+  // (e.g. a video might be #1 under `tree` but #5 under `array`).
+  order     Int?
   createdAt DateTime @default(now())
 
   item  LibraryItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
@@ -286,6 +291,7 @@ model LibraryItemTopic {
   @@id([itemId, topicId])
   @@index([topicId])
   @@index([itemId, isPrimary])
+  @@index([topicId, order])
 }
 
 model WeeklyPlan {
