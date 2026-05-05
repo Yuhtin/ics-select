@@ -69,17 +69,30 @@ async function handleResponse<T>(res: Response): Promise<T> {
   return (await res.json()) as T;
 }
 
+// Singleton in-flight refresh promise. When several requests 401 in parallel
+// (common on app load with N TanStack queries), they must all await the SAME
+// /auth/refresh — otherwise the first rotates the refresh token and the rest
+// validate against the now-revoked row, all returning 401, and the user gets
+// kicked out despite holding a valid session.
+let refreshInFlight: Promise<string | null> | null = null;
+
 async function tryRefresh(): Promise<string | null> {
-  try {
-    const res = await fetch(`${API_BASE}/auth/refresh`, {
-      method: 'POST',
-      credentials: 'include',
-    });
-    if (!res.ok) return null;
-    const body = (await res.json()) as { accessToken: string };
-    setAccessToken(body.accessToken);
-    return body.accessToken;
-  } catch {
-    return null;
-  }
+  if (refreshInFlight) return refreshInFlight;
+  refreshInFlight = (async () => {
+    try {
+      const res = await fetch(`${API_BASE}/auth/refresh`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+      if (!res.ok) return null;
+      const body = (await res.json()) as { accessToken: string };
+      setAccessToken(body.accessToken);
+      return body.accessToken;
+    } catch {
+      return null;
+    }
+  })().finally(() => {
+    refreshInFlight = null;
+  });
+  return refreshInFlight;
 }

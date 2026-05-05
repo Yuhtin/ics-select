@@ -87,15 +87,21 @@ export class GoogleCalendarService {
     meetLink?: string;
   }>> {
     const client = await this.clientFor(userId);
-    const res = await client.events.list({
-      calendarId: 'primary',
-      timeMin: timeMin.toISOString(),
-      timeMax: timeMax.toISOString(),
-      singleEvents: true,
-      orderBy: 'startTime',
-      maxResults: 100,
-      fields: 'items(id,summary,description,start,end,location,htmlLink,conferenceData/entryPoints)',
-    });
+    // googleapis runs on a long-lived HTTP/2 session (see google.options at top
+    // of file). When the session goes idle between cron ticks, Google may send
+    // GOAWAY and cancel the next stream — surfaced as ERR_HTTP2_STREAM_CANCEL.
+    // The next request reopens the socket, so a single retry is enough.
+    const res = await retryOnHttp2StreamCancel(() =>
+      client.events.list({
+        calendarId: 'primary',
+        timeMin: timeMin.toISOString(),
+        timeMax: timeMax.toISOString(),
+        singleEvents: true,
+        orderBy: 'startTime',
+        maxResults: 100,
+        fields: 'items(id,summary,description,start,end,location,htmlLink,conferenceData/entryPoints)',
+      }),
+    );
     const events = res.data.items ?? [];
     const includeAllDay = opts.includeAllDay === true;
     return events
@@ -305,4 +311,16 @@ export class GoogleCalendarService {
 
 function defaultClientFactory(auth: unknown): calendar_v3.Calendar {
   return google.calendar({ version: 'v3', auth: auth as any });
+}
+
+async function retryOnHttp2StreamCancel<T>(fn: () => Promise<T>): Promise<T> {
+  try {
+    return await fn();
+  } catch (err) {
+    const code = (err as { code?: string } | null)?.code;
+    if (code === 'ERR_HTTP2_STREAM_CANCEL') {
+      return await fn();
+    }
+    throw err;
+  }
 }
