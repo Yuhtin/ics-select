@@ -10,6 +10,8 @@ function makePrisma(rows: Array<{
   itemsPlanned: number;
   retrosSubmitted: number;
   daysSinceLastSession: number | null;
+  classesAttended?: number;
+  classesHeld?: number;
 }>) {
   return {
     $queryRawUnsafe: jest.fn(async () =>
@@ -20,6 +22,8 @@ function makePrisma(rows: Array<{
         itemsPlanned: r.itemsPlanned,
         retrosSubmitted: r.retrosSubmitted,
         daysSinceLastSession: r.daysSinceLastSession,
+        classesAttended: r.classesAttended ?? 0,
+        classesHeld: r.classesHeld ?? 0,
       })),
     ),
   };
@@ -119,6 +123,31 @@ describe('computeEngagementInputsForCohort', () => {
       NOW,
     );
     expect(result.get('u-a')!.cohortMedianItemsPlanned).toBe(8);
+  });
+
+  it('propagates classesAttended and classesHeld to EngagementInput', async () => {
+    const prisma = makePrisma([
+      {
+        userId: 'u-1',
+        daysActive: 5,
+        itemsDone: 3,
+        itemsPlanned: 6,
+        retrosSubmitted: 1,
+        daysSinceLastSession: 2,
+        classesAttended: 3,
+        classesHeld: 4,
+      },
+    ]);
+    const result = await computeEngagementInputsForCohort(
+      prisma as any,
+      ['u-1'],
+      'cycle-1',
+      CYCLE_START,
+      NOW,
+    );
+    const input = result.get('u-1')!;
+    expect(input.classesAttended).toBe(3);
+    expect(input.classesHeld).toBe(4);
   });
 
 });

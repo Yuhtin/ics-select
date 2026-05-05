@@ -205,6 +205,8 @@ export class CockpitService {
       retrosSubmitted: retros.length,
       weeksElapsed,
       daysSinceLastSession,
+      classesAttended: classes.filter((c) => c.scheduledAt < now && c.attendance[0]?.status === 'PRESENT').length,
+      classesHeld: classes.filter((c) => c.scheduledAt < now).length,
       cohortMedianItemsPlanned: cohortMedians.itemsPlanned,
     });
 
@@ -712,6 +714,8 @@ export class CockpitService {
         retrosSubmitted: Number(row.retrosSubmitted),
         weeksElapsed,
         daysSinceLastSession: null, // no per-user last-session in this batch query; neutral
+        classesAttended: 0, // simplified: class data not fetched per-user in this batch; neutral
+        classesHeld: 0,
       }).score,
     );
     let engagementMedian = 0;
@@ -800,6 +804,8 @@ export class CockpitService {
         retrosSubmitted,
         weeksElapsed: w,
         daysSinceLastSession,
+        classesAttended: 0, // simplified: per-week attendance replay not fetched; neutral
+        classesHeld: 0,
       });
       out.push(score.score);
     }

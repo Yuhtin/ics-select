@@ -11,6 +11,10 @@ export type EngagementInput = {
   weeksElapsed: number;
   // Null = no events recorded yet. Recency points = 0 (neutral, no penalty).
   daysSinceLastSession: number | null;
+  // Count of ClassSessions that have already occurred in the cycle.
+  // When 0 (no classes held yet), attendance points = 0 (neutral).
+  classesAttended: number;
+  classesHeld: number;
   // Cohort median of itemsPlanned. When provided, completion points use
   // max(personalRate, itemsDone/cohortMedianPlanned) so a member who got a
   // bigger plan than the cohort isn't double-penalized for completing fewer %.
@@ -32,13 +36,13 @@ export type EngagementScore = {
 export function computeEngagementScore(input: EngagementInput): EngagementScore {
   const cohortRankPct =
     input.cohortSize > 0 ? input.cohortRankFromBottom / input.cohortSize : 1;
-  const cohortPts = Math.max(0, Math.min(1, cohortRankPct)) * 30;
+  const cohortPts = Math.max(0, Math.min(1, cohortRankPct)) * 20;
 
   const activePct =
     input.daysElapsed > 0
       ? Math.min(1, input.daysActive / input.daysElapsed)
       : 0;
-  const activePts = activePct * 20;
+  const activePts = activePct * 22;
 
   const personalRate =
     input.itemsPlanned > 0 ? input.itemsDone / input.itemsPlanned : 0;
@@ -56,23 +60,29 @@ export function computeEngagementScore(input: EngagementInput): EngagementScore 
     input.weeksElapsed > 0
       ? Math.min(1, input.retrosSubmitted / input.weeksElapsed)
       : 0;
-  const retroPts = retroRate * 20;
+  const retroPts = retroRate * 21;
+
+  const attendancePts =
+    input.classesHeld > 0
+      ? (input.classesAttended / input.classesHeld) * 5
+      : 0;
 
   let recencyPts = 0;
   if (input.daysSinceLastSession === null) recencyPts = 0;
-  else if (input.daysSinceLastSession <= 3) recencyPts = 10;
-  else if (input.daysSinceLastSession <= 7) recencyPts = 5;
+  else if (input.daysSinceLastSession <= 3) recencyPts = 12;
+  else if (input.daysSinceLastSession <= 7) recencyPts = 6;
   else if (input.daysSinceLastSession <= 14) recencyPts = 2;
   else recencyPts = 0;
 
-  const total = cohortPts + activePts + completionPts + retroPts + recencyPts;
+  const total = cohortPts + activePts + completionPts + retroPts + attendancePts + recencyPts;
 
   const breakdown: ScoreBreakdownEntry[] = [
-    { label: COHORT_RANK_LABEL,     value: round(cohortPts),     weight: 30, status: statusFor(cohortPts, 30) },
-    { label: 'Days active',         value: round(activePts),     weight: 20, status: statusFor(activePts, 20) },
-    { label: 'Plan completion',     value: round(completionPts), weight: 20, status: statusFor(completionPts, 20) },
-    { label: 'Retros submitted',    value: round(retroPts),      weight: 20, status: statusFor(retroPts, 20) },
-    { label: 'Recency',             value: round(recencyPts),    weight: 10, status: statusFor(recencyPts, 10) },
+    { label: COHORT_RANK_LABEL,     value: round(cohortPts),      weight: 20, status: statusFor(cohortPts, 20) },
+    { label: 'Days active',         value: round(activePts),      weight: 22, status: statusFor(activePts, 22) },
+    { label: 'Plan completion',     value: round(completionPts),  weight: 20, status: statusFor(completionPts, 20) },
+    { label: 'Retros submitted',    value: round(retroPts),       weight: 21, status: statusFor(retroPts, 21) },
+    { label: 'Class attendance',    value: round(attendancePts),  weight: 5,  status: statusFor(attendancePts, 5) },
+    { label: 'Recency',             value: round(recencyPts),     weight: 12, status: statusFor(recencyPts, 12) },
   ];
 
   return { score: Math.round(total), breakdown };

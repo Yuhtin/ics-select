@@ -27,6 +27,8 @@ export async function computeEngagementInputsForCohort(
     itemsPlanned: number;
     retrosSubmitted: number;
     daysSinceLastSession: number | null;
+    classesHeld: number;
+    classesAttended: number;
   }>>(
     `SELECT
        u."userId",
@@ -34,7 +36,9 @@ export async function computeEngagementInputsForCohort(
        COALESCE(wp_done.cnt, 0)   AS "itemsDone",
        COALESCE(wp_plan.cnt, 0)   AS "itemsPlanned",
        COALESCE(retro.cnt, 0)     AS "retrosSubmitted",
-       last_ev."daysSinceLastSession" AS "daysSinceLastSession"
+       last_ev."daysSinceLastSession" AS "daysSinceLastSession",
+       COALESCE(cls_held.cnt, 0)  AS "classesHeld",
+       COALESCE(cls_present.cnt, 0) AS "classesAttended"
      FROM unnest($1::text[]) AS u("userId")
      LEFT JOIN (
        SELECT "userId", COUNT(DISTINCT date_trunc('day', "occurredAt"))::int AS cnt FROM "UserEvent"
@@ -64,7 +68,22 @@ export async function computeEngagementInputsForCohort(
        FROM "UserEvent"
        WHERE "userId" = ANY($1::text[])
        GROUP BY "userId"
-     ) last_ev ON last_ev."userId" = u."userId"`,
+     ) last_ev ON last_ev."userId" = u."userId"
+     LEFT JOIN (
+       SELECT cs."cycleId", COUNT(*)::int AS cnt FROM "ClassSession" cs
+       WHERE cs."cycleId" = $4 AND cs."scheduledAt" < $3
+       GROUP BY cs."cycleId"
+     ) cls_held ON cls_held."cycleId" = $4
+     LEFT JOIN (
+       SELECT ca."userId", COUNT(*)::int AS cnt
+       FROM "ClassAttendance" ca
+       JOIN "ClassSession" cs ON cs.id = ca."classSessionId"
+       WHERE ca."userId" = ANY($1::text[])
+         AND ca."status" = 'PRESENT'
+         AND cs."cycleId" = $4
+         AND cs."scheduledAt" < $3
+       GROUP BY ca."userId"
+     ) cls_present ON cls_present."userId" = u."userId"`,
     userIds,
     cycleStart,
     now,
@@ -105,6 +124,8 @@ export async function computeEngagementInputsForCohort(
       weeksElapsed,
       daysSinceLastSession:
         row.daysSinceLastSession === null ? null : Number(row.daysSinceLastSession),
+      classesAttended: Number(row.classesAttended),
+      classesHeld: Number(row.classesHeld),
       cohortMedianItemsPlanned,
     });
   }
