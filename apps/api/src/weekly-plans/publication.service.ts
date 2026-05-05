@@ -579,17 +579,26 @@ export class PublicationService {
     // Gather all item IDs known to this plan so we can null out overflow items
     const overflowIds = plan.items.map((i) => i.id).filter((id) => !byItem.has(id));
 
-    const placedUpdates = Array.from(byItem).map(([itemId, chunks]) => {
+    const placements = Array.from(byItem).map(([itemId, chunks]) => {
       chunks.sort((a, b) => a.startAt.getTime() - b.startAt.getTime());
       const earliest = chunks[0]!;
-      return this.prisma.weeklyPlanItem.update({
-        where: { id: itemId },
-        data: {
-          scheduledAt: earliest.startAt,
-          scheduledMinutes: chunks.reduce((s, c) => s + c.minutes, 0),
-        },
-      });
+      const totalMinutes = chunks.reduce((s, c) => s + c.minutes, 0);
+      return {
+        itemId,
+        scheduledAt: earliest.startAt,
+        durationMinutes: totalMinutes,
+      };
     });
+
+    const placedUpdates = placements.map((p) =>
+      this.prisma.weeklyPlanItem.update({
+        where: { id: p.itemId },
+        data: {
+          scheduledAt: p.scheduledAt,
+          scheduledMinutes: p.durationMinutes,
+        },
+      }),
+    );
 
     const overflowUpdate = overflowIds.length > 0
       ? [
@@ -621,6 +630,11 @@ export class PublicationService {
       sessionsCreated: result.sessions.length - sessionsFailed,
       sessionsFailed,
       overflow: result.overflow,
+      placements: placements.map((p) => ({
+        itemId: p.itemId,
+        scheduledAt: p.scheduledAt.toISOString(),
+        durationMinutes: p.durationMinutes,
+      })),
     };
   }
 
@@ -647,6 +661,7 @@ export class PublicationService {
     sessionsCreated: number;
     sessionsFailed: number;
     overflow: Array<{ itemId: string; minutesRequired: number }>;
+    placements: Array<{ itemId: string; scheduledAt: string; durationMinutes: number }>;
     removedCount: number;
     addedCount: number;
   }> {
@@ -841,9 +856,10 @@ export class PublicationService {
     sessionsCreated: number;
     sessionsFailed: number;
     overflow: Array<{ itemId: string; minutesRequired: number }>;
+    placements: Array<{ itemId: string; scheduledAt: string; durationMinutes: number }>;
   }> {
     if (input.addedLibraryItemIds.length === 0) {
-      return { sessionsCreated: 0, sessionsFailed: 0, overflow: [] };
+      return { sessionsCreated: 0, sessionsFailed: 0, overflow: [], placements: [] };
     }
 
     // Re-fetch the freshly-created items to get their DB ids.
@@ -866,7 +882,7 @@ export class PublicationService {
         });
       }
       // Re-key overflow itemIds (which were libraryItemIds) onto real item ids
-      // so the response matches the OverflowModal's expectations.
+      // so the response matches the SchedulingModal's expectations.
       return {
         sessionsCreated: 0,
         sessionsFailed: 0,
@@ -874,6 +890,7 @@ export class PublicationService {
           itemId: itemByLibId.get(o.itemId)?.id ?? o.itemId,
           minutesRequired: o.minutesRequired,
         })),
+        placements: [],
       };
     }
 
@@ -928,17 +945,21 @@ export class PublicationService {
     }
     const overflowItemIds = newItems.map((i) => i.id).filter((id) => !byItem.has(id));
 
-    const placedUpdates = Array.from(byItem).map(([itemId, chunks]) => {
+    const placements = Array.from(byItem).map(([itemId, chunks]) => {
       chunks.sort((a, b) => a.startAt.getTime() - b.startAt.getTime());
       const earliest = chunks[0]!;
-      return this.prisma.weeklyPlanItem.update({
-        where: { id: itemId },
-        data: {
-          scheduledAt: earliest.startAt,
-          scheduledMinutes: chunks.reduce((s, c) => s + c.minutes, 0),
-        },
-      });
+      const totalMinutes = chunks.reduce((s, c) => s + c.minutes, 0);
+      return { itemId, scheduledAt: earliest.startAt, durationMinutes: totalMinutes };
     });
+    const placedUpdates = placements.map((p) =>
+      this.prisma.weeklyPlanItem.update({
+        where: { id: p.itemId },
+        data: {
+          scheduledAt: p.scheduledAt,
+          scheduledMinutes: p.durationMinutes,
+        },
+      }),
+    );
     const overflowUpdate =
       overflowItemIds.length > 0
         ? [
@@ -959,6 +980,11 @@ export class PublicationService {
       overflow: input.plannedOverflow.map((o) => ({
         itemId: itemByLibId.get(o.itemId)?.id ?? o.itemId,
         minutesRequired: o.minutesRequired,
+      })),
+      placements: placements.map((p) => ({
+        itemId: p.itemId,
+        scheduledAt: p.scheduledAt.toISOString(),
+        durationMinutes: p.durationMinutes,
       })),
     };
   }

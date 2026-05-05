@@ -42,10 +42,17 @@ export type AiDraft = {
   totalMinutes: number;
 };
 
+export type SchedulingPlacement = {
+  itemId: string;
+  scheduledAt: string;
+  durationMinutes: number;
+};
+
 export type AutoScheduleResponse = {
   sessionsCreated: number;
   sessionsFailed: number;
   overflow: Array<{ itemId: string; minutesRequired: number }>;
+  placements: SchedulingPlacement[];
 };
 
 export type EditPublishedResponse = {
@@ -54,6 +61,7 @@ export type EditPublishedResponse = {
     sessionsCreated: number;
     sessionsFailed: number;
     overflow: Array<{ itemId: string; minutesRequired: number }>;
+    placements: SchedulingPlacement[];
     removedCount: number;
     addedCount: number;
   };

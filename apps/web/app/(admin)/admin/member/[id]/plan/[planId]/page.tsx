@@ -18,6 +18,7 @@ import {
   type WeeklyPlan,
   type WeeklyPlanItem,
   type AiDraft,
+  type SchedulingPlacement,
 } from '../../../../../../../lib/queries/admin-plan-editor';
 import { useTopics } from '../../../../../../../lib/queries/admin-topics';
 import type { LibraryItem } from '../../../../../../../lib/queries/library-search';
@@ -27,9 +28,31 @@ import { AiDraftPanel } from '../../../../../../../components/admin/plan-editor/
 import { EditablePlanPanel } from '../../../../../../../components/admin/plan-editor/editable-plan-panel';
 import { RegenerateBriefModal } from '../../../../../../../components/admin/plan-editor/regenerate-brief-modal';
 import {
-  OverflowModal,
-  type OverflowItem,
-} from '../../../../../../../components/admin/plan-editor/overflow-modal';
+  SchedulingModal,
+  type SchedulingPhase,
+} from '../../../../../../../components/admin/plan-editor/scheduling-modal';
+
+type SchedulingState = {
+  open: boolean;
+  phase: SchedulingPhase;
+  /** Which flow opened this modal — drives the close-button behavior (publish navigates away on Concluir; edit stays). */
+  flow: 'publish' | 'edit';
+  /** Items participating in this scheduling pass (for autoSchedule: all non-skipped; for editPublished: added items snapshot). */
+  items: WeeklyPlanItem[];
+  placements: SchedulingPlacement[];
+  overflow: Array<{ itemId: string; minutesRequired: number }>;
+  sessionsFailed: number;
+};
+
+const INITIAL_SCHEDULING_STATE: SchedulingState = {
+  open: false,
+  phase: 'pending',
+  flow: 'publish',
+  items: [],
+  placements: [],
+  overflow: [],
+  sessionsFailed: 0,
+};
 
 export default function PlanEditorPage({
   params,
@@ -49,10 +72,7 @@ export default function PlanEditorPage({
   const [carryOverInitialized, setCarryOverInitialized] = useState(false);
   const [aiDraft, setAiDraft] = useState<AiDraft | null>(null);
   const [briefOpen, setBriefOpen] = useState(false);
-  const [overflowState, setOverflowState] = useState<{
-    open: boolean;
-    overflow: OverflowItem[];
-  }>({ open: false, overflow: [] });
+  const [scheduling, setScheduling] = useState<SchedulingState>(INITIAL_SCHEDULING_STATE);
 
   // Bootstrap: either fetch existing or create-or-get draft
   const { data: fetchedPlan, error: planError } = usePlan(
@@ -240,6 +260,16 @@ export default function PlanEditorPage({
     }
   }
 
+  function extractOverflow(err: unknown): Array<{ itemId: string; minutesRequired: number }> | null {
+    if (!(err instanceof ApiErrorResponse) || err.apiError?.code !== 'PLAN_OVERFLOW') {
+      return null;
+    }
+    const details = err.apiError.details as
+      | { overflow?: Array<{ itemId: string; minutesRequired: number }> }
+      | undefined;
+    return details?.overflow ?? [];
+  }
+
   async function handlePublish(options: {
     publishAt: string | null;
     sendWhatsapp: boolean;
@@ -262,6 +292,11 @@ export default function PlanEditorPage({
         sendWhatsapp: options.sendWhatsapp,
         autoSchedule: options.autoSchedule,
       });
+      // Reflect the new status (PUBLISHED for immediate, SCHEDULED for
+      // deferred) in local state. Without this, if autoSchedule below throws
+      // PLAN_OVERFLOW, the panel keeps showing Save/Publish buttons that 409
+      // because the plan is already PUBLISHED on the server.
+      setPlan((prev) => (prev ? { ...prev, status: publishRes.plan.status } : prev));
       // Scheduled-publish path: cron handles autoSchedule + WhatsApp later.
       if (publishRes.deferred) {
         addToast({
@@ -280,46 +315,70 @@ export default function PlanEditorPage({
         navigateAfterPublish();
         return;
       }
-      const res = await autoSchedule.mutateAsync({
-        planId: plan.id,
-        force: false,
+      // Open SchedulingModal in pending state — the autoSchedule call below
+      // takes ~1s (scheduler <100ms + Google Calendar createEvent ×N). The
+      // modal gives the admin live feedback during that gap.
+      const schedulableItems = saved.items.filter((i) => i.outcome !== 'SKIPPED');
+      setScheduling({
+        open: true,
+        phase: 'pending',
+        flow: 'publish',
+        items: schedulableItems,
+        placements: [],
+        overflow: [],
+        sessionsFailed: 0,
       });
-      if (res.overflow && res.overflow.length > 0) {
-        setOverflowState({ open: true, overflow: res.overflow });
-        return;
-      }
-      const failed = res.sessionsFailed ?? 0;
-      addToast({
-        title: failed > 0 ? 'Plan published with calendar errors' : 'Plan published',
-        description:
-          failed > 0
-            ? `${res.sessionsCreated} session${res.sessionsCreated === 1 ? '' : 's'} on calendar · ${failed} failed (check Google connection).`
-            : `${res.sessionsCreated} session${res.sessionsCreated === 1 ? '' : 's'} scheduled.`,
-        color: failed > 0 ? 'warning' : 'success',
-      });
-      navigateAfterPublish();
-    } catch (err) {
-      if (
-        err instanceof ApiErrorResponse &&
-        err.apiError?.code === 'PLAN_OVERFLOW'
-      ) {
-        const overflow =
-          (err.apiError.details as { overflow?: OverflowItem[] } | undefined)
-            ?.overflow ?? [];
-        setOverflowState({ open: true, overflow });
-      } else {
+      try {
+        const res = await autoSchedule.mutateAsync({ planId: plan.id, force: false });
+        setScheduling((prev) => ({
+          ...prev,
+          phase: 'done',
+          placements: res.placements,
+          overflow: res.overflow,
+          sessionsFailed: res.sessionsFailed,
+        }));
+      } catch (err) {
+        const overflow = extractOverflow(err);
+        if (overflow !== null) {
+          setScheduling((prev) => ({
+            ...prev,
+            phase: 'overflow',
+            placements: [],
+            overflow,
+          }));
+          return;
+        }
+        setScheduling(INITIAL_SCHEDULING_STATE);
         addToast({
           title: 'Publish failed',
           description: err instanceof Error ? err.message : 'Unknown error',
           color: 'danger',
         });
-        throw err;
       }
+    } catch (err) {
+      addToast({
+        title: 'Publish failed',
+        description: err instanceof Error ? err.message : 'Unknown error',
+        color: 'danger',
+      });
+      throw err;
     }
   }
 
   async function handleApplyEdit(force = false) {
     if (!plan) return;
+    // Snapshot items before mutate — for the modal's pending-state list. After
+    // editPublished resolves we know which were added/removed via response counts.
+    const itemsSnapshot = plan.items.slice();
+    setScheduling({
+      open: true,
+      phase: 'pending',
+      flow: 'edit',
+      items: itemsSnapshot,
+      placements: [],
+      overflow: [],
+      sessionsFailed: 0,
+    });
     try {
       const res = await editPublished.mutateAsync({
         planId: plan.id,
@@ -331,29 +390,27 @@ export default function PlanEditorPage({
         force,
       });
       setPlan(res.plan);
-      const { addedCount, removedCount, sessionsCreated, sessionsFailed } = res.scheduling;
-      const parts: string[] = [];
-      if (addedCount > 0) parts.push(`+${addedCount} added`);
-      if (removedCount > 0) parts.push(`−${removedCount} removed`);
-      if (sessionsCreated > 0) parts.push(`${sessionsCreated} on calendar`);
-      if (sessionsFailed > 0) parts.push(`${sessionsFailed} calendar errors`);
-      addToast({
-        title: sessionsFailed > 0 ? 'Changes applied with calendar errors' : 'Changes applied',
-        description: parts.join(' · ') || 'No changes detected.',
-        color: sessionsFailed > 0 ? 'warning' : 'success',
-      });
-      setOverflowState({ open: false, overflow: [] });
+      // Re-snapshot from the fresh plan so the modal can show added items by id.
+      setScheduling((prev) => ({
+        ...prev,
+        phase: 'done',
+        items: res.plan.items.filter((i) => i.outcome !== 'SKIPPED'),
+        placements: res.scheduling.placements,
+        overflow: res.scheduling.overflow,
+        sessionsFailed: res.scheduling.sessionsFailed,
+      }));
     } catch (err) {
-      if (
-        err instanceof ApiErrorResponse &&
-        err.apiError?.code === 'PLAN_OVERFLOW'
-      ) {
-        const overflow =
-          (err.apiError.details as { overflow?: OverflowItem[] } | undefined)
-            ?.overflow ?? [];
-        setOverflowState({ open: true, overflow });
+      const overflow = extractOverflow(err);
+      if (overflow !== null) {
+        setScheduling((prev) => ({
+          ...prev,
+          phase: 'overflow',
+          placements: [],
+          overflow,
+        }));
         return;
       }
+      setScheduling(INITIAL_SCHEDULING_STATE);
       if (
         err instanceof ApiErrorResponse &&
         err.apiError?.code === 'CANT_REMOVE_COMPLETED_ITEM'
@@ -373,33 +430,41 @@ export default function PlanEditorPage({
     }
   }
 
-  async function handleForcePublish() {
-    if (!plan) return;
-    // Overflow modal in edit-published flow → re-call edit with force=true.
-    if (plan.status === 'PUBLISHED') {
+  async function handleForceFromModal() {
+    if (scheduling.flow === 'edit') {
       await handleApplyEdit(true);
       return;
     }
+    if (!plan) return;
+    // Re-run autoSchedule with force=true. Keep the modal open in pending
+    // state so the admin sees the same visual feedback during the retry.
+    setScheduling((prev) => ({ ...prev, phase: 'pending', placements: [], overflow: [] }));
     try {
       const res = await autoSchedule.mutateAsync({ planId: plan.id, force: true });
-      setOverflowState({ open: false, overflow: [] });
-      const failed = res.sessionsFailed ?? 0;
-      addToast({
-        title: failed > 0 ? 'Plan published with calendar errors' : 'Plan published',
-        description:
-          failed > 0
-            ? `${res.sessionsCreated} session${res.sessionsCreated === 1 ? '' : 's'} on calendar · ${failed} failed (check Google connection).`
-            : `${res.sessionsCreated} session${res.sessionsCreated === 1 ? '' : 's'} scheduled (overflow forced).`,
-        color: failed > 0 ? 'warning' : 'success',
-      });
-      navigateAfterPublish();
+      setScheduling((prev) => ({
+        ...prev,
+        phase: 'done',
+        placements: res.placements,
+        overflow: res.overflow,
+        sessionsFailed: res.sessionsFailed,
+      }));
     } catch (err) {
+      setScheduling(INITIAL_SCHEDULING_STATE);
       addToast({
         title: 'Publish failed',
         description: err instanceof Error ? err.message : 'Unknown error',
         color: 'danger',
       });
     }
+  }
+
+  function handleSchedulingClose() {
+    // After a fresh publish (flow === 'publish' && phase === 'done'), close
+    // navigates away to the cycle page. For edit-published or for dismissing
+    // an overflow, just close — local plan state is already up-to-date.
+    const shouldNavigate = scheduling.flow === 'publish' && scheduling.phase === 'done';
+    setScheduling(INITIAL_SCHEDULING_STATE);
+    if (shouldNavigate) navigateAfterPublish();
   }
 
   async function handleReschedulePending() {
@@ -416,21 +481,20 @@ export default function PlanEditorPage({
         color: 'success',
       });
     } catch (err) {
-      if (
-        err instanceof ApiErrorResponse &&
-        err.apiError?.code === 'PLAN_OVERFLOW'
-      ) {
-        const overflow =
-          (err.apiError.details as { overflow?: OverflowItem[] } | undefined)
-            ?.overflow ?? [];
-        setOverflowState({ open: true, overflow });
-      } else {
+      const overflow = extractOverflow(err);
+      if (overflow !== null) {
         addToast({
-          title: 'Reschedule failed',
-          description: err instanceof Error ? err.message : 'Unknown error',
-          color: 'danger',
+          title: 'Reschedule overflow',
+          description: `${overflow.length} item${overflow.length === 1 ? '' : 'ns'} sem janela disponível. Ajuste a disponibilidade ou o plano.`,
+          color: 'warning',
         });
+        return;
       }
+      addToast({
+        title: 'Reschedule failed',
+        description: err instanceof Error ? err.message : 'Unknown error',
+        color: 'danger',
+      });
     }
   }
 
@@ -581,15 +645,19 @@ export default function PlanEditorPage({
           }}
           loading={draftMutation.isPending}
         />
-        <OverflowModal
-          open={overflowState.open}
-          overflow={overflowState.overflow}
-          memberName={context?.member.name ?? ''}
-          onClose={() => setOverflowState({ open: false, overflow: [] })}
+        <SchedulingModal
+          open={scheduling.open}
+          phase={scheduling.phase}
+          items={scheduling.items}
+          placements={scheduling.placements}
+          overflow={scheduling.overflow}
+          timezone={context?.availability.timezone ?? 'America/Sao_Paulo'}
+          sessionsFailed={scheduling.sessionsFailed}
+          pendingForce={autoSchedule.isPending || editPublished.isPending}
+          onClose={handleSchedulingClose}
           onForce={() => {
-            void handleForcePublish();
+            void handleForceFromModal();
           }}
-          pending={autoSchedule.isPending || editPublished.isPending}
         />
       </div>
 

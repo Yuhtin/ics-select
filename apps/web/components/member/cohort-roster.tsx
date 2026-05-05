@@ -1,12 +1,13 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Copy, Mail, Search } from 'lucide-react';
+import { Copy, Flame, Mail, Search } from 'lucide-react';
 import { clsx } from 'clsx';
-import type { CohortMember } from '../../lib/queries/me-cohort';
+import type { CohortMember, MemberRank } from '../../lib/queries/me-cohort';
 
 interface Props {
   members: CohortMember[];
+  ranking?: MemberRank[];
 }
 
 function Initials({
@@ -45,9 +46,14 @@ function Initials({
   );
 }
 
-export function CohortRoster({ members }: Props) {
+export function CohortRoster({ members, ranking }: Props) {
   const [query, setQuery] = useState('');
   const [copiedEmail, setCopiedEmail] = useState<string | null>(null);
+
+  const onFireIds = useMemo(
+    () => new Set((ranking ?? []).map((r) => r.userId)),
+    [ranking],
+  );
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -116,6 +122,17 @@ export function CohortRoster({ members }: Props) {
                 {m.isMe && (
                   <span className="inline-flex h-[18px] items-center rounded-pill bg-primary px-2 font-mono text-[10px] font-semibold uppercase tracking-eyebrow text-primary-fg">
                     You
+                  </span>
+                )}
+                {onFireIds.has(m.userId) && (
+                  <span
+                    className="inline-flex items-center gap-1 text-focus"
+                    title="On fire this week"
+                  >
+                    <Flame className="h-3.5 w-3.5" strokeWidth={1.8} />
+                    <span className="font-mono text-[10px] font-semibold uppercase tracking-eyebrow">
+                      On fire
+                    </span>
                   </span>
                 )}
               </p>
