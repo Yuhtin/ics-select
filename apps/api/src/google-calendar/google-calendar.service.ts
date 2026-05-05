@@ -5,13 +5,15 @@ import { PrismaService } from '../common/prisma/prisma.service.js';
 import { AesGcmService } from '../common/crypto/aes-gcm.service.js';
 import { embedIcsId } from '../common/ics-id/ics-id.js';
 
-// Multiplex multiple concurrent Calendar requests over a single TLS socket.
-// Without this, Promise.all of N createEvent calls bottlenecks on HTTP/1.1
-// connection limits + per-connection serialization, taking ~N×latency wall
-// time even though we awaited them in parallel. With HTTP/2, googleapis sends
-// them as concurrent streams on one connection — wall time collapses to ~1×
-// latency for the whole batch.
-google.options({ http2: true });
+// HTTP/2 was previously enabled here to multiplex Promise.all-batched
+// createEvent calls during publish over one socket. In practice, Google's
+// edge sends GOAWAY on idle sessions and the next request fails with
+// ERR_HTTP2_STREAM_CANCEL — gaxios doesn't honor a per-request opt-out, so
+// the wedged session burned both attempts of retryOnHttp2StreamCancel and
+// surfaced as 500s on /me/calendar. HTTP/1.1 keep-alive is slower for the
+// publish batch but reliable for the single-shot reads that dominate
+// traffic; revisit if publish latency becomes the bottleneck.
+google.options({ http2: false });
 
 export type CreateEventInput = {
   summary: string;
@@ -52,16 +54,13 @@ export class GoogleCalendarService {
     const t0 = Date.now();
     const client = await this.clientFor(userId);
     const tApi = Date.now();
-    const res = await client.freebusy.query(
-      {
-        requestBody: {
-          timeMin: timeMin.toISOString(),
-          timeMax: timeMax.toISOString(),
-          items: [{ id: 'primary' }],
-        },
+    const res = await client.freebusy.query({
+      requestBody: {
+        timeMin: timeMin.toISOString(),
+        timeMax: timeMax.toISOString(),
+        items: [{ id: 'primary' }],
       },
-      { http2: false },
-    );
+    });
     const apiMs = Date.now() - tApi;
     const busy = res.data.calendars?.primary?.busy ?? [];
     const out = busy
@@ -90,25 +89,15 @@ export class GoogleCalendarService {
     meetLink?: string;
   }>> {
     const client = await this.clientFor(userId);
-    // Reads opt out of the global HTTP/2 default. Multiplexing only pays off
-    // for the batched createEvent path during publish; single reads got the
-    // downside (idle sessions GOAWAY'd by Google → ERR_HTTP2_STREAM_CANCEL on
-    // the next stream) without the upside. retryOnHttp2StreamCancel stays as a
-    // belt-and-suspenders for the rare case the global flag is honored anyway.
-    const res = await retryOnHttp2StreamCancel(() =>
-      client.events.list(
-        {
-          calendarId: 'primary',
-          timeMin: timeMin.toISOString(),
-          timeMax: timeMax.toISOString(),
-          singleEvents: true,
-          orderBy: 'startTime',
-          maxResults: 100,
-          fields: 'items(id,summary,description,start,end,location,htmlLink,conferenceData/entryPoints)',
-        },
-        { http2: false },
-      ),
-    );
+    const res = await client.events.list({
+      calendarId: 'primary',
+      timeMin: timeMin.toISOString(),
+      timeMax: timeMax.toISOString(),
+      singleEvents: true,
+      orderBy: 'startTime',
+      maxResults: 100,
+      fields: 'items(id,summary,description,start,end,location,htmlLink,conferenceData/entryPoints)',
+    });
     const events = res.data.items ?? [];
     const includeAllDay = opts.includeAllDay === true;
     return events
@@ -320,14 +309,3 @@ function defaultClientFactory(auth: unknown): calendar_v3.Calendar {
   return google.calendar({ version: 'v3', auth: auth as any });
 }
 
-async function retryOnHttp2StreamCancel<T>(fn: () => Promise<T>): Promise<T> {
-  try {
-    return await fn();
-  } catch (err) {
-    const code = (err as { code?: string } | null)?.code;
-    if (code === 'ERR_HTTP2_STREAM_CANCEL') {
-      return await fn();
-    }
-    throw err;
-  }
-}
