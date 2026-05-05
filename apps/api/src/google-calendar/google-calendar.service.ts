@@ -52,13 +52,16 @@ export class GoogleCalendarService {
     const t0 = Date.now();
     const client = await this.clientFor(userId);
     const tApi = Date.now();
-    const res = await client.freebusy.query({
-      requestBody: {
-        timeMin: timeMin.toISOString(),
-        timeMax: timeMax.toISOString(),
-        items: [{ id: 'primary' }],
+    const res = await client.freebusy.query(
+      {
+        requestBody: {
+          timeMin: timeMin.toISOString(),
+          timeMax: timeMax.toISOString(),
+          items: [{ id: 'primary' }],
+        },
       },
-    });
+      { http2: false },
+    );
     const apiMs = Date.now() - tApi;
     const busy = res.data.calendars?.primary?.busy ?? [];
     const out = busy
@@ -87,20 +90,24 @@ export class GoogleCalendarService {
     meetLink?: string;
   }>> {
     const client = await this.clientFor(userId);
-    // googleapis runs on a long-lived HTTP/2 session (see google.options at top
-    // of file). When the session goes idle between cron ticks, Google may send
-    // GOAWAY and cancel the next stream — surfaced as ERR_HTTP2_STREAM_CANCEL.
-    // The next request reopens the socket, so a single retry is enough.
+    // Reads opt out of the global HTTP/2 default. Multiplexing only pays off
+    // for the batched createEvent path during publish; single reads got the
+    // downside (idle sessions GOAWAY'd by Google → ERR_HTTP2_STREAM_CANCEL on
+    // the next stream) without the upside. retryOnHttp2StreamCancel stays as a
+    // belt-and-suspenders for the rare case the global flag is honored anyway.
     const res = await retryOnHttp2StreamCancel(() =>
-      client.events.list({
-        calendarId: 'primary',
-        timeMin: timeMin.toISOString(),
-        timeMax: timeMax.toISOString(),
-        singleEvents: true,
-        orderBy: 'startTime',
-        maxResults: 100,
-        fields: 'items(id,summary,description,start,end,location,htmlLink,conferenceData/entryPoints)',
-      }),
+      client.events.list(
+        {
+          calendarId: 'primary',
+          timeMin: timeMin.toISOString(),
+          timeMax: timeMax.toISOString(),
+          singleEvents: true,
+          orderBy: 'startTime',
+          maxResults: 100,
+          fields: 'items(id,summary,description,start,end,location,htmlLink,conferenceData/entryPoints)',
+        },
+        { http2: false },
+      ),
     );
     const events = res.data.items ?? [];
     const includeAllDay = opts.includeAllDay === true;
