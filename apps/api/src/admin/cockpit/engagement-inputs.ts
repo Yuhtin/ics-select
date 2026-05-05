@@ -42,7 +42,9 @@ export async function computeEngagementInputsForCohort(
      FROM unnest($1::text[]) AS u("userId")
      LEFT JOIN (
        SELECT "userId", COUNT(DISTINCT date_trunc('day', "occurredAt"))::int AS cnt FROM "UserEvent"
-       WHERE "userId" = ANY($1::text[]) AND "occurredAt" BETWEEN $2 AND $3
+       WHERE "userId" = ANY($1::text[])
+         AND "type" = 'OUTCOME_MARKED'
+         AND "occurredAt" BETWEEN $2 AND $3
        GROUP BY "userId"
      ) ev_days ON ev_days."userId" = u."userId"
      LEFT JOIN (

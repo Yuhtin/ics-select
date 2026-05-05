@@ -2,7 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { resolveActiveMembership } from '../../common/cycle/active-cycle';
 import { type ItemOutcome, isPositiveOutcome } from '@ics-select/shared';
-import { computeMemberRanking, type MemberRankingUser } from './member-ranking';
+import { computeEngagementInputsForCohort } from '../../admin/cockpit/engagement-inputs';
+import { computeEngagementScore } from '../../admin/cockpit/engagement-score';
 
 type CohortEvent = {
   id: string;
@@ -154,40 +155,30 @@ export class CohortService {
 
     let ranking: MemberRank[] | undefined;
     if ((cycle as any).rankingVisibleToMembers) {
-      const plans = await this.prisma.weeklyPlan.findMany({
-        where: {
-          userId: { in: userIds },
-          status: 'PUBLISHED',
-          weekStart: { gte: cycle.startsAt, lte: now },
-        },
-        include: {
-          items: {
-            select: {
-              outcome: true,
-              completedAt: true,
-              libraryItem: { select: { estimatedMinutes: true } },
-            },
-          },
-        },
-      });
-
-      const itemsByUser = new Map<string, MemberRankingUser['items']>();
-      for (const plan of plans) {
-        const bucket = itemsByUser.get(plan.userId) ?? [];
-        bucket.push(...((plan as any).items as MemberRankingUser['items']));
-        itemsByUser.set(plan.userId, bucket);
-      }
-
-      const rankingInput: MemberRankingUser[] = (cycle as any).memberships.map(
-        (m: any) => ({
-          userId: m.userId,
-          name: m.user.name,
-          pictureUrl: m.user.pictureUrl ?? null,
-          items: itemsByUser.get(m.userId) ?? [],
-        }),
+      const inputs = await computeEngagementInputsForCohort(
+        this.prisma,
+        userIds,
+        cycle.id,
+        this.mondayUTC(cycle.startsAt),
+        now,
       );
 
-      ranking = computeMemberRanking(rankingInput, weekStart, weekEnd, userId);
+      ranking = (cycle as any).memberships
+        .map((m: any) => {
+          const input = inputs.get(m.userId);
+          const score = input ? computeEngagementScore(input).score : 0;
+          return {
+            userId: m.userId,
+            name: m.user.name,
+            pictureUrl: m.user.pictureUrl ?? null,
+            score,
+            isMe: m.userId === userId,
+          };
+        })
+        .sort((a: MemberRank, b: MemberRank) => {
+          if (b.score !== a.score) return b.score - a.score;
+          return a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' });
+        });
     }
 
     const members: CohortMember[] = (cycle as any).memberships

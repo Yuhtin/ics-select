@@ -1,7 +1,4 @@
 'use client';
-
-import { useMemo, useState } from 'react';
-import { Copy, Flame, Mail, Search } from 'lucide-react';
 import { clsx } from 'clsx';
 import type { CohortMember, MemberRank } from '../../lib/queries/me-cohort';
 
@@ -46,129 +43,80 @@ function Initials({
   );
 }
 
+function scoreColor(score: number): string {
+  if (score >= 66) return 'text-outcome-done-easy';
+  if (score >= 33) return 'text-outcome-done-hard';
+  return 'text-outcome-stuck';
+}
+
 export function CohortRoster({ members, ranking }: Props) {
-  const [query, setQuery] = useState('');
-  const [copiedEmail, setCopiedEmail] = useState<string | null>(null);
-
-  const onFireIds = useMemo(
-    () => new Set((ranking ?? []).map((r) => r.userId)),
-    [ranking],
-  );
-
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return members;
-    return members.filter(
-      (m) =>
-        m.name.toLowerCase().includes(q) ||
-        m.email.toLowerCase().includes(q),
-    );
-  }, [members, query]);
-
-  const copyEmail = async (email: string) => {
-    try {
-      await navigator.clipboard.writeText(email);
-      setCopiedEmail(email);
-      setTimeout(() => setCopiedEmail((cur) => (cur === email ? null : cur)), 1500);
-    } catch {
-      // Clipboard blocked — silent, the email is visible anyway.
-    }
-  };
-
   if (members.length === 0) {
-    return (
-      <p className="font-mono text-xs text-fg-mute">No classmates to show.</p>
-    );
+    return <p className="font-mono text-xs text-fg-mute">No classmates to show.</p>;
   }
+
+  // When ranking present, use it (already sorted by score desc).
+  // When absent, fall back to alphabetical members list with no score column.
+  const useRanking = Boolean(ranking && ranking.length > 0);
+
+  const rows = useRanking
+    ? ranking!.map((r) => {
+        const m = members.find((x) => x.userId === r.userId);
+        return {
+          userId: r.userId,
+          name: r.name,
+          pictureUrl: r.pictureUrl,
+          isMe: r.isMe,
+          email: m?.email ?? null,
+          score: r.score,
+        };
+      })
+    : [...members]
+        .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' }))
+        .map((m) => ({ ...m, score: null as number | null }));
 
   return (
     <section className="rounded-tile border border-border-token bg-surface">
-      <header className="flex items-center gap-3 border-b border-border-token px-5 py-4">
-        <div className="flex-1">
-          <p className="font-mono text-[10px] font-semibold uppercase tracking-eyebrow text-fg-mute">
-            Classmates
-          </p>
-          <p className="mt-0.5 font-sans text-sm text-fg-soft">
-            {members.length} on this cycle
-          </p>
-        </div>
-        <div className="relative w-full max-w-xs">
-          <Search
-            className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-fg-faint"
-            strokeWidth={1.6}
-          />
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search name or email"
-            className="w-full rounded-input border border-border-strong bg-surface py-2 pl-9 pr-3 font-sans text-sm text-fg transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15"
-          />
-        </div>
+      <header className="border-b border-border-token px-5 py-4">
+        <p className="font-mono text-[10px] font-semibold uppercase tracking-eyebrow text-fg-mute">
+          {useRanking ? 'Cohort ranking' : 'Classmates'}
+        </p>
+        <p className="mt-0.5 font-sans text-sm text-fg-soft">
+          {members.length} {members.length === 1 ? 'classmate' : 'classmates'} this cycle
+        </p>
       </header>
-      <ul role="list" className="divide-y divide-border-token">
-        {filtered.map((m) => (
+      <ol role="list" className="divide-y divide-border-token">
+        {rows.map((row, idx) => (
           <li
-            key={m.userId}
+            key={row.userId}
             className={clsx(
               'flex items-center gap-4 px-5 py-3',
-              m.isMe && 'bg-primary-soft',
+              row.isMe && 'bg-primary-soft',
             )}
           >
-            <Initials name={m.name} pictureUrl={m.pictureUrl} />
+            {useRanking && (
+              <span className="w-6 font-mono text-xs tabular-nums font-semibold text-fg-mute">
+                {String(idx + 1).padStart(2, '0')}
+              </span>
+            )}
+            <Initials name={row.name} pictureUrl={row.pictureUrl} />
             <div className="flex-1 min-w-0">
               <p className="flex items-center gap-2 font-sans text-sm font-medium text-fg">
-                {m.name}
-                {m.isMe && (
+                {row.name}
+                {row.isMe && (
                   <span className="inline-flex h-[18px] items-center rounded-pill bg-primary px-2 font-mono text-[10px] font-semibold uppercase tracking-eyebrow text-primary-fg">
                     You
                   </span>
                 )}
-                {onFireIds.has(m.userId) && (
-                  <span
-                    className="inline-flex items-center gap-1 text-focus"
-                    title="On fire this week"
-                  >
-                    <Flame className="h-3.5 w-3.5" strokeWidth={1.8} />
-                    <span className="font-mono text-[10px] font-semibold uppercase tracking-eyebrow">
-                      On fire
-                    </span>
-                  </span>
-                )}
-              </p>
-              <p className="mt-0.5 truncate font-mono text-[12px] text-fg-mute">
-                {m.email}
               </p>
             </div>
-            <div className="flex items-center gap-1">
-              <a
-                href={`mailto:${m.email}`}
-                className="inline-flex h-8 w-8 items-center justify-center rounded-input text-fg-mute transition-colors hover:bg-bg-subtle hover:text-fg"
-                aria-label={`Email ${m.name}`}
-                title={`Email ${m.name}`}
-              >
-                <Mail className="h-4 w-4" strokeWidth={1.6} />
-              </a>
-              <button
-                type="button"
-                onClick={() => copyEmail(m.email)}
-                className="inline-flex h-8 w-8 items-center justify-center rounded-input text-fg-mute transition-colors hover:bg-bg-subtle hover:text-fg"
-                aria-label={`Copy ${m.name}'s email`}
-                title={
-                  copiedEmail === m.email ? 'Copied!' : `Copy email`
-                }
-              >
-                <Copy className="h-4 w-4" strokeWidth={1.6} />
-              </button>
-            </div>
+            {useRanking && row.score !== null && (
+              <span className={clsx('font-mono text-sm tabular-nums', scoreColor(row.score))}>
+                {row.score}/100
+              </span>
+            )}
           </li>
         ))}
-        {filtered.length === 0 && (
-          <li className="px-5 py-6 text-center font-mono text-xs text-fg-mute">
-            No classmates match “{query}”.
-          </li>
-        )}
-      </ul>
+      </ol>
     </section>
   );
 }

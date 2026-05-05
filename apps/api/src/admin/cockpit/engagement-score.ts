@@ -40,7 +40,7 @@ export function computeEngagementScore(input: EngagementInput): EngagementScore 
 
   const activePct =
     input.daysElapsed > 0
-      ? Math.min(1, input.daysActive / input.daysElapsed)
+      ? Math.min(1, input.daysActive / (input.daysElapsed * 0.5))
       : 0;
   const activePts = activePct * 22;
 
@@ -69,9 +69,9 @@ export function computeEngagementScore(input: EngagementInput): EngagementScore 
 
   let recencyPts = 0;
   if (input.daysSinceLastSession === null) recencyPts = 0;
-  else if (input.daysSinceLastSession <= 3) recencyPts = 12;
-  else if (input.daysSinceLastSession <= 7) recencyPts = 6;
-  else if (input.daysSinceLastSession <= 14) recencyPts = 2;
+  else if (input.daysSinceLastSession <= 1) recencyPts = 12;
+  else if (input.daysSinceLastSession <= 3) recencyPts = 8;
+  else if (input.daysSinceLastSession <= 7) recencyPts = 4;
   else recencyPts = 0;
 
   const total = cohortPts + activePts + completionPts + retroPts + attendancePts + recencyPts;

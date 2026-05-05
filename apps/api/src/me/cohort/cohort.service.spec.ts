@@ -8,6 +8,7 @@ const makePrismaMock = () => ({
   weeklyPlan: { findMany: jest.fn() },
   weeklyPlanItem: { findMany: jest.fn() },
   weeklyRetro: { findMany: jest.fn() },
+  $queryRawUnsafe: jest.fn(async () => []) as any,
 });
 
 describe('CohortService', () => {
@@ -52,7 +53,6 @@ describe('CohortService', () => {
         { userId: 'user-2', user: { id: 'user-2', name: 'Alice', email: 'alice@inteli.edu.br', pictureUrl: null } },
       ],
     } as any);
-    prisma.weeklyPlan.findMany.mockResolvedValue([]);
     prisma.weeklyPlanItem.findMany.mockResolvedValue([]);
     prisma.weeklyRetro.findMany.mockResolvedValue([]);
     const result = await service.getCohort('user-1', new Date('2026-04-17T19:00:00Z'));
@@ -82,43 +82,40 @@ describe('CohortService', () => {
         { userId: 'user-2', user: { id: 'user-2', name: 'Alice', email: 'alice@inteli.edu.br', pictureUrl: null } },
       ],
     } as any);
-    // user-2 (Alice) — 60min DONE_EASY this week
-    // user-1 (Me)    — 30min DONE_EASY this week
-    prisma.weeklyPlan.findMany.mockResolvedValue([
-      {
-        id: 'plan-me',
-        userId: 'user-1',
-        items: [
-          {
-            outcome: 'DONE_EASY',
-            completedAt: new Date('2026-04-15T10:00:00Z'),
-            libraryItem: { estimatedMinutes: 30 },
-          },
-        ],
-      },
-      {
-        id: 'plan-alice',
-        userId: 'user-2',
-        items: [
-          {
-            outcome: 'DONE_EASY',
-            completedAt: new Date('2026-04-15T10:00:00Z'),
-            libraryItem: { estimatedMinutes: 60 },
-          },
-        ],
-      },
-    ] as any);
     prisma.weeklyPlanItem.findMany.mockResolvedValue([]);
     prisma.weeklyRetro.findMany.mockResolvedValue([]);
+    // user-1 (Me) — high engagement; user-2 (Alice) — low engagement
+    prisma.$queryRawUnsafe.mockResolvedValue([
+      {
+        userId: 'user-1',
+        daysActive: 5,
+        itemsDone: 5,
+        itemsPlanned: 10,
+        retrosSubmitted: 1,
+        daysSinceLastSession: 2,
+        classesAttended: 2,
+        classesHeld: 2,
+      },
+      {
+        userId: 'user-2',
+        daysActive: 1,
+        itemsDone: 1,
+        itemsPlanned: 10,
+        retrosSubmitted: 0,
+        daysSinceLastSession: 10,
+        classesAttended: 0,
+        classesHeld: 2,
+      },
+    ]);
 
     const result = await service.getCohort('user-1', new Date('2026-04-17T19:00:00Z'));
     expect(result.ranking).toHaveLength(2);
-    expect(result.ranking![0]!.userId).toBe('user-2');   // Alice (60min) → higher score
-    expect(result.ranking![1]!.userId).toBe('user-1');   // Me (30min)
+    expect(result.ranking![0]!.userId).toBe('user-1');   // Me (higher engagement score)
+    expect(result.ranking![1]!.userId).toBe('user-2');   // Alice (lower score)
     expect(result.ranking!.find((r) => r.isMe)?.userId).toBe('user-1');
   });
 
-  it('returns empty ranking when ranking is visible but no member has score > 0', async () => {
+  it('returns ranking with score=0 for all members when $queryRawUnsafe returns empty', async () => {
     prisma.cycleMembership.findFirst.mockResolvedValue({
       cycleId: 'c-1',
       cycle: {
@@ -139,12 +136,14 @@ describe('CohortService', () => {
         { userId: 'user-1', user: { id: 'user-1', name: 'Me', email: 'me@inteli.edu.br', pictureUrl: null } },
       ],
     } as any);
-    prisma.weeklyPlan.findMany.mockResolvedValue([]);
     prisma.weeklyPlanItem.findMany.mockResolvedValue([]);
     prisma.weeklyRetro.findMany.mockResolvedValue([]);
+    // Empty rows — no engagement data yet
+    prisma.$queryRawUnsafe.mockResolvedValue([]);
 
     const result = await service.getCohort('user-1', new Date('2026-04-17T19:00:00Z'));
-    expect(result.ranking).toEqual([]);
+    expect(result.ranking).toBeDefined();
+    expect(result.ranking!.every((r) => r.score === 0)).toBe(true);
   });
 
   it('builds feed from recent item outcomes + retros (last 24h)', async () => {
@@ -169,7 +168,6 @@ describe('CohortService', () => {
         { userId: 'user-2', user: { id: 'user-2', name: 'Alice', email: 'alice@inteli.edu.br', pictureUrl: null } },
       ],
     } as any);
-    prisma.weeklyPlan.findMany.mockResolvedValue([]);
     prisma.weeklyPlanItem.findMany.mockResolvedValue([
       {
         id: 'item-1', outcome: 'DONE_EASY',

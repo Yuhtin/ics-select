@@ -3,8 +3,8 @@ import { computeEngagementScore, type EngagementInput } from './engagement-score
 const baseInput: EngagementInput = {
   cohortRankFromBottom: 6,
   cohortSize: 12,
-  daysActive: 12,
-  daysElapsed: 14,
+  daysActive: 4,
+  daysElapsed: 8,
   itemsDone: 8,
   itemsPlanned: 16,
   retrosSubmitted: 2,
@@ -16,11 +16,12 @@ const baseInput: EngagementInput = {
 
 describe('computeEngagementScore', () => {
   it('returns 100 for a perfect member', () => {
+    // daysActive=4, daysElapsed=8 → 4/(8×0.5)=1 → full 22 active pts
     const score = computeEngagementScore({
       cohortRankFromBottom: 12,
       cohortSize: 12,
-      daysActive: 14,
-      daysElapsed: 14,
+      daysActive: 4,
+      daysElapsed: 8,
       itemsDone: 16,
       itemsPlanned: 16,
       retrosSubmitted: 2,
@@ -85,16 +86,34 @@ describe('computeEngagementScore', () => {
     ]);
   });
 
-  it('Recency: 12 if ≤3d, 6 if ≤7d, 2 if ≤14d, 0 if >14d', () => {
-    const r1 = computeEngagementScore({ ...baseInput, daysSinceLastSession: 2 });
-    const r2 = computeEngagementScore({ ...baseInput, daysSinceLastSession: 5 });
-    const r3 = computeEngagementScore({ ...baseInput, daysSinceLastSession: 10 });
-    const r4 = computeEngagementScore({ ...baseInput, daysSinceLastSession: 20 });
-    const get = (s: typeof r1) => s.breakdown.find((b) => b.label === 'Recency')!.value;
+  it('Recency: 12 if ≤1d, 8 if ≤3d, 4 if ≤7d, 0 if >7d', () => {
+    const r0 = computeEngagementScore({ ...baseInput, daysSinceLastSession: 0 });
+    const r1 = computeEngagementScore({ ...baseInput, daysSinceLastSession: 1 });
+    const r2 = computeEngagementScore({ ...baseInput, daysSinceLastSession: 2 });
+    const r3 = computeEngagementScore({ ...baseInput, daysSinceLastSession: 3 });
+    const r5 = computeEngagementScore({ ...baseInput, daysSinceLastSession: 5 });
+    const r7 = computeEngagementScore({ ...baseInput, daysSinceLastSession: 7 });
+    const r10 = computeEngagementScore({ ...baseInput, daysSinceLastSession: 10 });
+    const r20 = computeEngagementScore({ ...baseInput, daysSinceLastSession: 20 });
+    const get = (s: typeof r0) => s.breakdown.find((b) => b.label === 'Recency')!.value;
+    expect(get(r0)).toBe(12);
     expect(get(r1)).toBe(12);
-    expect(get(r2)).toBe(6);
-    expect(get(r3)).toBe(2);
-    expect(get(r4)).toBe(0);
+    expect(get(r2)).toBe(8);
+    expect(get(r3)).toBe(8);
+    expect(get(r5)).toBe(4);
+    expect(get(r7)).toBe(4);
+    expect(get(r10)).toBe(0);
+    expect(get(r20)).toBe(0);
+  });
+
+  it('Days active: ceiling is 50% of daysElapsed (4 active / 8 elapsed = 100%)', () => {
+    const atCeiling = computeEngagementScore({ ...baseInput, daysActive: 4, daysElapsed: 8 });
+    const active = atCeiling.breakdown.find((b) => b.label === 'Days active')!;
+    expect(active.value).toBe(22);
+
+    const half = computeEngagementScore({ ...baseInput, daysActive: 2, daysElapsed: 8 });
+    const halfActive = half.breakdown.find((b) => b.label === 'Days active')!;
+    expect(halfActive.value).toBe(11);
   });
 
   it('Retros: max 21 pts at 100% rate', () => {
