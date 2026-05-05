@@ -78,15 +78,15 @@ describe('computeEngagementScore', () => {
     ]);
   });
 
-  it('Recency: 15 if ≤3d, 8 if ≤7d, 3 if ≤14d, 0 if >14d', () => {
+  it('Recency: 10 if ≤3d, 5 if ≤7d, 2 if ≤14d, 0 if >14d', () => {
     const r1 = computeEngagementScore({ ...baseInput, daysSinceLastSession: 2 });
     const r2 = computeEngagementScore({ ...baseInput, daysSinceLastSession: 5 });
     const r3 = computeEngagementScore({ ...baseInput, daysSinceLastSession: 10 });
     const r4 = computeEngagementScore({ ...baseInput, daysSinceLastSession: 20 });
     const get = (s: typeof r1) => s.breakdown.find((b) => b.label === 'Recency')!.value;
-    expect(get(r1)).toBe(15);
-    expect(get(r2)).toBe(8);
-    expect(get(r3)).toBe(3);
+    expect(get(r1)).toBe(10);
+    expect(get(r2)).toBe(5);
+    expect(get(r3)).toBe(2);
     expect(get(r4)).toBe(0);
   });
 

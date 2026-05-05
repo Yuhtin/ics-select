@@ -32,7 +32,7 @@ export type EngagementScore = {
 export function computeEngagementScore(input: EngagementInput): EngagementScore {
   const cohortRankPct =
     input.cohortSize > 0 ? input.cohortRankFromBottom / input.cohortSize : 1;
-  const cohortPts = Math.max(0, Math.min(1, cohortRankPct)) * 25;
+  const cohortPts = Math.max(0, Math.min(1, cohortRankPct)) * 30;
 
   const activePct =
     input.daysElapsed > 0
@@ -60,19 +60,19 @@ export function computeEngagementScore(input: EngagementInput): EngagementScore 
 
   let recencyPts = 0;
   if (input.daysSinceLastSession === null) recencyPts = 0;
-  else if (input.daysSinceLastSession <= 3) recencyPts = 15;
-  else if (input.daysSinceLastSession <= 7) recencyPts = 8;
-  else if (input.daysSinceLastSession <= 14) recencyPts = 3;
+  else if (input.daysSinceLastSession <= 3) recencyPts = 10;
+  else if (input.daysSinceLastSession <= 7) recencyPts = 5;
+  else if (input.daysSinceLastSession <= 14) recencyPts = 2;
   else recencyPts = 0;
 
   const total = cohortPts + activePts + completionPts + retroPts + recencyPts;
 
   const breakdown: ScoreBreakdownEntry[] = [
-    { label: COHORT_RANK_LABEL,     value: round(cohortPts),     weight: 25, status: statusFor(cohortPts, 25) },
+    { label: COHORT_RANK_LABEL,     value: round(cohortPts),     weight: 30, status: statusFor(cohortPts, 30) },
     { label: 'Days active',         value: round(activePts),     weight: 20, status: statusFor(activePts, 20) },
     { label: 'Plan completion',     value: round(completionPts), weight: 20, status: statusFor(completionPts, 20) },
     { label: 'Retros submitted',    value: round(retroPts),      weight: 20, status: statusFor(retroPts, 20) },
-    { label: 'Recency',             value: round(recencyPts),    weight: 15, status: statusFor(recencyPts, 15) },
+    { label: 'Recency',             value: round(recencyPts),    weight: 10, status: statusFor(recencyPts, 10) },
   ];
 
   return { score: Math.round(total), breakdown };

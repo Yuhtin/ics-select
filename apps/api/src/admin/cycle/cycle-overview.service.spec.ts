@@ -341,7 +341,7 @@ describe('CycleOverviewService', () => {
     expect(result.ranking[0]!.userId).toBe('user-a');
     expect(result.ranking[1]!.userId).toBe('user-b');
     expect(result.ranking[0]!.score).toBeGreaterThan(result.ranking[1]!.score);
-    expect(result.ranking[0]!.breakdown).toHaveLength(6);
+    expect(result.ranking[0]!.breakdown).toHaveLength(5);
     expect(result.ranking[0]!.hasAlert).toBe(true);
     expect(result.ranking[1]!.hasAlert).toBe(false);
   });
