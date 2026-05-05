@@ -36,6 +36,7 @@ export class ClassesService {
         update: { status: row.status },
       });
     }
+    return { ok: true, count: rows.length };
   }
 
   listAttendance(classSessionId: string) {

@@ -149,22 +149,22 @@ export function CycleOverviewView({ data }: { data: CycleOverviewResponse }) {
             <SectionLabel>Cohort heatmap · all weeks</SectionLabel>
             <CohortHeatmap weeks={data.heatmap.weeks} rows={data.heatmap.rows} />
           </div>
+
+          <ClassesSection
+            cycleId={data.cycle.id}
+            members={data.members.map((m) => ({
+              userId: m.userId,
+              name: m.name,
+              pictureUrl: m.pictureUrl,
+            }))}
+          />
         </div>
 
         <aside className="space-y-3 md:row-span-1">
           <SectionLabel>Activity · last 7d</SectionLabel>
-          <CohortFeed feed={data.feed} />
+          <CohortFeed feed={data.feed.slice(0, 35)} />
         </aside>
       </section>
-
-      <ClassesSection
-        cycleId={data.cycle.id}
-        members={data.members.map((m) => ({
-          userId: m.userId,
-          name: m.name,
-          pictureUrl: m.pictureUrl,
-        }))}
-      />
     </div>
   );
 }
