@@ -3,6 +3,7 @@ import { allocatedMinutes } from '@ics-select/shared';
 import { PrismaService } from '../common/prisma/prisma.service.js';
 import { SchedulerService, type SchedulerInput } from '../scheduler/scheduler.service.js';
 import { GoogleCalendarService } from '../google-calendar/google-calendar.service.js';
+import { BusyCacheService } from '../google-calendar/busy-cache.service.js';
 import { WhatsappService } from '../whatsapp/whatsapp.service.js';
 import { WhatsappTemplateService } from '../whatsapp/whatsapp-template.service.js';
 
@@ -101,6 +102,7 @@ export class PublicationService {
     private readonly calendar: GoogleCalendarService,
     private readonly whatsapp: WhatsappService,
     private readonly templates: WhatsappTemplateService,
+    private readonly busyCache: BusyCacheService,
   ) {}
 
   /**
@@ -435,6 +437,8 @@ export class PublicationService {
       txMs = Date.now() - tTx;
     }
 
+    this.busyCache.invalidate(plan.userId, plan.weekStart);
+
     this.logger.log(
       `[bench] reschedulePending total=${Date.now() - tTotal}ms · ` +
       `find=${findMs}ms ` +
@@ -519,6 +523,11 @@ export class PublicationService {
     const result = this.scheduler.plan(input);
     const schedulerMs = Date.now() - tScheduler;
     if (result.overflow.length > 0 && !force) {
+      // We may have already deleted previously-scheduled events above; busy
+      // state changed even though we're aborting before creating new ones.
+      if (existingEvents.length > 0) {
+        this.busyCache.invalidate(plan.userId, plan.weekStart);
+      }
       this.logger.log(
         `[bench] autoSchedule overflow-abort total=${Date.now() - tTotal}ms · ` +
         `find=${findMs}ms delEvents=${deleteEventsMs}ms(n=${existingEvents.length}) ` +
@@ -612,6 +621,8 @@ export class PublicationService {
     const tTx = Date.now();
     await this.prisma.$transaction([...placedUpdates, ...overflowUpdate]);
     const txMs = Date.now() - tTx;
+
+    this.busyCache.invalidate(plan.userId, plan.weekStart);
 
     this.logger.log(
       `[bench] autoSchedule total=${Date.now() - tTotal}ms · ` +
@@ -831,6 +842,12 @@ export class PublicationService {
       plannedOverflow,
       addedLibraryItemIds: addedRows.map((a) => a.libraryItemId),
     });
+
+    // Calendar state changed (deletes and/or creates) — drop the cached
+    // freebusy so the next plan-context read re-fetches.
+    if (removedEventIds.length > 0 || plannedSessions.length > 0) {
+      this.busyCache.invalidate(plan.userId, plan.weekStart);
+    }
 
     return {
       ...scheduling,

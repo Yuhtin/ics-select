@@ -1,6 +1,13 @@
 import { PrismaService } from '../common/prisma/prisma.service';
 import { GoogleCalendarService } from '../google-calendar/google-calendar.service';
+import { BusyCacheService } from '../google-calendar/busy-cache.service';
 import { WeeklyPlansService } from './weekly-plans.service';
+
+const stubBusyCache = {
+  getWeekBusy: jest.fn(),
+  invalidate: jest.fn(),
+  invalidateAllForUser: jest.fn(),
+} as unknown as BusyCacheService;
 
 describe('WeeklyPlansService.setItemOutcome — SKIPPED', () => {
   const calendar = { deleteEvent: jest.fn() };
@@ -24,6 +31,7 @@ describe('WeeklyPlansService.setItemOutcome — SKIPPED', () => {
           id: item.planId,
           userId: item.userId,
           status: item.planStatus,
+          weekStart: new Date('2026-04-13T00:00:00Z'),
         },
         libraryItem: {
           format: item.format ?? 'ARTICLE',
@@ -37,7 +45,7 @@ describe('WeeklyPlansService.setItemOutcome — SKIPPED', () => {
   });
 
   const build = (prisma: unknown) => {
-    return new WeeklyPlansService(prisma as PrismaService, calendar as unknown as GoogleCalendarService);
+    return new WeeklyPlansService(prisma as PrismaService, calendar as unknown as GoogleCalendarService, stubBusyCache);
   };
 
   beforeEach(() => {
@@ -132,6 +140,7 @@ describe('plan read — skippable flag', () => {
         findUnique: jest.fn().mockResolvedValue({
           id: 'p1',
           userId: 'u1',
+          weekStart: new Date('2026-04-13T00:00:00Z'),
           items: [
             {
               id: 'i1',
@@ -148,7 +157,7 @@ describe('plan read — skippable flag', () => {
       },
     };
 
-    const service = new WeeklyPlansService(prisma as any, stubCalendar as any);
+    const service = new WeeklyPlansService(prisma as any, stubCalendar as any, stubBusyCache);
     const plan = await service.getById('p1');
     expect(plan!.items[0]!.skippable).toBe(false);
     expect(plan!.items[1]!.skippable).toBe(true);
@@ -178,7 +187,7 @@ describe('plan read — skippable flag', () => {
       },
     };
 
-    const service = new WeeklyPlansService(prisma as any, stubCalendar as any);
+    const service = new WeeklyPlansService(prisma as any, stubCalendar as any, stubBusyCache);
     const plans = await service.listForMember('u1');
     expect(plans[0]!.items[0]!.skippable).toBe(true);
     expect(plans[0]!.items[1]!.skippable).toBe(false);
@@ -202,6 +211,7 @@ describe('WeeklyPlansService.remove (deletePlan)', () => {
         findUnique: jest.fn().mockResolvedValue({
           id: 'p1',
           userId: 'u1',
+          weekStart: new Date('2026-04-13T00:00:00Z'),
           items: [
             { calendarEvents: [] },
             { calendarEvents: [] },
@@ -210,7 +220,7 @@ describe('WeeklyPlansService.remove (deletePlan)', () => {
         delete: jest.fn().mockResolvedValue({}),
       },
     };
-    const service = new WeeklyPlansService(prisma, calendar as any);
+    const service = new WeeklyPlansService(prisma, calendar as any, stubBusyCache);
     await service.remove('p1');
     await flushMicrotasks();
     expect(calendar.deleteEvent).not.toHaveBeenCalled();
@@ -223,6 +233,7 @@ describe('WeeklyPlansService.remove (deletePlan)', () => {
         findUnique: jest.fn().mockResolvedValue({
           id: 'p1',
           userId: 'u1',
+          weekStart: new Date('2026-04-13T00:00:00Z'),
           items: [
             { calendarEvents: [{ googleEventId: 'evt-1' }] },
             { calendarEvents: [{ googleEventId: 'evt-2' }] },
@@ -232,7 +243,7 @@ describe('WeeklyPlansService.remove (deletePlan)', () => {
       },
     };
     calendar.deleteEvent.mockResolvedValue(undefined);
-    const service = new WeeklyPlansService(prisma, calendar as any);
+    const service = new WeeklyPlansService(prisma, calendar as any, stubBusyCache);
     await service.remove('p1');
     // The plan delete is awaited; the calendar deletes are not.
     expect(prisma.weeklyPlan.delete).toHaveBeenCalledWith({ where: { id: 'p1' } });
@@ -246,7 +257,7 @@ describe('WeeklyPlansService.remove (deletePlan)', () => {
     const prisma: any = {
       weeklyPlan: { findUnique: jest.fn().mockResolvedValue(null) },
     };
-    const service = new WeeklyPlansService(prisma, calendar as any);
+    const service = new WeeklyPlansService(prisma, calendar as any, stubBusyCache);
     await expect(service.remove('p1')).rejects.toThrow(/not found/i);
   });
 
@@ -256,13 +267,14 @@ describe('WeeklyPlansService.remove (deletePlan)', () => {
         findUnique: jest.fn().mockResolvedValue({
           id: 'p1',
           userId: 'u1',
+          weekStart: new Date('2026-04-13T00:00:00Z'),
           items: [{ calendarEvents: [{ googleEventId: 'evt-1' }] }],
         }),
         delete: jest.fn().mockResolvedValue({}),
       },
     };
     calendar.deleteEvent.mockRejectedValue(new Error('boom'));
-    const service = new WeeklyPlansService(prisma, calendar as any);
+    const service = new WeeklyPlansService(prisma, calendar as any, stubBusyCache);
     await expect(service.remove('p1')).resolves.toBeUndefined();
     expect(prisma.weeklyPlan.delete).toHaveBeenCalled();
     await flushMicrotasks();
@@ -309,7 +321,7 @@ describe('SKIPPED counts as completed across weekly-plans helpers', () => {
 
     const calendar = { deleteEvent: jest.fn() };
 
-    const service = new WeeklyPlansService(prisma as any, calendar as any);
+    const service = new WeeklyPlansService(prisma as any, calendar as any, stubBusyCache);
     const result = await service.cohortProgress(userId);
 
     expect(result).toHaveLength(1);

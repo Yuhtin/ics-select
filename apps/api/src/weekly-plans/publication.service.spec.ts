@@ -106,11 +106,17 @@ const templates = {
   render: jest.fn(async () => ({ text: 'rendered', enabled: true })),
 };
 
+const busyCache = {
+  getWeekBusy: jest.fn(async (): Promise<Array<{ start: Date; end: Date }>> => []),
+  invalidate: jest.fn(),
+  invalidateAllForUser: jest.fn(),
+};
+
 describe('PublicationService.publish', () => {
   it('flips status to PUBLISHED without touching Calendar', async () => {
     const prisma = fakePrisma();
     prisma.plans.set('p-1', { id: 'p-1', userId: 'u-1', status: 'DRAFT' });
-    const svc = new PublicationService(prisma as any, scheduler as any, calendar as any, whatsapp as any, templates as any);
+    const svc = new PublicationService(prisma as any, scheduler as any, calendar as any, whatsapp as any, templates as any, busyCache as any);
     const result = await svc.publish('p-1');
     expect(result.plan.status).toBe('PUBLISHED');
     expect(calendar.createEvent).not.toHaveBeenCalled();
@@ -144,7 +150,7 @@ describe('PublicationService.autoSchedule', () => {
       ],
       overflow: [],
     });
-    const svc = new PublicationService(prisma as any, scheduler as any, calendar as any, whatsapp as any, templates as any);
+    const svc = new PublicationService(prisma as any, scheduler as any, calendar as any, whatsapp as any, templates as any, busyCache as any);
     const result = await svc.autoSchedule('p-1', false);
     expect(result.sessionsCreated).toBe(1);
     expect(calendar.createEvent).toHaveBeenCalledTimes(1);
@@ -182,7 +188,7 @@ describe('PublicationService.autoSchedule', () => {
       sessions: [],
       overflow: [{ itemId: 'wpi-1', minutesRequired: 60 }],
     });
-    const svc = new PublicationService(prisma as any, scheduler as any, calendar as any, whatsapp as any, templates as any);
+    const svc = new PublicationService(prisma as any, scheduler as any, calendar as any, whatsapp as any, templates as any, busyCache as any);
     await expect(svc.autoSchedule('p-1', false)).rejects.toBeInstanceOf(PlanOverflowError);
   });
 
@@ -206,7 +212,7 @@ describe('PublicationService.autoSchedule', () => {
       ],
       overflow: [],
     });
-    const svc = new PublicationService(prisma as any, scheduler as any, calendar as any, whatsapp as any, templates as any);
+    const svc = new PublicationService(prisma as any, scheduler as any, calendar as any, whatsapp as any, templates as any, busyCache as any);
     const result = await svc.autoSchedule('p-1', false);
     expect(result.sessionsCreated).toBe(1);
   });
@@ -231,7 +237,7 @@ describe('PublicationService.autoSchedule', () => {
       ],
       overflow: [{ itemId: 'wpi-2', minutesRequired: 60 }],
     });
-    const svc = new PublicationService(prisma as any, scheduler as any, calendar as any, whatsapp as any, templates as any);
+    const svc = new PublicationService(prisma as any, scheduler as any, calendar as any, whatsapp as any, templates as any, busyCache as any);
     await svc.autoSchedule('p-1', true);
     // wpi-1 gets scheduledAt + scheduledMinutes
     expect(prisma.weeklyPlanItem.update).toHaveBeenCalledWith(
@@ -279,7 +285,7 @@ describe('PublicationService.autoSchedule', () => {
     };
     calendar.getFreeBusy.mockResolvedValueOnce([monBusy, wedBusy]);
     scheduler.plan.mockReturnValue({ sessions: [], overflow: [] });
-    const svc = new PublicationService(prisma as any, scheduler as any, calendar as any, whatsapp as any, templates as any);
+    const svc = new PublicationService(prisma as any, scheduler as any, calendar as any, whatsapp as any, templates as any, busyCache as any);
     await svc.autoSchedule('p-1', false);
 
     expect(scheduler.plan).toHaveBeenCalledTimes(1);
@@ -319,7 +325,7 @@ describe('PublicationService.autoSchedule', () => {
       ],
       overflow: [],
     });
-    const svc = new PublicationService(prisma as any, scheduler as any, calendar as any, whatsapp as any, templates as any);
+    const svc = new PublicationService(prisma as any, scheduler as any, calendar as any, whatsapp as any, templates as any, busyCache as any);
     await svc.autoSchedule('p-1', false);
 
     // Scheduler must only receive the PENDING item — not the SKIPPED one
@@ -361,7 +367,7 @@ describe('PublicationService.autoSchedule', () => {
       ],
       overflow: [],
     });
-    const svc = new PublicationService(prisma as any, scheduler as any, calendar as any, whatsapp as any, templates as any);
+    const svc = new PublicationService(prisma as any, scheduler as any, calendar as any, whatsapp as any, templates as any, busyCache as any);
     const result = await svc.autoSchedule('p-1', false);
 
     expect(result.sessionsCreated).toBe(1);
@@ -421,7 +427,7 @@ describe('PublicationService.reschedulePending', () => {
   it('rejects non-PUBLISHED plans with ConflictException', async () => {
     const prisma = fakePrisma();
     prisma.plans.set('p-1', makePlan({ status: 'DRAFT' }));
-    const svc = new PublicationService(prisma as any, scheduler as any, calendar as any, whatsapp as any, templates as any);
+    const svc = new PublicationService(prisma as any, scheduler as any, calendar as any, whatsapp as any, templates as any, busyCache as any);
     await expect(svc.reschedulePending('p-1')).rejects.toBeInstanceOf(ConflictException);
   });
 
@@ -438,7 +444,7 @@ describe('PublicationService.reschedulePending', () => {
         },
       ],
     }));
-    const svc = new PublicationService(prisma as any, scheduler as any, calendar as any, whatsapp as any, templates as any);
+    const svc = new PublicationService(prisma as any, scheduler as any, calendar as any, whatsapp as any, templates as any, busyCache as any);
     await svc.reschedulePending('p-1');
     expect(calendar.deleteEvent).not.toHaveBeenCalled();
     expect(scheduler.plan).not.toHaveBeenCalled();
@@ -449,7 +455,7 @@ describe('PublicationService.reschedulePending', () => {
     const plan = makePlan();
     (plan.items[0] as any).calendarEvents = [{ googleEventId: 'gcal-evt-1' }];
     prisma.plans.set('p-1', plan);
-    const svc = new PublicationService(prisma as any, scheduler as any, calendar as any, whatsapp as any, templates as any);
+    const svc = new PublicationService(prisma as any, scheduler as any, calendar as any, whatsapp as any, templates as any, busyCache as any);
     await svc.reschedulePending('p-1');
 
     // No events.list scan — delete by id directly from DB-tracked events.
@@ -485,7 +491,7 @@ describe('PublicationService.reschedulePending', () => {
   it('clamps scheduling window to max(now, plan.weekStart) via now param', async () => {
     const prisma = fakePrisma();
     prisma.plans.set('p-1', makePlan());
-    const svc = new PublicationService(prisma as any, scheduler as any, calendar as any, whatsapp as any, templates as any);
+    const svc = new PublicationService(prisma as any, scheduler as any, calendar as any, whatsapp as any, templates as any, busyCache as any);
     const midWeek = new Date('2026-04-16T10:00:00-03:00'); // Thursday
     await svc.reschedulePending('p-1', { now: midWeek });
 
@@ -502,7 +508,7 @@ describe('PublicationService.reschedulePending', () => {
       sessions: [],
       overflow: [{ itemId: 'wpi-pending', minutesRequired: 60 }],
     });
-    const svc = new PublicationService(prisma as any, scheduler as any, calendar as any, whatsapp as any, templates as any);
+    const svc = new PublicationService(prisma as any, scheduler as any, calendar as any, whatsapp as any, templates as any, busyCache as any);
     await expect(svc.reschedulePending('p-1')).rejects.toBeInstanceOf(PlanOverflowError);
   });
 
@@ -512,7 +518,7 @@ describe('PublicationService.reschedulePending', () => {
     (plan.items[0] as any).calendarEvents = [{ googleEventId: 'gcal-evt-1' }];
     prisma.plans.set('p-1', plan);
     calendar.deleteEvent.mockRejectedValueOnce(new Error('calendar down'));
-    const svc = new PublicationService(prisma as any, scheduler as any, calendar as any, whatsapp as any, templates as any);
+    const svc = new PublicationService(prisma as any, scheduler as any, calendar as any, whatsapp as any, templates as any, busyCache as any);
     await svc.reschedulePending('p-1');
 
     // The flaky delete is logged, not thrown.

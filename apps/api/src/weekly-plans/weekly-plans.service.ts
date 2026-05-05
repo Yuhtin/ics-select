@@ -2,6 +2,7 @@ import { ConflictException, ForbiddenException, Injectable, Logger, NotFoundExce
 import { PrismaService } from '../common/prisma/prisma.service.js';
 import { resolveActiveMembership } from '../common/cycle/active-cycle.js';
 import { GoogleCalendarService } from '../google-calendar/google-calendar.service.js';
+import { BusyCacheService } from '../google-calendar/busy-cache.service.js';
 import { type ItemOutcome, allocatedMinutes, isPositiveOutcome } from '@ics-select/shared';
 
 type CreateInput = {
@@ -39,6 +40,7 @@ export class WeeklyPlansService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly calendar: GoogleCalendarService,
+    private readonly busyCache: BusyCacheService,
   ) {}
 
   async remove(id: string) {
@@ -51,6 +53,7 @@ export class WeeklyPlansService {
       select: {
         id: true,
         userId: true,
+        weekStart: true,
         items: { select: { calendarEvents: { select: { googleEventId: true } } } },
       },
     });
@@ -61,6 +64,7 @@ export class WeeklyPlansService {
     await this.prisma.weeklyPlan.delete({ where: { id } });
 
     if (eventIds.length > 0) {
+      this.busyCache.invalidate(plan.userId, plan.weekStart);
       void this.deleteCalendarEventsInBackground(plan.userId, plan.id, eventIds);
     }
   }
@@ -345,7 +349,7 @@ export class WeeklyPlansService {
     const item = await this.prisma.weeklyPlanItem.findUnique({
       where: { id: itemId },
       include: {
-        weeklyPlan: { select: { id: true, userId: true, status: true } },
+        weeklyPlan: { select: { id: true, userId: true, status: true, weekStart: true } },
         libraryItem: { include: { topics: { include: { topic: { select: { slug: true } } } } } },
         calendarEvents: { select: { id: true, googleEventId: true } },
       },
@@ -374,6 +378,14 @@ export class WeeklyPlansService {
         completedAt: completed ? new Date() : null,
       },
     });
+
+    // Any non-PENDING outcome moves or deletes the calendar event; the
+    // member's busy state for this week changed, so the cached freebusy
+    // is stale. Invalidate optimistically — the next plan-context read
+    // will refetch. (PENDING means "undo" with no calendar side-effect.)
+    if (input.outcome !== 'PENDING') {
+      this.busyCache.invalidate(userId, item.weeklyPlan.weekStart);
+    }
 
     void this.reconcileCalendarAfterOutcome(item, input.outcome, userId).catch((err) => {
       this.logger.warn(

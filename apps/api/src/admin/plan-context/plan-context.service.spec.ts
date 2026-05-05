@@ -1,7 +1,7 @@
 import { NotFoundException } from '@nestjs/common';
 import { PlanContextService } from './plan-context.service';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { GoogleCalendarService } from '../../google-calendar/google-calendar.service';
+import { BusyCacheService } from '../../google-calendar/busy-cache.service';
 
 type PrismaMock = {
   user: { findUnique: jest.Mock };
@@ -34,10 +34,12 @@ function makePrisma(overrides: Partial<any> = {}): PrismaMock {
   return base;
 }
 
-function makeCalendarStub(busy: Array<{ start: Date; end: Date }> = []): GoogleCalendarService {
+function makeBusyCacheStub(busy: Array<{ start: Date; end: Date }> = []): BusyCacheService {
   return {
-    getFreeBusy: jest.fn(async () => busy),
-  } as unknown as GoogleCalendarService;
+    getWeekBusy: jest.fn(async () => busy),
+    invalidate: jest.fn(),
+    invalidateAllForUser: jest.fn(),
+  } as unknown as BusyCacheService;
 }
 
 // NOW: Friday 2026-04-17T12:00:00Z
@@ -71,9 +73,9 @@ const defaultMembership = {
 
 function makeService(
   prisma: PrismaMock,
-  calendar: GoogleCalendarService = makeCalendarStub(),
+  busyCache: BusyCacheService = makeBusyCacheStub(),
 ): PlanContextService {
-  return new PlanContextService(prisma as unknown as PrismaService, calendar);
+  return new PlanContextService(prisma as unknown as PrismaService, busyCache);
 }
 
 describe('PlanContextService', () => {
@@ -433,7 +435,7 @@ describe('PlanContextService', () => {
     });
   });
 
-  it('availability.remainingCapacityMinutes is computed from slots + caps − calendar busy', async () => {
+  it('availability.remainingCapacityMinutes is computed from slots + caps − cached busy', async () => {
     // Member has 9-22h windows Mon..Fri (780 min/day) and a 60-min cap on each
     // weekday. NOW is Friday 12:00 UTC = 09:00 BRT, so Fri is the only future
     // day with cap > 0 (Mon..Thu fully past, Sat/Sun cap 0).
@@ -460,8 +462,8 @@ describe('PlanContextService', () => {
       memberAvailability: { findUnique: jest.fn(async () => row) },
       availabilitySlot: { findMany: jest.fn(async () => slotRows) },
     });
-    const calendar = makeCalendarStub([]);
-    const service = makeService(prisma, calendar);
+    const busyCache = makeBusyCacheStub([]);
+    const service = makeService(prisma, busyCache);
     const result = await service.getContext(
       { memberId: 'user-a', weekStart: WEEK_START },
       NOW,
@@ -479,12 +481,14 @@ describe('PlanContextService', () => {
       user: { findUnique: jest.fn(async () => defaultMember) },
       cycleMembership: { findFirst: jest.fn(async () => defaultMembership) },
     });
-    const calendar = {
-      getFreeBusy: jest.fn(async () => {
+    const busyCache = {
+      getWeekBusy: jest.fn(async () => {
         throw new Error('boom');
       }),
-    } as unknown as GoogleCalendarService;
-    const service = makeService(prisma, calendar);
+      invalidate: jest.fn(),
+      invalidateAllForUser: jest.fn(),
+    } as unknown as BusyCacheService;
+    const service = makeService(prisma, busyCache);
     const result = await service.getContext(
       { memberId: 'user-a', weekStart: WEEK_START },
       NOW,

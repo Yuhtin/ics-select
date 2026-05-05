@@ -5,7 +5,7 @@ import {
   resolveActiveMembership,
 } from '../../common/cycle/active-cycle.js';
 import { POSITIVE_OUTCOMES } from '@ics-select/shared';
-import { GoogleCalendarService } from '../../google-calendar/google-calendar.service.js';
+import { BusyCacheService } from '../../google-calendar/busy-cache.service.js';
 import { computeRemainingWeekCapacity } from '../../scheduler/capacity.js';
 import type { AvailabilitySlotInput, BusyBlock } from '../../scheduler/scheduler.types.js';
 
@@ -178,7 +178,7 @@ export class PlanContextService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly calendar: GoogleCalendarService,
+    private readonly busyCache: BusyCacheService,
   ) {}
 
   async getContext(input: { memberId: string; weekStart: Date }, now: Date = new Date()): Promise<PlanContextResponse> {
@@ -550,8 +550,10 @@ export class PlanContextService {
     ];
     let busy: BusyBlock[];
     try {
-      const lookFrom = params.now.getTime() > params.weekStart.getTime() ? params.now : params.weekStart;
-      busy = await this.calendar.getFreeBusy(params.userId, lookFrom, params.weekEnd);
+      // Cache stores the full week so the same payload serves every read
+      // regardless of "now". The capacity helper clips by `now` itself
+      // via buildEffectiveIntervals, so this is correct.
+      busy = await this.busyCache.getWeekBusy(params.userId, params.weekStart, params.weekEnd);
     } catch (err) {
       this.logger.warn(
         `plan-context: getFreeBusy failed for user=${params.userId} · ${String(err)}`,
