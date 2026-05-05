@@ -1,10 +1,13 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service.js';
 import {
   computeWeekPosition,
   resolveActiveMembership,
 } from '../../common/cycle/active-cycle.js';
 import { POSITIVE_OUTCOMES } from '@ics-select/shared';
+import { GoogleCalendarService } from '../../google-calendar/google-calendar.service.js';
+import { computeRemainingWeekCapacity } from '../../scheduler/capacity.js';
+import type { AvailabilitySlotInput, BusyBlock } from '../../scheduler/scheduler.types.js';
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 // Only unfinished work carries over: PENDING (never started) and STUCK
@@ -107,6 +110,17 @@ export type PlanContextResponse = {
     preferredSessionMinutes: number;
     weeklyBudgetMinutes: number;
     timezone: string;
+    /**
+     * "How many more minutes can the admin add to this week's plan?" — sum
+     * of remaining capacity per day from today through Sunday, computed via
+     * the same intervals the scheduler uses (slot windows minus Google
+     * Calendar busy, capped per-day). Null when the calendar lookup fails;
+     * the badge falls back to weeklyBudgetMinutes - plannedMinutes in that
+     * case (the old behavior).
+     */
+    remainingCapacityMinutes: number | null;
+    /** Days from today through Sunday with remainingCapacityMinutes > 0. */
+    daysRemaining: number;
   };
 };
 
@@ -160,7 +174,12 @@ type RetroRow = {
 
 @Injectable()
 export class PlanContextService {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly logger = new Logger(PlanContextService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly calendar: GoogleCalendarService,
+  ) {}
 
   async getContext(input: { memberId: string; weekStart: Date }, now: Date = new Date()): Promise<PlanContextResponse> {
     const member = await this.prisma.user.findUnique({
@@ -187,6 +206,7 @@ export class PlanContextService {
     };
 
     const lastWeekStart = new Date(input.weekStart.getTime() - WEEK_MS);
+    const weekEnd = new Date(input.weekStart.getTime() + WEEK_MS);
 
     const [
       lastWeekPlan,
@@ -195,6 +215,7 @@ export class PlanContextService {
       availabilityRow,
       topics,
       memberItemsRaw,
+      slotRows,
     ] = await Promise.all([
       this.prisma.weeklyPlan.findFirst({
         where: {
@@ -274,6 +295,10 @@ export class PlanContextService {
         orderBy: { weeklyPlan: { weekStart: 'desc' } },
         select: { libraryItemId: true, outcome: true },
       }) as Promise<Array<{ libraryItemId: string; outcome: Outcome | 'SKIPPED' }>>,
+      this.prisma.availabilitySlot.findMany({
+        where: { userId: input.memberId },
+        select: { dayOfWeek: true, startMinute: true, endMinute: true },
+      }) as Promise<AvailabilitySlotInput[]>,
     ]);
 
     const topicById = new Map(topics.map((t) => [t.id, t]));
@@ -291,7 +316,15 @@ export class PlanContextService {
     const lastWeek = this.buildLastWeek(lastWeekPlan);
     const carryOverCandidates = this.buildCarryOver(lastWeekPlan, topicById);
     const topicCoverage = this.computeTopicCoverage(topics, thisCyclePlans);
-    const availability = this.buildAvailability(availabilityRow);
+    const remaining = await this.computeRemainingCapacity({
+      userId: input.memberId,
+      weekStart: input.weekStart,
+      weekEnd,
+      now,
+      slots: slotRows,
+      availability: availabilityRow,
+    });
+    const availability = this.buildAvailability(availabilityRow, remaining);
 
     // Latest outcome per library item — first occurrence wins because the query
     // ordered weekStart desc.
@@ -457,6 +490,7 @@ export class PlanContextService {
 
   private buildAvailability(
     row: AvailabilityRow | null,
+    remaining: { remainingCapacityMinutes: number | null; daysRemaining: number },
   ): PlanContextResponse['availability'] {
     const source = row ?? DEFAULT_AVAILABILITY;
     const weeklyBudgetMinutes =
@@ -478,6 +512,63 @@ export class PlanContextService {
       preferredSessionMinutes: source.preferredSessionMinutes,
       weeklyBudgetMinutes,
       timezone: source.timezone,
+      remainingCapacityMinutes: remaining.remainingCapacityMinutes,
+      daysRemaining: remaining.daysRemaining,
+    };
+  }
+
+  /**
+   * Compute "minutes still addable this week" by combining the member's
+   * declared availability (slot windows + per-day caps) with their actual
+   * Google Calendar busy state. Mirrors the scheduler's view, so the
+   * badge's number and what `reschedulePending` will fit are aligned.
+   *
+   * Returns `remainingCapacityMinutes: null` if the calendar lookup fails
+   * — the badge then falls back to the dumb (budget − planned) calc.
+   */
+  private async computeRemainingCapacity(params: {
+    userId: string;
+    weekStart: Date;
+    weekEnd: Date;
+    now: Date;
+    slots: AvailabilitySlotInput[];
+    availability: AvailabilityRow | null;
+  }): Promise<{ remainingCapacityMinutes: number | null; daysRemaining: number }> {
+    // Past weeks have no addable capacity; skip the calendar call entirely.
+    if (params.weekEnd.getTime() <= params.now.getTime()) {
+      return { remainingCapacityMinutes: 0, daysRemaining: 0 };
+    }
+    const av = params.availability ?? DEFAULT_AVAILABILITY;
+    const caps: (number | null)[] = [
+      av.mondayMinutes ?? null,
+      av.tuesdayMinutes ?? null,
+      av.wednesdayMinutes ?? null,
+      av.thursdayMinutes ?? null,
+      av.fridayMinutes ?? null,
+      av.saturdayMinutes ?? null,
+      av.sundayMinutes ?? null,
+    ];
+    let busy: BusyBlock[];
+    try {
+      const lookFrom = params.now.getTime() > params.weekStart.getTime() ? params.now : params.weekStart;
+      busy = await this.calendar.getFreeBusy(params.userId, lookFrom, params.weekEnd);
+    } catch (err) {
+      this.logger.warn(
+        `plan-context: getFreeBusy failed for user=${params.userId} · ${String(err)}`,
+      );
+      return { remainingCapacityMinutes: null, daysRemaining: 0 };
+    }
+    const out = computeRemainingWeekCapacity({
+      weekStart: params.weekStart,
+      slots: params.slots,
+      caps,
+      busyBlocks: busy,
+      timezone: av.timezone,
+      now: params.now,
+    });
+    return {
+      remainingCapacityMinutes: out.totalMinutes,
+      daysRemaining: out.daysRemaining,
     };
   }
 

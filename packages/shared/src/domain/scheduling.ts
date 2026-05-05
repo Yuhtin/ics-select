@@ -56,3 +56,38 @@ export function sumAllocatedMinutes(
   }
   return total;
 }
+
+/**
+ * Real time the member has burned this week — sum of `actualMinutes` (when
+ * the member logged it) or `allocatedMinutes(...)` as a fallback, across
+ * items with a positive outcome other than SKIPPED.
+ *
+ * SKIPPED is excluded even though it's a positive outcome: skipping means
+ * "I already knew this, didn't study", so no time was spent. DOUBTS counts
+ * — the study itself was done.
+ *
+ * Used by the budget badge to show "X min real / Y min planned" and by the
+ * remaining-capacity calculation so admins can keep adding work when a
+ * member finishes faster than expected.
+ */
+export function sumConsumedMinutes(
+  items: ReadonlyArray<{
+    estimatedMinutes: number;
+    format?: string | null;
+    actualMinutes?: number | null;
+    outcome?: string | null;
+  }>,
+): number {
+  let total = 0;
+  for (const i of items) {
+    const o = i.outcome;
+    if (o !== 'DONE_EASY' && o !== 'DONE_HARD' && o !== 'DOUBTS') continue;
+    const minutes =
+      typeof i.actualMinutes === 'number' && i.actualMinutes > 0
+        ? i.actualMinutes
+        : allocatedMinutes(i.estimatedMinutes, i.format);
+    total += minutes;
+  }
+  return total;
+}
+

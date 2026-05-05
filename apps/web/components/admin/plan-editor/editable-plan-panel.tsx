@@ -84,7 +84,26 @@ export function EditablePlanPanel({
         .reduce((s, i) => s + i.libraryItem.estimatedMinutes, 0),
     [plan.items],
   );
+  // Pending = work that hasn't been done yet. Drives the addable-headroom
+  // signal (pending vs remaining capacity). Counts PENDING + STUCK; SKIPPED
+  // is excluded by sumAllocatedMinutes; positive outcomes are excluded here
+  // because they no longer occupy a future Calendar slot.
+  const pendingMinutes = useMemo(
+    () =>
+      sumAllocatedMinutes(
+        plan.items
+          .filter((i) => i.outcome === 'PENDING' || i.outcome === 'STUCK')
+          .map((i) => ({
+            estimatedMinutes: i.libraryItem.estimatedMinutes,
+            format: i.libraryItem.format,
+            outcome: i.outcome,
+          })),
+      ),
+    [plan.items],
+  );
   const budgetMinutes = context.availability.weeklyBudgetMinutes;
+  const remainingMinutes = context.availability.remainingCapacityMinutes;
+  const daysRemaining = context.availability.daysRemaining;
   const adminNotes = plan.adminNotes ?? '';
   const excludeIds = useMemo(() => new Set(plan.items.map((i) => i.libraryItemId)), [plan.items]);
 
@@ -117,7 +136,13 @@ export function EditablePlanPanel({
             {plan.items.length} items · {plannedMinutes} min{' '}
             <span className="text-ink-faint">({rawMinutes} raw)</span>
           </span>
-          <BudgetBadge plannedMinutes={plannedMinutes} budgetMinutes={budgetMinutes} />
+          <BudgetBadge
+            plannedMinutes={plannedMinutes}
+            budgetMinutes={budgetMinutes}
+            remainingMinutes={remainingMinutes}
+            pendingMinutes={pendingMinutes}
+            daysRemaining={daysRemaining}
+          />
         </div>
       </header>
 
@@ -174,6 +199,9 @@ export function EditablePlanPanel({
         itemsCount={plan.items.length}
         plannedMinutes={plannedMinutes}
         budgetMinutes={budgetMinutes}
+        remainingMinutes={remainingMinutes}
+        pendingMinutes={pendingMinutes}
+        daysRemaining={daysRemaining}
         selectedLibraryItemIds={excludeIds}
         carryOverLibraryItemIds={carryOverLibraryItemIds}
         memberHistory={context.memberHistory}

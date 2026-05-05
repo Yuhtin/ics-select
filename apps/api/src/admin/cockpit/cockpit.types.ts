@@ -34,6 +34,15 @@ export type CockpitResponse = {
     planned: number;
     completionPct: number;
     cohortMedian: number;
+    /**
+     * Median number of items planned across the cohort. Used by the
+     * cockpit card to show the fairness hint when this member's plan is
+     * larger than typical — the engagement score's "Plan completion"
+     * criterion already protects them via max(personalRate, done /
+     * cohortMedianPlanned), but the card needs the denominator to
+     * communicate that to the admin.
+     */
+    cohortMedianPlanned: number;
     byOutcome: Record<ItemOutcome, number>;
     perWeek: Array<{ weekStart: string; byOutcome: Record<ItemOutcome, number> }>;
     needsAttention: { total: number; stuck: number; doubts: number };

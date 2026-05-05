@@ -1,6 +1,7 @@
 import { NotFoundException } from '@nestjs/common';
 import { PlanContextService } from './plan-context.service';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { GoogleCalendarService } from '../../google-calendar/google-calendar.service';
 
 type PrismaMock = {
   user: { findUnique: jest.Mock };
@@ -10,6 +11,7 @@ type PrismaMock = {
   weeklyRetro: { findFirst: jest.Mock };
   memberAvailability: { findUnique: jest.Mock };
   topic: { findMany: jest.Mock };
+  availabilitySlot: { findMany: jest.Mock };
 };
 
 function makePrisma(overrides: Partial<any> = {}): PrismaMock {
@@ -24,11 +26,18 @@ function makePrisma(overrides: Partial<any> = {}): PrismaMock {
     weeklyRetro: { findFirst: jest.fn(async () => null) },
     memberAvailability: { findUnique: jest.fn(async () => null) },
     topic: { findMany: jest.fn(async () => []) },
+    availabilitySlot: { findMany: jest.fn(async () => []) },
   };
   for (const key of Object.keys(overrides) as (keyof PrismaMock)[]) {
     base[key] = { ...base[key], ...(overrides[key] as any) };
   }
   return base;
+}
+
+function makeCalendarStub(busy: Array<{ start: Date; end: Date }> = []): GoogleCalendarService {
+  return {
+    getFreeBusy: jest.fn(async () => busy),
+  } as unknown as GoogleCalendarService;
 }
 
 // NOW: Friday 2026-04-17T12:00:00Z
@@ -60,8 +69,11 @@ const defaultMembership = {
   cycle: defaultCycle,
 };
 
-function makeService(prisma: PrismaMock): PlanContextService {
-  return new PlanContextService(prisma as unknown as PrismaService);
+function makeService(
+  prisma: PrismaMock,
+  calendar: GoogleCalendarService = makeCalendarStub(),
+): PlanContextService {
+  return new PlanContextService(prisma as unknown as PrismaService, calendar);
 }
 
 describe('PlanContextService', () => {
@@ -419,6 +431,66 @@ describe('PlanContextService', () => {
       pictureUrl: 'https://example.com/a.jpg',
       track: 'BIG_TECH',
     });
+  });
+
+  it('availability.remainingCapacityMinutes is computed from slots + caps − calendar busy', async () => {
+    // Member has 9-22h windows Mon..Fri (780 min/day) and a 60-min cap on each
+    // weekday. NOW is Friday 12:00 UTC = 09:00 BRT, so Fri is the only future
+    // day with cap > 0 (Mon..Thu fully past, Sat/Sun cap 0).
+    const slotRows = [0, 1, 2, 3, 4].map((dayOfWeek) => ({
+      dayOfWeek,
+      startMinute: 9 * 60,
+      endMinute: 22 * 60,
+    }));
+    const row = {
+      userId: 'user-a',
+      mondayMinutes: 60,
+      tuesdayMinutes: 60,
+      wednesdayMinutes: 60,
+      thursdayMinutes: 60,
+      fridayMinutes: 60,
+      saturdayMinutes: 0,
+      sundayMinutes: 0,
+      preferredSessionMinutes: 60,
+      timezone: 'America/Sao_Paulo',
+    };
+    const prisma = makePrisma({
+      user: { findUnique: jest.fn(async () => defaultMember) },
+      cycleMembership: { findFirst: jest.fn(async () => defaultMembership) },
+      memberAvailability: { findUnique: jest.fn(async () => row) },
+      availabilitySlot: { findMany: jest.fn(async () => slotRows) },
+    });
+    const calendar = makeCalendarStub([]);
+    const service = makeService(prisma, calendar);
+    const result = await service.getContext(
+      { memberId: 'user-a', weekStart: WEEK_START },
+      NOW,
+    );
+
+    // Friday window remaining (after now) is 22:00 BRT - 09:00 BRT = 13h, capped to 60.
+    expect(result.availability.remainingCapacityMinutes).toBe(60);
+    expect(result.availability.daysRemaining).toBe(1);
+    // Sanity: weeklyBudget is the historical 5×60 = 300, not the remaining.
+    expect(result.availability.weeklyBudgetMinutes).toBe(300);
+  });
+
+  it('availability.remainingCapacityMinutes is null when getFreeBusy throws', async () => {
+    const prisma = makePrisma({
+      user: { findUnique: jest.fn(async () => defaultMember) },
+      cycleMembership: { findFirst: jest.fn(async () => defaultMembership) },
+    });
+    const calendar = {
+      getFreeBusy: jest.fn(async () => {
+        throw new Error('boom');
+      }),
+    } as unknown as GoogleCalendarService;
+    const service = makeService(prisma, calendar);
+    const result = await service.getContext(
+      { memberId: 'user-a', weekStart: WEEK_START },
+      NOW,
+    );
+    expect(result.availability.remainingCapacityMinutes).toBeNull();
+    expect(result.availability.daysRemaining).toBe(0);
   });
 
   it('denormalizes valuedItem and stuckItem with title + outcome', async () => {

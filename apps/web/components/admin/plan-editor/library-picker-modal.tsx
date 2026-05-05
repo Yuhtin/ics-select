@@ -85,6 +85,9 @@ export interface LibraryPickerModalProps {
   itemsCount: number;
   plannedMinutes: number;
   budgetMinutes: number;
+  remainingMinutes: number | null;
+  pendingMinutes: number;
+  daysRemaining: number;
   selectedLibraryItemIds: Set<string>;
   carryOverLibraryItemIds: Set<string>;
   memberHistory: MemberHistoryRow[];
@@ -114,6 +117,9 @@ export function LibraryPickerModal({
   itemsCount,
   plannedMinutes,
   budgetMinutes,
+  remainingMinutes,
+  pendingMinutes,
+  daysRemaining,
   selectedLibraryItemIds,
   carryOverLibraryItemIds,
   memberHistory,
@@ -210,7 +216,13 @@ export function LibraryPickerModal({
               <span className="font-mono text-xs text-ink-mute tabular-nums">
                 {itemsCount} items · {plannedMinutes} min
               </span>
-              <BudgetBadge plannedMinutes={plannedMinutes} budgetMinutes={budgetMinutes} />
+              <BudgetBadge
+                plannedMinutes={plannedMinutes}
+                budgetMinutes={budgetMinutes}
+                remainingMinutes={remainingMinutes}
+                pendingMinutes={pendingMinutes}
+                daysRemaining={daysRemaining}
+              />
             </div>
           </div>
           <button

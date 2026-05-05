@@ -61,6 +61,14 @@ export type PlanContextResponse = {
     preferredSessionMinutes: number;
     weeklyBudgetMinutes: number;
     timezone: string;
+    /**
+     * Minutes still addable this week — slot windows from today through Sunday
+     * minus current Google Calendar busy, capped per-day. Null when the
+     * Calendar lookup failed; callers should fall back to weekly budget.
+     */
+    remainingCapacityMinutes: number | null;
+    /** Days from today through Sunday with non-zero remaining capacity. */
+    daysRemaining: number;
   };
   memberHistory: Array<{
     libraryItemId: string;

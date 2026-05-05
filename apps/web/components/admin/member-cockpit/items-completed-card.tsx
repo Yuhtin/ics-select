@@ -14,6 +14,15 @@ export function ItemsCompletedCard({ itemsCompleted }: Props) {
     Stuck:           bucket.byOutcome.STUCK ?? 0,
   }));
   const deltaCohort = itemsCompleted.total - itemsCompleted.cohortMedian;
+  // The engagement score's "Plan completion" criterion uses
+  //   max(personalRate, itemsDone / cohortMedianPlanned)
+  // so members assigned more items than the cohort median aren't punished
+  // for the bigger denominator. We surface that here too — when their plan
+  // is larger than typical, show the protected (cohort-relative) credit so
+  // the admin doesn't read a low personal % as underperformance.
+  const oversizedPlan =
+    itemsCompleted.cohortMedianPlanned > 0 &&
+    itemsCompleted.planned > itemsCompleted.cohortMedianPlanned;
 
   return (
     <section className="col-span-6 bg-surface border border-rule rounded-lg p-6">
@@ -30,12 +39,17 @@ export function ItemsCompletedCard({ itemsCompleted }: Props) {
               {itemsCompleted.total}
             </span>
             <span className="font-serif-tool tabular-nums text-ink-mute text-base">
-              of {itemsCompleted.planned} planned · <span className="text-ink">{itemsCompleted.completionPct}%</span>
+              of {itemsCompleted.planned} planned
             </span>
           </p>
           {deltaCohort !== 0 && (
             <p className={`font-mono text-[11px] mt-1 ${deltaCohort < 0 ? 'text-outcome-stuck' : 'text-outcome-done-easy'}`}>
               {deltaCohort < 0 ? '↓' : '↑'} {Math.abs(deltaCohort)} items vs cohort median {itemsCompleted.cohortMedian}
+            </p>
+          )}
+          {oversizedPlan && (
+            <p className="font-mono text-[11px] mt-1 text-ink-mute">
+              Plan size above cohort norm ({itemsCompleted.cohortMedianPlanned}) — engagement score uses cohort-relative rate, not raw %.
             </p>
           )}
         </div>
