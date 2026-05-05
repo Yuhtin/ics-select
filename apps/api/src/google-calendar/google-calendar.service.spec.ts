@@ -172,6 +172,7 @@ describe('GoogleCalendarService', () => {
         maxResults: 100,
         fields: 'items(id,summary,description,start,end,location,htmlLink,conferenceData/entryPoints)',
       }),
+      { http2: false },
     );
     expect(result).toEqual([
       {
