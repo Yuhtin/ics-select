@@ -129,6 +129,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'YouTube — Fireship',
     tags: ['concept', 'redis', 'intro', 'fireship'],
+    topicOrder: { 'caching': 1 },
   },
   {
     title: 'Top 5 Caching Strategies',
@@ -142,6 +143,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — ByteByteGo',
     tags: ['tradeoffs', 'cache-aside', 'read-through', 'write-through', 'write-back'],
+    topicOrder: { 'caching': 7 },
   },
   {
     title: 'Cache Systems Every Developer Should Know',
@@ -155,6 +157,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — ByteByteGo',
     tags: ['concept', 'cdn', 'layers', 'browser-cache'],
+    topicOrder: { 'caching': 4 },
   },
   {
     title: 'Caching Pitfalls Every Developer Should Know',
@@ -168,6 +171,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — ByteByteGo',
     tags: ['concept', 'pitfalls', 'thundering-herd', 'stampede'],
+    topicOrder: { 'caching': 9 },
   },
   {
     title: 'Cache Invalidation Explained',
@@ -181,6 +185,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — ByteByteGo',
     tags: ['concept', 'cache-invalidation', 'consistency'],
+    topicOrder: { 'caching': 6 },
   },
   {
     title: 'Top Caching Strategies — ByteByteGo Blog',
@@ -194,6 +199,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'Blog — ByteByteGo',
     tags: ['tradeoffs', 'write-through', 'cache-aside', 'write-back'],
+    topicOrder: { 'caching': 8 },
   },
   // ---------------------------------------------------------------------------
   // databases (10 items) — 2026-04-19
@@ -210,6 +216,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'YouTube — Fireship',
     tags: ['concept', 'postgresql', 'intro', 'fireship'],
+    topicOrder: { 'databases': 2 },
   },
   {
     title: 'SQL Explained in 100 Seconds',
@@ -223,6 +230,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'YouTube — Fireship',
     tags: ['concept', 'sql', 'intro', 'fireship'],
+    topicOrder: { 'databases': 1 },
   },
   {
     title: '7 Database Paradigms',
@@ -236,6 +244,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Fireship',
     tags: ['tradeoffs', 'paradigms', 'sql', 'nosql', 'graph-db', 'key-value'],
+    topicOrder: { 'databases': 3 },
   },
   {
     title: 'Database Index Fundamentals',
@@ -249,6 +258,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — ByteByteGo',
     tags: ['concept', 'index', 'b-tree', 'hash-index'],
+    topicOrder: { 'databases': 6 },
   },
   {
     title: "99% of Developers Don't Get PostgreSQL",
@@ -262,6 +272,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — The Coding Gopher',
     tags: ['concept', 'postgresql', 'mvcc', 'internals'],
+    topicOrder: { 'databases': 14 },
   },
   {
     title: 'PostgreSQL Internal Architecture Explained',
@@ -275,6 +286,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Hussein Nasser',
     tags: ['concept', 'postgresql', 'architecture', 'mvcc', 'wal', 'internals'],
+    topicOrder: { 'databases': 15 },
   },
   {
     title: 'A Deep Dive in How Slow SELECT * is',
@@ -288,6 +300,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Hussein Nasser',
     tags: ['concept', 'postgresql', 'query-performance', 'internals'],
+    topicOrder: { 'databases': 12 },
   },
   {
     title: 'Database Indexing Strategies',
@@ -301,6 +314,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'Blog — ByteByteGo',
     tags: ['concept', 'index', 'clustered', 'covering-index'],
+    topicOrder: { 'databases': 7 },
   },
   {
     title: '8 Data Structures That Power Your Databases',
@@ -314,6 +328,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'Guide — ByteByteGo',
     tags: ['concept', 'data-structures', 'b-tree', 'lsm-tree', 'bloom-filter'],
+    topicOrder: { 'databases': 9 },
   },
   {
     title: 'Database Pages — A Deep Dive',
@@ -327,6 +342,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'Medium — Hussein Nasser',
     tags: ['concept', 'pages', 'storage', 'rows', 'internals'],
+    topicOrder: { 'databases': 11 },
   },
   {
     title: 'Why Netflix, Instagram, and Twitter Pick Different Databases',
@@ -340,6 +356,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — ByteMonk',
     tags: ['case-study', 'database-selection', 'netflix', 'instagram', 'twitter'],
+    topicOrder: { 'databases': 18 },
   },
 
   // ---------------------------------------------------------------------------
@@ -357,6 +374,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'YouTube — Fireship',
     tags: ['practice', 'javascript', 'map', 'fireship'],
+    topicOrder: { 'array': 3 },
   },
   {
     title: 'Arrays in Programming — Fundamentals',
@@ -370,6 +388,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'YouTube — mycodeschool',
     tags: ['concept', 'memory', 'indexing', 'static-vs-dynamic'],
+    topicOrder: { 'array': 2 },
   },
   {
     title: 'Data Structures: Arrays vs Linked Lists',
@@ -383,6 +402,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'YouTube — mycodeschool',
     tags: ['tradeoffs', 'linked-list', 'operations', 'complexity'],
+    topicOrder: { 'array': 4 },
   },
   {
     title: 'Implementando um hashmap do ZERO em Python',
@@ -396,7 +416,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'YouTube — Augusto Galego',
     tags: ['practice', 'hashmap', 'python', 'implementation', 'collision', 'galego'],
-    topicOrder: { hashmap: 3 },
+    topicOrder: { 'array': 44, 'hashmap': 3 },
   },
   {
     title: '10 Key Data Structures We Use Every Day',
@@ -412,7 +432,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'YouTube — ByteByteGo',
     tags: ['concept', 'data-structures', 'overview'],
-    topicOrder: { hashmap: 10 },
+    topicOrder: { 'array': 1, 'graph': 1, 'hashmap': 10, 'lists': 1, 'tree': 1 },
   },
   {
     title: 'Grokking Data Structures — Arrays (chapter)',
@@ -426,6 +446,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'Book — Grokking Data Structures',
     tags: ['concept', 'book', 'grokking', 'array', 'static-vs-dynamic'],
+    topicOrder: { 'array': 5 },
   },
 
   // ---------------------------------------------------------------------------
@@ -446,6 +467,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'YouTube — mycodeschool',
     tags: ['concept', 'linked-list', 'pointers', 'memory-layout'],
+    topicOrder: { 'lists': 2 },
   },
   {
     title: 'Introduction to Doubly Linked List',
@@ -459,6 +481,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'YouTube — mycodeschool',
     tags: ['concept', 'doubly-linked-list', 'pointers'],
+    topicOrder: { 'lists': 6 },
   },
   {
     title: 'Linked List in C/C++ — Inserting a node at beginning',
@@ -472,6 +495,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'YouTube — mycodeschool',
     tags: ['concept', 'linked-list', 'insertion', 'pointers'],
+    topicOrder: { 'lists': 4 },
   },
   {
     title: 'Introduction to Stack',
@@ -485,6 +509,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'YouTube — mycodeschool',
     tags: ['concept', 'stack', 'lifo', 'push-pop'],
+    topicOrder: { 'lists': 7 },
   },
   {
     title: 'Como Rodar uma Linked List?',
@@ -498,6 +523,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'YouTube — Augusto Galego',
     tags: ['practice', 'linked-list', 'traversal', 'python'],
+    topicOrder: { 'lists': 3 },
   },
   {
     title: 'Como inverter uma Linked List (LeetCode 206)',
@@ -511,6 +537,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'YouTube — Augusto Galego',
     tags: ['concept', 'linked-list', 'reverse', 'leetcode-206', 'iterative'],
+    topicOrder: { 'lists': 10 },
   },
   {
     title: 'Linked List implementation of Queue',
@@ -524,6 +551,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'YouTube — mycodeschool',
     tags: ['concept', 'queue', 'linked-list', 'fifo', 'composition'],
+    topicOrder: { 'lists': 8 },
   },
   {
     title: 'Grokking Data Structures — Linked Lists (chapter)',
@@ -537,6 +565,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'Book — Grokking Data Structures',
     tags: ['concept', 'book', 'grokking', 'linked-list'],
+    topicOrder: { 'lists': 5 },
   },
 
   // ---------------------------------------------------------------------------
@@ -559,6 +588,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'YouTube — Fireship',
     tags: ['concept', 'b-tree', 'radix-tree', 'rope', 'bloom-filter', 'cuckoo-hashing', 'fireship'],
+    topicOrder: { 'array': 45, 'databases': 8, 'tree': 25, 'trie': 7 },
   },
   {
     title: 'Data structures: Introduction to Trees',
@@ -572,6 +602,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'YouTube — mycodeschool',
     tags: ['concept', 'tree', 'terminology', 'fundamentals'],
+    topicOrder: { 'tree': 2 },
   },
   {
     title: 'Data structures: Binary Tree',
@@ -585,6 +616,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'YouTube — mycodeschool',
     tags: ['concept', 'binary-tree', 'complete-tree', 'perfect-tree'],
+    topicOrder: { 'tree': 3 },
   },
   {
     title: 'Data structures: Binary Search Tree',
@@ -598,6 +630,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'YouTube — mycodeschool',
     tags: ['concept', 'bst', 'binary-search-tree', 'operations'],
+    topicOrder: { 'tree': 6 },
   },
   {
     title: 'Binary Tree Bootcamp: Full, Complete, & Perfect Trees + Traversals',
@@ -611,6 +644,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'YouTube — Back To Back SWE',
     tags: ['concept', 'traversal', 'preorder', 'inorder', 'postorder', 'dfs'],
+    topicOrder: { 'tree': 4 },
   },
   {
     title: 'AVL Trees & Rotations (Self-Balancing Binary Search Trees)',
@@ -624,6 +658,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'YouTube — Back To Back SWE',
     tags: ['concept', 'avl-tree', 'self-balancing', 'rotations', 'bst'],
+    topicOrder: { 'tree': 21 },
   },
   {
     title: 'B-Tree vs. LSM-Tree',
@@ -637,6 +672,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'Guide — ByteByteGo',
     tags: ['tradeoffs', 'b-tree', 'lsm-tree', 'storage-engine', 'write-amplification'],
+    topicOrder: { 'databases': 10, 'tree': 26 },
   },
   {
     title: 'Grokking Data Structures — Trees (chapter)',
@@ -650,6 +686,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'Book — Grokking Data Structures',
     tags: ['concept', 'book', 'grokking', 'tree', 'bst'],
+    topicOrder: { 'tree': 7 },
   },
   {
     title: 'Binary Tree Inorder e Preorder',
@@ -663,6 +700,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'YouTube — Augusto Galego',
     tags: ['practice', 'tree', 'inorder', 'preorder', 'traversal', 'leetcode'],
+    topicOrder: { 'tree': 5 },
   },
 
   // ---------------------------------------------------------------------------
@@ -685,6 +723,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'YouTube — mycodeschool',
     tags: ['concept', 'sorting', 'bubble-sort', 'fundamentals'],
+    topicOrder: { 'sorting': 1 },
   },
   {
     title: 'Selection sort algorithm',
@@ -698,6 +737,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'YouTube — mycodeschool',
     tags: ['concept', 'selection-sort', 'complexity'],
+    topicOrder: { 'sorting': 5 },
   },
   {
     title: 'Algoritmo MergeSort Explicado',
@@ -711,6 +751,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'YouTube — Augusto Galego',
     tags: ['practice', 'merge-sort', 'divide-and-conquer', 'python', 'pt-br'],
+    topicOrder: { 'sorting': 7 },
   },
   {
     title: 'Quicksort: Implementação e Explicação',
@@ -724,6 +765,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'YouTube — Augusto Galego',
     tags: ['practice', 'quicksort', 'partition', 'python', 'pt-br'],
+    topicOrder: { 'sorting': 9 },
   },
   {
     title: 'Analysis of quicksort',
@@ -737,6 +779,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'YouTube — mycodeschool',
     tags: ['concept', 'quicksort', 'analysis', 'complexity', 'average-case'],
+    topicOrder: { 'sorting': 11 },
   },
   {
     title: 'Grokking Algorithms — Quicksort (chapter 4)',
@@ -750,6 +793,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'Book — Grokking Algorithms',
     tags: ['concept', 'book', 'grokking', 'quicksort', 'divide-and-conquer'],
+    topicOrder: { 'sorting': 10 },
   },
 
   // ---------------------------------------------------------------------------
@@ -772,6 +816,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Arthur Takeda',
     tags: ['concept', 'cap-theorem', 'consistency', 'availability', 'partition-tolerance', 'pt-br'],
+    topicOrder: { 'cap-consistency': 3, 'reliability': 1 },
   },
   {
     title: 'A Arte de Não Quebrar Seu App — System Design #2',
@@ -785,6 +830,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Arthur Takeda',
     tags: ['concept', 'reliability', 'uptime', 'failure-modes', 'redundancy', 'pt-br'],
+    topicOrder: { 'reliability': 3 },
   },
   {
     title: 'Cache — System Design #3',
@@ -798,6 +844,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Arthur Takeda',
     tags: ['concept', 'cache', 'system-design', 'pt-br'],
+    topicOrder: { 'caching': 3 },
   },
   {
     title: 'Relacional vs Não-Relacional — System Design #4',
@@ -811,6 +858,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Arthur Takeda',
     tags: ['tradeoffs', 'sql', 'nosql', 'relational', 'document', 'pt-br'],
+    topicOrder: { 'databases': 4 },
   },
   {
     title: 'Como Escalar Banco de Dados? — System Design #5',
@@ -824,6 +872,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Arthur Takeda',
     tags: ['concept', 'sharding', 'replication', 'scaling', 'horizontal-scale', 'pt-br'],
+    topicOrder: { 'databases': 17, 'sharding': 2 },
   },
   {
     title: 'Docker Explicado em 8 Minutos',
@@ -837,6 +886,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Arthur Takeda',
     tags: ['concept', 'docker', 'containers', 'intro', 'pt-br'],
+    topicOrder: { 'containers': 3 },
   },
   {
     title: 'Autenticação Moderna em 20 Minutos',
@@ -850,6 +900,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Arthur Takeda',
     tags: ['concept', 'authentication', 'oauth', 'jwt', 'mfa', 'pt-br'],
+    topicOrder: { 'security': 4 },
   },
   {
     title: 'AWS do Zero: Os Únicos Serviços que Você Precisa Conhecer',
@@ -863,6 +914,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Arthur Takeda',
     tags: ['practice', 'aws', 'cloud', 'ec2', 's3', 'lambda', 'pt-br'],
+    topicOrder: { 'cloud': 2 },
   },
   {
     title: 'A Mentira do "100% Anônimo" das VPNs',
@@ -876,6 +928,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Arthur Takeda',
     tags: ['tradeoffs', 'vpn', 'privacy', 'dns', 'networking', 'pt-br'],
+    topicOrder: { 'networking': 8, 'security': 11 },
   },
   {
     title: '10 Conceitos-Base de Computação Que Você Precisa Saber',
@@ -889,6 +942,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP', 'COMPETITIVE_PROGRAMMING'],
     source: 'YouTube — Arthur Takeda',
     tags: ['concept', 'fundamentals', 'computer-science', 'onboarding', 'first-study', 'pt-br'],
+    topicOrder: { 'foundations': 1 },
   },
   {
     title: 'Saber Isso Te Faz Um Dev MUITO Melhor (Design Patterns)',
@@ -902,6 +956,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Arthur Takeda',
     tags: ['concept', 'design-patterns', 'gof', 'oop', 'pt-br'],
+    topicOrder: { 'design-patterns': 1 },
   },
 
   // ---------------------------------------------------------------------------
@@ -921,6 +976,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'YouTube — Augusto Galego',
     tags: ['concept', 'leetcode', 'interview-prep', 'onboarding', 'pt-br'],
+    topicOrder: { 'foundations': 6 },
   },
   {
     title: 'Big O Notation: O Pesadelo do Programador Iniciante',
@@ -934,6 +990,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'YouTube — Lucas Montano',
     tags: ['concept', 'big-o', 'complexity', 'prerequisite', 'onboarding', 'pt-br'],
+    topicOrder: { 'foundations': 5 },
   },
   {
     title: 'Git Explained in 100 Seconds',
@@ -946,6 +1003,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'YouTube — Fireship',
     tags: ['practice', 'git', 'onboarding', 'fireship'],
+    topicOrder: { 'foundations': 3 },
   },
   {
     title: 'GitHub Pull Request in 100 Seconds',
@@ -958,6 +1016,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'YouTube — Fireship',
     tags: ['practice', 'github', 'pull-request', 'onboarding', 'fireship'],
+    topicOrder: { 'foundations': 4 },
   },
   {
     title: 'Bash in 100 Seconds',
@@ -970,6 +1029,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'YouTube — Fireship',
     tags: ['practice', 'bash', 'terminal', 'cli', 'onboarding', 'fireship'],
+    topicOrder: { 'foundations': 2 },
   },
 
   // ---------------------------------------------------------------------------
@@ -1001,6 +1061,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: "YouTube — Kiki's Bytes",
     tags: ['concept', 'system-design-overview', 'load-balancing', 'caching', 'cap-theorem', 'sql-vs-nosql'],
+    topicOrder: { 'cap-consistency': 4, 'load-balancers': 2, 'scalability': 1 },
   },
 
   // ---------------------------------------------------------------------------
@@ -1018,6 +1079,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'YouTube — Augusto Galego',
     tags: ['concept', 'heap', 'heapq', 'python', 'galego'],
+    topicOrder: { 'heap': 1 },
   },
   {
     title: 'Implement A Binary Heap — An Efficient Implementation of The Priority Queue ADT',
@@ -1031,6 +1093,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'YouTube — Back To Back SWE',
     tags: ['concept', 'binary-heap', 'priority-queue', 'heapify', 'min-heap', 'max-heap'],
+    topicOrder: { 'heap': 3 },
   },
   {
     title: 'Merge K Sorted Arrays — Min Heap Algorithm',
@@ -1044,6 +1107,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'YouTube — Back To Back SWE',
     tags: ['concept', 'merge-k-sorted', 'min-heap', 'priority-queue', 'interview'],
+    topicOrder: { 'heap': 10 },
   },
   {
     title: "Find the k'th Largest or Smallest Element of an Array: From Sorting To Heaps To Partitioning",
@@ -1057,6 +1121,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'YouTube — Back To Back SWE',
     tags: ['concept', 'kth-largest', 'min-heap', 'quickselect', 'partitioning', 'interview'],
+    topicOrder: { 'heap': 6, 'sorting': 14 },
   },
   {
     title: 'Grokking Data Structures — Heaps (chapter)',
@@ -1070,6 +1135,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'Book — Grokking Data Structures',
     tags: ['concept', 'book', 'grokking', 'heap', 'priority-queue'],
+    topicOrder: { 'heap': 2 },
   },
 
   // ---------------------------------------------------------------------------
@@ -1087,6 +1153,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'YouTube — mycodeschool',
     tags: ['concept', 'graph', 'terminology', 'fundamentals'],
+    topicOrder: { 'graph': 2 },
   },
   {
     title: 'Graph Representation part 02 — Adjacency Matrix',
@@ -1100,6 +1167,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'YouTube — mycodeschool',
     tags: ['concept', 'graph', 'adjacency-matrix', 'representation'],
+    topicOrder: { 'graph': 3 },
   },
   {
     title: 'Breadth First Search (BFS): Visualized and Explained',
@@ -1113,6 +1181,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'YouTube — Reducible',
     tags: ['concept', 'graph', 'bfs', 'queue', 'visualization'],
+    topicOrder: { 'graph': 5 },
   },
   {
     title: 'Depth First Search Algorithm | Graph Theory',
@@ -1126,6 +1195,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'YouTube — William Fiset',
     tags: ['concept', 'graph', 'dfs', 'recursion', 'stack'],
+    topicOrder: { 'graph': 8 },
   },
   {
     title: "Dijkstra's Shortest Path Algorithm | Graph Theory",
@@ -1139,6 +1209,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'YouTube — William Fiset',
     tags: ['concept', 'graph', 'dijkstra', 'shortest-path', 'priority-queue'],
+    topicOrder: { 'graph': 25, 'heap': 15 },
   },
   {
     title: "Topological Sort | Kahn's Algorithm | Graph Theory",
@@ -1152,6 +1223,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'YouTube — William Fiset',
     tags: ['concept', 'graph', 'topological-sort', 'dag', 'kahn'],
+    topicOrder: { 'graph': 18 },
   },
   {
     title: 'Grokking Algorithms — Breadth-First Search (chapter)',
@@ -1165,6 +1237,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'Book — Grokking Algorithms',
     tags: ['concept', 'book', 'grokking', 'graph', 'bfs'],
+    topicOrder: { 'graph': 6 },
   },
   {
     title: "Grokking Algorithms — Dijkstra's Algorithm (chapter)",
@@ -1178,6 +1251,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'Book — Grokking Algorithms',
     tags: ['concept', 'book', 'grokking', 'graph', 'dijkstra', 'shortest-path'],
+    topicOrder: { 'graph': 26, 'heap': 16 },
   },
 
   // ---------------------------------------------------------------------------
@@ -1195,6 +1269,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'YouTube — Augusto Galego',
     tags: ['concept', 'binary-search', 'galego'],
+    topicOrder: { 'searching': 1 },
   },
   {
     title: 'What is binary search',
@@ -1208,6 +1283,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'YouTube — mycodeschool',
     tags: ['concept', 'binary-search', 'fundamentals'],
+    topicOrder: { 'searching': 2 },
   },
   {
     title: 'Binary Search — Iterative Implementation and common errors',
@@ -1221,6 +1297,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'YouTube — mycodeschool',
     tags: ['concept', 'binary-search', 'iterative', 'overflow', 'off-by-one'],
+    topicOrder: { 'searching': 4 },
   },
   {
     title: 'Binary search — finding first or last occurrence of a number',
@@ -1234,6 +1311,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'YouTube — mycodeschool',
     tags: ['concept', 'binary-search', 'duplicates', 'first-last-occurrence'],
+    topicOrder: { 'searching': 6 },
   },
   {
     title: 'Total Occurrences Of K In A Sorted Array (Facebook Software Engineering Interview Question)',
@@ -1247,6 +1325,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'YouTube — Back To Back SWE',
     tags: ['concept', 'binary-search', 'duplicates', 'interview', 'facebook'],
+    topicOrder: { 'searching': 7 },
   },
   {
     title: 'Grokking Algorithms — Binary Search (chapter 1)',
@@ -1260,6 +1339,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'Book — Grokking Algorithms',
     tags: ['concept', 'book', 'grokking', 'binary-search'],
+    topicOrder: { 'searching': 3 },
   },
 
   // ---------------------------------------------------------------------------
@@ -1277,6 +1357,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'YouTube — Augusto Galego',
     tags: ['concept', 'recursion', 'tower-of-hanoi', 'galego'],
+    topicOrder: { 'recursion': 6 },
   },
 
   // ---------------------------------------------------------------------------
@@ -1294,6 +1375,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'YouTube — mycodeschool',
     tags: ['concept', 'dp', 'memoization', 'fibonacci', 'recursion-to-dp'],
+    topicOrder: { 'dp': 2, 'recursion': 2 },
   },
   {
     title: 'Dynamic Programming | Leetcode 70 (Climbing Stairs)',
@@ -1307,6 +1389,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'YouTube — Augusto Galego',
     tags: ['concept', 'dp', 'climbing-stairs', 'leetcode-70', 'galego'],
+    topicOrder: { 'dp': 4 },
   },
   {
     title: 'Top 5 Dynamic Programming Patterns for Coding Interviews — For Beginners',
@@ -1320,6 +1403,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'YouTube — NeetCode',
     tags: ['concept', 'dp', 'patterns', 'overview', 'neetcode'],
+    topicOrder: { 'dp': 1 },
   },
   {
     title: 'The Recursive Staircase — Top Down & Bottom Up Dynamic Programming',
@@ -1333,6 +1417,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'YouTube — Back To Back SWE',
     tags: ['concept', 'dp', 'top-down', 'bottom-up', 'staircase', 'memoization', 'tabulation'],
+    topicOrder: { 'dp': 3, 'recursion': 10 },
   },
   {
     title: 'The 0/1 Knapsack Problem (Demystifying Dynamic Programming)',
@@ -1346,6 +1431,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'YouTube — Back To Back SWE',
     tags: ['concept', 'dp', '0-1-knapsack', '2d-dp', 'classic'],
+    topicOrder: { 'dp': 15 },
   },
   {
     title: 'Edit Distance Between 2 Strings — The Levenshtein Distance',
@@ -1359,6 +1445,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'YouTube — Back To Back SWE',
     tags: ['concept', 'dp', 'edit-distance', 'levenshtein', 'string-dp', '2d-dp'],
+    topicOrder: { 'dp': 23 },
   },
   {
     title: 'Grokking Algorithms — Dynamic Programming (chapter 9)',
@@ -1372,6 +1459,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'Book — Grokking Algorithms',
     tags: ['concept', 'book', 'grokking', 'dp', 'knapsack', 'lcs'],
+    topicOrder: { 'dp': 12 },
   },
   {
     title: 'O que é replicação de Banco de Dados?',
@@ -1385,6 +1473,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Augusto Galego',
     tags: ['concept', 'replication', 'master-replica', 'sync-async', 'galego'],
+    topicOrder: { 'databases': 16 },
   },
 
   // ---------------------------------------------------------------------------
@@ -1402,6 +1491,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'YouTube — NeetCode',
     tags: ['concept', 'trie', 'prefix-tree', 'leetcode-208', 'neetcode'],
+    topicOrder: { 'trie': 3 },
   },
   {
     title: 'Grokking Data Structures — Tries (chapter)',
@@ -1415,6 +1505,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'Book — Grokking Data Structures',
     tags: ['concept', 'book', 'grokking', 'trie', 'prefix-tree', 'autocomplete'],
+    topicOrder: { 'trie': 2 },
   },
 
   // ---------------------------------------------------------------------------
@@ -1433,6 +1524,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'Site — AlgoViz (Davi Duarte)',
     tags: ['concept', 'sorting', 'bubble-sort', 'algoviz', 'visualization', 'pt-br'],
+    topicOrder: { 'sorting': 2 },
   },
   {
     title: 'AlgoViz — Selection Sort',
@@ -1446,6 +1538,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'Site — AlgoViz (Davi Duarte)',
     tags: ['concept', 'sorting', 'selection-sort', 'algoviz', 'visualization', 'pt-br'],
+    topicOrder: { 'sorting': 4 },
   },
   {
     title: 'AlgoViz — Insertion Sort',
@@ -1459,6 +1552,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'Site — AlgoViz (Davi Duarte)',
     tags: ['concept', 'sorting', 'insertion-sort', 'algoviz', 'visualization', 'pt-br'],
+    topicOrder: { 'sorting': 3 },
   },
   {
     title: 'AlgoViz — Merge Sort',
@@ -1472,6 +1566,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'Site — AlgoViz (Davi Duarte)',
     tags: ['concept', 'sorting', 'merge-sort', 'divide-and-conquer', 'algoviz', 'visualization', 'pt-br'],
+    topicOrder: { 'recursion': 7, 'sorting': 6 },
   },
   {
     title: 'AlgoViz — Quick Sort',
@@ -1485,6 +1580,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'Site — AlgoViz (Davi Duarte)',
     tags: ['concept', 'sorting', 'quick-sort', 'partitioning', 'algoviz', 'visualization', 'pt-br'],
+    topicOrder: { 'recursion': 8, 'sorting': 8 },
   },
   {
     title: 'AlgoViz — Counting Sort',
@@ -1498,6 +1594,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'Site — AlgoViz (Davi Duarte)',
     tags: ['concept', 'sorting', 'counting-sort', 'non-comparison', 'algoviz', 'visualization', 'pt-br'],
+    topicOrder: { 'sorting': 12 },
   },
   {
     title: 'AlgoViz — Bucket Sort',
@@ -1511,6 +1608,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'Site — AlgoViz (Davi Duarte)',
     tags: ['concept', 'sorting', 'bucket-sort', 'algoviz', 'visualization', 'pt-br'],
+    topicOrder: { 'sorting': 13 },
   },
   {
     title: 'AlgoViz — BFS (Breadth-First Search)',
@@ -1524,6 +1622,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'Site — AlgoViz (Davi Duarte)',
     tags: ['concept', 'graph', 'bfs', 'queue', 'algoviz', 'visualization', 'pt-br'],
+    topicOrder: { 'graph': 4 },
   },
   {
     title: 'AlgoViz — DFS (Depth-First Search)',
@@ -1537,6 +1636,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'Site — AlgoViz (Davi Duarte)',
     tags: ['concept', 'graph', 'dfs', 'recursion', 'stack', 'algoviz', 'visualization', 'pt-br'],
+    topicOrder: { 'graph': 7, 'recursion': 9 },
   },
   {
     title: 'AlgoViz — Dijkstra',
@@ -1550,6 +1650,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'Site — AlgoViz (Davi Duarte)',
     tags: ['concept', 'graph', 'dijkstra', 'shortest-path', 'priority-queue', 'algoviz', 'visualization', 'pt-br'],
+    topicOrder: { 'graph': 24, 'heap': 14 },
   },
   {
     title: 'AlgoViz — Topological Sort',
@@ -1563,6 +1664,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'Site — AlgoViz (Davi Duarte)',
     tags: ['concept', 'graph', 'topological-sort', 'dag', 'kahn', 'algoviz', 'visualization', 'pt-br'],
+    topicOrder: { 'graph': 17 },
   },
   {
     title: 'AlgoViz — Union-Find (DSU)',
@@ -1576,6 +1678,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'Site — AlgoViz (Davi Duarte)',
     tags: ['concept', 'graph', 'union-find', 'dsu', 'path-compression', 'algoviz', 'visualization', 'pt-br'],
+    topicOrder: { 'graph': 21 },
   },
   {
     title: 'AlgoViz — Ciclo Único em Array',
@@ -1589,6 +1692,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'Site — AlgoViz (Davi Duarte)',
     tags: ['concept', 'array', 'cycle-detection', 'simulation', 'algoviz', 'visualization', 'pt-br'],
+    topicOrder: { 'array': 25 },
   },
   {
     title: 'AlgoViz — Two Sum',
@@ -1602,7 +1706,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'Site — AlgoViz (Davi Duarte)',
     tags: ['concept', 'hashmap', 'two-sum', 'leetcode-1', 'algoviz', 'visualization', 'pt-br'],
-    topicOrder: { hashmap: 7 },
+    topicOrder: { 'array': 9, 'hashmap': 7 },
   },
   {
     title: 'AlgoViz — LRU Cache',
@@ -1616,7 +1720,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'Site — AlgoViz (Davi Duarte)',
     tags: ['concept', 'caching', 'lru', 'doubly-linked-list', 'hashmap', 'algoviz', 'visualization', 'pt-br'],
-    topicOrder: { hashmap: 11 },
+    topicOrder: { 'caching': 5, 'hashmap': 11, 'lists': 18 },
   },
   {
     title: 'AlgoViz — Trie (Prefix Tree)',
@@ -1630,6 +1734,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'Site — AlgoViz (Davi Duarte)',
     tags: ['concept', 'trie', 'prefix-tree', 'autocomplete', 'algoviz', 'visualization', 'pt-br'],
+    topicOrder: { 'tree': 24, 'trie': 1 },
   },
 
   // ---------------------------------------------------------------------------
@@ -1647,7 +1752,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — ByteByteGo',
     tags: ['concept', 'hashmap', 'consistent-hashing', 'sharding', 'distributed', 'bytebytego'],
-    topicOrder: { hashmap: 13 },
+    topicOrder: { 'hashmap': 13, 'sharding': 3 },
   },
   {
     title: 'Grokking Algorithms — Hash Tables (chapter 5)',
@@ -1693,6 +1798,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Fireship',
     tags: ['concept', 'kafka', 'log-based', 'fireship'],
+    topicOrder: { 'message-queues': 3 },
   },
   {
     title: 'RabbitMQ in 100 Seconds',
@@ -1706,6 +1812,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Fireship',
     tags: ['concept', 'rabbitmq', 'broker', 'fireship'],
+    topicOrder: { 'message-queues': 2 },
   },
   {
     title: 'What is a Message Queue and When should you use Messaging Queue Systems Like RabbitMQ and Kafka',
@@ -1719,6 +1826,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Hussein Nasser',
     tags: ['concept', 'message-queues', 'overview', 'when-to-use', 'hussein-nasser'],
+    topicOrder: { 'message-queues': 1 },
   },
   {
     title: 'Kafka vs. RabbitMQ vs. Messaging Middleware vs. Pulsar',
@@ -1732,6 +1840,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — ByteByteGo',
     tags: ['tradeoffs', 'kafka', 'rabbitmq', 'pulsar', 'comparison'],
+    topicOrder: { 'message-queues': 5, 'pubsub': 4 },
   },
   {
     title: 'Apache Kafka Fundamentals You Should Know',
@@ -1745,6 +1854,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — ByteByteGo',
     tags: ['concept', 'kafka', 'partitions', 'consumer-groups', 'replication'],
+    topicOrder: { 'message-queues': 4 },
   },
   {
     title: 'System Design: Why is Kafka fast?',
@@ -1758,6 +1868,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — ByteByteGo',
     tags: ['concept', 'kafka', 'internals', 'zero-copy', 'sequential-io'],
+    topicOrder: { 'message-queues': 7 },
   },
 
   // ---------------------------------------------------------------------------
@@ -1775,6 +1886,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'YouTube — NeetCode',
     tags: ['practice', 'greedy', 'leetcode-55', 'jump-game', 'neetcode'],
+    topicOrder: { 'greedy': 9 },
   },
   {
     title: 'Gas Station — Greedy — Leetcode 134',
@@ -1788,6 +1900,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'YouTube — NeetCode',
     tags: ['practice', 'greedy', 'leetcode-134', 'gas-station', 'neetcode'],
+    topicOrder: { 'greedy': 13 },
   },
   {
     title: 'Jump Game II — Greedy — Leetcode 45',
@@ -1801,6 +1914,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'YouTube — NeetCode',
     tags: ['practice', 'greedy', 'leetcode-45', 'jump-game-ii', 'bfs', 'neetcode'],
+    topicOrder: { 'greedy': 11 },
   },
   {
     title: 'Interval Scheduling Maximization (Proof w/ Exchange Argument)',
@@ -1814,6 +1928,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'YouTube — Back To Back SWE',
     tags: ['concept', 'greedy', 'interval-scheduling', 'exchange-argument', 'proof'],
+    topicOrder: { 'greedy': 2 },
   },
   {
     title: 'Huffman Codes: An Information Theory Perspective',
@@ -1827,6 +1942,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'YouTube — Reducible',
     tags: ['concept', 'greedy', 'huffman', 'compression', 'information-theory', 'tree'],
+    topicOrder: { 'greedy': 3, 'tree': 27 },
   },
   {
     title: 'Grokking Algorithms — Greedy Algorithms (chapter 8)',
@@ -1840,6 +1956,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'Book — Grokking Algorithms',
     tags: ['concept', 'book', 'grokking', 'greedy', 'set-cover', 'np-complete'],
+    topicOrder: { 'greedy': 1 },
   },
 
   // ---------------------------------------------------------------------------
@@ -1857,6 +1974,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Augusto Galego',
     tags: ['concept', 'rate-limiting', 'fundamentals', 'galego'],
+    topicOrder: { 'rate-limiting': 1 },
   },
   {
     title: 'Rate Limiting Fundamentals',
@@ -1870,6 +1988,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'Blog — ByteByteGo',
     tags: ['concept', 'rate-limiting', 'fundamentals', 'distributed-systems', 'bytebytego'],
+    topicOrder: { 'rate-limiting': 2 },
   },
   {
     title: 'Rate Limiter System Design: Token Bucket, Leaky Bucket, Scaling',
@@ -1883,6 +2002,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — ByteByteGo',
     tags: ['concept', 'rate-limiting', 'token-bucket', 'leaky-bucket', 'distributed', 'bytebytego'],
+    topicOrder: { 'rate-limiting': 5 },
   },
   {
     title: 'How Rate Limiting and Throttling Saves Your API Server From CRASHING',
@@ -1896,6 +2016,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — ByteMonk',
     tags: ['practice', 'rate-limiting', 'token-bucket', 'leaky-bucket', 'java', 'throttling'],
+    topicOrder: { 'rate-limiting': 4 },
   },
   {
     title: 'Five Rate Limiting Algorithms — Key Concepts in System Design',
@@ -1909,6 +2030,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Hello Byte',
     tags: ['concept', 'rate-limiting', 'algorithms', 'overview', 'sliding-window'],
+    topicOrder: { 'rate-limiting': 3 },
   },
   {
     title: 'Rate Limiter | Explicação Completa',
@@ -1922,6 +2044,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Augusto Galego',
     tags: ['concept', 'rate-limiting', 'leaky-bucket', 'distributed', 'practice', 'galego'],
+    topicOrder: { 'rate-limiting': 6 },
   },
 
   // ---------------------------------------------------------------------------
@@ -1939,6 +2062,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Fireship',
     tags: ['concept', 'networking', 'overview', 'tcp-ip', 'fireship'],
+    topicOrder: { 'networking': 1 },
   },
   {
     title: 'DNS Explained in 100 Seconds',
@@ -1952,6 +2076,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Fireship',
     tags: ['concept', 'networking', 'dns', 'fireship'],
+    topicOrder: { 'networking': 2 },
   },
   {
     title: 'When to use UDP vs TCP in Building a Backend Application?',
@@ -1965,6 +2090,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Hussein Nasser',
     tags: ['tradeoffs', 'networking', 'tcp', 'udp', 'protocol', 'hussein-nasser'],
+    topicOrder: { 'networking': 4 },
   },
   {
     title: 'What are SSL/TLS Certificates? Why do we Need them? and How do they Work?',
@@ -1978,6 +2104,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Hussein Nasser',
     tags: ['concept', 'networking', 'ssl', 'tls', 'certificates', 'security', 'hussein-nasser'],
+    topicOrder: { 'networking': 3, 'security': 10 },
   },
   {
     title: 'This is why gRPC was invented',
@@ -1991,6 +2118,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Hussein Nasser',
     tags: ['concept', 'networking', 'grpc', 'rpc', 'http2', 'protobuf', 'hussein-nasser'],
+    topicOrder: { 'networking': 7 },
   },
   {
     title: 'Hyper Text Transfer Protocol Crash Course — HTTP 1.0, 1.1, HTTP/2, HTTP/3',
@@ -2004,6 +2132,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Hussein Nasser',
     tags: ['concept', 'networking', 'http', 'http2', 'http3', 'quic', 'hussein-nasser'],
+    topicOrder: { 'networking': 5 },
   },
   {
     title: 'WebSockets Crash Course — Handshake, Use-cases, Pros & Cons and more',
@@ -2017,6 +2146,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Hussein Nasser',
     tags: ['concept', 'networking', 'websockets', 'realtime', 'full-duplex', 'hussein-nasser'],
+    topicOrder: { 'networking': 6, 'pubsub': 5 },
   },
 
   // ---------------------------------------------------------------------------
@@ -2034,6 +2164,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Augusto Galego',
     tags: ['concept', 'caching', 'fundamentals', 'hit-miss', 'galego'],
+    topicOrder: { 'caching': 2 },
   },
   {
     title: 'O que é Load Balancer?',
@@ -2047,6 +2178,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Augusto Galego',
     tags: ['concept', 'load-balancer', 'fundamentals', 'l4', 'l7', 'galego'],
+    topicOrder: { 'load-balancers': 1 },
   },
   {
     title: 'O que é DB Sharding?',
@@ -2060,6 +2192,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Augusto Galego',
     tags: ['concept', 'sharding', 'database', 'shard-key', 'galego'],
+    topicOrder: { 'sharding': 1 },
   },
   {
     title: 'O que são sharded counters?',
@@ -2073,6 +2206,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Augusto Galego',
     tags: ['concept', 'sharding', 'counters', 'high-write', 'contention', 'galego'],
+    topicOrder: { 'sharding': 4 },
   },
   {
     title: 'Concorrência é DIFERENTE de Paralelismo!',
@@ -2086,6 +2220,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Augusto Galego',
     tags: ['concept', 'concurrency', 'parallelism', 'threading', 'galego'],
+    topicOrder: { 'scalability': 2 },
   },
   {
     title: 'Quando usar Monolitos vs Microserviços',
@@ -2099,6 +2234,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Augusto Galego',
     tags: ['tradeoffs', 'monolith', 'microservices', 'architecture', 'galego'],
+    topicOrder: { 'design-patterns': 4, 'scalability': 4 },
   },
   {
     title: 'Princípios SOLID Pelos Olhos de um Dev Sr.',
@@ -2112,6 +2248,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Augusto Galego',
     tags: ['concept', 'solid', 'design-principles', 'srp', 'liskov', 'galego'],
+    topicOrder: { 'design-patterns': 2 },
   },
   {
     title: 'Padrão SAGA | Orquestrando diferentes microsserviços',
@@ -2125,6 +2262,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Augusto Galego',
     tags: ['concept', 'saga', 'microservices', 'distributed-transactions', 'compensation', 'galego'],
+    topicOrder: { 'design-patterns': 5, 'reliability': 6 },
   },
   {
     title: 'Top 6 Load Balancing Algorithms Every Developer Should Know',
@@ -2138,6 +2276,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — ByteByteGo',
     tags: ['tradeoffs', 'load-balancer', 'algorithms', 'round-robin', 'least-connections', 'bytebytego'],
+    topicOrder: { 'load-balancers': 3 },
   },
 
   // ---------------------------------------------------------------------------
@@ -2155,6 +2294,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Fireship',
     tags: ['concept', 'containers', 'docker', 'fireship'],
+    topicOrder: { 'containers': 1 },
   },
   {
     title: 'Kubernetes Explained in 100 Seconds',
@@ -2168,6 +2308,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Fireship',
     tags: ['concept', 'containers', 'kubernetes', 'k8s', 'orchestration', 'fireship'],
+    topicOrder: { 'containers': 2 },
   },
   {
     title: 'Kubernetes Explained in 6 Minutes | k8s Architecture',
@@ -2181,6 +2322,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — ByteByteGo',
     tags: ['concept', 'containers', 'kubernetes', 'architecture', 'etcd', 'scheduler', 'bytebytego'],
+    topicOrder: { 'containers': 7, 'scalability': 3 },
   },
   {
     title: 'The evolution from virtual machines to containers',
@@ -2194,6 +2336,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Hussein Nasser',
     tags: ['concept', 'containers', 'virtual-machines', 'history', 'hussein-nasser'],
+    topicOrder: { 'containers': 5 },
   },
   {
     title: "99% of Developers Don't Get Docker",
@@ -2207,6 +2350,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — The Coding Gopher',
     tags: ['concept', 'containers', 'docker', 'namespaces', 'cgroups', 'linux', 'internals', 'coding-gopher'],
+    topicOrder: { 'containers': 6 },
   },
   {
     title: 'Eu não sabia o que era Docker até agora...',
@@ -2220,6 +2364,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Augusto Galego',
     tags: ['concept', 'containers', 'docker', 'fundamentals', 'galego'],
+    topicOrder: { 'containers': 4 },
   },
 
   // ---------------------------------------------------------------------------
@@ -2237,6 +2382,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Fireship',
     tags: ['concept', 'cloud', 'aws', 'fireship'],
+    topicOrder: { 'cloud': 1 },
   },
   {
     title: 'Top 50+ AWS Services Explained in 10 Minutes',
@@ -2250,6 +2396,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Fireship',
     tags: ['concept', 'cloud', 'aws', 'services', 'overview', 'fireship'],
+    topicOrder: { 'cloud': 3 },
   },
   {
     title: 'But What Is Cloud Native Really All About?',
@@ -2263,6 +2410,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — ByteByteGo',
     tags: ['concept', 'cloud', 'cloud-native', 'microservices', 'devops', 'bytebytego'],
+    topicOrder: { 'cloud': 4 },
   },
   {
     title: 'Serverless Computing in 100 Seconds',
@@ -2276,6 +2424,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Fireship',
     tags: ['concept', 'cloud', 'serverless', 'faas', 'lambda', 'fireship'],
+    topicOrder: { 'cloud': 5 },
   },
   {
     title: 'Amazon Prime Video Ditches AWS Serverless, Saves 90%',
@@ -2289,6 +2438,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — ByteByteGo',
     tags: ['case-study', 'cloud', 'serverless', 'monolith', 'prime-video', 'bytebytego'],
+    topicOrder: { 'cloud': 6, 'scalability': 5 },
   },
 
   // ---------------------------------------------------------------------------
@@ -2306,6 +2456,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Augusto Galego',
     tags: ['concept', 'security', 'fundamentals', 'sql-injection', 'xss', 'csrf', 'galego'],
+    topicOrder: { 'security': 1 },
   },
   {
     title: 'Session vs Token Authentication in 100 Seconds',
@@ -2319,6 +2470,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Fireship',
     tags: ['concept', 'security', 'session', 'token', 'authentication', 'fireship'],
+    topicOrder: { 'security': 3 },
   },
   {
     title: '7 Cryptography Concepts EVERY Developer Should Know',
@@ -2332,6 +2484,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Fireship',
     tags: ['concept', 'security', 'cryptography', 'hashing', 'encryption', 'fireship'],
+    topicOrder: { 'security': 9 },
   },
   {
     title: 'OAuth 2 Explained In Simple Terms',
@@ -2345,6 +2498,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — ByteByteGo',
     tags: ['concept', 'security', 'oauth', 'oauth2', 'authorization', 'bytebytego'],
+    topicOrder: { 'security': 8 },
   },
   {
     title: 'JSON Web Tokens (JWTs) Explained',
@@ -2358,6 +2512,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — The Coding Gopher',
     tags: ['concept', 'security', 'jwt', 'token', 'hmac', 'coding-gopher'],
+    topicOrder: { 'security': 7 },
   },
   {
     title: 'Five Password Authentications From Least to Most Secure (Explained with NodeJS & Postgres)',
@@ -2371,6 +2526,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Hussein Nasser',
     tags: ['concept', 'security', 'password', 'hashing', 'bcrypt', 'argon2', 'hussein-nasser'],
+    topicOrder: { 'security': 6 },
   },
   {
     title: 'Securing Backend Applications (OWASP recommendations)',
@@ -2384,6 +2540,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Hussein Nasser',
     tags: ['concept', 'security', 'owasp', 'backend', 'injection', 'hussein-nasser'],
+    topicOrder: { 'security': 2 },
   },
 
   // ---------------------------------------------------------------------------
@@ -2401,6 +2558,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — ByteByteGo',
     tags: ['concept', 'reliability', 'fault-tolerance', 'circuit-breaker', 'retry', 'bytebytego'],
+    topicOrder: { 'reliability': 2 },
   },
   {
     title: 'Top 7 Most-Used Distributed System Patterns',
@@ -2414,6 +2572,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — ByteByteGo',
     tags: ['concept', 'reliability', 'distributed-systems', 'consensus', 'paxos', 'raft', 'bytebytego'],
+    topicOrder: { 'cap-consistency': 6, 'reliability': 4 },
   },
   {
     title: 'Fail-over and High-Availability (Explained by Example)',
@@ -2427,6 +2586,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Hussein Nasser',
     tags: ['concept', 'reliability', 'failover', 'high-availability', 'split-brain', 'hussein-nasser'],
+    topicOrder: { 'reliability': 5 },
   },
 
   // ---------------------------------------------------------------------------
@@ -2444,6 +2604,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — ByteByteGo',
     tags: ['concept', 'pubsub', 'architecture-patterns', 'overview', 'event-driven', 'bytebytego'],
+    topicOrder: { 'design-patterns': 3, 'pubsub': 1 },
   },
   {
     title: 'Publish-Subscribe Architecture (Explained by Example)',
@@ -2457,6 +2618,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Hussein Nasser',
     tags: ['concept', 'pubsub', 'publish-subscribe', 'event-driven', 'fan-out', 'hussein-nasser'],
+    topicOrder: { 'pubsub': 2 },
   },
   {
     title: 'Publish-Subscribe Pattern vs Message Queues vs Request Response (Detailed Discussion with Examples)',
@@ -2470,6 +2632,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Hussein Nasser',
     tags: ['tradeoffs', 'pubsub', 'message-queues', 'request-response', 'comparison', 'hussein-nasser'],
+    topicOrder: { 'message-queues': 6, 'pubsub': 3 },
   },
 
   // ---------------------------------------------------------------------------
@@ -2487,6 +2650,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — ByteByteGo',
     tags: ['concept', 'cap-theorem', 'consistency', 'availability', 'partition-tolerance', 'bytebytego'],
+    topicOrder: { 'cap-consistency': 2 },
   },
   {
     title: 'ACID Properties in Databases With Examples',
@@ -2500,6 +2664,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — ByteByteGo',
     tags: ['concept', 'acid', 'transactions', 'consistency', 'isolation', 'bytebytego'],
+    topicOrder: { 'cap-consistency': 1, 'databases': 5 },
   },
   {
     title: 'My thoughts on the CAP theorem',
@@ -2513,6 +2678,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Hussein Nasser',
     tags: ['concept', 'cap-theorem', 'partition-tolerance', 'distributed', 'opinion', 'hussein-nasser'],
+    topicOrder: { 'cap-consistency': 5 },
   },
   {
     title: 'Relational Database ACID Transactions (Explained by Example)',
@@ -2526,6 +2692,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Hussein Nasser',
     tags: ['concept', 'acid', 'transactions', 'isolation-levels', 'mvcc', 'postgres', 'hussein-nasser'],
+    topicOrder: { 'cap-consistency': 7, 'databases': 13 },
   },
 
   // ---------------------------------------------------------------------------
@@ -2543,6 +2710,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'YouTube — mycodeschool',
     tags: ['concept', 'recursion', 'factorial', 'base-case', 'stack-frames'],
+    topicOrder: { 'recursion': 1 },
   },
   {
     title: 'Mentiram pra você sobre recursão...',
@@ -2556,6 +2724,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'YouTube — Augusto Galego',
     tags: ['concept', 'recursion', 'iteration', 'tradeoffs', 'galego'],
+    topicOrder: { 'recursion': 5 },
   },
   {
     title: 'Time and space complexity analysis of recursive programs — using factorial',
@@ -2569,6 +2738,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'YouTube — mycodeschool',
     tags: ['concept', 'recursion', 'complexity', 'stack-depth', 'memory'],
+    topicOrder: { 'recursion': 3 },
   },
   {
     title: 'The Backtracking Blueprint — The Legendary 3 Keys to Backtracking Algorithms',
@@ -2582,6 +2752,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'YouTube — Back To Back SWE',
     tags: ['concept', 'recursion', 'backtracking', 'paradigm', 'template'],
+    topicOrder: { 'recursion': 11 },
   },
   {
     title: 'The N Queens Problem using Backtracking/Recursion — Explained',
@@ -2595,6 +2766,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'YouTube — Back To Back SWE',
     tags: ['concept', 'recursion', 'backtracking', 'n-queens', 'application'],
+    topicOrder: { 'recursion': 20 },
   },
   {
     title: 'Grokking Algorithms — Recursion (chapter 3)',
@@ -2608,6 +2780,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'Book — Grokking Algorithms',
     tags: ['concept', 'book', 'grokking', 'recursion'],
+    topicOrder: { 'recursion': 4 },
   },
 
   // ---------------------------------------------------------------------------
@@ -2626,6 +2799,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'LeetCode — Arrays & Hashing',
     tags: ['practice', 'leetcode', 'lc-217', 'arrays-hashing', 'hashset'],
+    topicOrder: { 'array': 7 },
   },
   {
     title: 'LeetCode 1 — Two Sum',
@@ -2639,6 +2813,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'LeetCode — Arrays & Hashing',
     tags: ['practice', 'leetcode', 'lc-1', 'arrays-hashing', 'hashmap'],
+    topicOrder: { 'array': 8 },
   },
   {
     title: 'LeetCode 242 — Valid Anagram',
@@ -2652,6 +2827,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'LeetCode — Arrays & Hashing',
     tags: ['practice', 'leetcode', 'lc-242', 'arrays-hashing', 'string', 'counting'],
+    topicOrder: { 'array': 10 },
   },
   {
     title: 'LeetCode 49 — Group Anagrams',
@@ -2665,6 +2841,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'LeetCode — Arrays & Hashing',
     tags: ['practice', 'leetcode', 'lc-49', 'arrays-hashing', 'hashmap', 'string'],
+    topicOrder: { 'array': 19 },
   },
   {
     title: 'LeetCode 347 — Top K Frequent Elements',
@@ -2678,6 +2855,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'LeetCode — Arrays & Hashing',
     tags: ['practice', 'leetcode', 'lc-347', 'arrays-hashing', 'bucket-sort', 'heap'],
+    topicOrder: { 'array': 20, 'heap': 8 },
   },
   {
     title: 'LeetCode 238 — Product of Array Except Self',
@@ -2691,6 +2869,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'LeetCode — Arrays & Hashing',
     tags: ['practice', 'leetcode', 'lc-238', 'arrays-hashing', 'prefix-product'],
+    topicOrder: { 'array': 21 },
   },
   {
     title: 'LeetCode 36 — Valid Sudoku',
@@ -2704,6 +2883,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'LeetCode — Arrays & Hashing',
     tags: ['practice', 'leetcode', 'lc-36', 'arrays-hashing', 'matrix', 'hashset'],
+    topicOrder: { 'array': 22 },
   },
   {
     title: 'LeetCode 271 — Encode and Decode Strings',
@@ -2717,6 +2897,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'LeetCode — Arrays & Hashing',
     tags: ['practice', 'leetcode', 'lc-271', 'arrays-hashing', 'string', 'serialization'],
+    topicOrder: { 'array': 23 },
   },
   {
     title: 'LeetCode 128 — Longest Consecutive Sequence',
@@ -2730,6 +2911,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'LeetCode — Arrays & Hashing',
     tags: ['practice', 'leetcode', 'lc-128', 'arrays-hashing', 'hashset'],
+    topicOrder: { 'array': 24 },
   },
   // ---------------------------------------------------------------------------
   // PROBLEMs — Two Pointers (NeetCode 150) — 2026-04-28
@@ -2748,6 +2930,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'LeetCode — Two Pointers',
     tags: ['practice', 'leetcode', 'lc-125', 'two-pointers'],
+    topicOrder: { 'array': 11 },
   },
   {
     title: 'LeetCode 15 — 3Sum',
@@ -2761,6 +2944,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'LeetCode — Two Pointers',
     tags: ['practice', 'leetcode', 'lc-15', 'two-pointers'],
+    topicOrder: { 'array': 15 },
   },
   {
     title: 'LeetCode 11 — Container With Most Water',
@@ -2774,6 +2958,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'LeetCode — Two Pointers',
     tags: ['practice', 'leetcode', 'lc-11', 'two-pointers'],
+    topicOrder: { 'array': 14 },
   },
   {
     title: 'LeetCode 167 — Two Sum II Input Array Is Sorted',
@@ -2787,6 +2972,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'LeetCode — Two Pointers',
     tags: ['practice', 'leetcode', 'lc-167', 'two-pointers'],
+    topicOrder: { 'array': 12 },
   },
   {
     title: 'LeetCode 42 — Trapping Rain Water',
@@ -2800,6 +2986,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'LeetCode — Two Pointers',
     tags: ['practice', 'leetcode', 'lc-42', 'two-pointers'],
+    topicOrder: { 'array': 46 },
   },
 
   // ---------------------------------------------------------------------------
@@ -2819,6 +3006,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'LeetCode — Sliding Window',
     tags: ['practice', 'leetcode', 'lc-121', 'sliding-window'],
+    topicOrder: { 'array': 13 },
   },
   {
     title: 'LeetCode 424 — Longest Repeating Character Replacement',
@@ -2832,6 +3020,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'LeetCode — Sliding Window',
     tags: ['practice', 'leetcode', 'lc-424', 'sliding-window'],
+    topicOrder: { 'array': 17 },
   },
   {
     title: 'LeetCode 3 — Longest Substring Without Repeating Characters',
@@ -2845,6 +3034,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'LeetCode — Sliding Window',
     tags: ['practice', 'leetcode', 'lc-3', 'sliding-window'],
+    topicOrder: { 'array': 16 },
   },
   {
     title: 'LeetCode 567 — Permutation In String',
@@ -2858,6 +3048,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'LeetCode — Sliding Window',
     tags: ['practice', 'leetcode', 'lc-567', 'sliding-window'],
+    topicOrder: { 'array': 18 },
   },
   {
     title: 'LeetCode 76 — Minimum Window Substring',
@@ -2871,6 +3062,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'LeetCode — Sliding Window',
     tags: ['practice', 'leetcode', 'lc-76', 'sliding-window'],
+    topicOrder: { 'array': 48 },
   },
   {
     title: 'LeetCode 239 — Sliding Window Maximum',
@@ -2884,6 +3076,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'LeetCode — Sliding Window',
     tags: ['practice', 'leetcode', 'lc-239', 'sliding-window'],
+    topicOrder: { 'array': 47 },
   },
 
   // ---------------------------------------------------------------------------
@@ -2903,6 +3096,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'LeetCode — Stack',
     tags: ['practice', 'leetcode', 'lc-20', 'stack'],
+    topicOrder: { 'array': 31 },
   },
   {
     title: 'LeetCode 853 — Car Fleet',
@@ -2916,6 +3110,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'LeetCode — Stack',
     tags: ['practice', 'leetcode', 'lc-853', 'stack'],
+    topicOrder: { 'array': 36 },
   },
   {
     title: 'LeetCode 739 — Daily Temperatures',
@@ -2929,6 +3124,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'LeetCode — Stack',
     tags: ['practice', 'leetcode', 'lc-739', 'stack'],
+    topicOrder: { 'array': 35 },
   },
   {
     title: 'LeetCode 150 — Evaluate Reverse Polish Notation',
@@ -2942,6 +3138,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'LeetCode — Stack',
     tags: ['practice', 'leetcode', 'lc-150', 'stack'],
+    topicOrder: { 'array': 34 },
   },
   {
     title: 'LeetCode 22 — Generate Parentheses',
@@ -2955,6 +3152,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'LeetCode — Stack',
     tags: ['practice', 'leetcode', 'lc-22', 'stack'],
+    topicOrder: { 'array': 33 },
   },
   {
     title: 'LeetCode 155 — Min Stack',
@@ -2968,6 +3166,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'LeetCode — Stack',
     tags: ['practice', 'leetcode', 'lc-155', 'stack'],
+    topicOrder: { 'array': 32 },
   },
   {
     title: 'LeetCode 84 — Largest Rectangle In Histogram',
@@ -2981,6 +3180,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'LeetCode — Stack',
     tags: ['practice', 'leetcode', 'lc-84', 'stack'],
+    topicOrder: { 'array': 49 },
   },
 
   // ---------------------------------------------------------------------------
@@ -3000,6 +3200,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'LeetCode — Binary Search',
     tags: ['practice', 'leetcode', 'lc-704', 'binary-search'],
+    topicOrder: { 'searching': 5 },
   },
   {
     title: 'LeetCode 153 — Find Minimum In Rotated Sorted Array',
@@ -3013,6 +3214,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'LeetCode — Binary Search',
     tags: ['practice', 'leetcode', 'lc-153', 'binary-search'],
+    topicOrder: { 'searching': 8 },
   },
   {
     title: 'LeetCode 875 — Koko Eating Bananas',
@@ -3026,6 +3228,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'LeetCode — Binary Search',
     tags: ['practice', 'leetcode', 'lc-875', 'binary-search'],
+    topicOrder: { 'searching': 12 },
   },
   {
     title: 'LeetCode 33 — Search In Rotated Sorted Array',
@@ -3039,6 +3242,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'LeetCode — Binary Search',
     tags: ['practice', 'leetcode', 'lc-33', 'binary-search'],
+    topicOrder: { 'searching': 9 },
   },
   {
     title: 'LeetCode 74 — Search a 2D Matrix',
@@ -3052,6 +3256,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'LeetCode — Binary Search',
     tags: ['practice', 'leetcode', 'lc-74', 'binary-search'],
+    topicOrder: { 'searching': 10 },
   },
   {
     title: 'LeetCode 981 — Time Based Key Value Store',
@@ -3065,6 +3270,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'LeetCode — Binary Search',
     tags: ['practice', 'leetcode', 'lc-981', 'binary-search'],
+    topicOrder: { 'searching': 11 },
   },
   {
     title: 'LeetCode 4 — Median of Two Sorted Arrays',
@@ -3078,6 +3284,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'LeetCode — Binary Search',
     tags: ['practice', 'leetcode', 'lc-4', 'binary-search'],
+    topicOrder: { 'searching': 13 },
   },
 
   // ---------------------------------------------------------------------------
@@ -3097,6 +3304,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'LeetCode — Linked List',
     tags: ['practice', 'leetcode', 'lc-141', 'linked-list'],
+    topicOrder: { 'lists': 11 },
   },
   {
     title: 'LeetCode 21 — Merge Two Sorted Lists',
@@ -3110,6 +3318,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'LeetCode — Linked List',
     tags: ['practice', 'leetcode', 'lc-21', 'linked-list'],
+    topicOrder: { 'lists': 12 },
   },
   {
     title: 'LeetCode 206 — Reverse Linked List',
@@ -3123,6 +3332,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'LeetCode — Linked List',
     tags: ['practice', 'leetcode', 'lc-206', 'linked-list'],
+    topicOrder: { 'lists': 9 },
   },
   {
     title: 'LeetCode 2 — Add Two Numbers',
@@ -3136,6 +3346,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'LeetCode — Linked List',
     tags: ['practice', 'leetcode', 'lc-2', 'linked-list'],
+    topicOrder: { 'lists': 14 },
   },
   {
     title: 'LeetCode 138 — Copy List With Random Pointer',
@@ -3149,6 +3360,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'LeetCode — Linked List',
     tags: ['practice', 'leetcode', 'lc-138', 'linked-list'],
+    topicOrder: { 'lists': 17 },
   },
   {
     title: 'LeetCode 287 — Find The Duplicate Number',
@@ -3162,6 +3374,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'LeetCode — Linked List',
     tags: ['practice', 'leetcode', 'lc-287', 'linked-list'],
+    topicOrder: { 'lists': 16 },
   },
   {
     title: 'LeetCode 146 — LRU Cache',
@@ -3175,6 +3388,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'LeetCode — Linked List',
     tags: ['practice', 'leetcode', 'lc-146', 'linked-list'],
+    topicOrder: { 'lists': 19 },
   },
   {
     title: 'LeetCode 19 — Remove Nth Node From End of List',
@@ -3188,6 +3402,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'LeetCode — Linked List',
     tags: ['practice', 'leetcode', 'lc-19', 'linked-list'],
+    topicOrder: { 'lists': 13 },
   },
   {
     title: 'LeetCode 143 — Reorder List',
@@ -3201,6 +3416,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'LeetCode — Linked List',
     tags: ['practice', 'leetcode', 'lc-143', 'linked-list'],
+    topicOrder: { 'lists': 15 },
   },
   {
     title: 'LeetCode 23 — Merge K Sorted Lists',
@@ -3214,6 +3430,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'LeetCode — Linked List',
     tags: ['practice', 'leetcode', 'lc-23', 'linked-list'],
+    topicOrder: { 'lists': 20 },
   },
   {
     title: 'LeetCode 25 — Reverse Nodes In K Group',
@@ -3227,6 +3444,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'LeetCode — Linked List',
     tags: ['practice', 'leetcode', 'lc-25', 'linked-list'],
+    topicOrder: { 'lists': 21 },
   },
 
   // ---------------------------------------------------------------------------
@@ -3246,6 +3464,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'LeetCode — Trees',
     tags: ['practice', 'leetcode', 'lc-110', 'trees'],
+    topicOrder: { 'tree': 11 },
   },
   {
     title: 'LeetCode 543 — Diameter of Binary Tree',
@@ -3259,6 +3478,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'LeetCode — Trees',
     tags: ['practice', 'leetcode', 'lc-543', 'trees'],
+    topicOrder: { 'tree': 12 },
   },
   {
     title: 'LeetCode 226 — Invert Binary Tree',
@@ -3272,6 +3492,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'LeetCode — Trees',
     tags: ['practice', 'leetcode', 'lc-226', 'trees'],
+    topicOrder: { 'tree': 9 },
   },
   {
     title: 'LeetCode 104 — Maximum Depth of Binary Tree',
@@ -3285,6 +3506,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'LeetCode — Trees',
     tags: ['practice', 'leetcode', 'lc-104', 'trees'],
+    topicOrder: { 'tree': 10 },
   },
   {
     title: 'LeetCode 100 — Same Tree',
@@ -3298,6 +3520,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'LeetCode — Trees',
     tags: ['practice', 'leetcode', 'lc-100', 'trees'],
+    topicOrder: { 'tree': 8 },
   },
   {
     title: 'LeetCode 572 — Subtree of Another Tree',
@@ -3311,6 +3534,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'LeetCode — Trees',
     tags: ['practice', 'leetcode', 'lc-572', 'trees'],
+    topicOrder: { 'tree': 13 },
   },
   {
     title: 'LeetCode 102 — Binary Tree Level Order Traversal',
@@ -3324,6 +3548,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'LeetCode — Trees',
     tags: ['practice', 'leetcode', 'lc-102', 'trees'],
+    topicOrder: { 'tree': 14 },
   },
   {
     title: 'LeetCode 199 — Binary Tree Right Side View',
@@ -3337,6 +3562,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'LeetCode — Trees',
     tags: ['practice', 'leetcode', 'lc-199', 'trees'],
+    topicOrder: { 'tree': 15 },
   },
   {
     title: 'LeetCode 105 — Construct Binary Tree From Preorder And Inorder Traversal',
@@ -3350,6 +3576,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'LeetCode — Trees',
     tags: ['practice', 'leetcode', 'lc-105', 'trees'],
+    topicOrder: { 'tree': 20 },
   },
   {
     title: 'LeetCode 1448 — Count Good Nodes In Binary Tree',
@@ -3363,6 +3590,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'LeetCode — Trees',
     tags: ['practice', 'leetcode', 'lc-1448', 'trees'],
+    topicOrder: { 'tree': 16 },
   },
   {
     title: 'LeetCode 230 — Kth Smallest Element In a Bst',
@@ -3376,6 +3604,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'LeetCode — Trees',
     tags: ['practice', 'leetcode', 'lc-230', 'trees'],
+    topicOrder: { 'tree': 18 },
   },
   {
     title: 'LeetCode 235 — Lowest Common Ancestor of a Binary Search Tree',
@@ -3389,6 +3618,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'LeetCode — Trees',
     tags: ['practice', 'leetcode', 'lc-235', 'trees'],
+    topicOrder: { 'tree': 19 },
   },
   {
     title: 'LeetCode 98 — Validate Binary Search Tree',
@@ -3402,6 +3632,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'LeetCode — Trees',
     tags: ['practice', 'leetcode', 'lc-98', 'trees'],
+    topicOrder: { 'tree': 17 },
   },
   {
     title: 'LeetCode 124 — Binary Tree Maximum Path Sum',
@@ -3415,6 +3646,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'LeetCode — Trees',
     tags: ['practice', 'leetcode', 'lc-124', 'trees'],
+    topicOrder: { 'tree': 22 },
   },
   {
     title: 'LeetCode 297 — Serialize And Deserialize Binary Tree',
@@ -3428,6 +3660,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'LeetCode — Trees',
     tags: ['practice', 'leetcode', 'lc-297', 'trees'],
+    topicOrder: { 'tree': 23 },
   },
 
   // ---------------------------------------------------------------------------
@@ -3447,6 +3680,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Tries',
     tags: ['practice', 'leetcode', 'lc-211', 'tries'],
+    topicOrder: { 'trie': 5 },
   },
   {
     title: 'LeetCode 208 — Implement Trie Prefix Tree',
@@ -3460,6 +3694,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Tries',
     tags: ['practice', 'leetcode', 'lc-208', 'tries'],
+    topicOrder: { 'trie': 4 },
   },
   {
     title: 'LeetCode 212 — Word Search II',
@@ -3473,6 +3708,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Tries',
     tags: ['practice', 'leetcode', 'lc-212', 'tries'],
+    topicOrder: { 'trie': 6 },
   },
 
   // ---------------------------------------------------------------------------
@@ -3492,6 +3728,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Heap / Priority Queue',
     tags: ['practice', 'leetcode', 'lc-703', 'heap'],
+    topicOrder: { 'heap': 4 },
   },
   {
     title: 'LeetCode 1046 — Last Stone Weight',
@@ -3505,6 +3742,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Heap / Priority Queue',
     tags: ['practice', 'leetcode', 'lc-1046', 'heap'],
+    topicOrder: { 'heap': 5 },
   },
   {
     title: 'LeetCode 355 — Design Twitter',
@@ -3518,6 +3756,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Heap / Priority Queue',
     tags: ['practice', 'leetcode', 'lc-355', 'heap'],
+    topicOrder: { 'heap': 12 },
   },
   {
     title: 'LeetCode 973 — K Closest Points to Origin',
@@ -3531,6 +3770,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Heap / Priority Queue',
     tags: ['practice', 'leetcode', 'lc-973', 'heap'],
+    topicOrder: { 'heap': 9 },
   },
   {
     title: 'LeetCode 215 — Kth Largest Element In An Array',
@@ -3544,6 +3784,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Heap / Priority Queue',
     tags: ['practice', 'leetcode', 'lc-215', 'heap'],
+    topicOrder: { 'heap': 7 },
   },
   {
     title: 'LeetCode 621 — Task Scheduler',
@@ -3557,6 +3798,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Heap / Priority Queue',
     tags: ['practice', 'leetcode', 'lc-621', 'heap'],
+    topicOrder: { 'heap': 11 },
   },
   {
     title: 'LeetCode 295 — Find Median From Data Stream',
@@ -3570,6 +3812,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Heap / Priority Queue',
     tags: ['practice', 'leetcode', 'lc-295', 'heap'],
+    topicOrder: { 'heap': 13 },
   },
 
   // ---------------------------------------------------------------------------
@@ -3589,6 +3832,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Backtracking',
     tags: ['practice', 'leetcode', 'lc-39', 'backtracking'],
+    topicOrder: { 'recursion': 16 },
   },
   {
     title: 'LeetCode 40 — Combination Sum II',
@@ -3602,6 +3846,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Backtracking',
     tags: ['practice', 'leetcode', 'lc-40', 'backtracking'],
+    topicOrder: { 'recursion': 17 },
   },
   {
     title: 'LeetCode 17 — Letter Combinations of a Phone Number',
@@ -3615,6 +3860,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Backtracking',
     tags: ['practice', 'leetcode', 'lc-17', 'backtracking'],
+    topicOrder: { 'recursion': 15 },
   },
   {
     title: 'LeetCode 131 — Palindrome Partitioning',
@@ -3628,6 +3874,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Backtracking',
     tags: ['practice', 'leetcode', 'lc-131', 'backtracking'],
+    topicOrder: { 'recursion': 18 },
   },
   {
     title: 'LeetCode 46 — Permutations',
@@ -3641,6 +3888,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Backtracking',
     tags: ['practice', 'leetcode', 'lc-46', 'backtracking'],
+    topicOrder: { 'recursion': 14 },
   },
   {
     title: 'LeetCode 78 — Subsets',
@@ -3654,6 +3902,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Backtracking',
     tags: ['practice', 'leetcode', 'lc-78', 'backtracking'],
+    topicOrder: { 'recursion': 12 },
   },
   {
     title: 'LeetCode 90 — Subsets II',
@@ -3667,6 +3916,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Backtracking',
     tags: ['practice', 'leetcode', 'lc-90', 'backtracking'],
+    topicOrder: { 'recursion': 13 },
   },
   {
     title: 'LeetCode 79 — Word Search',
@@ -3680,6 +3930,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Backtracking',
     tags: ['practice', 'leetcode', 'lc-79', 'backtracking'],
+    topicOrder: { 'recursion': 19 },
   },
   {
     title: 'LeetCode 51 — N Queens',
@@ -3693,6 +3944,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Backtracking',
     tags: ['practice', 'leetcode', 'lc-51', 'backtracking'],
+    topicOrder: { 'recursion': 21 },
   },
 
   // ---------------------------------------------------------------------------
@@ -3712,6 +3964,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Graphs',
     tags: ['practice', 'leetcode', 'lc-133', 'graphs'],
+    topicOrder: { 'graph': 11 },
   },
   {
     title: 'LeetCode 207 — Course Schedule',
@@ -3725,6 +3978,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Graphs',
     tags: ['practice', 'leetcode', 'lc-207', 'graphs'],
+    topicOrder: { 'graph': 19 },
   },
   {
     title: 'LeetCode 210 — Course Schedule II',
@@ -3738,6 +3992,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Graphs',
     tags: ['practice', 'leetcode', 'lc-210', 'graphs'],
+    topicOrder: { 'graph': 20 },
   },
   {
     title: 'LeetCode 261 — Graph Valid Tree',
@@ -3751,6 +4006,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Graphs',
     tags: ['practice', 'leetcode', 'lc-261', 'graphs'],
+    topicOrder: { 'graph': 22 },
   },
   {
     title: 'LeetCode 695 — Max Area of Island',
@@ -3764,6 +4020,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Graphs',
     tags: ['practice', 'leetcode', 'lc-695', 'graphs'],
+    topicOrder: { 'graph': 10 },
   },
   {
     title: 'LeetCode 323 — Number of Connected Components In An Undirected Graph',
@@ -3777,6 +4034,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Graphs',
     tags: ['practice', 'leetcode', 'lc-323', 'graphs'],
+    topicOrder: { 'graph': 16 },
   },
   {
     title: 'LeetCode 200 — Number of Islands',
@@ -3790,6 +4048,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Graphs',
     tags: ['practice', 'leetcode', 'lc-200', 'graphs'],
+    topicOrder: { 'graph': 9 },
   },
   {
     title: 'LeetCode 417 — Pacific Atlantic Water Flow',
@@ -3803,6 +4062,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Graphs',
     tags: ['practice', 'leetcode', 'lc-417', 'graphs'],
+    topicOrder: { 'graph': 15 },
   },
   {
     title: 'LeetCode 684 — Redundant Connection',
@@ -3816,6 +4076,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Graphs',
     tags: ['practice', 'leetcode', 'lc-684', 'graphs'],
+    topicOrder: { 'graph': 23 },
   },
   {
     title: 'LeetCode 994 — Rotting Oranges',
@@ -3829,6 +4090,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Graphs',
     tags: ['practice', 'leetcode', 'lc-994', 'graphs'],
+    topicOrder: { 'graph': 14 },
   },
   {
     title: 'LeetCode 130 — Surrounded Regions',
@@ -3842,6 +4104,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Graphs',
     tags: ['practice', 'leetcode', 'lc-130', 'graphs'],
+    topicOrder: { 'graph': 12 },
   },
   {
     title: 'LeetCode 286 — Walls And Gates',
@@ -3855,6 +4118,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Graphs',
     tags: ['practice', 'leetcode', 'lc-286', 'graphs'],
+    topicOrder: { 'graph': 13 },
   },
   {
     title: 'LeetCode 127 — Word Ladder',
@@ -3868,6 +4132,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Graphs',
     tags: ['practice', 'leetcode', 'lc-127', 'graphs'],
+    topicOrder: { 'graph': 31 },
   },
 
   // ---------------------------------------------------------------------------
@@ -3887,6 +4152,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Advanced Graphs',
     tags: ['practice', 'leetcode', 'lc-787', 'advanced-graphs'],
+    topicOrder: { 'graph': 28 },
   },
   {
     title: 'LeetCode 1584 — Min Cost to Connect All Points',
@@ -3900,6 +4166,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Advanced Graphs',
     tags: ['practice', 'leetcode', 'lc-1584', 'advanced-graphs'],
+    topicOrder: { 'graph': 30 },
   },
   {
     title: 'LeetCode 743 — Network Delay Time',
@@ -3913,6 +4180,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Advanced Graphs',
     tags: ['practice', 'leetcode', 'lc-743', 'advanced-graphs'],
+    topicOrder: { 'graph': 27 },
   },
   {
     title: 'LeetCode 269 — Alien Dictionary',
@@ -3926,6 +4194,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Advanced Graphs',
     tags: ['practice', 'leetcode', 'lc-269', 'advanced-graphs'],
+    topicOrder: { 'graph': 32 },
   },
   {
     title: 'LeetCode 332 — Reconstruct Itinerary',
@@ -3939,6 +4208,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Advanced Graphs',
     tags: ['practice', 'leetcode', 'lc-332', 'advanced-graphs'],
+    topicOrder: { 'graph': 33 },
   },
   {
     title: 'LeetCode 778 — Swim In Rising Water',
@@ -3952,6 +4222,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Advanced Graphs',
     tags: ['practice', 'leetcode', 'lc-778', 'advanced-graphs'],
+    topicOrder: { 'graph': 29 },
   },
 
   // ---------------------------------------------------------------------------
@@ -3971,6 +4242,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 1-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-70', 'dp-1d'],
+    topicOrder: { 'dp': 5 },
   },
   {
     title: 'LeetCode 746 — Min Cost Climbing Stairs',
@@ -3984,6 +4256,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 1-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-746', 'dp-1d'],
+    topicOrder: { 'dp': 6 },
   },
   {
     title: 'LeetCode 322 — Coin Change',
@@ -3997,6 +4270,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 1-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-322', 'dp-1d'],
+    topicOrder: { 'dp': 18 },
   },
   {
     title: 'LeetCode 91 — Decode Ways',
@@ -4010,6 +4284,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 1-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-91', 'dp-1d'],
+    topicOrder: { 'dp': 9 },
   },
   {
     title: 'LeetCode 198 — House Robber',
@@ -4023,6 +4298,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 1-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-198', 'dp-1d'],
+    topicOrder: { 'dp': 7 },
   },
   {
     title: 'LeetCode 213 — House Robber II',
@@ -4036,6 +4312,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 1-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-213', 'dp-1d'],
+    topicOrder: { 'dp': 8 },
   },
   {
     title: 'LeetCode 300 — Longest Increasing Subsequence',
@@ -4049,6 +4326,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 1-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-300', 'dp-1d'],
+    topicOrder: { 'dp': 20 },
   },
   {
     title: 'LeetCode 5 — Longest Palindromic Substring',
@@ -4062,6 +4340,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 1-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-5', 'dp-1d'],
+    topicOrder: { 'dp': 21 },
   },
   {
     title: 'LeetCode 152 — Maximum Product Subarray',
@@ -4075,6 +4354,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 1-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-152', 'dp-1d'],
+    topicOrder: { 'dp': 11 },
   },
   {
     title: 'LeetCode 647 — Palindromic Substrings',
@@ -4088,6 +4368,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 1-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-647', 'dp-1d'],
+    topicOrder: { 'dp': 22 },
   },
   {
     title: 'LeetCode 416 — Partition Equal Subset Sum',
@@ -4101,6 +4382,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 1-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-416', 'dp-1d'],
+    topicOrder: { 'dp': 16 },
   },
   {
     title: 'LeetCode 139 — Word Break',
@@ -4114,6 +4396,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 1-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-139', 'dp-1d'],
+    topicOrder: { 'dp': 10 },
   },
 
   // ---------------------------------------------------------------------------
@@ -4133,6 +4416,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 2-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-309', 'dp-2d'],
+    topicOrder: { 'dp': 26 },
   },
   {
     title: 'LeetCode 518 — Coin Change II',
@@ -4146,6 +4430,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 2-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-518', 'dp-2d'],
+    topicOrder: { 'dp': 19 },
   },
   {
     title: 'LeetCode 72 — Edit Distance',
@@ -4159,6 +4444,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 2-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-72', 'dp-2d'],
+    topicOrder: { 'dp': 24 },
   },
   {
     title: 'LeetCode 97 — Interleaving String',
@@ -4172,6 +4458,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 2-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-97', 'dp-2d'],
+    topicOrder: { 'dp': 25 },
   },
   {
     title: 'LeetCode 1143 — Longest Common Subsequence',
@@ -4185,6 +4472,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 2-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-1143', 'dp-2d'],
+    topicOrder: { 'dp': 14 },
   },
   {
     title: 'LeetCode 494 — Target Sum',
@@ -4198,6 +4486,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 2-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-494', 'dp-2d'],
+    topicOrder: { 'dp': 17 },
   },
   {
     title: 'LeetCode 62 — Unique Paths',
@@ -4211,6 +4500,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 2-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-62', 'dp-2d'],
+    topicOrder: { 'dp': 13 },
   },
   {
     title: 'LeetCode 312 — Burst Balloons',
@@ -4224,6 +4514,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 2-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-312', 'dp-2d'],
+    topicOrder: { 'dp': 30 },
   },
   {
     title: 'LeetCode 115 — Distinct Subsequences',
@@ -4237,6 +4528,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 2-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-115', 'dp-2d'],
+    topicOrder: { 'dp': 28 },
   },
   {
     title: 'LeetCode 329 — Longest Increasing Path In a Matrix',
@@ -4250,6 +4542,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 2-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-329', 'dp-2d'],
+    topicOrder: { 'dp': 27 },
   },
   {
     title: 'LeetCode 10 — Regular Expression Matching',
@@ -4263,6 +4556,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 2-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-10', 'dp-2d'],
+    topicOrder: { 'dp': 29 },
   },
 
   // ---------------------------------------------------------------------------
@@ -4282,6 +4576,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Greedy',
     tags: ['practice', 'leetcode', 'lc-134', 'greedy'],
+    topicOrder: { 'greedy': 14 },
   },
   {
     title: 'LeetCode 846 — Hand of Straights',
@@ -4295,6 +4590,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Greedy',
     tags: ['practice', 'leetcode', 'lc-846', 'greedy'],
+    topicOrder: { 'greedy': 18 },
   },
   {
     title: 'LeetCode 55 — Jump Game',
@@ -4308,6 +4604,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Greedy',
     tags: ['practice', 'leetcode', 'lc-55', 'greedy'],
+    topicOrder: { 'greedy': 10 },
   },
   {
     title: 'LeetCode 45 — Jump Game II',
@@ -4321,6 +4618,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Greedy',
     tags: ['practice', 'leetcode', 'lc-45', 'greedy'],
+    topicOrder: { 'greedy': 12 },
   },
   {
     title: 'LeetCode 53 — Maximum Subarray',
@@ -4334,6 +4632,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Greedy',
     tags: ['practice', 'leetcode', 'lc-53', 'greedy'],
+    topicOrder: { 'greedy': 15 },
   },
   {
     title: 'LeetCode 1899 — Merge Triplets to Form Target Triplet',
@@ -4347,6 +4646,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Greedy',
     tags: ['practice', 'leetcode', 'lc-1899', 'greedy'],
+    topicOrder: { 'greedy': 19 },
   },
   {
     title: 'LeetCode 763 — Partition Labels',
@@ -4360,6 +4660,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Greedy',
     tags: ['practice', 'leetcode', 'lc-763', 'greedy'],
+    topicOrder: { 'greedy': 16 },
   },
   {
     title: 'LeetCode 678 — Valid Parenthesis String',
@@ -4373,6 +4674,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Greedy',
     tags: ['practice', 'leetcode', 'lc-678', 'greedy'],
+    topicOrder: { 'greedy': 17 },
   },
 
   // ---------------------------------------------------------------------------
@@ -4392,6 +4694,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Intervals',
     tags: ['practice', 'leetcode', 'lc-252', 'intervals'],
+    topicOrder: { 'array': 26, 'greedy': 4 },
   },
   {
     title: 'LeetCode 57 — Insert Interval',
@@ -4405,6 +4708,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Intervals',
     tags: ['practice', 'leetcode', 'lc-57', 'intervals'],
+    topicOrder: { 'array': 28, 'greedy': 6 },
   },
   {
     title: 'LeetCode 253 — Meeting Rooms II',
@@ -4418,6 +4722,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Intervals',
     tags: ['practice', 'leetcode', 'lc-253', 'intervals'],
+    topicOrder: { 'array': 30, 'greedy': 7 },
   },
   {
     title: 'LeetCode 56 — Merge Intervals',
@@ -4431,6 +4736,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Intervals',
     tags: ['practice', 'leetcode', 'lc-56', 'intervals'],
+    topicOrder: { 'array': 27, 'greedy': 5 },
   },
   {
     title: 'LeetCode 435 — Non Overlapping Intervals',
@@ -4444,6 +4750,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Intervals',
     tags: ['practice', 'leetcode', 'lc-435', 'intervals'],
+    topicOrder: { 'array': 29, 'greedy': 8 },
   },
   {
     title: 'LeetCode 1851 — Minimum Interval to Include Each Query',
@@ -4457,6 +4764,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Intervals',
     tags: ['practice', 'leetcode', 'lc-1851', 'intervals'],
+    topicOrder: { 'array': 50, 'greedy': 20 },
   },
 
   // ---------------------------------------------------------------------------
@@ -4479,6 +4787,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Math & Geometry',
     tags: ['practice', 'leetcode', 'lc-202', 'math'],
+    topicOrder: { 'array': 37 },
   },
   {
     title: 'LeetCode 66 — Plus One',
@@ -4492,6 +4801,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Math & Geometry',
     tags: ['practice', 'leetcode', 'lc-66', 'math'],
+    topicOrder: { 'array': 6 },
   },
   {
     title: 'LeetCode 2013 — Detect Squares',
@@ -4505,6 +4815,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Math & Geometry',
     tags: ['practice', 'leetcode', 'lc-2013', 'math'],
+    topicOrder: { 'array': 40 },
   },
   {
     title: 'LeetCode 43 — Multiply Strings',
@@ -4518,6 +4829,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Math & Geometry',
     tags: ['practice', 'leetcode', 'lc-43', 'math'],
+    topicOrder: { 'array': 38 },
   },
   {
     title: 'LeetCode 50 — Pow(x, n)',
@@ -4531,6 +4843,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Math & Geometry',
     tags: ['practice', 'leetcode', 'lc-50', 'math'],
+    topicOrder: { 'array': 39 },
   },
   {
     title: 'LeetCode 48 — Rotate Image',
@@ -4544,6 +4857,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Math & Geometry',
     tags: ['practice', 'leetcode', 'lc-48', 'math'],
+    topicOrder: { 'array': 41 },
   },
   {
     title: 'LeetCode 73 — Set Matrix Zeroes',
@@ -4557,6 +4871,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Math & Geometry',
     tags: ['practice', 'leetcode', 'lc-73', 'math'],
+    topicOrder: { 'array': 43 },
   },
   {
     title: 'LeetCode 54 — Spiral Matrix',
@@ -4570,6 +4885,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Math & Geometry',
     tags: ['practice', 'leetcode', 'lc-54', 'math'],
+    topicOrder: { 'array': 42 },
   },
 
   // ---------------------------------------------------------------------------
@@ -4589,6 +4905,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'YouTube — Fireship',
     tags: ['concept', 'binary', 'fireship'],
+    topicOrder: { 'bit-manipulation': 1 },
   },
   {
     title: 'How to count to 1000 on two hands',
@@ -4602,6 +4919,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'YouTube — 3Blue1Brown',
     tags: ['concept', 'binary', 'counting'],
+    topicOrder: { 'bit-manipulation': 2 },
   },
   {
     title: 'Single Number — Leetcode 136 (XOR trick)',
@@ -4615,6 +4933,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'YouTube — NeetCode',
     tags: ['concept', 'xor', 'leetcode-walkthrough', 'lc-136'],
+    topicOrder: { 'bit-manipulation': 3 },
   },
   {
     title: 'Number of 1 Bits — Leetcode 191 (Brian Kernighan)',
@@ -4628,6 +4947,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'YouTube — NeetCode',
     tags: ['concept', 'kernighan', 'popcount', 'leetcode-walkthrough', 'lc-191'],
+    topicOrder: { 'bit-manipulation': 5 },
   },
   {
     title: 'Add Two Numbers Without The "+" Sign (Bit Shifting Basics)',
@@ -4641,6 +4961,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'YouTube — Back To Back SWE',
     tags: ['concept', 'xor', 'carry', 'arithmetic', 'leetcode-walkthrough', 'lc-371'],
+    topicOrder: { 'bit-manipulation': 11 },
   },
 
   // ---------------------------------------------------------------------------
@@ -4660,6 +4981,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Bit Manipulation',
     tags: ['practice', 'leetcode', 'lc-338', 'bit-manipulation'],
+    topicOrder: { 'bit-manipulation': 7 },
   },
   {
     title: 'LeetCode 268 — Missing Number',
@@ -4673,6 +4995,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Bit Manipulation',
     tags: ['practice', 'leetcode', 'lc-268', 'bit-manipulation'],
+    topicOrder: { 'bit-manipulation': 8 },
   },
   {
     title: 'LeetCode 191 — Number of 1 Bits',
@@ -4686,6 +5009,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Bit Manipulation',
     tags: ['practice', 'leetcode', 'lc-191', 'bit-manipulation'],
+    topicOrder: { 'bit-manipulation': 6 },
   },
   {
     title: 'LeetCode 190 — Reverse Bits',
@@ -4699,6 +5023,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Bit Manipulation',
     tags: ['practice', 'leetcode', 'lc-190', 'bit-manipulation'],
+    topicOrder: { 'bit-manipulation': 9 },
   },
   {
     title: 'LeetCode 136 — Single Number',
@@ -4712,6 +5037,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Bit Manipulation',
     tags: ['practice', 'leetcode', 'lc-136', 'bit-manipulation'],
+    topicOrder: { 'bit-manipulation': 4 },
   },
   {
     title: 'LeetCode 7 — Reverse Integer',
@@ -4725,6 +5051,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Bit Manipulation',
     tags: ['practice', 'leetcode', 'lc-7', 'bit-manipulation'],
+    topicOrder: { 'bit-manipulation': 10 },
   },
   {
     title: 'LeetCode 371 — Sum of Two Integers',
@@ -4738,6 +5065,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — Bit Manipulation',
     tags: ['practice', 'leetcode', 'lc-371', 'bit-manipulation'],
+    topicOrder: { 'bit-manipulation': 12 },
   },
 
   // ===========================================================================
@@ -4757,6 +5085,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — 3Blue1Brown',
     tags: ['concept', 'linear-algebra', 'vectors', '3blue1brown'],
+    topicOrder: { 'math': 1 },
   },
   {
     title: 'Linear combinations, span, basis vectors | Chapter 2',
@@ -4770,6 +5099,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — 3Blue1Brown',
     tags: ['concept', 'linear-algebra', 'span', 'basis', '3blue1brown'],
+    topicOrder: { 'math': 2 },
   },
   {
     title: 'Linear transformations and matrices | Chapter 3',
@@ -4783,6 +5113,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — 3Blue1Brown',
     tags: ['concept', 'linear-algebra', 'transformations', 'matrices', '3blue1brown'],
+    topicOrder: { 'math': 3 },
   },
   {
     title: 'Matrix multiplication as composition | Chapter 4',
@@ -4796,6 +5127,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — 3Blue1Brown',
     tags: ['concept', 'linear-algebra', 'matrix-multiplication', '3blue1brown'],
+    topicOrder: { 'math': 4 },
   },
   {
     title: 'The determinant | Chapter 6',
@@ -4809,6 +5141,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — 3Blue1Brown',
     tags: ['concept', 'linear-algebra', 'determinant', '3blue1brown'],
+    topicOrder: { 'math': 5 },
   },
   {
     title: 'Eigenvectors and eigenvalues | Chapter 14',
@@ -4822,6 +5155,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — 3Blue1Brown',
     tags: ['concept', 'linear-algebra', 'eigenvectors', 'eigenvalues', '3blue1brown'],
+    topicOrder: { 'math': 10 },
   },
 
   // --- Calculus essentials (4 items) ---
@@ -4837,6 +5171,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — 3Blue1Brown',
     tags: ['concept', 'calculus', 'derivative', 'integral', '3blue1brown'],
+    topicOrder: { 'math': 6 },
   },
   {
     title: 'The paradox of the derivative | Chapter 2',
@@ -4850,6 +5185,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — 3Blue1Brown',
     tags: ['concept', 'calculus', 'derivative', '3blue1brown'],
+    topicOrder: { 'math': 7 },
   },
   {
     title: 'Visualizing the chain rule and product rule | Chapter 4',
@@ -4863,6 +5199,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — 3Blue1Brown',
     tags: ['concept', 'calculus', 'chain-rule', 'product-rule', '3blue1brown'],
+    topicOrder: { 'math': 8 },
   },
   {
     title: 'Integration and the fundamental theorem of calculus | Chapter 8',
@@ -4876,6 +5213,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — 3Blue1Brown',
     tags: ['concept', 'calculus', 'integration', 'fundamental-theorem', '3blue1brown'],
+    topicOrder: { 'math': 9 },
   },
 
   // --- Probability + stats (3 items) ---
@@ -4891,6 +5229,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — StatQuest with Josh Starmer',
     tags: ['concept', 'statistics', 'normal-distribution', 'statquest'],
+    topicOrder: { 'math': 12 },
   },
   {
     title: 'p-values: What they are and how to interpret them',
@@ -4904,6 +5243,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — StatQuest with Josh Starmer',
     tags: ['concept', 'statistics', 'p-value', 'hypothesis-testing', 'statquest'],
+    topicOrder: { 'math': 13 },
   },
   {
     title: 'Bayes theorem, the geometry of changing beliefs',
@@ -4917,6 +5257,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — 3Blue1Brown',
     tags: ['concept', 'probability', 'bayes-theorem', '3blue1brown'],
+    topicOrder: { 'math': 11 },
   },
 
   // ===========================================================================
@@ -4938,6 +5279,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Fireship',
     tags: ['concept', 'machine-learning', 'fireship'],
+    topicOrder: { 'data-science': 1 },
   },
   {
     title: 'PyTorch in 100 Seconds',
@@ -4951,6 +5293,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Fireship',
     tags: ['concept', 'pytorch', 'tensors', 'fireship'],
+    topicOrder: { 'data-science': 11 },
   },
   {
     title: 'The Essential Main Ideas of Neural Networks',
@@ -4964,6 +5307,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — StatQuest with Josh Starmer',
     tags: ['concept', 'neural-network', 'statquest'],
+    topicOrder: { 'data-science': 5 },
   },
   {
     title: 'Linear Regression, Clearly Explained',
@@ -4977,6 +5321,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — StatQuest with Josh Starmer',
     tags: ['concept', 'linear-regression', 'least-squares', 'statquest'],
+    topicOrder: { 'data-science': 2 },
   },
   {
     title: 'StatQuest: Logistic Regression',
@@ -4990,6 +5335,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — StatQuest with Josh Starmer',
     tags: ['concept', 'logistic-regression', 'classification', 'statquest'],
+    topicOrder: { 'data-science': 3 },
   },
   {
     title: 'Decision and Classification Trees, Clearly Explained',
@@ -5003,6 +5349,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — StatQuest with Josh Starmer',
     tags: ['concept', 'decision-tree', 'classification', 'gini', 'statquest'],
+    topicOrder: { 'data-science': 4 },
   },
   {
     title: 'But what is a neural network? | Deep Learning Chapter 1',
@@ -5016,6 +5363,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — 3Blue1Brown',
     tags: ['concept', 'neural-network', 'deep-learning', '3blue1brown'],
+    topicOrder: { 'data-science': 6 },
   },
   {
     title: 'Gradient descent, how neural networks learn | Deep Learning Chapter 2',
@@ -5029,6 +5377,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — 3Blue1Brown',
     tags: ['concept', 'gradient-descent', 'cost-function', '3blue1brown'],
+    topicOrder: { 'data-science': 7 },
   },
   {
     title: 'Backpropagation, intuitively | Deep Learning Chapter 3',
@@ -5042,6 +5391,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — 3Blue1Brown',
     tags: ['concept', 'backpropagation', '3blue1brown'],
+    topicOrder: { 'data-science': 8 },
   },
   {
     title: 'Backpropagation calculus | Deep Learning Chapter 4',
@@ -5055,6 +5405,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — 3Blue1Brown',
     tags: ['concept', 'backpropagation', 'chain-rule', 'calculus', '3blue1brown'],
+    topicOrder: { 'data-science': 9 },
   },
   {
     title: 'Transformers, the tech behind LLMs | Deep Learning Chapter 5',
@@ -5068,6 +5419,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — 3Blue1Brown',
     tags: ['concept', 'transformer', 'llm', 'attention', '3blue1brown'],
+    topicOrder: { 'data-science': 10 },
   },
   {
     title: 'The spelled-out intro to neural networks and backpropagation: building micrograd',
@@ -5081,6 +5433,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Andrej Karpathy',
     tags: ['concept', 'neural-network', 'autograd', 'micrograd', 'from-scratch', 'python', 'karpathy'],
+    topicOrder: { 'data-science': 12 },
   },
 
   // ===========================================================================
@@ -5100,6 +5453,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Fireship',
     tags: ['concept', 'cicd', 'devops', 'fireship'],
+    topicOrder: { 'cicd': 1 },
   },
   {
     title: 'CI/CD In 5 Minutes — Crash Course System Design #2',
@@ -5113,6 +5467,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — ByteByteGo',
     tags: ['concept', 'cicd', 'pipeline', 'bytebytego'],
+    topicOrder: { 'cicd': 2 },
   },
   {
     title: '5 Ways to DevOps-ify your App — GitHub Actions Tutorial',
@@ -5126,6 +5481,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Fireship',
     tags: ['practice', 'cicd', 'github-actions', 'workflow', 'yaml', 'fireship'],
+    topicOrder: { 'cicd': 3 },
   },
   {
     title: 'Top 5 Most-Used Deployment Strategies',
@@ -5139,6 +5495,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — ByteByteGo',
     tags: ['tradeoffs', 'cicd', 'deployment', 'blue-green', 'canary', 'rolling', 'bytebytego'],
+    topicOrder: { 'cicd': 4 },
   },
 
   // --- hashmap teaching (article do Davi) — 2026-04-28 ---
@@ -5154,7 +5511,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'Medium — Davi Duarte',
     tags: ['concept', 'hashing', 'sha-256', 'bcrypt', 'argon2', 'tls', 'password-storage'],
-    topicOrder: { hashmap: 4 },
+    topicOrder: { 'hashmap': 4, 'security': 5 },
   },
 
   // --- hashmap intro + Python dict — 2026-05-04 ---
