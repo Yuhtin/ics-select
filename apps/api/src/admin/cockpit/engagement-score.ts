@@ -9,7 +9,6 @@ export type EngagementInput = {
   itemsPlanned: number;
   retrosSubmitted: number;
   weeksElapsed: number;
-  ttfvMedianHours: number;
   // Null = no events recorded yet. Recency points = 0 (neutral, no penalty).
   daysSinceLastSession: number | null;
   // Cohort median of itemsPlanned. When provided, completion points use
@@ -57,29 +56,23 @@ export function computeEngagementScore(input: EngagementInput): EngagementScore 
     input.weeksElapsed > 0
       ? Math.min(1, input.retrosSubmitted / input.weeksElapsed)
       : 0;
-  const retroPts = retroRate * 15;
-
-  const ttfvPts =
-    input.ttfvMedianHours >= 24
-      ? 0
-      : (1 - input.ttfvMedianHours / 24) * 10;
+  const retroPts = retroRate * 20;
 
   let recencyPts = 0;
   if (input.daysSinceLastSession === null) recencyPts = 0;
-  else if (input.daysSinceLastSession <= 3) recencyPts = 10;
-  else if (input.daysSinceLastSession <= 7) recencyPts = 5;
-  else if (input.daysSinceLastSession <= 14) recencyPts = 2;
+  else if (input.daysSinceLastSession <= 3) recencyPts = 15;
+  else if (input.daysSinceLastSession <= 7) recencyPts = 8;
+  else if (input.daysSinceLastSession <= 14) recencyPts = 3;
   else recencyPts = 0;
 
-  const total = cohortPts + activePts + completionPts + retroPts + ttfvPts + recencyPts;
+  const total = cohortPts + activePts + completionPts + retroPts + recencyPts;
 
   const breakdown: ScoreBreakdownEntry[] = [
     { label: COHORT_RANK_LABEL,     value: round(cohortPts),     weight: 25, status: statusFor(cohortPts, 25) },
     { label: 'Days active',         value: round(activePts),     weight: 20, status: statusFor(activePts, 20) },
     { label: 'Plan completion',     value: round(completionPts), weight: 20, status: statusFor(completionPts, 20) },
-    { label: 'Retros submitted',    value: round(retroPts),      weight: 15, status: statusFor(retroPts, 15) },
-    { label: 'Time to first view',  value: round(ttfvPts),       weight: 10, status: statusFor(ttfvPts, 10) },
-    { label: 'Recency',             value: round(recencyPts),    weight: 10, status: statusFor(recencyPts, 10) },
+    { label: 'Retros submitted',    value: round(retroPts),      weight: 20, status: statusFor(retroPts, 20) },
+    { label: 'Recency',             value: round(recencyPts),    weight: 15, status: statusFor(recencyPts, 15) },
   ];
 
   return { score: Math.round(total), breakdown };

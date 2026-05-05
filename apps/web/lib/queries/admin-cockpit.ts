@@ -14,7 +14,6 @@ export type CockpitResponse = {
     sessions:        { value: number; cohortMedian: number; perWeek: number[] };
     daysActive:      { value: number; cycleDays: number; cohortMedian: number; perWeek: number[] };
     daysStudying:    { value: number; cycleDays: number; cohortMedian: number; perWeek: number[] };
-    timeToFirstView: { medianHours: number; cohortMedianHours: number; perWeek: number[] };
     retros:          { submitted: number; expected: number };
     carryOver:       { value: number; cohortMedian: number; perWeek: number[] };
     lastSeen:        { occurredAt: string | null; surface: string | null };

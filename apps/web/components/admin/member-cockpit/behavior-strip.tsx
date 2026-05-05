@@ -31,7 +31,7 @@ export function BehaviorStrip({ behavior }: { behavior: CockpitResponse['behavio
           vs cohort median
         </p>
       </div>
-      <div className="grid grid-cols-7 divide-x divide-rule">
+      <div className="grid grid-cols-6 divide-x divide-rule">
         <KpiCell
           label="Sessions"
           value={String(behavior.sessions.value)}
@@ -51,11 +51,6 @@ export function BehaviorStrip({ behavior }: { behavior: CockpitResponse['behavio
           fraction={`/ ${behavior.daysStudying.cycleDays}`}
           bars={behavior.daysStudying.perWeek}
           delta={deltaTxt(behavior.daysStudying.value, behavior.daysStudying.cohortMedian)}
-        />
-        <KpiCell
-          label="TTFv plan"
-          value={`${behavior.timeToFirstView.medianHours}h`}
-          delta={deltaTxt(behavior.timeToFirstView.medianHours, behavior.timeToFirstView.cohortMedianHours, 'h')}
         />
         <KpiCell
           label="Retros"

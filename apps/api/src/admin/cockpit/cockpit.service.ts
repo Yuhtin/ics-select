@@ -166,7 +166,6 @@ export class CockpitService {
       now,
     );
     const sessions = await this.countSessions(memberId, cycleStart, now);
-    const ttfvMedianHours = computeTtfvMedian(plans, await this.firstViewByPlan(memberId));
     const carryOver = allItems.filter((i) => i.carriedFromItemId !== null).length;
 
     const sessionsPerWeek = await this.sessionsPerWeek(memberId, weeksElapsed, cycleStart);
@@ -205,7 +204,6 @@ export class CockpitService {
       itemsPlanned: allItems.length,
       retrosSubmitted: retros.length,
       weeksElapsed,
-      ttfvMedianHours,
       daysSinceLastSession,
       cohortMedianItemsPlanned: cohortMedians.itemsPlanned,
     });
@@ -268,7 +266,6 @@ export class CockpitService {
         sessions: { value: sessions, cohortMedian: cohortMedians.sessions, perWeek: sessionsPerWeek },
         daysActive: { value: daysActive, cycleDays: daysElapsed, cohortMedian: cohortMedians.daysActive, perWeek: daysActivePerWeek },
         daysStudying: { value: daysStudying, cycleDays: daysElapsed, cohortMedian: cohortMedians.daysStudying, perWeek: daysStudyingPerWeek },
-        timeToFirstView: { medianHours: ttfvMedianHours, cohortMedianHours: cohortMedians.ttfv, perWeek: [] },
         retros: { submitted: retros.length, expected: weeksElapsed },
         carryOver: { value: carryOver, cohortMedian: cohortMedians.carryOver, perWeek: carryOverPerWeek },
         lastSeen: {
@@ -329,7 +326,6 @@ export class CockpitService {
         sessions: { value: 0, cohortMedian: 0, perWeek: [] },
         daysActive: { value: 0, cycleDays: 0, cohortMedian: 0, perWeek: [] },
         daysStudying: { value: 0, cycleDays: 0, cohortMedian: 0, perWeek: [] },
-        timeToFirstView: { medianHours: 0, cohortMedianHours: 0, perWeek: [] },
         retros: { submitted: 0, expected: 0 },
         carryOver: { value: 0, cohortMedian: 0, perWeek: [] },
         lastSeen: { occurredAt: null, surface: null },
@@ -382,16 +378,6 @@ export class CockpitService {
       to,
     );
     return Number(rows[0]?.c ?? 0);
-  }
-
-  private async firstViewByPlan(userId: string): Promise<Map<string, Date>> {
-    const rows = await this.prisma.$queryRawUnsafe<Array<{ planId: string; first: Date }>>(
-      `SELECT meta->>'planId' AS "planId", MIN("occurredAt") AS first
-       FROM "UserEvent" WHERE "userId" = $1 AND "type" = 'PLAN_VIEW' AND meta->>'planId' IS NOT NULL
-       GROUP BY meta->>'planId'`,
-      userId,
-    );
-    return new Map(rows.map((r) => [r.planId, r.first]));
   }
 
   private async sessionsPerWeek(
@@ -493,7 +479,6 @@ export class CockpitService {
       sessions: 0,
       daysActive: 0,
       daysStudying: 0,
-      ttfv: 0,
       itemsDone: 0,
       itemsPlanned: 0,
       minutes: 0,
@@ -644,33 +629,6 @@ export class CockpitService {
       topicRows.map((r) => [r.topicId, Math.round(r.median ?? 0)]),
     );
 
-    // --- TTFv median: median of (firstView - publishedAt) hours per cohort user ---
-    // For each cohort user: gather their plans' first PLAN_VIEW events, compute hours,
-    // then take median across users (median of per-user medians).
-    const ttfvRows = await this.prisma.$queryRawUnsafe<Array<{ hours: number | null }>>(
-      `SELECT EXTRACT(EPOCH FROM (MIN(e."occurredAt") - wp."publishedAt")) / 3600.0 AS hours
-       FROM "UserEvent" e
-       JOIN "WeeklyPlan" wp ON wp.id = (e.meta->>'planId')
-       WHERE e."userId" = ANY($1::text[])
-         AND e."type" = 'PLAN_VIEW'
-         AND e.meta->>'planId' IS NOT NULL
-         AND wp."publishedAt" IS NOT NULL
-         AND wp."userId" = ANY($1::text[])
-         AND wp."cycleId" = $2
-       GROUP BY e."userId", wp.id
-       HAVING MIN(e."occurredAt") >= wp."publishedAt"`,
-      cohortIds, cycleId,
-    );
-    let ttfvMedian = 0;
-    if (ttfvRows.length > 0) {
-      const hours = ttfvRows.map((r) => r.hours ?? 0).sort((a, b) => a - b);
-      const mid = Math.floor(hours.length / 2);
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      ttfvMedian = Math.round(
-        hours.length % 2 === 0 ? (hours[mid - 1]! + hours[mid]!) / 2 : hours[mid]!,
-      );
-    }
-
     // --- engagement median: compute score per cohort user with their metrics, then median in JS ---
     // We gather per-user metrics from the queries above for a simplified per-user score.
     // Using a single query to get all metrics per cohort user.
@@ -753,7 +711,6 @@ export class CockpitService {
         itemsPlanned: Number(row.itemsPlanned),
         retrosSubmitted: Number(row.retrosSubmitted),
         weeksElapsed,
-        ttfvMedianHours: ttfvMedian,
         daysSinceLastSession: null, // no per-user last-session in this batch query; neutral
       }).score,
     );
@@ -761,7 +718,6 @@ export class CockpitService {
     if (cohortScores.length > 0) {
       const sorted = [...cohortScores].sort((a, b) => a - b);
       const mid = Math.floor(sorted.length / 2);
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       engagementMedian = Math.round(
         sorted.length % 2 === 0 ? (sorted[mid - 1]! + sorted[mid]!) / 2 : sorted[mid]!,
       );
@@ -772,7 +728,6 @@ export class CockpitService {
       sessions: sessionsMedian,
       daysActive: daysActiveMedian,
       daysStudying: daysStudyingMedian,
-      ttfv: ttfvMedian,
       itemsDone: itemsDoneMedian,
       itemsPlanned: itemsPlannedMedian,
       minutes: minutesMedian,
@@ -844,7 +799,6 @@ export class CockpitService {
         itemsPlanned,
         retrosSubmitted,
         weeksElapsed: w,
-        ttfvMedianHours: 0, // omitted for per-week sparkline (cheap simplification)
         daysSinceLastSession,
       });
       out.push(score.score);
@@ -920,26 +874,6 @@ function bucketCarryPerWeek(
     if (!planThisWeek) return 0;
     return planThisWeek.items.filter((it) => it.carriedFromItemId).length;
   });
-}
-
-function computeTtfvMedian(plans: PlanLike[], firstViewByPlan: Map<string, Date>): number {
-  const hoursPerPlan: number[] = [];
-  for (const plan of plans) {
-    if (!plan.publishedAt || !plan.id) continue;
-    const firstView = firstViewByPlan.get(plan.id);
-    if (!firstView) continue;
-    const hours = (firstView.getTime() - plan.publishedAt.getTime()) / 3_600_000;
-    if (hours >= 0) hoursPerPlan.push(hours);
-  }
-  if (hoursPerPlan.length === 0) return 0;
-  hoursPerPlan.sort((a, b) => a - b);
-  const mid = Math.floor(hoursPerPlan.length / 2);
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const median =
-    hoursPerPlan.length % 2 === 0
-      ? (hoursPerPlan[mid - 1]! + hoursPerPlan[mid]!) / 2
-      : hoursPerPlan[mid]!;
-  return Math.round(median);
 }
 
 async function arrayPerWeek<T>(

@@ -5,10 +5,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 
 /**
  * Builds an EngagementInput per cohort member using a single batched query.
- * Used by the cycle-overview ranking. Per-user ttfvMedianHours is treated as
- * 0 here (computing it per-user across a cohort is expensive and the cycle
- * ranking can tolerate this simplification — the cockpit individual page
- * still computes the real value via its own path).
+ * Used by the cycle-overview ranking.
  *
  * cycleStart must be Monday-normalized (use mondayUTC(cycle.startsAt) at the
  * call site). Passing a raw cycle.startsAt that doesn't fall on a Monday
@@ -106,7 +103,6 @@ export async function computeEngagementInputsForCohort(
       itemsPlanned: Number(row.itemsPlanned),
       retrosSubmitted: Number(row.retrosSubmitted),
       weeksElapsed,
-      ttfvMedianHours: 0,
       daysSinceLastSession:
         row.daysSinceLastSession === null ? null : Number(row.daysSinceLastSession),
       cohortMedianItemsPlanned,

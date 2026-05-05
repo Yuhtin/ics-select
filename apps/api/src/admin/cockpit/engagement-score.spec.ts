@@ -9,7 +9,6 @@ const baseInput: EngagementInput = {
   itemsPlanned: 16,
   retrosSubmitted: 2,
   weeksElapsed: 2,
-  ttfvMedianHours: 2,
   daysSinceLastSession: 1,
 };
 
@@ -24,7 +23,6 @@ describe('computeEngagementScore', () => {
       itemsPlanned: 16,
       retrosSubmitted: 2,
       weeksElapsed: 2,
-      ttfvMedianHours: 0,
       daysSinceLastSession: 0,
     });
     expect(score.score).toBe(100);
@@ -40,7 +38,6 @@ describe('computeEngagementScore', () => {
       itemsPlanned: 16,
       retrosSubmitted: 0,
       weeksElapsed: 2,
-      ttfvMedianHours: 48,
       daysSinceLastSession: 30,
     });
     expect(score.score).toBe(0);
@@ -77,30 +74,26 @@ describe('computeEngagementScore', () => {
       'Days active',
       'Plan completion',
       'Retros submitted',
-      'Time to first view',
       'Recency',
     ]);
   });
 
-  it('TTFv bonus is 10 at 0h, 0 at 24h, linear in between', () => {
-    const at0 = computeEngagementScore({ ...baseInput, ttfvMedianHours: 0 });
-    const at12 = computeEngagementScore({ ...baseInput, ttfvMedianHours: 12 });
-    const at24 = computeEngagementScore({ ...baseInput, ttfvMedianHours: 24 });
-    const c0 = at0.breakdown.find((b) => b.label === 'Time to first view')!.value;
-    const c12 = at12.breakdown.find((b) => b.label === 'Time to first view')!.value;
-    const c24 = at24.breakdown.find((b) => b.label === 'Time to first view')!.value;
-    expect(c0).toBe(10);
-    expect(c12).toBe(5);
-    expect(c24).toBe(0);
-  });
-
-  it('Recency: 10 if ≤3d, 5 if ≤7d, 0 if >14d', () => {
+  it('Recency: 15 if ≤3d, 8 if ≤7d, 3 if ≤14d, 0 if >14d', () => {
     const r1 = computeEngagementScore({ ...baseInput, daysSinceLastSession: 2 });
     const r2 = computeEngagementScore({ ...baseInput, daysSinceLastSession: 5 });
-    const r3 = computeEngagementScore({ ...baseInput, daysSinceLastSession: 20 });
+    const r3 = computeEngagementScore({ ...baseInput, daysSinceLastSession: 10 });
+    const r4 = computeEngagementScore({ ...baseInput, daysSinceLastSession: 20 });
     const get = (s: typeof r1) => s.breakdown.find((b) => b.label === 'Recency')!.value;
-    expect(get(r1)).toBe(10);
-    expect(get(r2)).toBe(5);
-    expect(get(r3)).toBe(0);
+    expect(get(r1)).toBe(15);
+    expect(get(r2)).toBe(8);
+    expect(get(r3)).toBe(3);
+    expect(get(r4)).toBe(0);
+  });
+
+  it('Retros: max 20 pts at 100% rate', () => {
+    const perfect = computeEngagementScore({ ...baseInput, retrosSubmitted: 2, weeksElapsed: 2 });
+    const retro = perfect.breakdown.find((b) => b.label === 'Retros submitted')!;
+    expect(retro.value).toBe(20);
+    expect(retro.weight).toBe(20);
   });
 });

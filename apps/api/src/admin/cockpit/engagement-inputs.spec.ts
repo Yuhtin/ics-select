@@ -121,17 +121,5 @@ describe('computeEngagementInputsForCohort', () => {
     expect(result.get('u-a')!.cohortMedianItemsPlanned).toBe(8);
   });
 
-  it('omits ttfvMedianHours per-user (treats it as 0 for cohort ranking)', async () => {
-    const prisma = makePrisma([
-      { userId: 'u-1', daysActive: 1, itemsDone: 1, itemsPlanned: 1, retrosSubmitted: 0, daysSinceLastSession: 1 },
-    ]);
-    const result = await computeEngagementInputsForCohort(
-      prisma as any,
-      ['u-1'],
-      'cycle-1',
-      CYCLE_START,
-      NOW,
-    );
-    expect(result.get('u-1')!.ttfvMedianHours).toBe(0);
-  });
 });
+

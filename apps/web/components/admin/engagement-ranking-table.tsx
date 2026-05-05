@@ -14,7 +14,6 @@ const COLUMN_LABELS: Array<{ key: string; label: string }> = [
   { key: 'Days active',        label: 'ACTIVE' },
   { key: 'Plan completion',    label: 'COMPL' },
   { key: 'Retros submitted',   label: 'RETRO' },
-  { key: 'Time to first view', label: 'TTFV' },
   { key: 'Recency',            label: 'RECEN' },
 ];
 

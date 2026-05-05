@@ -69,7 +69,6 @@ const BASE_COCKPIT = {
     sessions:        { value: 12, cohortMedian: 16, perWeek: [3, 4, 2, 2, 1] },
     daysActive:      { value: 9,  cycleDays: 35, cohortMedian: 12, perWeek: [3, 2, 2, 1, 1] },
     daysStudying:    { value: 6,  cycleDays: 35, cohortMedian: 11, perWeek: [2, 1, 1, 1, 1] },
-    timeToFirstView: { medianHours: 18, cohortMedianHours: 4, perWeek: [] },
     retros:          { submitted: 3, expected: 4 },
     carryOver:       { value: 3, cohortMedian: 1, perWeek: [0, 1, 1, 1, 0] },
     lastSeen:        { occurredAt: '2026-04-18T16:24:00.000Z', surface: '/me/plan' },
