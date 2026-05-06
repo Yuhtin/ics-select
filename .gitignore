@@ -24,3 +24,5 @@ generated/
 /.playwright-mcp
 .superpowers/
 prod-*.png
+/pentest
+apps/api/.env.production
