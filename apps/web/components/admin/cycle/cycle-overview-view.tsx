@@ -162,7 +162,7 @@ export function CycleOverviewView({ data }: { data: CycleOverviewResponse }) {
 
         <aside className="space-y-3 md:row-span-1">
           <SectionLabel>Activity · last 7d</SectionLabel>
-          <CohortFeed feed={data.feed.slice(0, 35)} />
+          <CohortFeed feed={data.feed.slice(0, 20)} />
         </aside>
       </section>
     </div>

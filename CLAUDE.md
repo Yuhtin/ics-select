@@ -321,7 +321,7 @@ Platform colors appear as **3px vertical stripes** before item titles in list ro
 
 ### Admin cycle overview layout
 
-`/admin/cycle/[id]` left column stacks **Engagement ranking → Triage → Cohort heatmap → Classes** in that order; the right aside is just `Activity · last 7d` (capped to 35 events via `data.feed.slice(0, 35)`). The `Engagement ranking` section unmounts entirely when `data.ranking.length === 0` — gate the wrapper, not just the inner component, otherwise an orphaned `SectionLabel` leaks. Lives in `apps/web/components/admin/cycle/cycle-overview-view.tsx`.
+`/admin/cycle/[id]` left column stacks **Engagement ranking → Triage → Cohort heatmap → Classes** in that order; the right aside is just `Activity · last 7d` (capped to 20 events via `data.feed.slice(0, 20)`). The `Engagement ranking` section unmounts entirely when `data.ranking.length === 0` — gate the wrapper, not just the inner component, otherwise an orphaned `SectionLabel` leaks. Lives in `apps/web/components/admin/cycle/cycle-overview-view.tsx`.
 
 ## Conventions worth preserving
 
