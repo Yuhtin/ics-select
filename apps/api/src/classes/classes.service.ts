@@ -21,11 +21,18 @@ export class ClassesService {
     });
   }
 
-  listForCycle(cycleId: string) {
-    return this.prisma.classSession.findMany({
+  async listForCycle(cycleId: string) {
+    const rows = await this.prisma.classSession.findMany({
       where: { cycleId },
       orderBy: { scheduledAt: 'desc' },
+      include: {
+        attendance: { select: { userId: true, status: true } },
+      },
     });
+    return rows.map(({ attendance, ...rest }) => ({
+      ...rest,
+      attendances: attendance,
+    }));
   }
 
   async markBatchAttendance(classSessionId: string, rows: AttendanceRow[]) {
