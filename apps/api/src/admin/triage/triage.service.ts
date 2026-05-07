@@ -120,8 +120,20 @@ type RuleContext = {
 export class TriageService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getTriage(now: Date = new Date(), adminUserId?: string): Promise<TriageResponse> {
-    const cycle = await resolveActiveCycle(this.prisma, now);
+  async getTriage(
+    now: Date = new Date(),
+    adminUserId?: string,
+    cycleId?: string,
+  ): Promise<TriageResponse> {
+    // When the admin is viewing a specific cycle (e.g. /admin/cycle/:id), the
+    // page passes its cycleId so triage matches that view. Otherwise we fall
+    // back to the system-wide "primary" cycle for callers that don't pin a
+    // cycle (legacy widgets, the /admin home redirect, etc.).
+    const cycle = cycleId
+      ? await this.prisma.cycle.findFirst({
+          where: { id: cycleId, status: { not: 'ARCHIVED' } },
+        })
+      : await resolveActiveCycle(this.prisma, now);
     if (!cycle) {
       return { alerts: [], cohortStrip: [], cycleInfo: null };
     }

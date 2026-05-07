@@ -17,7 +17,7 @@ import { SectionLabel } from '../../ui/section-label';
 import { EngagementRankingTable } from '../engagement-ranking-table';
 
 export function CycleOverviewView({ data }: { data: CycleOverviewResponse }) {
-  const triage = useAdminTriage();
+  const triage = useAdminTriage(data.cycle.id);
   const dismiss = useDismissAlert();
 
   const alerts = triage.data?.alerts ?? [];

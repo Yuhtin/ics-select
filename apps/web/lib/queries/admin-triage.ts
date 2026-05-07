@@ -53,10 +53,13 @@ export type TriageResponse = {
   cycleInfo: CycleInfo | null;
 };
 
-export function useAdminTriage() {
+export function useAdminTriage(cycleId?: string) {
+  const url = cycleId
+    ? `/admin/triage?cycleId=${encodeURIComponent(cycleId)}`
+    : '/admin/triage';
   return useQuery({
-    queryKey: ['admin', 'triage'],
-    queryFn: () => apiFetch<TriageResponse>('/admin/triage'),
+    queryKey: ['admin', 'triage', cycleId ?? null],
+    queryFn: () => apiFetch<TriageResponse>(url),
     refetchInterval: 60_000,
   });
 }
