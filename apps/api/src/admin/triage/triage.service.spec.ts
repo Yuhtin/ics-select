@@ -16,9 +16,9 @@ function makePrisma(overrides: Partial<any> = {}): PrismaMock {
   // for the legacy single-active-cycle path also need findMany returning the
   // same row for the new path. We reflect findFirst's resolved value into
   // findMany so existing tests stay green without each opting in.
-  const findFirstMock = jest.fn(async () => null);
+  const findFirstMock: jest.Mock = jest.fn(async () => null);
   const findManyMock = jest.fn(async ({ include }: any = {}) => {
-    const single = await findFirstMock();
+    const single: any = await findFirstMock();
     if (!single) return [];
     return include?._count?.select?.memberships
       ? [{ ...single, _count: { memberships: 0 } }]
@@ -39,7 +39,7 @@ function makePrisma(overrides: Partial<any> = {}): PrismaMock {
   // findFirst is now resolving to (overrides commonly replace findFirst).
   if (!('findMany' in (overrides.cycle ?? {}))) {
     base.cycle.findMany = jest.fn(async ({ include }: any = {}) => {
-      const single = await base.cycle.findFirst({});
+      const single: any = await base.cycle.findFirst({});
       if (!single) return [];
       return include?._count?.select?.memberships
         ? [{ ...single, _count: { memberships: 0 } }]
