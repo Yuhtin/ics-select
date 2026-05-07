@@ -5,7 +5,6 @@ import { RefreshTokenService } from './tokens/refresh-token.service.js';
 import type { GoogleProfilePayload } from './strategies/google.strategy.js';
 import { AesGcmService } from '../common/crypto/aes-gcm.service.js';
 import { GoogleCalendarService } from '../google-calendar/google-calendar.service.js';
-
 export const BOOTSTRAP_ADMIN_EMAILS_TOKEN = 'BOOTSTRAP_ADMIN_EMAILS_TOKEN';
 
 // Marker thrown from loginWithGoogle when a first-login email is not in the
@@ -47,15 +46,23 @@ export class AuthService {
     // and isn't a bootstrap admin, require a pending InvitedEmail before we
     // create the User. Domain check already ran in GoogleStrategy.validate;
     // this is the second, email-level gate.
-    let invite: { id: string; role: 'ADMIN' | 'MEMBER' } | null = null;
+    type InviteRow = {
+      id: string;
+      role: 'ADMIN' | 'MEMBER';
+      cycle: { id: string; startsAt: Date; endsAt: Date; status: 'ACTIVE' | 'ARCHIVED' } | null;
+    };
+    let invite: InviteRow | null = null;
     if (!existing && !shouldBeAdmin) {
       const row = await this.prisma.invitedEmail.findUnique({
         where: { email: profile.email },
+        include: {
+          cycle: { select: { id: true, startsAt: true, endsAt: true, status: true } },
+        },
       });
       if (!row) {
         throw new UnauthorizedException(EMAIL_NOT_INVITED);
       }
-      invite = { id: row.id, role: row.role };
+      invite = { id: row.id, role: row.role, cycle: row.cycle };
     }
 
     const user = existing
@@ -75,6 +82,27 @@ export class AuthService {
             role: shouldBeAdmin ? 'ADMIN' : invite?.role ?? 'MEMBER',
           },
         });
+
+    // Auto-enroll: if the consumed invite pinned a cycle, create the
+    // CycleMembership now and delete the invite atomically. The invite is
+    // only consumed on the first-login branch (!existing), so user.id was
+    // just created above and cannot already have a CycleMembership — no
+    // overlap check is needed here. The CyclesService.addMember path is the
+    // one that needs the overlap guard.
+    if (invite) {
+      if (invite.cycle && invite.cycle.status !== 'ARCHIVED') {
+        await this.prisma.$transaction([
+          this.prisma.cycleMembership.create({
+            data: { userId: user.id, cycleId: invite.cycle.id },
+          }),
+          this.prisma.invitedEmail.delete({ where: { id: invite.id } }),
+        ]);
+      } else {
+        // Invite without a cycle (legacy ADMIN-only flow or pre-migration
+        // invite). Drop it; admin will add the membership manually if needed.
+        await this.prisma.invitedEmail.delete({ where: { id: invite.id } });
+      }
+    }
 
     const accessTokenEnc = this.aes.encrypt(profile.accessToken);
     const refreshTokenEnc = profile.refreshToken

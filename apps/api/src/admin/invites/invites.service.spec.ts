@@ -1,5 +1,9 @@
 import { Test } from '@nestjs/testing';
-import { ConflictException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service.js';
 import { InvitesService } from './invites.service.js';
 
@@ -11,6 +15,9 @@ const makePrismaMock = () => ({
     deleteMany: jest.fn(),
   },
   user: {
+    findUnique: jest.fn(),
+  },
+  cycle: {
     findUnique: jest.fn(),
   },
 });
@@ -31,7 +38,7 @@ describe('InvitesService', () => {
   });
 
   describe('list', () => {
-    it('returns invites with inviter metadata', async () => {
+    it('returns invites with inviter and cycle metadata', async () => {
       prisma.invitedEmail.findMany.mockResolvedValue([
         {
           id: 'inv-1',
@@ -39,6 +46,12 @@ describe('InvitesService', () => {
           role: 'MEMBER',
           createdAt: new Date('2026-04-20T10:00:00Z'),
           createdBy: { id: 'u-admin', name: 'Admin', email: 'admin@a.com' },
+          cycle: {
+            id: 'c-1',
+            name: '2026.2',
+            startsAt: new Date('2026-04-01'),
+            endsAt: new Date('2026-07-01'),
+          },
         },
       ]);
       const out = await service.list();
@@ -48,18 +61,88 @@ describe('InvitesService', () => {
         name: 'Admin',
         email: 'admin@a.com',
       });
+      expect(out[0]!.cycle).toEqual({
+        id: 'c-1',
+        name: '2026.2',
+        startsAt: new Date('2026-04-01'),
+        endsAt: new Date('2026-07-01'),
+      });
     });
   });
 
   describe('create', () => {
+    it('rejects when MEMBER invite has no cycleId', async () => {
+      await expect(
+        service.create({
+          email: 'a@a.com',
+          role: 'MEMBER',
+          createdById: 'admin-1',
+        }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('allows ADMIN invite without cycleId', async () => {
+      prisma.user.findUnique.mockResolvedValue(null);
+      prisma.invitedEmail.create.mockResolvedValue({
+        id: 'inv-1',
+        email: 'a@a.com',
+        role: 'ADMIN',
+        createdAt: new Date(),
+        createdBy: null,
+        cycle: null,
+      });
+      const out = await service.create({
+        email: 'a@a.com',
+        role: 'ADMIN',
+        createdById: 'admin-1',
+      });
+      expect(out.cycle).toBeNull();
+      expect(prisma.invitedEmail.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ cycleId: null, role: 'ADMIN' }),
+        }),
+      );
+    });
+
+    it('rejects when target cycle does not exist', async () => {
+      prisma.cycle.findUnique.mockResolvedValue(null);
+      await expect(
+        service.create({
+          email: 'a@a.com',
+          role: 'MEMBER',
+          cycleId: 'c-missing',
+          createdById: 'admin-1',
+        }),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('rejects when target cycle is archived', async () => {
+      prisma.cycle.findUnique.mockResolvedValue({ id: 'c-old', status: 'ARCHIVED' });
+      await expect(
+        service.create({
+          email: 'a@a.com',
+          role: 'MEMBER',
+          cycleId: 'c-old',
+          createdById: 'admin-1',
+        }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
     it('rejects when a User already exists for the email', async () => {
+      prisma.cycle.findUnique.mockResolvedValue({ id: 'c-1', status: 'ACTIVE' });
       prisma.user.findUnique.mockResolvedValue({ id: 'u-1', email: 'a@a.com' });
       await expect(
-        service.create({ email: 'a@a.com', role: 'MEMBER', createdById: 'admin-1' }),
+        service.create({
+          email: 'a@a.com',
+          role: 'MEMBER',
+          cycleId: 'c-1',
+          createdById: 'admin-1',
+        }),
       ).rejects.toThrow(ConflictException);
     });
 
     it('lowercases and trims the email before writing', async () => {
+      prisma.cycle.findUnique.mockResolvedValue({ id: 'c-1', status: 'ACTIVE' });
       prisma.user.findUnique.mockResolvedValue(null);
       prisma.invitedEmail.create.mockResolvedValue({
         id: 'inv-1',
@@ -67,25 +150,33 @@ describe('InvitesService', () => {
         role: 'MEMBER',
         createdAt: new Date(),
         createdBy: null,
+        cycle: { id: 'c-1', name: '2026.2', startsAt: new Date(), endsAt: new Date() },
       });
       await service.create({
         email: '  A@a.com  ',
         role: 'MEMBER',
+        cycleId: 'c-1',
         createdById: 'admin-1',
       });
       expect(prisma.invitedEmail.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: expect.objectContaining({ email: 'a@a.com' }),
+          data: expect.objectContaining({ email: 'a@a.com', cycleId: 'c-1' }),
         }),
       );
     });
 
     it('maps P2002 unique-violation to ConflictException', async () => {
+      prisma.cycle.findUnique.mockResolvedValue({ id: 'c-1', status: 'ACTIVE' });
       prisma.user.findUnique.mockResolvedValue(null);
       const err = Object.assign(new Error('unique'), { code: 'P2002' });
       prisma.invitedEmail.create.mockRejectedValue(err);
       await expect(
-        service.create({ email: 'a@a.com', role: 'MEMBER', createdById: 'admin-1' }),
+        service.create({
+          email: 'a@a.com',
+          role: 'MEMBER',
+          cycleId: 'c-1',
+          createdById: 'admin-1',
+        }),
       ).rejects.toThrow(ConflictException);
     });
   });

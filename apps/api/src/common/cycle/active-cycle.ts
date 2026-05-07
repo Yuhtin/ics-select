@@ -123,6 +123,37 @@ export async function resolveActiveMembership<T extends ResolveMembershipInclude
   });
 }
 
+/**
+ * Returns a CycleMembership row when `userId` already has a non-ARCHIVED
+ * membership in a cycle whose date range overlaps `target`'s date range.
+ * Returns null when adding a membership in `target` is safe.
+ *
+ * "Overlap" uses the inclusive interval test:
+ *   existing.startsAt <= target.endsAt && existing.endsAt >= target.startsAt
+ *
+ * The membership in `target` itself is excluded so this helper is safe to
+ * call when re-adding (idempotent enroll). Pass target.id = null when
+ * checking before the cycle has been chosen yet.
+ */
+export async function findOverlappingActiveMembership(
+  prisma: PrismaCycleClient,
+  userId: string,
+  target: { id: string | null; startsAt: Date; endsAt: Date },
+) {
+  return prisma.cycleMembership.findFirst({
+    where: {
+      userId,
+      ...(target.id ? { cycleId: { not: target.id } } : {}),
+      cycle: {
+        status: { not: 'ARCHIVED' },
+        startsAt: { lte: target.endsAt },
+        endsAt: { gte: target.startsAt },
+      },
+    },
+    include: { cycle: true },
+  });
+}
+
 export type WeekPosition = {
   weekNumber: number; // 0 when the cycle hasn't started yet, otherwise 1..weeksTotal
   weeksTotal: number;

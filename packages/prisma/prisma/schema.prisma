@@ -126,10 +126,14 @@ model InvitedEmail {
   id          String   @id @default(cuid())
   email       String   @unique
   role        Role     @default(MEMBER)
+  cycleId     String?
   createdAt   DateTime @default(now())
   createdById String?
 
-  createdBy User? @relation("inviteCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdBy User?  @relation("inviteCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  cycle     Cycle? @relation(fields: [cycleId], references: [id], onDelete: SetNull)
+
+  @@index([cycleId])
 }
 
 model RefreshToken {
@@ -168,6 +172,7 @@ model Cycle {
   classes     ClassSession[]
   weeklyPlans WeeklyPlan[]
   retros      WeeklyRetro[]
+  invites     InvitedEmail[]
 }
 
 model CycleMembership {

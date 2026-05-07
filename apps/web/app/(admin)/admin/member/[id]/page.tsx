@@ -2,10 +2,14 @@
 import { use, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { clsx } from 'clsx';
 import { ArrowLeft, ChevronDown, MessageCircle } from 'lucide-react';
 import { useAdminCockpit } from '../../../../../lib/queries/admin-cockpit';
 import { useAdminMember } from '../../../../../lib/queries/admin-member';
-import type { PlanWeekSlot } from '../../../../../lib/queries/admin-member';
+import type {
+  MemberDetailResponse,
+  PlanWeekSlot,
+} from '../../../../../lib/queries/admin-member';
 import { RiskBanner } from '../../../../../components/admin/member-cockpit/risk-banner';
 import { EngagementCard } from '../../../../../components/admin/member-cockpit/engagement-card';
 import { ItemsCompletedCard } from '../../../../../components/admin/member-cockpit/items-completed-card';
@@ -76,6 +80,13 @@ export default function AdminMemberPage({ params }: { params: Promise<{ id: stri
               {cycle && <> · {cycle.name} · week {cycle.weekNumber} of {cycle.weeksTotal}</>}
               {' · '}{member.email}
             </p>
+            {rawData && rawData.memberships.length > 1 && (
+              <CyclePicker
+                memberships={rawData.memberships}
+                selectedCycleId={selectedCycleId ?? cycle?.id ?? null}
+                onSelect={setSelectedCycleId}
+              />
+            )}
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -165,6 +176,51 @@ function Avatar({ name, pictureUrl }: { name: string; pictureUrl: string | null 
   return (
     <div className="w-14 h-14 rounded-full bg-paper-warm border border-rule flex items-center justify-center font-serif text-ink text-xl font-semibold">
       {initials || '—'}
+    </div>
+  );
+}
+
+function CyclePicker({
+  memberships,
+  selectedCycleId,
+  onSelect,
+}: {
+  memberships: MemberDetailResponse['memberships'];
+  selectedCycleId: string | null;
+  onSelect: (cycleId: string) => void;
+}) {
+  // Sort: ACTIVE first by startsAt desc, then ARCHIVED by startsAt desc.
+  // The current/most-recent ACTIVE cycle ends up first, archived ones trail.
+  const sorted = [...memberships].sort((a, b) => {
+    if (a.status !== b.status) return a.status === 'ACTIVE' ? -1 : 1;
+    return (
+      new Date(b.cycleStartsAt).getTime() - new Date(a.cycleStartsAt).getTime()
+    );
+  });
+  return (
+    <div className="mt-2 flex flex-wrap items-center gap-1.5">
+      {sorted.map((m) => {
+        const isSelected = selectedCycleId === m.cycleId;
+        const isArchived = m.status === 'ARCHIVED';
+        return (
+          <button
+            key={m.cycleId}
+            type="button"
+            onClick={() => onSelect(m.cycleId)}
+            className={clsx(
+              'rounded-pill border px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-label transition-colors',
+              isSelected
+                ? 'border-ink bg-ink text-paper'
+                : isArchived
+                  ? 'border-rule text-ink-faint hover:text-ink-mute'
+                  : 'border-rule text-ink-mute hover:text-ink hover:border-ink/40',
+            )}
+          >
+            {m.cycleName}
+            {isArchived && <span className="ml-1 opacity-70">(archived)</span>}
+          </button>
+        );
+      })}
     </div>
   );
 }

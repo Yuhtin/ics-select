@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { clsx } from 'clsx';
 import { Trash2 } from 'lucide-react';
 import { ApiErrorResponse } from '../../lib/api/client';
@@ -9,28 +9,53 @@ import {
   useCreateInvite,
   useDeleteInvite,
 } from '../../lib/queries/admin-invites';
+import { useAdminCycles } from '../../lib/queries/admin-cycles';
 import { Eyebrow } from '../ui/eyebrow';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function InvitesSection() {
   const { data: invites, isLoading } = useAdminInvites();
+  const { data: cycles } = useAdminCycles();
   const create = useCreateInvite();
   const remove = useDeleteInvite();
 
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<'ADMIN' | 'MEMBER'>('MEMBER');
+  const [cycleId, setCycleId] = useState<string>('');
   const [formError, setFormError] = useState<string | null>(null);
   const emailOk = EMAIL_REGEX.test(email.trim());
 
+  // Cycles available as invite targets: non-archived, not already past.
+  // The ranking ACTIVE-current-or-upcoming matches resolveActiveCycle's view.
+  const eligibleCycles = useMemo(() => {
+    if (!cycles) return [];
+    const now = Date.now();
+    return cycles
+      .filter((c) => c.status === 'ACTIVE' && new Date(c.endsAt).getTime() >= now)
+      .sort(
+        (a, b) =>
+          new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime(),
+      );
+  }, [cycles]);
+
+  const cycleRequired = role === 'MEMBER';
+  const cycleOk = !cycleRequired || cycleId.length > 0;
+  const submitOk = emailOk && cycleOk && !create.isPending;
+
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
-    if (!emailOk || create.isPending) return;
+    if (!submitOk) return;
     setFormError(null);
     try {
-      await create.mutateAsync({ email: email.trim(), role });
+      await create.mutateAsync({
+        email: email.trim(),
+        role,
+        ...(cycleId ? { cycleId } : {}),
+      });
       setEmail('');
       setRole('MEMBER');
+      setCycleId('');
     } catch (err) {
       if (err instanceof ApiErrorResponse) {
         const code = err.apiError?.message;
@@ -38,6 +63,12 @@ export function InvitesSection() {
           setFormError('Essa pessoa já tem conta — convide outro email.');
         } else if (code === 'invite-already-exists') {
           setFormError('Esse email já foi convidado.');
+        } else if (code === 'cycle-required-for-member') {
+          setFormError('Selecione um ciclo para esse member.');
+        } else if (code === 'cycle-archived') {
+          setFormError('Esse ciclo está arquivado.');
+        } else if (code === 'cycle-not-found') {
+          setFormError('Ciclo não encontrado.');
         } else {
           setFormError(err.apiError?.message ?? 'Não foi possível convidar.');
         }
@@ -71,18 +102,40 @@ export function InvitesSection() {
         </div>
         <select
           value={role}
-          onChange={(e) => setRole(e.target.value as 'ADMIN' | 'MEMBER')}
+          onChange={(e) => {
+            const next = e.target.value as 'ADMIN' | 'MEMBER';
+            setRole(next);
+            if (next === 'ADMIN') setCycleId('');
+          }}
           className="rounded-input border border-rule bg-paper px-3 py-1.5 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-focus/40"
         >
           <option value="MEMBER">Member</option>
           <option value="ADMIN">Admin</option>
         </select>
+        <select
+          value={cycleId}
+          onChange={(e) => setCycleId(e.target.value)}
+          disabled={role === 'ADMIN'}
+          className={clsx(
+            'rounded-input border border-rule bg-paper px-3 py-1.5 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-focus/40 min-w-[180px]',
+            role === 'ADMIN' && 'cursor-not-allowed opacity-50',
+          )}
+        >
+          <option value="">
+            {role === 'ADMIN' ? 'No cycle (admin)' : 'Select cycle…'}
+          </option>
+          {eligibleCycles.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
         <button
           type="submit"
-          disabled={!emailOk || create.isPending}
+          disabled={!submitOk}
           className={clsx(
             'rounded-input px-3 py-1.5 font-sans text-sm font-medium transition-colors',
-            emailOk && !create.isPending
+            submitOk
               ? 'bg-ink text-paper hover:bg-ink-soft'
               : 'cursor-not-allowed bg-paper-warm text-ink-mute',
           )}
@@ -112,6 +165,7 @@ export function InvitesSection() {
                 <p className="mt-0.5 font-mono text-[10px] uppercase tracking-label text-ink-mute">
                   Invited {new Date(inv.createdAt).toLocaleDateString()}
                   {inv.createdBy ? ` · by ${inv.createdBy.name.split(' ')[0]}` : null}
+                  {inv.cycle ? ` · ${inv.cycle.name}` : ' · no cycle'}
                 </p>
               </div>
               <span

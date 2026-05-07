@@ -8,11 +8,29 @@ type FakeUser = {
   role: 'ADMIN' | 'MEMBER';
   privacyAcceptedAt: Date | null;
 };
+type FakeCycle = {
+  id: string;
+  startsAt: Date;
+  endsAt: Date;
+  status: 'ACTIVE' | 'ARCHIVED';
+};
+type FakeInvite = {
+  id: string;
+  email: string;
+  role: 'ADMIN' | 'MEMBER';
+  cycle: FakeCycle | null;
+};
+type FakeMembership = { id: string; userId: string; cycleId: string };
 
 function fakeDeps(bootstrap: string[] = []) {
   const users = new Map<string, FakeUser>();
-  const googleAccounts = new Map<string, { accessTokenEnc: string; refreshTokenEnc: string | null; expiresAt: Date; scope: string; userId: string }>();
-  const invites = new Map<string, { id: string; email: string; role: 'ADMIN' | 'MEMBER' }>();
+  const googleAccounts = new Map<
+    string,
+    { accessTokenEnc: string; refreshTokenEnc: string | null; expiresAt: Date; scope: string; userId: string }
+  >();
+  const invites = new Map<string, FakeInvite>();
+  const cycles = new Map<string, FakeCycle>();
+  const memberships = new Map<string, FakeMembership>();
   const prisma = {
     user: {
       findUnique: jest.fn(async ({ where }: { where: { email: string } }) =>
@@ -40,10 +58,45 @@ function fakeDeps(bootstrap: string[] = []) {
       }),
     },
     invitedEmail: {
-      findUnique: jest.fn(async ({ where }: { where: { email: string } }) =>
-        invites.get(where.email) ?? null,
+      findUnique: jest.fn(
+        async ({ where, include: _i }: { where: { email: string }; include?: any }) =>
+          invites.get(where.email) ?? null,
       ),
+      delete: jest.fn(async ({ where }: { where: { id: string } }) => {
+        for (const [email, inv] of invites) {
+          if (inv.id === where.id) invites.delete(email);
+        }
+        return {};
+      }),
     },
+    cycleMembership: {
+      findFirst: jest.fn(async ({ where }: { where: any }) => {
+        for (const m of memberships.values()) {
+          if (m.userId !== where.userId) continue;
+          if (where.cycleId?.not && m.cycleId === where.cycleId.not) continue;
+          const cyc = cycles.get(m.cycleId);
+          if (!cyc) continue;
+          const wc = where.cycle;
+          if (wc) {
+            if (wc.status?.not && cyc.status === wc.status.not) continue;
+            if (wc.startsAt?.lte && cyc.startsAt > wc.startsAt.lte) continue;
+            if (wc.endsAt?.gte && cyc.endsAt < wc.endsAt.gte) continue;
+          }
+          return { ...m, cycle: cyc };
+        }
+        return null;
+      }),
+      create: jest.fn(async ({ data }: { data: { userId: string; cycleId: string } }) => {
+        const id = `m-${memberships.size + 1}`;
+        const rec = { id, ...data } as FakeMembership;
+        memberships.set(id, rec);
+        return rec;
+      }),
+    },
+    // $transaction([op1, op2, ...]) — tests pass plain promises in the array,
+    // mirroring the Prisma "array of operations" form. Jest mocks above
+    // already return promises, so we just await them in order.
+    $transaction: jest.fn(async (ops: Promise<unknown>[]) => Promise.all(ops)),
   };
   const jwt = { sign: jest.fn(() => 'jwt.token.value') };
   const refresh = {
@@ -61,16 +114,17 @@ function fakeDeps(bootstrap: string[] = []) {
   const aes = { encrypt: jest.fn((s: string) => `enc(${s})`), decrypt: jest.fn((s: string) => s.replace(/^enc\(|\)$/g, '')) };
   const gcal = { invalidateAuth: jest.fn() };
   const svc = new AuthService(prisma as any, jwt as any, refresh as any, bootstrap, aes as any, gcal as any);
-  return { svc, prisma, jwt, refresh, users, googleAccounts, invites, aes, gcal };
+  return { svc, prisma, jwt, refresh, users, googleAccounts, invites, cycles, memberships, aes, gcal };
 }
 
 describe('AuthService.loginWithGoogle', () => {
-  it('creates a new user on first login when an invite exists', async () => {
+  it('creates a new user on first login when an invite exists (no cycle)', async () => {
     const { svc, users, invites } = fakeDeps();
     invites.set('pedro@sou.inteli.edu.br', {
       id: 'inv-1',
       email: 'pedro@sou.inteli.edu.br',
       role: 'MEMBER',
+      cycle: null,
     });
     const result = await svc.loginWithGoogle({
       email: 'pedro@sou.inteli.edu.br',
@@ -84,6 +138,35 @@ describe('AuthService.loginWithGoogle', () => {
     expect(result.user.role).toBe('MEMBER');
     expect(result.accessToken).toBe('jwt.token.value');
     expect(result.refreshToken.plaintext).toMatch(/^rt-/);
+    // Cycle-less invite is consumed (deleted) but no membership is created.
+    expect(invites.size).toBe(0);
+  });
+
+  it('auto-enrolls into the invite target cycle and consumes the invite', async () => {
+    const { svc, invites, cycles, memberships } = fakeDeps();
+    const cycle: FakeCycle = {
+      id: 'c-main',
+      startsAt: new Date('2026-04-01'),
+      endsAt: new Date('2026-07-01'),
+      status: 'ACTIVE',
+    };
+    cycles.set(cycle.id, cycle);
+    invites.set('pedro@sou.inteli.edu.br', {
+      id: 'inv-1',
+      email: 'pedro@sou.inteli.edu.br',
+      role: 'MEMBER',
+      cycle,
+    });
+    await svc.loginWithGoogle({
+      email: 'pedro@sou.inteli.edu.br',
+      name: 'Pedro',
+      pictureUrl: null,
+      accessToken: 'ga',
+      refreshToken: null,
+    });
+    expect(memberships.size).toBe(1);
+    expect(Array.from(memberships.values())[0]?.cycleId).toBe('c-main');
+    expect(invites.size).toBe(0);
   });
 
   it('rejects first-login when email is neither invited nor bootstrap admin', async () => {
@@ -106,6 +189,7 @@ describe('AuthService.loginWithGoogle', () => {
       id: 'inv-1',
       email: 'pedro@sou.inteli.edu.br',
       role: 'ADMIN',
+      cycle: null,
     });
     await svc.loginWithGoogle({
       email: 'pedro@sou.inteli.edu.br',
@@ -123,6 +207,7 @@ describe('AuthService.loginWithGoogle', () => {
       id: 'inv-1',
       email: 'pedro@sou.inteli.edu.br',
       role: 'MEMBER',
+      cycle: null,
     });
     await svc.loginWithGoogle({
       email: 'pedro@sou.inteli.edu.br',
@@ -163,6 +248,7 @@ describe('AuthService.loginWithGoogle', () => {
       id: 'inv-1',
       email: 'pedro@sou.inteli.edu.br',
       role: 'MEMBER',
+      cycle: null,
     });
     await svc.loginWithGoogle({
       email: 'pedro@sou.inteli.edu.br',
@@ -184,6 +270,7 @@ describe('AuthService.loginWithGoogle', () => {
       id: 'inv-1',
       email: 'pedro@sou.inteli.edu.br',
       role: 'MEMBER',
+      cycle: null,
     });
     const result = await svc.loginWithGoogle({
       email: 'pedro@sou.inteli.edu.br',

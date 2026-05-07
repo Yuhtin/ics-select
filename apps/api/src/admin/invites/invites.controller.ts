@@ -26,7 +26,12 @@ export class InvitesController {
   @Post()
   create(@CurrentUser() user: JwtStrategyPayload, @Body() body: unknown) {
     const parsed = CreateInviteSchema.parse(body);
-    return this.invites.create({ ...parsed, createdById: user.sub });
+    return this.invites.create({
+      email: parsed.email,
+      role: parsed.role,
+      cycleId: parsed.cycleId,
+      createdById: user.sub,
+    });
   }
 
   @Delete(':id')

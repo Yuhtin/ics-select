@@ -1,5 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service.js';
+import { findOverlappingActiveMembership } from '../common/cycle/active-cycle.js';
 
 type CreateInput = { name: string; startsAt: Date; endsAt: Date };
 type UpdateInput = Partial<CreateInput> & { rankingVisibleToMembers?: boolean };
@@ -63,6 +64,22 @@ export class CyclesService {
   }
 
   async addMember(cycleId: string, userId: string) {
+    const cycle = await this.prisma.cycle.findUnique({ where: { id: cycleId } });
+    if (!cycle) throw new NotFoundException('cycle not found');
+
+    // One active membership per user: reject if the user is already in any
+    // non-ARCHIVED cycle whose date range overlaps the target. Archived
+    // cycles never block — they are how the admin retires a cycle.
+    const conflict = await findOverlappingActiveMembership(this.prisma, userId, cycle);
+    if (conflict) {
+      throw new ConflictException({
+        code: 'member-already-in-overlapping-cycle',
+        message: `Member is already enrolled in "${conflict.cycle.name}", which overlaps this cycle. Remove or archive that membership first.`,
+        conflictCycleId: conflict.cycle.id,
+        conflictCycleName: conflict.cycle.name,
+      });
+    }
+
     const membership = await this.prisma.cycleMembership.create({
       data: { cycleId, userId },
     });
