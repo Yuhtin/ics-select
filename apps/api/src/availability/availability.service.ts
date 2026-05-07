@@ -29,6 +29,13 @@ const CAP_KEYS = [
   'sundayMinutes',
 ] as const;
 
+// Default slot window applied when the user upserts caps without ever picking
+// specific slots (the onboarding flow). Wide enough that the scheduler can
+// place blocks anywhere reasonable; the per-day cap keeps total minutes
+// bounded. Customizing in /me/settings/availability replaces these.
+const DEFAULT_SLOT_START = 9 * 60; // 09:00 local
+const DEFAULT_SLOT_END = 23 * 60; // 23:00 local
+
 @Injectable()
 export class AvailabilityService {
   constructor(private readonly prisma: PrismaService) {}
@@ -124,6 +131,41 @@ export class AvailabilityService {
             endMinute: s.endMinute,
           })),
         });
+      } else {
+        // Fallback: caller upserted caps but never picked specific slots
+        // (onboarding flow). For each cap>0 day that doesn't already have a
+        // slot, write a wide default — otherwise the scheduler has no window
+        // to place anything in and publish silently produces zero events.
+        const existing = await tx.availabilitySlot.findMany({
+          where: { userId },
+          select: { dayOfWeek: true },
+        });
+        const daysWithSlots = new Set(existing.map((s) => s.dayOfWeek));
+        const dayToCapKey = [
+          'mondayMinutes',
+          'tuesdayMinutes',
+          'wednesdayMinutes',
+          'thursdayMinutes',
+          'fridayMinutes',
+          'saturdayMinutes',
+          'sundayMinutes',
+        ] satisfies readonly (typeof CAP_KEYS[number])[];
+        const defaults: { userId: string; dayOfWeek: number; startMinute: number; endMinute: number }[] = [];
+        for (let day = 0; day < 7; day++) {
+          if (daysWithSlots.has(day)) continue;
+          const cap = capsData[dayToCapKey[day]!];
+          if (typeof cap === 'number' && cap > 0) {
+            defaults.push({
+              userId,
+              dayOfWeek: day,
+              startMinute: DEFAULT_SLOT_START,
+              endMinute: DEFAULT_SLOT_END,
+            });
+          }
+        }
+        if (defaults.length > 0) {
+          await tx.availabilitySlot.createMany({ data: defaults });
+        }
       }
     });
 

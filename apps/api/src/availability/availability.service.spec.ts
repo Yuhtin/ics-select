@@ -182,6 +182,61 @@ describe('AvailabilityService', () => {
     const svc = new AvailabilityService(prisma as any);
     expect(await svc.get('u')).toBeNull();
   });
+
+  it('upsert without slots auto-creates default 09-23 slots for cap>0 days', async () => {
+    // Mirrors the onboarding payload: caps only, no slots field. The user has
+    // never picked specific windows, so the service must seed defaults
+    // — otherwise the scheduler has no window to place items in.
+    const prisma = fakePrisma();
+    const svc = new AvailabilityService(prisma as any);
+    await svc.upsert('u-onboard', {
+      mondayMinutes: 60,
+      tuesdayMinutes: 0,
+      wednesdayMinutes: 60,
+      thursdayMinutes: 0,
+      fridayMinutes: 30,
+      saturdayMinutes: 90,
+      sundayMinutes: 0,
+      preferredSessionMinutes: 30,
+      timezone: 'America/Sao_Paulo',
+    });
+    const slots = Array.from(prisma.slotRows.values()).filter(
+      (s: any) => s.userId === 'u-onboard',
+    );
+    expect(slots.map((s: any) => s.dayOfWeek).sort()).toEqual([0, 2, 4, 5]);
+    for (const s of slots) {
+      expect(s.startMinute).toBe(9 * 60);
+      expect(s.endMinute).toBe(23 * 60);
+    }
+  });
+
+  it('upsert without slots leaves existing slots untouched (custom takes precedence)', async () => {
+    const prisma = fakePrisma();
+    // Pretend the user already saved a custom Wed window via Settings.
+    prisma.slotRows.set('s-1', {
+      id: 's-1',
+      userId: 'u-existing',
+      dayOfWeek: 2,
+      startMinute: 18 * 60,
+      endMinute: 20 * 60,
+    });
+    const svc = new AvailabilityService(prisma as any);
+    await svc.upsert('u-existing', {
+      mondayMinutes: 60,
+      wednesdayMinutes: 60,
+      preferredSessionMinutes: 30,
+      timezone: 'America/Sao_Paulo',
+    } as AvailabilityPatchInput);
+    const slots = Array.from(prisma.slotRows.values()).filter(
+      (s: any) => s.userId === 'u-existing',
+    );
+    // Mon got a default; Wed kept its custom 18-20 window.
+    const monday = slots.find((s: any) => s.dayOfWeek === 0)!;
+    const wednesday = slots.find((s: any) => s.dayOfWeek === 2)!;
+    expect(monday.endMinute - monday.startMinute).toBe(14 * 60);
+    expect(wednesday.startMinute).toBe(18 * 60);
+    expect(wednesday.endMinute).toBe(20 * 60);
+  });
 });
 
 describe('AvailabilityService.updateProfile', () => {
