@@ -476,6 +476,87 @@ describe('PlanContextService', () => {
     expect(result.availability.weeklyBudgetMinutes).toBe(300);
   });
 
+  it('availability.remainingCapacityMinutes ignores busy intervals belonging to the member own scheduled items', async () => {
+    // Friday window 09-22 BRT, cap 60 min.
+    const slotRows = [{ dayOfWeek: 4, startMinute: 9 * 60, endMinute: 22 * 60 }];
+    const row = {
+      userId: 'user-a',
+      mondayMinutes: 0,
+      tuesdayMinutes: 0,
+      wednesdayMinutes: 0,
+      thursdayMinutes: 0,
+      fridayMinutes: 60,
+      saturdayMinutes: 0,
+      sundayMinutes: 0,
+      preferredSessionMinutes: 30,
+      timezone: 'America/Sao_Paulo',
+    };
+    // Two ICS events at Fri 18:00–18:30 and 18:30–19:00 BRT (= 21:00 and 21:30 UTC).
+    const ownItems = [
+      {
+        scheduledAt: new Date('2026-04-17T21:00:00Z'),
+        scheduledMinutes: 30,
+      },
+      {
+        scheduledAt: new Date('2026-04-17T21:30:00Z'),
+        scheduledMinutes: 30,
+      },
+    ];
+    const prisma = makePrisma({
+      user: { findUnique: jest.fn(async () => defaultMember) },
+      cycleMembership: { findFirst: jest.fn(async () => defaultMembership) },
+      memberAvailability: { findUnique: jest.fn(async () => row) },
+      availabilitySlot: { findMany: jest.fn(async () => slotRows) },
+      weeklyPlanItem: { findMany: jest.fn(async () => ownItems) },
+    });
+    // Calendar busy reports the same 60 min — those are our ICS events.
+    const busyCache = makeBusyCacheStub([
+      { start: new Date('2026-04-17T21:00:00Z'), end: new Date('2026-04-17T22:00:00Z') },
+    ]);
+    const service = makeService(prisma, busyCache);
+    const result = await service.getContext(
+      { memberId: 'user-a', weekStart: WEEK_START },
+      NOW,
+    );
+    // Without the fix this would be 0 (the 60 min of ICS busy would consume
+    // the whole 60-min cap). With the fix the ICS interval is removed from
+    // busy, so the full 60-min cap stays addable.
+    expect(result.availability.remainingCapacityMinutes).toBe(60);
+  });
+
+  it('availability.remainingCapacityMinutes still subtracts non-ICS busy from the window', async () => {
+    // Friday: tight window 09-12 BRT (= 12-15 UTC), cap 180. NOW = 12:00 UTC
+    // sits at the window start. cap matches window length so any busy inside
+    // it directly trims the result.
+    const slotRows = [{ dayOfWeek: 4, startMinute: 9 * 60, endMinute: 12 * 60 }];
+    const row = {
+      userId: 'user-a',
+      mondayMinutes: 0, tuesdayMinutes: 0, wednesdayMinutes: 0, thursdayMinutes: 0,
+      fridayMinutes: 180,
+      saturdayMinutes: 0, sundayMinutes: 0,
+      preferredSessionMinutes: 30,
+      timezone: 'America/Sao_Paulo',
+    };
+    const prisma = makePrisma({
+      user: { findUnique: jest.fn(async () => defaultMember) },
+      cycleMembership: { findFirst: jest.fn(async () => defaultMembership) },
+      memberAvailability: { findUnique: jest.fn(async () => row) },
+      availabilitySlot: { findMany: jest.fn(async () => slotRows) },
+      weeklyPlanItem: { findMany: jest.fn(async () => []) },
+    });
+    // 30 min of unrelated busy inside the window (13:00-13:30 UTC = 10:00-10:30 BRT).
+    const busyCache = makeBusyCacheStub([
+      { start: new Date('2026-04-17T13:00:00Z'), end: new Date('2026-04-17T13:30:00Z') },
+    ]);
+    const service = makeService(prisma, busyCache);
+    const result = await service.getContext(
+      { memberId: 'user-a', weekStart: WEEK_START },
+      NOW,
+    );
+    // 180-min window, minus 30 min of non-ICS busy = 150 min free.
+    expect(result.availability.remainingCapacityMinutes).toBe(150);
+  });
+
   it('availability.remainingCapacityMinutes is null when getFreeBusy throws', async () => {
     const prisma = makePrisma({
       user: { findUnique: jest.fn(async () => defaultMember) },

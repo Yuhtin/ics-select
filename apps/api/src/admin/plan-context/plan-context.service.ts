@@ -10,6 +10,58 @@ import { computeRemainingWeekCapacity } from '../../scheduler/capacity.js';
 import type { AvailabilitySlotInput, BusyBlock } from '../../scheduler/scheduler.types.js';
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+
+/**
+ * Returns `busy` with `subtract` intervals carved out. Each block in `busy`
+ * is split / shrunk so any portion overlapping a `subtract` interval is
+ * removed. Used so the remaining-capacity calc treats our own scheduled
+ * items as available time (they are *the* plan; they shouldn't compete
+ * with new items). Subtract intervals are merged first so overlapping
+ * Calendar duplicates collapse cleanly.
+ */
+function subtractIntervals(
+  busy: BusyBlock[],
+  subtract: { start: Date; end: Date }[],
+): BusyBlock[] {
+  if (subtract.length === 0) return busy;
+  const sorted = subtract
+    .map((s) => ({ start: s.start.getTime(), end: s.end.getTime() }))
+    .sort((a, b) => a.start - b.start);
+  const merged: { start: number; end: number }[] = [];
+  for (const s of sorted) {
+    const last = merged[merged.length - 1];
+    if (last && s.start <= last.end) {
+      last.end = Math.max(last.end, s.end);
+    } else {
+      merged.push({ ...s });
+    }
+  }
+  const out: BusyBlock[] = [];
+  for (const block of busy) {
+    let segments: { start: number; end: number }[] = [
+      { start: block.start.getTime(), end: block.end.getTime() },
+    ];
+    for (const cut of merged) {
+      const next: { start: number; end: number }[] = [];
+      for (const seg of segments) {
+        if (cut.end <= seg.start || cut.start >= seg.end) {
+          next.push(seg);
+          continue;
+        }
+        if (cut.start > seg.start) next.push({ start: seg.start, end: cut.start });
+        if (cut.end < seg.end) next.push({ start: cut.end, end: seg.end });
+      }
+      segments = next;
+      if (segments.length === 0) break;
+    }
+    for (const seg of segments) {
+      if (seg.end > seg.start) {
+        out.push({ start: new Date(seg.start), end: new Date(seg.end) });
+      }
+    }
+  }
+  return out;
+}
 // Only unfinished work carries over: PENDING (never started) and STUCK
 // (couldn't finish). DOUBTS is positive — the study was done; the dúvida is
 // surfaced as a member note in the timeline, not as a re-plan signal.
@@ -523,6 +575,15 @@ export class PlanContextService {
    * Google Calendar busy state. Mirrors the scheduler's view, so the
    * badge's number and what `reschedulePending` will fit are aligned.
    *
+   * The intervals belonging to this plan's PUBLISHED items are subtracted
+   * from busy *before* capacity is computed — otherwise items already in
+   * the plan would compete with themselves for capacity (their Calendar
+   * events show up in busy AND get counted in pendingMinutes downstream),
+   * making the badge read "Over capacity" even when the scheduler had
+   * actually fit everything just fine. The intent is that the number
+   * answers "if I add MORE work, how much more fits?", regardless of how
+   * full the plan currently is.
+   *
    * Returns `remainingCapacityMinutes: null` if the calendar lookup fails
    * — the badge then falls back to the dumb (budget − planned) calc.
    */
@@ -560,11 +621,18 @@ export class PlanContextService {
       );
       return { remainingCapacityMinutes: null, daysRemaining: 0 };
     }
+
+    const ownIntervals = await this.loadOwnPlanIntervals(
+      params.userId,
+      params.weekStart,
+    );
+    const adjustedBusy = subtractIntervals(busy, ownIntervals);
+
     const out = computeRemainingWeekCapacity({
       weekStart: params.weekStart,
       slots: params.slots,
       caps,
-      busyBlocks: busy,
+      busyBlocks: adjustedBusy,
       timezone: av.timezone,
       now: params.now,
     });
@@ -572,6 +640,35 @@ export class PlanContextService {
       remainingCapacityMinutes: out.totalMinutes,
       daysRemaining: out.daysRemaining,
     };
+  }
+
+  /**
+   * Returns the [start, end] intervals of the member's currently-scheduled
+   * items for the given week. Used to remove our own Calendar events from
+   * the busy list when computing remaining capacity. Items with no
+   * scheduledAt or scheduledMinutes contribute no interval.
+   */
+  private async loadOwnPlanIntervals(
+    userId: string,
+    weekStart: Date,
+  ): Promise<{ start: Date; end: Date }[]> {
+    const items = await this.prisma.weeklyPlanItem.findMany({
+      where: {
+        weeklyPlan: { userId, weekStart },
+        scheduledAt: { not: null },
+        scheduledMinutes: { not: null },
+      },
+      select: { scheduledAt: true, scheduledMinutes: true },
+    });
+    return items
+      .filter(
+        (i): i is { scheduledAt: Date; scheduledMinutes: number } =>
+          i.scheduledAt != null && i.scheduledMinutes != null,
+      )
+      .map((i) => ({
+        start: i.scheduledAt,
+        end: new Date(i.scheduledAt.getTime() + i.scheduledMinutes * 60_000),
+      }));
   }
 
   private computeWeekNumber(
