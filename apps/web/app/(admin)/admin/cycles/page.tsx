@@ -8,7 +8,6 @@ import {
   useArchiveCycle,
   type CycleRow,
 } from '../../../../lib/queries/admin-cycles';
-import { resolveActiveCycleId } from '../../../../lib/cycle/active-cycle';
 import { Eyebrow } from '../../../../components/ui/eyebrow';
 import { NewCycleModal } from '../../../../components/admin/cycles/new-cycle-modal';
 
@@ -20,11 +19,20 @@ function formatRange(start: string, end: string): string {
   return `${s} – ${e}`;
 }
 
-function phaseOf(cycle: CycleRow, activeId: string | null, now: Date): Phase {
+// Phase is purely a function of date range + status. We intentionally do NOT
+// use resolveActiveCycleId here — that helper returns a single "the active
+// cycle" for navigation/landing redirects, but the admin cycles list needs to
+// surface every running cycle as Active. Otherwise, when two ACTIVE cycles
+// overlap (main + bench), the one with the older startsAt would drop into
+// "past" even though now is still inside its range.
+function phaseOf(cycle: CycleRow, now: Date): Phase {
   if (cycle.status === 'ARCHIVED') return 'archived';
-  if (cycle.id === activeId) return 'active';
-  if (new Date(cycle.startsAt).getTime() > now.getTime()) return 'upcoming';
-  return 'past';
+  const start = new Date(cycle.startsAt).getTime();
+  const end = new Date(cycle.endsAt).getTime();
+  const nowMs = now.getTime();
+  if (nowMs < start) return 'upcoming';
+  if (nowMs > end) return 'past';
+  return 'active';
 }
 
 const PHASE_CLASS: Record<Phase, string> = {
@@ -54,16 +62,11 @@ export default function AdminCyclesPage() {
   const [newOpen, setNewOpen] = useState(false);
   const now = useMemo(() => new Date(), []);
 
-  const activeId = useMemo(
-    () => (data ? resolveActiveCycleId(data, now) : null),
-    [data, now],
-  );
-
   const rows = useMemo(() => {
     if (!data) return [] as Array<{ cycle: CycleRow; phase: Phase }>;
     const annotated = data.map((cycle) => ({
       cycle,
-      phase: phaseOf(cycle, activeId, now),
+      phase: phaseOf(cycle, now),
     }));
     annotated.sort((a, b) => {
       const pa = PHASE_ORDER[a.phase];
@@ -74,7 +77,7 @@ export default function AdminCyclesPage() {
       );
     });
     return annotated;
-  }, [data, activeId, now]);
+  }, [data, now]);
 
   const confirmArchive = (cycle: CycleRow) => {
     if (!confirm(`Archive cycle "${cycle.name}"?`)) return;
