@@ -30,6 +30,14 @@ const EnvSchema = z.object({
     .string()
     .transform((s) => s.split(',').map((d) => d.trim().toLowerCase()).filter(Boolean))
     .pipe(z.array(z.string()).min(1, 'At least one allowed domain required')),
+  // Individual email overrides — emails that bypass the ALLOWED_EMAIL_DOMAINS
+  // check. Use sparingly for non-student inteli accounts (e.g. consulting club
+  // mailbox) that need access without opening the entire parent domain.
+  ALLOWED_EMAIL_EXCEPTIONS: z
+    .string()
+    .optional()
+    .default('')
+    .transform((s) => s.split(',').map((e) => e.trim().toLowerCase()).filter(Boolean)),
   BOOTSTRAP_ADMIN_EMAILS: z
     .string()
     .optional()

@@ -53,13 +53,19 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     if (!email) {
       return done(new UnauthorizedException('Google profile missing email'), false);
     }
-    const rawDomains = this.config.getOrThrow<string[] | string>('ALLOWED_EMAIL_DOMAINS');
-    const domains = Array.isArray(rawDomains)
-      ? rawDomains
-      : rawDomains.split(',').map((d) => d.trim().toLowerCase()).filter(Boolean);
-    const allowed = domains.some((d) => email.endsWith(`@${d}`));
-    if (!allowed) {
-      return done(new UnauthorizedException('Email domain not allowed'), false);
+    const rawExceptions = this.config.get<string[] | string>('ALLOWED_EMAIL_EXCEPTIONS') ?? [];
+    const exceptions = Array.isArray(rawExceptions)
+      ? rawExceptions
+      : rawExceptions.split(',').map((e) => e.trim().toLowerCase()).filter(Boolean);
+    if (!exceptions.includes(email)) {
+      const rawDomains = this.config.getOrThrow<string[] | string>('ALLOWED_EMAIL_DOMAINS');
+      const domains = Array.isArray(rawDomains)
+        ? rawDomains
+        : rawDomains.split(',').map((d) => d.trim().toLowerCase()).filter(Boolean);
+      const allowed = domains.some((d) => email.endsWith(`@${d}`));
+      if (!allowed) {
+        return done(new UnauthorizedException('Email domain not allowed'), false);
+      }
     }
     const payload: GoogleProfilePayload = {
       email,

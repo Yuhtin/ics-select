@@ -27,11 +27,23 @@ describe('loadEnv', () => {
     expect(env.ENCRYPTION_KEY.length).toBe(32);
     expect(env.ALLOWED_EMAIL_DOMAINS).toEqual(['sou.inteli.edu.br']);
     expect(env.BOOTSTRAP_ADMIN_EMAILS).toEqual([]);
+    expect(env.ALLOWED_EMAIL_EXCEPTIONS).toEqual([]);
   });
 
   it('accepts multiple allowed domains', () => {
     const env = loadEnv({ ...baseEnv, ALLOWED_EMAIL_DOMAINS: 'sou.inteli.edu.br,inteli.edu.br' });
     expect(env.ALLOWED_EMAIL_DOMAINS).toEqual(['sou.inteli.edu.br', 'inteli.edu.br']);
+  });
+
+  it('parses email exceptions and lowercases them', () => {
+    const env = loadEnv({
+      ...baseEnv,
+      ALLOWED_EMAIL_EXCEPTIONS: ' Consulting.Club@inteli.edu.br , staff@partner.com ',
+    });
+    expect(env.ALLOWED_EMAIL_EXCEPTIONS).toEqual([
+      'consulting.club@inteli.edu.br',
+      'staff@partner.com',
+    ]);
   });
 
   it('parses bootstrap admin emails', () => {
