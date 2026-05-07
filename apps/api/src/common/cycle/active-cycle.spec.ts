@@ -34,10 +34,20 @@ function makePrisma() {
         if (orderBy?.startsAt === 'desc') matches.sort((a, b) => b.startsAt - a.startsAt);
         return matches[0] ?? null;
       }),
-      findMany: jest.fn(async ({ where, orderBy, take }: any) => {
-        const matches = cycles.filter((c) => matchesCycle(c, where));
+      findMany: jest.fn(async ({ where, orderBy, take, include }: any) => {
+        let matches = cycles.filter((c) => matchesCycle(c, where));
         if (orderBy?.startsAt === 'asc') matches.sort((a, b) => a.startsAt - b.startsAt);
         if (orderBy?.startsAt === 'desc') matches.sort((a, b) => b.startsAt - a.startsAt);
+        if (include?._count?.select?.memberships) {
+          matches = matches.map((c) => ({
+            ...c,
+            _count: {
+              memberships: memberships.filter(
+                (m) => m.cycleId === c.id || m.cycle?.id === c.id,
+              ).length,
+            },
+          }));
+        }
         return take ? matches.slice(0, take) : matches;
       }),
     },
@@ -135,6 +145,69 @@ describe('resolveActiveCycle', () => {
     });
     const result = await resolveActiveCycle(prisma as any, NOW);
     expect(result).toBeNull();
+  });
+
+  it('prefers the cycle with more memberships when two ACTIVE cycles overlap', async () => {
+    const prisma = makePrisma();
+    prisma.cycles.push(
+      {
+        id: 'main',
+        status: 'ACTIVE',
+        startsAt: new Date('2026-04-01'),
+        endsAt: new Date('2026-06-30'),
+      },
+      {
+        id: 'bench',
+        status: 'ACTIVE',
+        // Later startsAt — under the old `desc` rule, would have won.
+        startsAt: new Date('2026-04-15'),
+        endsAt: new Date('2026-06-30'),
+      },
+    );
+    prisma.memberships.push(
+      { id: 'm1', userId: 'u1', cycleId: 'main' },
+      { id: 'm2', userId: 'u2', cycleId: 'main' },
+      { id: 'm3', userId: 'u3', cycleId: 'main' },
+      { id: 'm4', userId: 'u4', cycleId: 'bench' },
+    );
+    const result = await resolveActiveCycle(prisma as any, NOW);
+    expect(result?.id).toBe('main');
+  });
+
+  it('uses earliest startsAt as tiebreak when membership counts are equal', async () => {
+    const prisma = makePrisma();
+    prisma.cycles.push(
+      {
+        id: 'older',
+        status: 'ACTIVE',
+        startsAt: new Date('2026-04-01'),
+        endsAt: new Date('2026-06-30'),
+      },
+      {
+        id: 'newer',
+        status: 'ACTIVE',
+        startsAt: new Date('2026-04-15'),
+        endsAt: new Date('2026-06-30'),
+      },
+    );
+    prisma.memberships.push(
+      { id: 'm1', userId: 'u1', cycleId: 'older' },
+      { id: 'm2', userId: 'u2', cycleId: 'newer' },
+    );
+    const result = await resolveActiveCycle(prisma as any, NOW);
+    expect(result?.id).toBe('older');
+  });
+
+  it('does not leak the _count wrapper to callers', async () => {
+    const prisma = makePrisma();
+    prisma.cycles.push({
+      id: 'current',
+      status: 'ACTIVE',
+      startsAt: new Date('2026-04-01'),
+      endsAt: new Date('2026-06-30'),
+    });
+    const result = await resolveActiveCycle(prisma as any, NOW);
+    expect(result).not.toHaveProperty('_count');
   });
 });
 

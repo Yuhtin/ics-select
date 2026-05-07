@@ -74,6 +74,21 @@ function fakePrisma() {
         }
         return list[0] ?? null;
       }),
+      findMany: jest.fn(async ({ where, include }: any) => {
+        const list: any[] = [];
+        for (const c of cycles.values()) {
+          if (where?.status && c.status !== where.status) continue;
+          if (where?.startsAt?.lte && c.startsAt && c.startsAt > where.startsAt.lte) continue;
+          if (where?.startsAt?.gt && c.startsAt && c.startsAt <= where.startsAt.gt) continue;
+          if (where?.endsAt?.gte && c.endsAt && c.endsAt < where.endsAt.gte) continue;
+          list.push(
+            include?._count?.select?.memberships
+              ? { ...c, _count: { memberships: 0 } }
+              : c,
+          );
+        }
+        return list;
+      }),
     },
     cycleMembership: {
       findFirst: jest.fn(async ({ where }: any) => {

@@ -1,9 +1,12 @@
 /**
  * Shared helpers for resolving THE active cycle.
  *
- * Business rule (as of 2026-04-17):
- *   1. If a cycle with status=ACTIVE contains `now` (startsAt <= now <= endsAt),
- *      that cycle is "the active one".
+ * Business rule (as of 2026-05-07):
+ *   1. If one or more cycles with status=ACTIVE contain `now`
+ *      (startsAt <= now <= endsAt), the "primary" running cycle wins:
+ *      most memberships first, with the earlier startsAt as tiebreak. This
+ *      surfaces the main cohort instead of a satellite cycle (e.g. Bench)
+ *      when both are running concurrently.
  *   2. Otherwise, the active cycle is the ACTIVE cycle with the earliest
  *      `startsAt > now` (the nearest upcoming cycle).
  *   3. Never return more than one cycle as "active".
@@ -26,16 +29,28 @@ export async function resolveActiveCycle(
   prisma: PrismaCycleClient,
   now: Date = new Date(),
 ) {
-  // 1. Cycle whose date range contains `now`.
-  const current = await prisma.cycle.findFirst({
+  // 1. Cycle whose date range contains `now`. When multiple overlap, pick
+  //    the one with the most memberships (the "main" cohort over a satellite
+  //    like Bench), then the earliest startsAt as tiebreak.
+  const current = await prisma.cycle.findMany({
     where: {
       status: 'ACTIVE',
       startsAt: { lte: now },
       endsAt: { gte: now },
     },
-    orderBy: { startsAt: 'desc' },
+    include: { _count: { select: { memberships: true } } },
   });
-  if (current) return current;
+  if (current.length > 0) {
+    current.sort((a, b) => {
+      const sizeDiff = b._count.memberships - a._count.memberships;
+      if (sizeDiff !== 0) return sizeDiff;
+      return a.startsAt.getTime() - b.startsAt.getTime();
+    });
+    // Strip the _count wrapper so the return shape matches the legacy
+    // `findFirst` contract (callers consume Cycle, not Cycle & _count).
+    const { _count: _omit, ...cycle } = current[0]!;
+    return cycle;
+  }
 
   // 2. Nearest upcoming cycle.
   return prisma.cycle.findFirst({

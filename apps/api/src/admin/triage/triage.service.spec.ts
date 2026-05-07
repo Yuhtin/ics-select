@@ -2,7 +2,7 @@ import { TriageService } from './triage.service';
 import { PrismaService } from '../../common/prisma/prisma.service';
 
 type PrismaMock = {
-  cycle: { findFirst: jest.Mock };
+  cycle: { findFirst: jest.Mock; findMany: jest.Mock };
   cycleMembership: { findMany: jest.Mock };
   weeklyPlan: { findMany: jest.Mock };
   weeklyPlanItem: { findMany: jest.Mock };
@@ -11,8 +11,21 @@ type PrismaMock = {
 };
 
 function makePrisma(overrides: Partial<any> = {}): PrismaMock {
+  // Mirror the new resolveActiveCycle shape: it queries findMany with
+  // include._count, then sorts in code. Tests that override `cycle.findFirst`
+  // for the legacy single-active-cycle path also need findMany returning the
+  // same row for the new path. We reflect findFirst's resolved value into
+  // findMany so existing tests stay green without each opting in.
+  const findFirstMock = jest.fn(async () => null);
+  const findManyMock = jest.fn(async ({ include }: any = {}) => {
+    const single = await findFirstMock();
+    if (!single) return [];
+    return include?._count?.select?.memberships
+      ? [{ ...single, _count: { memberships: 0 } }]
+      : [single];
+  });
   const base: PrismaMock = {
-    cycle: { findFirst: jest.fn(async () => null) },
+    cycle: { findFirst: findFirstMock, findMany: findManyMock },
     cycleMembership: { findMany: jest.fn(async () => []) },
     weeklyPlan: { findMany: jest.fn(async () => []) },
     weeklyPlanItem: { findMany: jest.fn(async () => []) },
@@ -21,6 +34,17 @@ function makePrisma(overrides: Partial<any> = {}): PrismaMock {
   };
   for (const key of Object.keys(overrides) as (keyof PrismaMock)[]) {
     base[key] = { ...base[key], ...(overrides[key] as any) };
+  }
+  // After overrides, re-link cycle.findMany so it pulls from whatever
+  // findFirst is now resolving to (overrides commonly replace findFirst).
+  if (!('findMany' in (overrides.cycle ?? {}))) {
+    base.cycle.findMany = jest.fn(async ({ include }: any = {}) => {
+      const single = await base.cycle.findFirst({});
+      if (!single) return [];
+      return include?._count?.select?.memberships
+        ? [{ ...single, _count: { memberships: 0 } }]
+        : [single];
+    });
   }
   return base;
 }

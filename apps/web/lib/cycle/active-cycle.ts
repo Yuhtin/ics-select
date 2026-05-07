@@ -5,7 +5,10 @@ import type { CycleRow } from '../queries/admin-cycles';
  * apps/api/src/common/cycle/active-cycle.ts. The admin UI must see the same
  * cycle the backend treats as active, so both helpers apply the same rule:
  *
- *   1. An ACTIVE cycle that contains `now` (startsAt <= now <= endsAt).
+ *   1. ACTIVE cycles containing `now` win. When multiple overlap, the one
+ *      with the most memberships is the "primary" (so a satellite cycle
+ *      like Bench doesn't outrank the main cohort). Earlier startsAt is the
+ *      tiebreaker.
  *   2. Otherwise, the ACTIVE cycle with the earliest `startsAt > now` (the
  *      nearest upcoming cycle).
  *   3. ARCHIVED cycles are never returned. If nothing qualifies, null.
@@ -13,6 +16,10 @@ import type { CycleRow } from '../queries/admin-cycles';
  * A naive `cycles.find(c => c.status === 'ACTIVE')` is wrong and regresses in
  * the window between two back-to-back cycles — CLAUDE.md calls this out.
  */
+function membershipCount(c: CycleRow): number {
+  return c._count?.memberships ?? c.memberships?.length ?? 0;
+}
+
 export function resolveActiveCycleId(
   cycles: CycleRow[] | undefined | null,
   now: Date = new Date(),
@@ -27,9 +34,11 @@ export function resolveActiveCycleId(
     return start <= nowMs && nowMs <= end;
   });
   if (contains.length > 0) {
-    contains.sort(
-      (a, b) => new Date(b.startsAt).getTime() - new Date(a.startsAt).getTime(),
-    );
+    contains.sort((a, b) => {
+      const sizeDiff = membershipCount(b) - membershipCount(a);
+      if (sizeDiff !== 0) return sizeDiff;
+      return new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime();
+    });
     return contains[0]!.id;
   }
 
