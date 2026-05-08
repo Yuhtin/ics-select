@@ -19,7 +19,7 @@ Monorepo (pnpm 9 + Turborepo 2), Node 20:
 - `packages/prisma` — `schema.prisma` (~30 migrations: numbered `0–10` for the foundational set, then letter-prefixed `b–j` once the digit space ran into ordering conflicts; pgvector + tsvector managed via raw SQL), re-exports the generated client. The runtime image points `main` at `generated/client/index.js` directly — no TS wrapper.
 - `packages/shared` — Compiled with tsc to `dist/` as CommonJS (required because `apps/api` resolves it at runtime, not via ts-jest). Holds `APP_VERSION` and (future) Zod contract schemas.
 
-AI features use **OpenAI `gpt-5.4-mini`** via `apps/api/src/common/openai/openai-chat.provider.ts` (`callJson`, `callText`, async-generator `stream`). Embeddings use the same client with `text-embedding-3-small`. There is no Anthropic dependency.
+AI features use **OpenAI `gpt-5.4-mini`** via `apps/api/src/common/openai/openai-chat.provider.ts` (`callJson`, `callText`, async-generator `stream`). There is no Anthropic dependency. **Embeddings were removed (2026-05-08):** the OpenAI embedding generation was deleted from `LibraryService` and the seed because no `SELECT` ever consumed them — the `LibraryItem.embedding` `vector(1536)` column is preserved nullable for legacy data and a possible future semantic-search feature, but is no longer written.
 
 ## Commands
 
@@ -125,7 +125,7 @@ The `<html>` element must also have `className="light"` and `data-theme="light"`
 
 ### Prisma & pgvector
 
-Prisma can't describe `vector(1536)` or `tsvector` natively, so migrations `0_init` (extension), `3_library_search_columns` / `e_library_search_v2` / `h_library_search_english` (embedding column + tsvector + trigger + ivfflat index) go through `$queryRawUnsafe` / `$executeRawUnsafe` in `apps/api/src/library/library.service.ts`. The `search` method uses **lexical** tsvector (`english` stemming, weighted title/description/tags/source + simple-tokenized URL) plus a service-side topic-label match; vector embeddings are written on create/update via `OpenAiService.embed` but are **not** consumed by any `SELECT` today — the column is maintained for a future semantic-search feature. The `tsvector` is maintained by a Postgres trigger, not from app code.
+Prisma can't describe `vector(1536)` or `tsvector` natively, so migrations `0_init` (extension), `3_library_search_columns` / `e_library_search_v2` / `h_library_search_english` (embedding column + tsvector + trigger + ivfflat index) go through `$queryRawUnsafe` / `$executeRawUnsafe` in `apps/api/src/library/library.service.ts`. The `search` method uses **lexical** tsvector (`english` stemming, weighted title/description/tags/source + simple-tokenized URL) plus a service-side topic-label match. The `tsvector` is maintained by a Postgres trigger, not from app code. **The `embedding vector(1536)` column is no longer written** (removed 2026-05-08 — no `SELECT` ever consumed it; OpenAI embedding cost was waste). Existing rows keep their old vectors; new rows have `embedding = NULL`. If semantic search is wired up later, re-introduce embedding writes alongside a `SELECT ... ORDER BY embedding <=> $query` query path. The pgvector extension and the ivfflat index are kept on the column.
 
 ### Library (acervo) curation & topic M2M
 

@@ -17,7 +17,6 @@ type Item = {
 
 function fakePrisma() {
   const items = new Map<string, Item>();
-  const raw: Array<{ embeddingRaw: number[]; id: string }> = [];
   const topicRows: Array<{ id: string; slug: string; label: string }> = [];
   const libraryItemTopicRows: Array<{
     itemId: string;
@@ -26,7 +25,6 @@ function fakePrisma() {
   }> = [];
   return {
     items,
-    raw,
     libraryItem: {
       create: jest.fn(async ({ data }: { data: Omit<Item, 'id' | 'createdAt' | 'updatedAt'> }) => {
         const id = `li-${items.size + 1}`;
@@ -107,12 +105,6 @@ function fakePrisma() {
       }),
     },
     $transaction: jest.fn(async (ops: any[]) => Promise.all(ops)),
-    $executeRawUnsafe: jest.fn(async (_sql: string, ...values: unknown[]) => {
-      const [id, vectorLiteral] = values as [string, string];
-      const nums = vectorLiteral.replace(/[[\]]/g, '').split(',').map(Number);
-      raw.push({ id, embeddingRaw: nums });
-      return 1;
-    }),
     $queryRawUnsafe: jest.fn(async (_sql: string, ...values: unknown[]) => {
       const q = ((values[0] as string | null) ?? '').trim().toLowerCase();
       if (!q) return [];
@@ -133,18 +125,10 @@ function fakePrisma() {
   };
 }
 
-const openai = {
-  embed: jest.fn(async (_text: string) => [0.1, 0.2, 0.3]),
-};
-
 describe('LibraryService', () => {
-  beforeEach(() => {
-    openai.embed.mockClear();
-  });
-
-  it('create stores the item, computes embedding, and writes it via raw SQL', async () => {
+  it('create stores the item and returns it shaped with topics', async () => {
     const prisma = fakePrisma();
-    const svc = new LibraryService(prisma as any, openai as any);
+    const svc = new LibraryService(prisma as any);
     const created = await svc.create({
       title: 'DP Intro',
       description: 'Intro to dynamic programming',
@@ -157,34 +141,12 @@ describe('LibraryService', () => {
       createdById: 'u-1',
     });
     expect(created.id).toBe('li-1');
-    expect(openai.embed).toHaveBeenCalledWith(expect.stringContaining('DP Intro'));
-    expect(prisma.raw).toHaveLength(1);
-    expect(prisma.raw[0]?.id).toBe('li-1');
-    expect(prisma.raw[0]?.embeddingRaw).toEqual([0.1, 0.2, 0.3]);
-  });
-
-  it('update re-embeds when content-affecting fields change', async () => {
-    const prisma = fakePrisma();
-    const svc = new LibraryService(prisma as any, openai as any);
-    const created = await svc.create({
-      title: 'Old',
-      description: null,
-      url: null,
-      format: 'ARTICLE',
-      difficulty: 'EASY',
-      estimatedMinutes: 10,
-      source: null,
-      tags: [],
-      createdById: 'u-1',
-    });
-    openai.embed.mockClear();
-    await svc.update(created.id, { title: 'New title' });
-    expect(openai.embed).toHaveBeenCalled();
+    expect(created.title).toBe('DP Intro');
   });
 
   it('search returns results via raw query', async () => {
     const prisma = fakePrisma();
-    const svc = new LibraryService(prisma as any, openai as any);
+    const svc = new LibraryService(prisma as any);
     await svc.create({
       title: 'Arrays 101',
       description: null,
@@ -203,7 +165,7 @@ describe('LibraryService', () => {
 
   it('list returns items sorted newest first', async () => {
     const prisma = fakePrisma();
-    const svc = new LibraryService(prisma as any, openai as any);
+    const svc = new LibraryService(prisma as any);
     await svc.create({
       title: 'A',
       description: null,
@@ -232,7 +194,7 @@ describe('LibraryService', () => {
 
   it('search returns empty array when the query matches nothing', async () => {
     const prisma = fakePrisma();
-    const svc = new LibraryService(prisma as any, openai as any);
+    const svc = new LibraryService(prisma as any);
     // Seed two items that do NOT mention "zzzunmatchable".
     await svc.create({
       title: 'Arrays 101', description: null, url: null, format: 'ARTICLE',
@@ -250,7 +212,7 @@ describe('LibraryService', () => {
 
   it('search matches items by topic label even when tsvector has no hit', async () => {
     const prisma = fakePrisma();
-    const svc = new LibraryService(prisma as any, openai as any);
+    const svc = new LibraryService(prisma as any);
     // Seed a Databases topic (push, not reassign — mock closes over the array).
     prisma.topic.rows.push({ id: 't-db', slug: 'databases', label: 'Databases' });
     // Item whose title / desc / tags do NOT contain "databases".
@@ -271,7 +233,7 @@ describe('LibraryService', () => {
 
   it('search returns items whose source matches the query', async () => {
     const prisma = fakePrisma();
-    const svc = new LibraryService(prisma as any, openai as any);
+    const svc = new LibraryService(prisma as any);
     await svc.create({
       title: 'How JavaScript works', description: null, url: null,
       format: 'VIDEO', difficulty: 'MEDIUM', estimatedMinutes: 10,

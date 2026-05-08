@@ -2,15 +2,11 @@
  * Library seed — topics taxonomy + library items.
  *
  * Idempotent: topics upsert by slug, items upsert by (title + url).
- * Embedding: generated via OpenAI when OPENAI_API_KEY is set; skipped otherwise
- * (items can be re-embedded later by editing them through the admin UI, which
- * triggers LibraryService.writeEmbedding).
  *
  * Run from repo root:
  *   pnpm --filter @ics-select/api seed:library
  */
 import { PrismaClient } from '@ics-select/prisma';
-import OpenAI from 'openai';
 import type { Track } from '@ics-select/shared';
 
 const prisma = new PrismaClient();
@@ -2178,7 +2174,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Augusto Galego',
     tags: ['concept', 'load-balancer', 'fundamentals', 'l4', 'l7', 'galego'],
-    topicOrder: { 'load-balancers': 1 },
+    topicOrder: { 'load-balancers': 2 },
   },
   {
     title: 'O que é DB Sharding?',
@@ -5573,26 +5569,126 @@ const ITEMS: ItemSeed[] = [
     tags: ['concept', 'hashmap', 'hash-function', 'collision'],
     topicOrder: { hashmap: 1 },
   },
+
+  // ---------------------------------------------------------------------------
+  // PawelCodeStuff (8 items) — 2026-05-08
+  // Davi: "E muito bom". Vídeos curtos (3-10min) com animação, zero IDE.
+  // Estilo Fireship-adjacente com mais profundidade técnica.
+  // Catálogo completo do canal nesta data (channel ID UCLvVXWEcwO68vBIfLl9VirQ).
+  // ---------------------------------------------------------------------------
+  {
+    title: 'Load Balancing Explained in 3 Minutes',
+    url: 'https://www.youtube.com/watch?v=kGTqxMaKEY0',
+    description:
+      'PawelCodeStuff — load balancer em 3min: o que é, por que distribui, animação clara da ideia. Entry-point ultra-rápido antes do Galego (9min) e dos algoritmos do ByteByteGo.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 3,
+    topicSlugs: ['load-balancers'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — PawelCodeStuff',
+    tags: ['concept', 'load-balancer', 'intro', 'pawel-code-stuff'],
+    topicOrder: { 'load-balancers': 1 },
+  },
+  {
+    title: 'Database Indexes Explained In 6 Minutes',
+    url: 'https://www.youtube.com/watch?v=YC50j-nozZs',
+    description:
+      'PawelCodeStuff — por que índices existem e como mudam o custo de busca em SELECT. Animação da diferença full-scan vs lookup. Entry pré-ByteByteGo "Database Index Fundamentals".',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 7,
+    topicSlugs: ['databases'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — PawelCodeStuff',
+    tags: ['concept', 'index', 'database', 'pawel-code-stuff'],
+    topicOrder: { 'databases': 5 },
+  },
+  {
+    title: 'Auto-Increment vs UUID Explained in 5 Minutes',
+    url: 'https://www.youtube.com/watch?v=JbdvmQ_HgJo',
+    description:
+      'PawelCodeStuff — escolha de primary key: auto-increment vs UUID. Trade-offs de unicidade global, índices clusterizados, fragmentação, segurança e enumeração de IDs.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 6,
+    topicSlugs: ['databases'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — PawelCodeStuff',
+    tags: ['tradeoffs', 'primary-key', 'uuid', 'auto-increment', 'database', 'pawel-code-stuff'],
+    topicOrder: { 'databases': 8 },
+  },
+  {
+    title: '3 Databases Built for Specific Problems',
+    url: 'https://www.youtube.com/watch?v=rZbJLJIESZg',
+    description:
+      'PawelCodeStuff — três bancos especializados (time-series, vector, graph) e o problema que cada um resolve melhor que um relacional. Complementa "7 Database Paradigms" com fits concretos.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 8,
+    topicSlugs: ['databases'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — PawelCodeStuff',
+    tags: ['tradeoffs', 'database-selection', 'time-series', 'vector-db', 'graph-db', 'pawel-code-stuff'],
+    topicOrder: { 'databases': 19 },
+  },
+  {
+    title: 'Why Good Password Hashing is Intentionally Slow',
+    url: 'https://www.youtube.com/watch?v=lLDZ9O8E62Y',
+    description:
+      'PawelCodeStuff — por que bcrypt/argon2 são lentos de propósito: tornar brute-force economicamente inviável. Entry pré-Hussein Nasser sobre níveis de password storage.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 6,
+    topicSlugs: ['security'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — PawelCodeStuff',
+    tags: ['concept', 'security', 'password', 'hashing', 'bcrypt', 'argon2', 'pawel-code-stuff'],
+    topicOrder: { 'security': 5 },
+  },
+  {
+    title: 'Why Moving Your Mouse Generates Secure Keys',
+    url: 'https://www.youtube.com/watch?v=DB0dEPDCm24',
+    description:
+      'PawelCodeStuff — entropia e CSPRNG: por que sistemas usam input físico (mouse, teclado, ruído) pra semear geradores criptográficos e o que dá errado quando essa entropia é fraca.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 10,
+    topicSlugs: ['security'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — PawelCodeStuff',
+    tags: ['concept', 'security', 'entropy', 'csprng', 'cryptography', 'pawel-code-stuff'],
+    topicOrder: { 'security': 12 },
+  },
+  {
+    title: 'Why is rendering text so complicated?',
+    url: 'https://www.youtube.com/watch?v=4soZ33MvlW4',
+    description:
+      'PawelCodeStuff — a profundidade da pilha de renderização de texto: Unicode, encoding, glyphs, ligaturas, shaping, layout. Curiosity piece pra abrir o apetite pela depth de CS.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 6,
+    topicSlugs: ['foundations'],
+    tracks: [],
+    source: 'YouTube — PawelCodeStuff',
+    tags: ['concept', 'fundamentals', 'unicode', 'rendering', 'curiosity', 'pawel-code-stuff'],
+    topicOrder: { 'foundations': 7 },
+  },
+  {
+    title: 'File Compression Explained In 4 Minutes',
+    url: 'https://www.youtube.com/watch?v=jy148D4iB_Q',
+    description:
+      'PawelCodeStuff — compressão sem-perda em 4min: redundância, RLE, codificação por dicionário (LZ77), Huffman. Curiosity piece sobre algoritmos do dia-a-dia.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 4,
+    topicSlugs: ['foundations'],
+    tracks: [],
+    source: 'YouTube — PawelCodeStuff',
+    tags: ['concept', 'fundamentals', 'compression', 'huffman', 'lz77', 'curiosity', 'pawel-code-stuff'],
+    topicOrder: { 'foundations': 8 },
+  },
 ];
-
-// -----------------------------------------------------------------------------
-// Embedding helper — optional, skipped when OPENAI_API_KEY is missing
-// -----------------------------------------------------------------------------
-
-async function maybeEmbed(
-  openai: OpenAI | null,
-  title: string,
-  description: string | null,
-  tags: string[],
-): Promise<number[] | null> {
-  if (!openai) return null;
-  const text = [title, description ?? '', tags.join(' ')].join('\n').trim();
-  const res = await openai.embeddings.create({
-    model: 'text-embedding-3-small',
-    input: text,
-  });
-  return res.data[0]?.embedding ?? null;
-}
 
 // -----------------------------------------------------------------------------
 // Main
@@ -5609,16 +5705,6 @@ async function main() {
     );
   }
   console.log(`Using admin: ${admin.email}`);
-
-  const openai = process.env.OPENAI_API_KEY
-    ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
-    : null;
-  if (!openai) {
-    console.warn(
-      'OPENAI_API_KEY not set — items will be created without embeddings. ' +
-        'Re-save them via the admin UI later to generate embeddings.',
-    );
-  }
 
   // 1) Topics: upsert by slug
   console.log(`Upserting ${TOPICS.length} topics...`);
@@ -5687,21 +5773,6 @@ async function main() {
     ]);
 
     existing ? updated++ : created++;
-
-    const embedding = await maybeEmbed(
-      openai,
-      item.title,
-      item.description,
-      item.tags,
-    );
-    if (embedding) {
-      const vectorLiteral = `[${embedding.join(',')}]`;
-      await prisma.$executeRawUnsafe(
-        `UPDATE "LibraryItem" SET "embedding" = $2::vector WHERE "id" = $1`,
-        saved.id,
-        vectorLiteral,
-      );
-    }
   }
   console.log(`  ✓ ${created} created, ${updated} updated`);
   console.log('Seed complete.');

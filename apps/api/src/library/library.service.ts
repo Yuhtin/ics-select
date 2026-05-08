@@ -1,7 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import type { Track } from '@ics-select/shared';
 import { PrismaService } from '../common/prisma/prisma.service.js';
-import { OpenAiService } from '../common/openai/openai.service.js';
 
 export type TopicRef = {
   id: string;
@@ -36,12 +35,6 @@ export type SearchInput = {
   maxMinutes?: number;
   limit?: number;
 };
-
-const CONTENT_AFFECTING_FIELDS: Array<keyof CreateLibraryItemInput> = [
-  'title',
-  'description',
-  'tags',
-];
 
 // Shape of the Prisma include we use for item reads. Keep it narrow.
 const TOPIC_INCLUDE = {
@@ -88,10 +81,7 @@ function shapeItem<T extends RawItemWithTopics>(raw: T) {
 
 @Injectable()
 export class LibraryService {
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly openai: OpenAiService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async create(input: CreateLibraryItemInput) {
     const created = await this.prisma.libraryItem.create({
@@ -110,7 +100,6 @@ export class LibraryService {
     if (input.topicSlugs && input.topicSlugs.length > 0) {
       await this.replaceTopics(created.id, input.topicSlugs);
     }
-    await this.writeEmbedding(created.id, input.title, input.description, input.tags);
     const out = await this.getById(created.id);
     if (!out) throw new Error('library item disappeared after create');
     return out;
@@ -119,7 +108,6 @@ export class LibraryService {
   async update(id: string, input: UpdateLibraryItemInput) {
     const existing = await this.prisma.libraryItem.findUnique({ where: { id } });
     if (!existing) throw new NotFoundException('library item not found');
-    const merged = { ...existing, ...input };
     const { topicSlugs, createdById: _ignored, ...fields } = input;
     await this.prisma.libraryItem.update({
       where: { id },
@@ -127,10 +115,6 @@ export class LibraryService {
     });
     if (topicSlugs !== undefined) {
       await this.replaceTopics(id, topicSlugs);
-    }
-    const contentChanged = CONTENT_AFFECTING_FIELDS.some((f) => f in input);
-    if (contentChanged) {
-      await this.writeEmbedding(id, merged.title, merged.description, merged.tags);
     }
     const out = await this.getById(id);
     if (!out) throw new Error('library item disappeared after update');
@@ -373,19 +357,4 @@ export class LibraryService {
     ]);
   }
 
-  private async writeEmbedding(
-    id: string,
-    title: string,
-    description: string | null,
-    tags: string[],
-  ): Promise<void> {
-    const text = [title, description ?? '', tags.join(' ')].join('\n').trim();
-    const vector = await this.openai.embed(text);
-    const vectorLiteral = `[${vector.join(',')}]`;
-    await this.prisma.$executeRawUnsafe(
-      `UPDATE "LibraryItem" SET "embedding" = $2::vector WHERE "id" = $1`,
-      id,
-      vectorLiteral,
-    );
-  }
 }
