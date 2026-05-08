@@ -278,7 +278,12 @@ export class CockpitService {
         sessions: { value: sessions, cohortMedian: cohortMedians.sessions, perWeek: sessionsPerWeek },
         daysActive: { value: daysActive, cycleDays: daysElapsed, cohortMedian: cohortMedians.daysActive, perWeek: daysActivePerWeek },
         daysStudying: { value: daysStudying, cycleDays: daysElapsed, cohortMedian: cohortMedians.daysStudying, perWeek: daysStudyingPerWeek },
-        retros: { submitted: retros.length, expected: weeksElapsed },
+        // expected = number of weeks whose retro window has already closed
+        // (= weeksElapsed - 1). The current week's retro doesn't count: window
+        // opens Friday and stays submittable until the next Monday, so until
+        // the week fully ends there's no opportunity to be "behind". Same
+        // divisor used by the engagement score's retro criterion.
+        retros: { submitted: retros.length, expected: Math.max(0, weeksElapsed - 1) },
         carryOver: { value: carryOver, cohortMedian: cohortMedians.carryOver, perWeek: carryOverPerWeek },
         lastSeen: {
           occurredAt: lastEvent?.occurredAt.toISOString() ?? null,

@@ -56,10 +56,16 @@ export function computeEngagementScore(input: EngagementInput): EngagementScore 
   // "only" 6 — that's already at parity with everyone else.
   const completionPts = Math.max(0, Math.min(1, Math.max(personalRate, cohortNormalizedRate))) * 27;
 
+  // The retro for week N opens Friday of week N and stays submittable until
+  // the next Monday. While we're inside week N, that window is either not
+  // open yet or still in progress — only weeks that have FULLY ended count
+  // as a retro opportunity. Hence divisor = weeksElapsed - 1, with full
+  // credit when no week has closed yet (no opportunity, no penalty).
+  const expectedRetros = Math.max(0, input.weeksElapsed - 1);
   const retroRate =
-    input.weeksElapsed > 0
-      ? Math.min(1, input.retrosSubmitted / input.weeksElapsed)
-      : 0;
+    expectedRetros > 0
+      ? Math.min(1, input.retrosSubmitted / expectedRetros)
+      : 1;
   const retroPts = retroRate * 21;
 
   const attendancePts =

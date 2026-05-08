@@ -134,6 +134,38 @@ describe('computeEngagementScore', () => {
     expect(retro.weight).toBe(21);
   });
 
+  it('Retros: divisor is weeksElapsed-1 (current week\'s retro window not yet closed)', () => {
+    // Week 2 with 1 retro submitted = 1/(2-1) = 1.0 → max 21pts.
+    // Old formula was 1/2=0.5 → 10.5pts, which penalized members for not
+    // having submitted the *current* week's retro that hadn't even opened.
+    const week2OneRetro = computeEngagementScore({
+      ...baseInput,
+      weeksElapsed: 2,
+      retrosSubmitted: 1,
+    });
+    const retro = week2OneRetro.breakdown.find((b) => b.label === 'Retros submitted')!;
+    expect(retro.value).toBe(21);
+
+    // Week 5 with 2 retros = 2/(5-1) = 0.5 → 10.5pts.
+    const week5TwoRetros = computeEngagementScore({
+      ...baseInput,
+      weeksElapsed: 5,
+      retrosSubmitted: 2,
+    });
+    const retroMid = week5TwoRetros.breakdown.find((b) => b.label === 'Retros submitted')!;
+    expect(retroMid.value).toBe(10.5);
+  });
+
+  it('Retros: full credit during week 1 (no retro window has closed yet)', () => {
+    const week1 = computeEngagementScore({
+      ...baseInput,
+      weeksElapsed: 1,
+      retrosSubmitted: 0,
+    });
+    const retro = week1.breakdown.find((b) => b.label === 'Retros submitted')!;
+    expect(retro.value).toBe(21);
+  });
+
   it('Class attendance: 0 if no classes held; full 5 pts at 100% PRESENT rate', () => {
     const noClasses = computeEngagementScore({ ...baseInput, classesAttended: 0, classesHeld: 0 });
     const att0 = noClasses.breakdown.find((b) => b.label === 'Class attendance')!;
