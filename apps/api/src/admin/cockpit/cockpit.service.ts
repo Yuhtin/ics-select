@@ -165,6 +165,15 @@ export class CockpitService {
       cycleStart,
       now,
     );
+    // Same definition as engagement-inputs.ts: BRT days with at least one
+    // completed item in the cycle. The chip-level daysActive above keeps the
+    // broader "any platform event" semantics for the dashboard display.
+    const daysCompletedForScore = await this.distinctDaysOfCompletedItems(
+      memberId,
+      cycle.id,
+      cycleStart,
+      now,
+    );
     const sessions = await this.countSessions(memberId, cycleStart, now);
     const carryOver = allItems.filter((i) => i.carriedFromItemId !== null).length;
 
@@ -198,7 +207,7 @@ export class CockpitService {
     const engagement = computeEngagementScore({
       cohortRankFromBottom,
       cohortSize: cohortIds.length,
-      daysActive,
+      daysActive: daysCompletedForScore,
       daysElapsed,
       itemsDone: completed.length,
       itemsPlanned: allItems.length,
@@ -345,7 +354,7 @@ export class CockpitService {
 
   private async distinctDaysOfEvents(userId: string, from: Date, to: Date): Promise<number> {
     const rows = await this.prisma.$queryRawUnsafe<Array<{ d: Date }>>(
-      `SELECT DISTINCT date_trunc('day', "occurredAt") AS d
+      `SELECT DISTINCT date_trunc('day', "occurredAt" AT TIME ZONE 'UTC' AT TIME ZONE 'America/Sao_Paulo') AS d
        FROM "UserEvent" WHERE "userId" = $1 AND "occurredAt" BETWEEN $2 AND $3`,
       userId,
       from,
@@ -361,12 +370,38 @@ export class CockpitService {
     to: Date,
   ): Promise<number> {
     const rows = await this.prisma.$queryRawUnsafe<Array<{ d: Date }>>(
-      `SELECT DISTINCT date_trunc('day', e."occurredAt") AS d
+      `SELECT DISTINCT date_trunc('day', e."occurredAt" AT TIME ZONE 'UTC' AT TIME ZONE 'America/Sao_Paulo') AS d
        FROM "UserEvent" e
        WHERE e."userId" = $1
          AND e."type" = 'OUTCOME_MARKED'
          AND e."occurredAt" BETWEEN $2 AND $3`,
       userId,
+      from,
+      to,
+    );
+    return rows.length;
+  }
+
+  // Distinct BRT days where the member completed at least one plan item in
+  // this cycle. Source: WeeklyPlanItem.completedAt — same field that drives
+  // the home streak and the engagement-inputs ranking. Used as the daysActive
+  // input for computeEngagementScore so cockpit and cycle-overview agree.
+  private async distinctDaysOfCompletedItems(
+    userId: string,
+    cycleId: string,
+    from: Date,
+    to: Date,
+  ): Promise<number> {
+    const rows = await this.prisma.$queryRawUnsafe<Array<{ d: Date }>>(
+      `SELECT DISTINCT date_trunc('day', wpi."completedAt" AT TIME ZONE 'UTC' AT TIME ZONE 'America/Sao_Paulo') AS d
+       FROM "WeeklyPlanItem" wpi
+       JOIN "WeeklyPlan" wp ON wp.id = wpi."weeklyPlanId"
+       WHERE wp."userId" = $1
+         AND wp."cycleId" = $2
+         AND wpi."completedAt" IS NOT NULL
+         AND wpi."completedAt" BETWEEN $3 AND $4`,
+      userId,
+      cycleId,
       from,
       to,
     );
@@ -413,7 +448,7 @@ export class CockpitService {
       weeksElapsed,
       async (start, end) => {
         const r = await this.prisma.$queryRawUnsafe<Array<{ d: Date }>>(
-          `SELECT DISTINCT date_trunc('day', "occurredAt") AS d FROM "UserEvent" WHERE "userId" = $1 AND "occurredAt" >= $2 AND "occurredAt" < $3`,
+          `SELECT DISTINCT date_trunc('day', "occurredAt" AT TIME ZONE 'UTC' AT TIME ZONE 'America/Sao_Paulo') AS d FROM "UserEvent" WHERE "userId" = $1 AND "occurredAt" >= $2 AND "occurredAt" < $3`,
           userId,
           start,
           end,
@@ -434,7 +469,7 @@ export class CockpitService {
       weeksElapsed,
       async (start, end) => {
         const r = await this.prisma.$queryRawUnsafe<Array<{ d: Date }>>(
-          `SELECT DISTINCT date_trunc('day', "occurredAt") AS d FROM "UserEvent" WHERE "userId" = $1 AND "type" = 'OUTCOME_MARKED' AND "occurredAt" >= $2 AND "occurredAt" < $3`,
+          `SELECT DISTINCT date_trunc('day', "occurredAt" AT TIME ZONE 'UTC' AT TIME ZONE 'America/Sao_Paulo') AS d FROM "UserEvent" WHERE "userId" = $1 AND "type" = 'OUTCOME_MARKED' AND "occurredAt" >= $2 AND "occurredAt" < $3`,
           userId,
           start,
           end,
@@ -513,7 +548,7 @@ export class CockpitService {
       `SELECT percentile_cont(0.5) WITHIN GROUP (ORDER BY COALESCE(per_user.cnt, 0)) AS median
        FROM unnest($1::text[]) AS u("userId")
        LEFT JOIN (
-         SELECT "userId", COUNT(DISTINCT date_trunc('day', "occurredAt"))::int AS cnt
+         SELECT "userId", COUNT(DISTINCT date_trunc('day', "occurredAt" AT TIME ZONE 'UTC' AT TIME ZONE 'America/Sao_Paulo'))::int AS cnt
          FROM "UserEvent"
          WHERE "userId" = ANY($1::text[])
            AND "occurredAt" BETWEEN $2 AND $3
@@ -528,7 +563,7 @@ export class CockpitService {
       `SELECT percentile_cont(0.5) WITHIN GROUP (ORDER BY COALESCE(per_user.cnt, 0)) AS median
        FROM unnest($1::text[]) AS u("userId")
        LEFT JOIN (
-         SELECT "userId", COUNT(DISTINCT date_trunc('day', "occurredAt"))::int AS cnt
+         SELECT "userId", COUNT(DISTINCT date_trunc('day', "occurredAt" AT TIME ZONE 'UTC' AT TIME ZONE 'America/Sao_Paulo'))::int AS cnt
          FROM "UserEvent"
          WHERE "userId" = ANY($1::text[])
            AND "type" = 'OUTCOME_MARKED'
@@ -641,18 +676,20 @@ export class CockpitService {
       sessions: number;
       daysActive: number;
       daysStudying: number;
+      daysCompleted: number;
       itemsDone: number;
       itemsPlanned: number;
       retrosSubmitted: number;
     }>>(
       `SELECT
          u."userId",
-         COALESCE(ev_sess.cnt, 0)   AS sessions,
-         COALESCE(ev_days.cnt, 0)   AS "daysActive",
-         COALESCE(ev_study.cnt, 0)  AS "daysStudying",
-         COALESCE(wp_done.cnt, 0)   AS "itemsDone",
-         COALESCE(wp_plan.cnt, 0)   AS "itemsPlanned",
-         COALESCE(retro.cnt, 0)     AS "retrosSubmitted"
+         COALESCE(ev_sess.cnt, 0)        AS sessions,
+         COALESCE(ev_days.cnt, 0)        AS "daysActive",
+         COALESCE(ev_study.cnt, 0)       AS "daysStudying",
+         COALESCE(wp_done_days.cnt, 0)   AS "daysCompleted",
+         COALESCE(wp_done.cnt, 0)        AS "itemsDone",
+         COALESCE(wp_plan.cnt, 0)        AS "itemsPlanned",
+         COALESCE(retro.cnt, 0)          AS "retrosSubmitted"
        FROM unnest($1::text[]) AS u("userId")
        LEFT JOIN (
          SELECT "userId", COUNT(*)::int AS cnt FROM "UserEvent"
@@ -660,15 +697,24 @@ export class CockpitService {
          GROUP BY "userId"
        ) ev_sess ON ev_sess."userId" = u."userId"
        LEFT JOIN (
-         SELECT "userId", COUNT(DISTINCT date_trunc('day', "occurredAt"))::int AS cnt FROM "UserEvent"
+         SELECT "userId", COUNT(DISTINCT date_trunc('day', "occurredAt" AT TIME ZONE 'UTC' AT TIME ZONE 'America/Sao_Paulo'))::int AS cnt FROM "UserEvent"
          WHERE "userId" = ANY($1::text[]) AND "occurredAt" BETWEEN $2 AND $3
          GROUP BY "userId"
        ) ev_days ON ev_days."userId" = u."userId"
        LEFT JOIN (
-         SELECT "userId", COUNT(DISTINCT date_trunc('day', "occurredAt"))::int AS cnt FROM "UserEvent"
+         SELECT "userId", COUNT(DISTINCT date_trunc('day', "occurredAt" AT TIME ZONE 'UTC' AT TIME ZONE 'America/Sao_Paulo'))::int AS cnt FROM "UserEvent"
          WHERE "userId" = ANY($1::text[]) AND "type" = 'OUTCOME_MARKED' AND "occurredAt" BETWEEN $2 AND $3
          GROUP BY "userId"
        ) ev_study ON ev_study."userId" = u."userId"
+       LEFT JOIN (
+         SELECT wp."userId",
+                COUNT(DISTINCT date_trunc('day', wpi."completedAt" AT TIME ZONE 'UTC' AT TIME ZONE 'America/Sao_Paulo'))::int AS cnt
+         FROM "WeeklyPlanItem" wpi JOIN "WeeklyPlan" wp ON wp.id = wpi."weeklyPlanId"
+         WHERE wp."cycleId" = $4 AND wp."userId" = ANY($1::text[])
+           AND wpi."completedAt" IS NOT NULL
+           AND wpi."completedAt" BETWEEN $2 AND $3
+         GROUP BY wp."userId"
+       ) wp_done_days ON wp_done_days."userId" = u."userId"
        LEFT JOIN (
          SELECT wp."userId", COUNT(*)::int AS cnt
          FROM "WeeklyPlanItem" wpi JOIN "WeeklyPlan" wp ON wp.id = wpi."weeklyPlanId"
@@ -709,7 +755,7 @@ export class CockpitService {
       computeEngagementScore({
         cohortRankFromBottom: Math.floor(cohortIds.length / 2), // simplified: mid-rank for each user
         cohortSize: cohortIds.length,
-        daysActive: Number(row.daysActive),
+        daysActive: Number(row.daysCompleted),
         daysElapsed,
         itemsDone: Number(row.itemsDone),
         itemsPlanned: Number(row.itemsPlanned),

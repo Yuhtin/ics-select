@@ -42,7 +42,7 @@ export function computeEngagementScore(input: EngagementInput): EngagementScore 
     input.daysElapsed > 0
       ? Math.min(1, input.daysActive / (input.daysElapsed * 0.5))
       : 0;
-  const activePts = activePct * 22;
+  const activePts = activePct * 15;
 
   const personalRate =
     input.itemsPlanned > 0 ? input.itemsDone / input.itemsPlanned : 0;
@@ -54,7 +54,7 @@ export function computeEngagementScore(input: EngagementInput): EngagementScore 
   // member would have done relative to the typical cohort plan size. A member
   // assigned 14 items in a cohort that averages 6 isn't punished for finishing
   // "only" 6 — that's already at parity with everyone else.
-  const completionPts = Math.max(0, Math.min(1, Math.max(personalRate, cohortNormalizedRate))) * 20;
+  const completionPts = Math.max(0, Math.min(1, Math.max(personalRate, cohortNormalizedRate))) * 27;
 
   const retroRate =
     input.weeksElapsed > 0
@@ -78,8 +78,8 @@ export function computeEngagementScore(input: EngagementInput): EngagementScore 
 
   const breakdown: ScoreBreakdownEntry[] = [
     { label: COHORT_RANK_LABEL,     value: round(cohortPts),      weight: 20, status: statusFor(cohortPts, 20) },
-    { label: 'Days active',         value: round(activePts),      weight: 22, status: statusFor(activePts, 22) },
-    { label: 'Plan completion',     value: round(completionPts),  weight: 20, status: statusFor(completionPts, 20) },
+    { label: 'Days active',         value: round(activePts),      weight: 15, status: statusFor(activePts, 15) },
+    { label: 'Plan completion',     value: round(completionPts),  weight: 27, status: statusFor(completionPts, 27) },
     { label: 'Retros submitted',    value: round(retroPts),       weight: 21, status: statusFor(retroPts, 21) },
     { label: 'Class attendance',    value: round(attendancePts),  weight: 5,  status: statusFor(attendancePts, 5) },
     { label: 'Recency',             value: round(recencyPts),     weight: 12, status: statusFor(recencyPts, 12) },

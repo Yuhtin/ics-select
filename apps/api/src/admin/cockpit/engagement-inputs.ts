@@ -41,11 +41,20 @@ export async function computeEngagementInputsForCohort(
        COALESCE(cls_present.cnt, 0) AS "classesAttended"
      FROM unnest($1::text[]) AS u("userId")
      LEFT JOIN (
-       SELECT "userId", COUNT(DISTINCT date_trunc('day', "occurredAt"))::int AS cnt FROM "UserEvent"
-       WHERE "userId" = ANY($1::text[])
-         AND "type" = 'OUTCOME_MARKED'
-         AND "occurredAt" BETWEEN $2 AND $3
-       GROUP BY "userId"
+       -- Source: WeeklyPlanItem.completedAt (single source of truth, also used
+       -- by the home streak counter). Counts BRT days because the column is
+       -- timestamp without time zone written as UTC by Prisma; without the
+       -- conversion, marks made after 21h BRT bleed into the next day and
+       -- collapse two real BRT days into one.
+       SELECT wp."userId",
+              COUNT(DISTINCT date_trunc('day', wpi."completedAt" AT TIME ZONE 'UTC' AT TIME ZONE 'America/Sao_Paulo'))::int AS cnt
+       FROM "WeeklyPlanItem" wpi
+       JOIN "WeeklyPlan" wp ON wp.id = wpi."weeklyPlanId"
+       WHERE wp."cycleId" = $4
+         AND wp."userId" = ANY($1::text[])
+         AND wpi."completedAt" IS NOT NULL
+         AND wpi."completedAt" BETWEEN $2 AND $3
+       GROUP BY wp."userId"
      ) ev_days ON ev_days."userId" = u."userId"
      LEFT JOIN (
        SELECT wp."userId", COUNT(*)::int AS cnt

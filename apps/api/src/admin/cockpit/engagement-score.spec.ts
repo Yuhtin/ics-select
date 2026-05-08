@@ -16,7 +16,7 @@ const baseInput: EngagementInput = {
 
 describe('computeEngagementScore', () => {
   it('returns 100 for a perfect member', () => {
-    // daysActive=4, daysElapsed=8 → 4/(8×0.5)=1 → full 22 active pts
+    // daysActive=4, daysElapsed=8 → 4/(8×0.5)=1 → full 15 active pts
     const score = computeEngagementScore({
       cohortRankFromBottom: 12,
       cohortSize: 12,
@@ -109,11 +109,22 @@ describe('computeEngagementScore', () => {
   it('Days active: ceiling is 50% of daysElapsed (4 active / 8 elapsed = 100%)', () => {
     const atCeiling = computeEngagementScore({ ...baseInput, daysActive: 4, daysElapsed: 8 });
     const active = atCeiling.breakdown.find((b) => b.label === 'Days active')!;
-    expect(active.value).toBe(22);
+    expect(active.value).toBe(15);
 
     const half = computeEngagementScore({ ...baseInput, daysActive: 2, daysElapsed: 8 });
     const halfActive = half.breakdown.find((b) => b.label === 'Days active')!;
-    expect(halfActive.value).toBe(11);
+    expect(halfActive.value).toBe(7.5);
+  });
+
+  it('Plan completion: max 27 pts at 100% rate', () => {
+    const perfect = computeEngagementScore({
+      ...baseInput,
+      itemsDone: 16,
+      itemsPlanned: 16,
+    });
+    const completion = perfect.breakdown.find((b) => b.label === 'Plan completion')!;
+    expect(completion.value).toBe(27);
+    expect(completion.weight).toBe(27);
   });
 
   it('Retros: max 21 pts at 100% rate', () => {

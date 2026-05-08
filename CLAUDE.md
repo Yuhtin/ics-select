@@ -73,22 +73,26 @@ docker compose up -d postgres                 # pgvector/pgvector:pg16 on :5432
 
 ### Database workflow — **READ THIS BEFORE TOUCHING ANY MIGRATION**
 
-**The repo's `apps/api/.env` ships pointing at the production DB** (`212.38.89.33:5433`). That file is the same file Prisma reads when you run `prisma migrate dev`, `prisma migrate reset`, or `prisma db execute` from your laptop. There is no built-in safety net — every migration command targets whatever `DATABASE_URL` resolves to, and the prod DB is **not baselined** with `_prisma_migrations`, so `prisma migrate dev` against it will hit P3005 and offer to **reset the database**. Confirming that prompt drops every table. This has happened. Don't repeat it.
+**Env file convention:**
+
+- `apps/api/.env` → **LOCAL DEV** (Docker compose Postgres on `localhost:5432`). Safe to use as the default for `prisma migrate dev`, ad-hoc `seed:library` runs against local data, etc.
+- `apps/api/.env.production` → **PRODUCTION** (`212.38.89.33:5433`). **Never source this file or pass it to any Prisma command from your laptop without an explicit per-command go-ahead from the user.** It exists so the deploy pipeline / recovery scripts can pick it up intentionally, not so commands accidentally read prod credentials.
+
+The prod DB is **not baselined** with `_prisma_migrations`, so `prisma migrate dev` against it hits P3005 and offers to **reset the database**. Confirming that prompt drops every table. This has happened. Don't repeat it.
 
 **The contract:**
 
-- **Local dev → use the local Postgres.** Bring it up with `docker compose up -d postgres`. Then run migrations against an explicitly-overridden URL:
+- **Local dev → use the local Postgres.** Bring it up with `docker compose up -d postgres`, then run Prisma commands normally — `apps/api/.env` already points at `localhost:5432`. If you ever need to be paranoid about which DB you're hitting, set `DATABASE_URL` per-command:
   ```bash
   DATABASE_URL='postgres://ics:ics_dev_password@localhost:5432/ics_select?sslmode=disable' \
     pnpm --filter @ics-select/prisma exec prisma migrate dev --name <slug>
   ```
-  Prefer setting `DATABASE_URL` per-command (as above) over editing `apps/api/.env` so the prod URL stays available for one-off recovery work.
 - **Prod migrations ship via the container.** New migration files go into `packages/prisma/prisma/migrations/`, get committed, and the next container start runs `prisma migrate deploy` from `apps/api/docker-entrypoint.sh`. **Never** run `prisma migrate dev` or `prisma migrate reset` against the prod URL — `deploy` is the only safe verb, and it only ever applies pending migrations (no destructive prompts).
-- **Seed scripts and ad-hoc reads** that need prod data (e.g., `seed:library`, `seed:recovery`, the recovery `psql` queries we did on 2026-05-02) **must be explicitly confirmed by the user before running**. The signal is unambiguous: the user says "rode contra prod" / "pode rodar" / similar, *for that specific command*. A general "fix the X" instruction is not a license to point a Prisma command at prod.
+- **Seed scripts and ad-hoc reads against prod data** (e.g., `seed:library`, `seed:recovery`, the recovery `psql` queries we did on 2026-05-02) **must be explicitly confirmed by the user before running with `apps/api/.env.production`**. The signal is unambiguous: the user says "rode contra prod" / "pode rodar" / similar, *for that specific command*. A general "fix the X" instruction is not a license to point a Prisma command at prod.
 
 **Hard rules for AI assistants (Claude or otherwise) operating in this repo:**
 
-1. Before running anything that touches a database, confirm `DATABASE_URL`. If it points at prod, **stop and ask** — even for read-only queries, even for "small" migrations, even when retrying a failure.
+1. Before running anything that touches a database, confirm which env file is being sourced (`.env` = local OK, `.env.production` = stop-and-ask). If the resolved `DATABASE_URL` points at `212.38.89.33` or any other non-localhost host, **stop and ask** — even for read-only queries, even for "small" migrations, even when retrying a failure.
 2. Never confirm an interactive `prisma migrate dev` / `migrate reset` reset prompt without the user's explicit go-ahead for that prompt. Treat any P3005 against prod as a hard stop.
 3. Subagents implementing plan tasks must inherit this rule via their prompt; pass an explicit "do not run destructive DB commands; if a step appears to require one, escalate." constraint.
 4. Production-data write operations (seed scripts, recovery imports, schema fixes) should always be shown to the user as a dry preview (or at least a one-line summary of what's about to change) **before** execution. The user OKs each one separately.
@@ -175,8 +179,8 @@ The engagement score is the **single source of truth** for "how engaged is this 
 | Criterion | Pts | What it measures |
 |---|---|---|
 | Cohort rank | 20 | Position in cohort by `itemsDone` (any non-PENDING outcome). Only **comparative** criterion. `(cohortRankFromBottom / cohortSize) × 20`. |
-| Days active | 22 | Distinct days with an `OUTCOME_MARKED` UserEvent. Ceiling = 50% of cycle days (`min(1, daysActive / (daysElapsed × 0.5)) × 22`), so ≈4 days/week maxes the score. |
-| Plan completion | 20 | `max(personalRate, itemsDone / cohortMedianPlanned) × 20` — the more flattering of personal % and progress vs. typical cohort plan size. |
+| Days active | 15 | Distinct **BRT** days where the member completed at least one plan item in the cycle (source: `WeeklyPlanItem.completedAt`, same field that drives the home streak). Ceiling = 50% of cycle days (`min(1, daysActive / (daysElapsed × 0.5)) × 15`), so ≈4 days/week maxes the score. The SQL converts UTC → America/Sao_Paulo before `date_trunc` — the column is `timestamp without time zone` written as UTC by Prisma, so without the conversion marks made after 21h BRT bleed into the next day and collapse two real BRT days into one. The cockpit dashboard chip also surfaces a broader `daysActive` (any `UserEvent`) for "platform pulse"; that chip is for display only and does not feed the score. |
+| Plan completion | 27 | `max(personalRate, itemsDone / cohortMedianPlanned) × 27` — the more flattering of personal % and progress vs. typical cohort plan size. |
 | Retros submitted | 21 | `min(1, retros / weeksElapsed) × 21`. |
 | Class attendance | 5 | `(classesAttended / classesHeld) × 5` where `classesHeld` filters `scheduledAt < now`, and only `PRESENT` counts (matches existing pattern in `cockpit.service.ts`). 0 when no classes have happened yet. **Caveat:** if the admin bulk-marks everyone PRESENT, every member gets the full 5 and the criterion stops differentiating — by design (we trust the admin's marks), but keep in mind when reading rankings. |
 | Recency | 12 | Tiered by `daysSinceLastSession`: ≤1d → 12, ≤3d → 8, ≤7d → 4, >7d or null → 0. |
