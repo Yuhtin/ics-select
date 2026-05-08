@@ -200,7 +200,7 @@ describe('AvailabilityService', () => {
       preferredSessionMinutes: 30,
       timezone: 'America/Sao_Paulo',
     });
-    const slots = Array.from(prisma.slotRows.values()).filter(
+    const slots: any[] = Array.from(prisma.slotRows.values()).filter(
       (s: any) => s.userId === 'u-onboard',
     );
     expect(slots.map((s: any) => s.dayOfWeek).sort()).toEqual([0, 2, 4, 5]);
@@ -227,12 +227,12 @@ describe('AvailabilityService', () => {
       preferredSessionMinutes: 30,
       timezone: 'America/Sao_Paulo',
     } as AvailabilityPatchInput);
-    const slots = Array.from(prisma.slotRows.values()).filter(
+    const slots: any[] = Array.from(prisma.slotRows.values()).filter(
       (s: any) => s.userId === 'u-existing',
     );
     // Mon got a default; Wed kept its custom 18-20 window.
-    const monday = slots.find((s: any) => s.dayOfWeek === 0)!;
-    const wednesday = slots.find((s: any) => s.dayOfWeek === 2)!;
+    const monday: any = slots.find((s: any) => s.dayOfWeek === 0)!;
+    const wednesday: any = slots.find((s: any) => s.dayOfWeek === 2)!;
     expect(monday.endMinute - monday.startMinute).toBe(14 * 60);
     expect(wednesday.startMinute).toBe(18 * 60);
     expect(wednesday.endMinute).toBe(20 * 60);
