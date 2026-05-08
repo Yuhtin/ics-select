@@ -16,7 +16,7 @@ Monorepo (pnpm 9 + Turborepo 2), Node 20:
 
 - `apps/api` — **NestJS 10** + **Prisma 5** + **PostgreSQL 16 + pgvector**. Google OAuth via passport, short-lived JWT + rotating refresh tokens in cookies, AES-256-GCM-encrypted Google tokens. Modules live under `src/<feature>/` (auth, users, cycles, library, availability, weekly-plans, scheduler, classes, admin-dashboard, ai, whatsapp, notifications, google-calendar, me, reports, privacy, health).
 - `apps/web` — **Next.js 15 App Router** + **HeroUI** + **Tailwind 3** + **Framer Motion** + **next-themes** + **TanStack Query** + **lucide-react**. Route group `(app)` holds the admin shell; route group `(member)` holds the gamified member experience; unauthenticated routes are `/login`, `/privacy`, `/auth/callback`.
-- `packages/prisma` — `schema.prisma` (~30 migrations: numbered `0–10` for the foundational set, then letter-prefixed `b–j` once the digit space ran into ordering conflicts; pgvector + tsvector managed via raw SQL), re-exports the generated client. The runtime image points `main` at `generated/client/index.js` directly — no TS wrapper.
+- `packages/prisma` — `schema.prisma` (32 migrations: numbered `0–10` for the foundational set, then letter-prefixed `b–w` once the digit space ran into ordering conflicts; pgvector + tsvector managed via raw SQL), re-exports the generated client. The runtime image points `main` at `generated/client/index.js` directly — no TS wrapper.
 - `packages/shared` — Compiled with tsc to `dist/` as CommonJS (required because `apps/api` resolves it at runtime, not via ts-jest). Holds `APP_VERSION` and (future) Zod contract schemas.
 
 AI features use **OpenAI `gpt-5.4-mini`** via `apps/api/src/common/openai/openai-chat.provider.ts` (`callJson`, `callText`, async-generator `stream`). There is no Anthropic dependency. **Embeddings were removed (2026-05-08):** the OpenAI embedding generation was deleted from `LibraryService` and the seed because no `SELECT` ever consumed them — the `LibraryItem.embedding` `vector(1536)` column is preserved nullable for legacy data and a possible future semantic-search feature, but is no longer written.
@@ -129,7 +129,7 @@ Prisma can't describe `vector(1536)` or `tsvector` natively, so migrations `0_in
 
 ### Library (acervo) curation & topic M2M
 
-The library is populated via **`apps/api/scripts/seed-library.ts`** (entry `pnpm --filter @ics-select/api seed:library`). The seed is idempotent — topics upsert by `slug`, items upsert by `(title, url)`, and each item's `LibraryItemTopic` join rows are rewritten atomically per run. Embeddings are generated when `OPENAI_API_KEY` is set.
+The library is populated via **`apps/api/scripts/seed-library.ts`** (entry `pnpm --filter @ics-select/api seed:library`). The seed is idempotent — topics upsert by `slug`, items upsert by `(title, url)`, and each item's `LibraryItemTopic` join rows are rewritten atomically per run. (Embeddings are no longer generated — see Stack section + Prisma & pgvector for why.)
 
 **Item ↔ Topic is many-to-many.** `LibraryItem` has no `topicId` FK; instead, `LibraryItemTopic (itemId, topicId, isPrimary)` joins them (migration `g_library_item_topics_m2m`). Exactly one row per item has `isPrimary = true` (the "home" topic for admin navigation); additional rows mark secondary covers. `LibraryService.shapeItem` derives `{ topicId, topic, topics }` on reads so the admin UI keeps consuming a single primary topic.
 
@@ -202,7 +202,7 @@ The critical path is `apps/api/src/weekly-plans/` + `apps/api/src/scheduler/`. `
 1. Loads the plan's `items` (with library item metadata) and the member's `MemberAvailability`.
 2. Calls `SchedulerService.plan` — a greedy chunker that splits each item by `preferredSessionMinutes` and packs chunks day-by-day into the weekly budget (Phase 4 ignores real Calendar busy time and just uses declared daily minutes). **`WeeklyPlanItem.order` is a hard constraint:** chunks are placed in strict `(item.order, intra-item seq)` order against a wall-clock cursor that never moves backwards. A short item with a later `order` will *not* be tucked into an earlier-day gap ahead of longer items the admin sequenced first — under-fill is preferred over reordering. Lives in `apps/api/src/scheduler/phase1.ts`; the older size-desc FFD + branch-and-bound (`phase2.ts`) was removed because order-as-soft-constraint produced ordering bugs in real plans.
 3. If `overflow` is non-empty and `force=false`, throws `PlanOverflowError` (HTTP 409, plan stays DRAFT, no sessions/events created).
-4. Creates one `GoogleCalendarService.createEvent` per scheduler-output chunk. Calendar failures are swallowed. No longer writes DB-side session rows — events on Google Calendar are the source of truth for time blocks. PR 3 will embed `ICS ID: <planId>/<itemId>` in the description so downstream reminders/cleanup can find them.
+4. Creates one `GoogleCalendarService.createEvent` per scheduler-output chunk. Calendar failures are swallowed. No longer writes DB-side session rows — events on Google Calendar are the source of truth for time blocks. The event description carries an `ICS ID: <planId>/<itemId>` marker (`embedIcsId` in `apps/api/src/common/ics-id/`) so downstream reminders/cleanup can find them.
 5. Plan transitions to PUBLISHED.
 
 ### Google Calendar auth
