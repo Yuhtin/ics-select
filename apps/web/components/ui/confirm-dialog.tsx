@@ -8,6 +8,7 @@ import {
   ModalFooter,
   ModalHeader,
   type ButtonProps,
+  type ModalProps,
 } from '@heroui/react';
 import type { ReactNode } from 'react';
 
@@ -21,6 +22,8 @@ type ConfirmDialogProps = {
   cancelLabel?: string;
   confirmColor?: ButtonProps['color'];
   isLoading?: boolean;
+  /** Forwarded to the underlying HeroUI Modal — use to override z-index when nested inside another modal. */
+  classNames?: ModalProps['classNames'];
 };
 
 export function ConfirmDialog({
@@ -33,9 +36,17 @@ export function ConfirmDialog({
   cancelLabel = 'Cancelar',
   confirmColor = 'danger',
   isLoading = false,
+  classNames,
 }: ConfirmDialogProps) {
   return (
-    <Modal isOpen={isOpen} onClose={onClose} placement="center" size="sm" backdrop="blur">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      placement="center"
+      size="sm"
+      backdrop="blur"
+      classNames={classNames}
+    >
       <ModalContent>
         <ModalHeader className="flex flex-col gap-1">{title}</ModalHeader>
         {description && (

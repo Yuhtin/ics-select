@@ -8,6 +8,7 @@ import {
   useDeleteNote,
   type AdminNote,
 } from '../../../lib/queries/admin-notes';
+import { ConfirmDialog } from '../../ui/confirm-dialog';
 
 function formatRelative(iso: string): string {
   const d = new Date(iso);
@@ -22,6 +23,7 @@ export function NotesTab({ memberId }: { memberId: string }) {
   const [draft, setDraft] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState('');
+  const [deleteTarget, setDeleteTarget] = useState<AdminNote | null>(null);
 
   const submitNew = () => {
     if (draft.trim().length === 0) return;
@@ -41,8 +43,14 @@ export function NotesTab({ memberId }: { memberId: string }) {
   };
 
   const removeNote = (note: AdminNote) => {
-    if (!confirm('Delete this note?')) return;
-    remove.mutate({ id: note.id, aboutId: memberId });
+    setDeleteTarget(note);
+  };
+  const confirmRemove = () => {
+    if (!deleteTarget) return;
+    remove.mutate(
+      { id: deleteTarget.id, aboutId: memberId },
+      { onSettled: () => setDeleteTarget(null) },
+    );
   };
 
   return (
@@ -117,6 +125,18 @@ export function NotesTab({ memberId }: { memberId: string }) {
           })}
         </ul>
       )}
+
+      <ConfirmDialog
+        isOpen={deleteTarget !== null}
+        onClose={() => {
+          if (!remove.isPending) setDeleteTarget(null);
+        }}
+        onConfirm={confirmRemove}
+        title="Apagar nota?"
+        description="Essa ação não pode ser desfeita."
+        confirmLabel="Apagar"
+        isLoading={remove.isPending}
+      />
     </div>
   );
 }

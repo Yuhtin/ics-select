@@ -12,6 +12,7 @@ import { useAuth } from '../../../../lib/auth/auth-context';
 import { Eyebrow } from '../../../../components/ui/eyebrow';
 import { ItemFormModal } from '../../../../components/admin/library/item-form-modal';
 import { TopicsModal } from '../../../../components/admin/library/topics-modal';
+import { ConfirmDialog } from '../../../../components/ui/confirm-dialog';
 import { TopicCombobox } from '../../../../components/admin/library/topic-combobox';
 import {
   MultiFilterCombobox,
@@ -226,6 +227,7 @@ export default function AdminLibraryPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<AdminLibraryItem | null>(null);
   const [topicsOpen, setTopicsOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<AdminLibraryItem | null>(null);
   const remove = useDeleteLibraryItem();
 
   const openCreate = () => {
@@ -241,8 +243,13 @@ export default function AdminLibraryPage() {
     setEditing(null);
   };
   const removeItem = (item: AdminLibraryItem) => {
-    if (!confirm(`Delete "${item.title}"?`)) return;
-    remove.mutate(item.id);
+    setDeleteTarget(item);
+  };
+  const confirmRemove = () => {
+    if (!deleteTarget) return;
+    remove.mutate(deleteTarget.id, {
+      onSettled: () => setDeleteTarget(null),
+    });
   };
 
   const anyFilterActive =
@@ -401,6 +408,24 @@ export default function AdminLibraryPage() {
 
       <ItemFormModal open={formOpen} initial={editing} onClose={closeForm} />
       <TopicsModal open={topicsOpen} onClose={() => setTopicsOpen(false)} />
+      <ConfirmDialog
+        isOpen={deleteTarget !== null}
+        onClose={() => {
+          if (!remove.isPending) setDeleteTarget(null);
+        }}
+        onConfirm={confirmRemove}
+        title="Delete library item?"
+        description={
+          deleteTarget ? (
+            <>
+              Delete <span className="font-semibold text-ink">{deleteTarget.title}</span>? Members
+              still finish items they already had in active plans.
+            </>
+          ) : null
+        }
+        confirmLabel="Delete"
+        isLoading={remove.isPending}
+      />
     </div>
   );
 }

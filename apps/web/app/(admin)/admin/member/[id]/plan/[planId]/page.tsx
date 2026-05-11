@@ -31,6 +31,7 @@ import {
   SchedulingModal,
   type SchedulingPhase,
 } from '../../../../../../../components/admin/plan-editor/scheduling-modal';
+import { ConfirmDialog } from '../../../../../../../components/ui/confirm-dialog';
 
 type SchedulingState = {
   open: boolean;
@@ -73,6 +74,8 @@ export default function PlanEditorPage({
   const [aiDraft, setAiDraft] = useState<AiDraft | null>(null);
   const [briefOpen, setBriefOpen] = useState(false);
   const [scheduling, setScheduling] = useState<SchedulingState>(INITIAL_SCHEDULING_STATE);
+  const [rescheduleConfirmOpen, setRescheduleConfirmOpen] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
   // Bootstrap: either fetch existing or create-or-get draft
   const { data: fetchedPlan, error: planError } = usePlan(
@@ -469,10 +472,7 @@ export default function PlanEditorPage({
 
   async function handleReschedulePending() {
     if (!plan) return;
-    const confirmed = window.confirm(
-      'Realocar os itens pendentes no calendário da pessoa?',
-    );
-    if (!confirmed) return;
+    setRescheduleConfirmOpen(false);
     try {
       await reschedulePending.mutateAsync(plan.id);
       addToast({
@@ -500,10 +500,7 @@ export default function PlanEditorPage({
 
   async function handleDeletePlan() {
     if (!plan) return;
-    const confirmed = window.confirm(
-      'Apagar este plano permanentemente? Essa ação não pode ser desfeita. Todos os eventos do Google Calendar também serão removidos.',
-    );
-    if (!confirmed) return;
+    setDeleteConfirmOpen(false);
     try {
       await deletePlan.mutateAsync(plan.id);
       router.push(`/admin/member/${memberId}`);
@@ -537,7 +534,7 @@ export default function PlanEditorPage({
           {plan && plan.status === 'PUBLISHED' && (
             <button
               type="button"
-              onClick={() => { void handleReschedulePending(); }}
+              onClick={() => setRescheduleConfirmOpen(true)}
               disabled={reschedulePending.isPending}
               className="ml-auto inline-flex items-center gap-1.5 rounded-pill border border-rule px-3 py-1 font-mono text-[10px] uppercase tracking-label text-ink-soft hover:border-ink-soft hover:bg-paper-warm disabled:opacity-50"
             >
@@ -547,7 +544,7 @@ export default function PlanEditorPage({
           {plan && (
             <button
               type="button"
-              onClick={() => { void handleDeletePlan(); }}
+              onClick={() => setDeleteConfirmOpen(true)}
               disabled={deletePlan.isPending}
               className={`${plan.status === 'PUBLISHED' ? '' : 'ml-auto '}inline-flex items-center gap-1.5 rounded-pill border border-outcome-stuck/40 px-3 py-1 font-mono text-[10px] uppercase tracking-label text-outcome-stuck hover:border-outcome-stuck hover:bg-outcome-stuck/5 disabled:opacity-50`}
             >
@@ -669,6 +666,34 @@ export default function PlanEditorPage({
           Resize to at least 1280px width.
         </p>
       </div>
+
+      <ConfirmDialog
+        isOpen={rescheduleConfirmOpen}
+        onClose={() => {
+          if (!reschedulePending.isPending) setRescheduleConfirmOpen(false);
+        }}
+        onConfirm={() => {
+          void handleReschedulePending();
+        }}
+        title="Realocar itens pendentes?"
+        description="Vamos redistribuir os itens pendentes nas próximas janelas livres do calendário da pessoa."
+        confirmLabel="Realocar"
+        confirmColor="primary"
+        isLoading={reschedulePending.isPending}
+      />
+      <ConfirmDialog
+        isOpen={deleteConfirmOpen}
+        onClose={() => {
+          if (!deletePlan.isPending) setDeleteConfirmOpen(false);
+        }}
+        onConfirm={() => {
+          void handleDeletePlan();
+        }}
+        title="Apagar este plano?"
+        description="Essa ação não pode ser desfeita. Todos os eventos no Google Calendar também serão removidos."
+        confirmLabel="Apagar plano"
+        isLoading={deletePlan.isPending}
+      />
     </>
   );
 }

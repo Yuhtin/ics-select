@@ -8,9 +8,11 @@ import {
   useAdminInvites,
   useCreateInvite,
   useDeleteInvite,
+  type Invite,
 } from '../../lib/queries/admin-invites';
 import { useAdminCycles } from '../../lib/queries/admin-cycles';
 import { Eyebrow } from '../ui/eyebrow';
+import { ConfirmDialog } from '../ui/confirm-dialog';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -24,6 +26,7 @@ export function InvitesSection() {
   const [role, setRole] = useState<'ADMIN' | 'MEMBER'>('MEMBER');
   const [cycleId, setCycleId] = useState<string>('');
   const [formError, setFormError] = useState<string | null>(null);
+  const [revokeTarget, setRevokeTarget] = useState<Invite | null>(null);
   const emailOk = EMAIL_REGEX.test(email.trim());
 
   // Cycles available as invite targets: non-archived, not already past.
@@ -180,11 +183,7 @@ export function InvitesSection() {
               </span>
               <button
                 type="button"
-                onClick={() => {
-                  if (confirm(`Revogar convite de ${inv.email}?`)) {
-                    remove.mutate(inv.id);
-                  }
-                }}
+                onClick={() => setRevokeTarget(inv)}
                 disabled={remove.isPending}
                 aria-label={`Revoke invite for ${inv.email}`}
                 className="rounded-input p-1.5 text-ink-mute transition-colors hover:bg-paper-warm hover:text-outcome-stuck"
@@ -195,6 +194,31 @@ export function InvitesSection() {
           ))}
         </ul>
       )}
+
+      <ConfirmDialog
+        isOpen={revokeTarget !== null}
+        onClose={() => {
+          if (!remove.isPending) setRevokeTarget(null);
+        }}
+        onConfirm={() => {
+          if (!revokeTarget) return;
+          remove.mutate(revokeTarget.id, {
+            onSettled: () => setRevokeTarget(null),
+          });
+        }}
+        title="Revogar convite?"
+        description={
+          revokeTarget ? (
+            <>
+              Revogar o convite de{' '}
+              <span className="font-semibold text-ink">{revokeTarget.email}</span>? Se quiser
+              convidar de novo, crie um novo convite.
+            </>
+          ) : null
+        }
+        confirmLabel="Revogar"
+        isLoading={remove.isPending}
+      />
     </section>
   );
 }

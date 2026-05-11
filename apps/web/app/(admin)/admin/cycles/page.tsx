@@ -10,6 +10,7 @@ import {
 } from '../../../../lib/queries/admin-cycles';
 import { Eyebrow } from '../../../../components/ui/eyebrow';
 import { NewCycleModal } from '../../../../components/admin/cycles/new-cycle-modal';
+import { ConfirmDialog } from '../../../../components/ui/confirm-dialog';
 
 type Phase = 'active' | 'upcoming' | 'past' | 'archived';
 
@@ -60,6 +61,7 @@ export default function AdminCyclesPage() {
   const { data, isLoading } = useAdminCycles();
   const archive = useArchiveCycle();
   const [newOpen, setNewOpen] = useState(false);
+  const [archiveTarget, setArchiveTarget] = useState<CycleRow | null>(null);
   const now = useMemo(() => new Date(), []);
 
   const rows = useMemo(() => {
@@ -79,9 +81,11 @@ export default function AdminCyclesPage() {
     return annotated;
   }, [data, now]);
 
-  const confirmArchive = (cycle: CycleRow) => {
-    if (!confirm(`Archive cycle "${cycle.name}"?`)) return;
-    archive.mutate(cycle.id);
+  const confirmArchive = () => {
+    if (!archiveTarget) return;
+    archive.mutate(archiveTarget.id, {
+      onSettled: () => setArchiveTarget(null),
+    });
   };
 
   return (
@@ -154,7 +158,7 @@ export default function AdminCyclesPage() {
                 </Link>
                 {cycle.status === 'ACTIVE' && (
                   <button
-                    onClick={() => confirmArchive(cycle)}
+                    onClick={() => setArchiveTarget(cycle)}
                     disabled={archive.isPending}
                     className="inline-flex items-center gap-1 font-mono text-[11px] text-ink-mute hover:text-ink disabled:opacity-40"
                     title="Archive this cycle"
@@ -170,6 +174,24 @@ export default function AdminCyclesPage() {
       )}
 
       <NewCycleModal open={newOpen} onClose={() => setNewOpen(false)} />
+      <ConfirmDialog
+        isOpen={archiveTarget !== null}
+        onClose={() => {
+          if (!archive.isPending) setArchiveTarget(null);
+        }}
+        onConfirm={confirmArchive}
+        title="Archive cycle?"
+        description={
+          archiveTarget ? (
+            <>
+              Archive <span className="font-semibold text-ink">{archiveTarget.name}</span>? Members
+              will keep their data, but the cycle won&apos;t appear as active anymore.
+            </>
+          ) : null
+        }
+        confirmLabel="Archive"
+        isLoading={archive.isPending}
+      />
     </div>
   );
 }

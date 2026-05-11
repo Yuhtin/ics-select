@@ -7,6 +7,7 @@ import {
   useUpdateTopic,
   useDeleteTopic,
 } from '../../../lib/queries/admin-library';
+import { ConfirmDialog } from '../../ui/confirm-dialog';
 
 export function TopicsModal({
   open,
@@ -118,6 +119,7 @@ function TopicRow({
 }) {
   const [slug, setSlug] = useState(topic.slug);
   const [label, setLabel] = useState(topic.label);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const dirty = slug !== topic.slug || label !== topic.label;
 
   return (
@@ -145,14 +147,29 @@ function TopicRow({
       )}
       <button
         type="button"
-        onClick={() => {
-          if (confirm(`Delete topic "${topic.label}"?`)) onDelete();
-        }}
+        onClick={() => setConfirmOpen(true)}
         className="text-ink-mute hover:text-outcome-stuck"
         aria-label="Delete topic"
       >
         <Trash2 className="h-3.5 w-3.5" strokeWidth={1.5} />
       </button>
+      <ConfirmDialog
+        isOpen={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={() => {
+          setConfirmOpen(false);
+          onDelete();
+        }}
+        title="Delete topic?"
+        description={
+          <>
+            Delete topic <span className="font-semibold text-ink">{topic.label}</span>? Library
+            items tagged with this topic will lose the tag.
+          </>
+        }
+        confirmLabel="Delete"
+        classNames={{ wrapper: 'z-[110]', backdrop: 'z-[110]' }}
+      />
     </li>
   );
 }
