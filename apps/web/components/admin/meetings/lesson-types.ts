@@ -57,4 +57,5 @@ export type MeetingSummary = {
   audience: string;
   beatCount: number;
   status: 'ready' | 'draft';
+  primaryGroup: NodeGroup;
 };

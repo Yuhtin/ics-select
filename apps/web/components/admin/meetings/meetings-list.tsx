@@ -1,9 +1,11 @@
 'use client';
 
 import Link from 'next/link';
+import { clsx } from 'clsx';
 import { ArrowRight, Clock, Layers, Users } from 'lucide-react';
 import type { MeetingSummary } from './lesson-types';
 import { Eyebrow } from '../../ui/eyebrow';
+import { GROUP_META } from './group-meta';
 
 export function MeetingsList({ meetings }: { meetings: MeetingSummary[] }) {
   return (
@@ -35,15 +37,20 @@ export function MeetingsList({ meetings }: { meetings: MeetingSummary[] }) {
 }
 
 function MeetingCard({ meeting }: { meeting: MeetingSummary }) {
+  const meta = GROUP_META[meeting.primaryGroup];
   return (
     <li>
       <Link
         href={`/admin/meetings/${meeting.slug}`}
-        className="group block rounded-card border border-border-token bg-surface p-7 transition-all hover:border-border-strong hover:bg-surface-hover"
+        className="group relative block overflow-hidden rounded-card border border-border-token bg-surface p-7 pl-9 transition-all hover:border-border-strong hover:bg-surface-hover"
       >
+        <span
+          aria-hidden
+          className={clsx('absolute left-0 top-0 h-full w-[3px]', meta.stripeClass)}
+        />
         <div className="flex flex-wrap items-start justify-between gap-x-10 gap-y-4">
           <div className="min-w-0 flex-1 space-y-3">
-            <Eyebrow>System Design</Eyebrow>
+            <Eyebrow className={meta.accentClass}>System Design · {meta.label}</Eyebrow>
             <h2 className="font-serif text-3xl font-semibold leading-tight tracking-tight text-fg">
               {meeting.title}
             </h2>

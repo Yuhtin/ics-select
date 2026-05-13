@@ -102,7 +102,7 @@ function BeatStepper({
                 type="button"
                 onClick={() => onSelect(i)}
                 className={clsx(
-                  'group flex h-full min-h-[78px] w-[126px] flex-col items-start gap-1.5 rounded-card border px-3 py-2.5 text-left transition-all',
+                  'group relative flex h-full min-h-[78px] w-[126px] flex-col items-start gap-1.5 overflow-hidden rounded-card border px-3 py-2.5 pl-[14px] text-left transition-all',
                   active
                     ? 'border-fg bg-surface shadow-sm'
                     : passed
@@ -110,17 +110,22 @@ function BeatStepper({
                       : 'border-border-token bg-surface hover:border-border-strong',
                 )}
               >
-                <div className="flex w-full items-center justify-between">
-                  <span
-                    className={clsx(
-                      'font-mono text-[10px] font-bold uppercase tracking-eyebrow',
-                      active ? 'text-fg' : 'text-fg-mute',
-                    )}
-                  >
-                    Beat {b.beat}
-                  </span>
-                  <span className={clsx('h-1.5 w-1.5 rounded-full', meta.ringClass)} />
-                </div>
+                <span
+                  aria-hidden
+                  className={clsx(
+                    'absolute left-0 top-0 h-full w-[3px] transition-opacity',
+                    meta.stripeClass,
+                    active ? 'opacity-100' : passed ? 'opacity-50' : 'opacity-30',
+                  )}
+                />
+                <span
+                  className={clsx(
+                    'font-mono text-[10px] font-bold uppercase tracking-eyebrow',
+                    active ? 'text-fg' : 'text-fg-mute',
+                  )}
+                >
+                  Beat {b.beat}
+                </span>
                 <p
                   className={clsx(
                     'line-clamp-2 font-sans text-[11px] leading-tight',
@@ -141,17 +146,23 @@ function BeatStepper({
 function FocusCard({ node }: { node: LessonNode }) {
   const meta = GROUP_META[node.group];
   return (
-    <article className="overflow-hidden rounded-card border border-border-token bg-surface">
-      <header className="flex flex-wrap items-baseline justify-between gap-3 border-b border-border-token bg-bg-subtle/40 px-7 py-4">
-        <div className="flex items-center gap-3">
-          <span className={clsx('h-2 w-2 rounded-full', meta.ringClass)} />
-          <Eyebrow>
-            {meta.eyebrow}
-            {typeof node.beat === 'number' && (
-              <span className={clsx('ml-2', meta.accentClass)}>· beat #{node.beat}</span>
-            )}
-          </Eyebrow>
-        </div>
+    <article className="relative overflow-hidden rounded-card border border-border-token bg-surface">
+      <span
+        aria-hidden
+        className={clsx('absolute left-0 top-0 h-full w-[3px]', meta.stripeClass)}
+      />
+      <header
+        className={clsx(
+          'flex flex-wrap items-baseline justify-between gap-3 border-b border-border-token px-7 py-4',
+          meta.tintClass,
+        )}
+      >
+        <Eyebrow className={meta.accentClass}>
+          {meta.eyebrow}
+          {typeof node.beat === 'number' && (
+            <span className="ml-2 text-fg-mute">· beat #{node.beat}</span>
+          )}
+        </Eyebrow>
         <h2 className="font-serif text-xl font-semibold text-fg">{node.label}</h2>
       </header>
 

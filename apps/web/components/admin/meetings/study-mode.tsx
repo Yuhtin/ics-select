@@ -77,38 +77,52 @@ function SidebarNav({
   ];
 
   return (
-    <nav className="space-y-6 text-sm">
-      {order.map((group) => {
+    <nav className="text-sm">
+      {order.map((group, groupIdx) => {
         const nodes = grouped[group];
         if (!nodes || nodes.length === 0) return null;
         const meta = GROUP_META[group];
         return (
-          <div key={group} className="space-y-2">
-            <div className="flex items-center gap-2">
-              <span className={clsx('h-1.5 w-1.5 rounded-full', meta.ringClass)} />
-              <Eyebrow>{meta.eyebrow}</Eyebrow>
-            </div>
+          <div
+            key={group}
+            className={clsx(
+              'space-y-2',
+              groupIdx > 0 && 'mt-5 border-t border-border-token pt-5',
+            )}
+          >
+            <Eyebrow className={meta.accentClass}>{meta.eyebrow}</Eyebrow>
             <ul className="space-y-0.5">
-              {nodes.map((n) => (
-                <li key={n.id}>
-                  <a
-                    href={`#node-${n.id}`}
-                    className={clsx(
-                      'block rounded-input px-2 py-1 leading-snug transition-colors',
-                      activeId === n.id
-                        ? 'bg-bg-subtle text-fg font-medium'
-                        : 'text-fg-mute hover:text-fg',
-                    )}
-                  >
-                    {typeof n.beat === 'number' && (
-                      <span className="mr-2 font-mono text-[10px] text-fg-faint">
-                        #{n.beat}
-                      </span>
-                    )}
-                    {n.label}
-                  </a>
-                </li>
-              ))}
+              {nodes.map((n) => {
+                const active = activeId === n.id;
+                return (
+                  <li key={n.id}>
+                    <a
+                      href={`#node-${n.id}`}
+                      className={clsx(
+                        'group relative flex items-baseline rounded-input pl-3 pr-2 py-1 leading-snug transition-colors',
+                        active
+                          ? 'bg-bg-subtle text-fg font-medium'
+                          : 'text-fg-mute hover:text-fg',
+                      )}
+                    >
+                      <span
+                        aria-hidden
+                        className={clsx(
+                          'absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full transition-opacity',
+                          meta.stripeClass,
+                          active ? 'opacity-100' : 'opacity-30 group-hover:opacity-70',
+                        )}
+                      />
+                      {typeof n.beat === 'number' && (
+                        <span className="mr-2 font-mono text-[10px] text-fg-faint">
+                          #{n.beat}
+                        </span>
+                      )}
+                      <span>{n.label}</span>
+                    </a>
+                  </li>
+                );
+              })}
             </ul>
           </div>
         );
@@ -165,20 +179,28 @@ function NodeSection({ node, pass }: { node: LessonNode; pass: Pass }) {
   return (
     <section
       id={`node-${node.id}`}
-      className="scroll-mt-32 border-t border-border-token pt-10 first:border-t-0 first:pt-0"
+      className="relative scroll-mt-32 pl-6 pt-10 first:pt-0"
     >
+      <span
+        aria-hidden
+        className={clsx(
+          'absolute left-0 top-10 bottom-0 w-[3px] rounded-full first:top-0',
+          meta.stripeClass,
+        )}
+      />
       <div className="space-y-3">
-        <div className="flex flex-wrap items-center gap-3">
-          <span className={clsx('h-1.5 w-1.5 rounded-full', meta.ringClass)} />
-          <Eyebrow>
-            {meta.eyebrow}
-            {typeof node.beat === 'number' && (
-              <span className={clsx('ml-2', meta.accentClass)}>· beat #{node.beat}</span>
-            )}
-            {node.teachFromZero === true && (
-              <span className="ml-2 text-warn">· teach from zero</span>
-            )}
-          </Eyebrow>
+        <div className="flex flex-wrap items-center gap-2">
+          <Eyebrow className={meta.accentClass}>{meta.eyebrow}</Eyebrow>
+          {typeof node.beat === 'number' && (
+            <span className="font-mono text-[10px] uppercase tracking-eyebrow text-fg-mute">
+              · beat #{node.beat}
+            </span>
+          )}
+          {node.teachFromZero === true && (
+            <span className="font-mono text-[10px] uppercase tracking-eyebrow text-warn">
+              · teach from zero
+            </span>
+          )}
         </div>
         <h2 className="font-serif text-3xl font-semibold tracking-tight text-fg lg:text-4xl">
           {node.label}

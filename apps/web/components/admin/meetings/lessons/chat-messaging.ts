@@ -5,10 +5,69 @@ export const chatMessaging: Lesson = {
   title: 'Chat & Messaging',
   subtitle: 'Stateful, real-time, ordered — o outro extremo do espectro.',
   blurb:
-    'O case clássico de chat real-time, do WhatsApp ao Discord. Cinco beats que cobrem as primitivas centrais do perfil write-heavy com conexão persistente: requisitos (statefulness e ordering como restrições principais), transport (WebSocket vs alternativas), fan-out (push via PubSub para grupos pequenos, pull/inbox para mega-grupos), ordering e persistência (Snowflake + causal consistency por conversa), e sharding por conv_id pra preservar locality. A regra que sai daqui: connection model + fan-out pattern dominam o design de qualquer sistema real-time.',
-  durationMin: 50,
+    'O case clássico de chat real-time, do WhatsApp ao Discord. Foundation sobre estimativa de capacidade pra sistemas write-heavy, seguida de 6 beats que cobrem as primitivas centrais do perfil real-time com conexão persistente: requisitos, transport (WebSocket), fan-out (push via PubSub vs pull/inbox), ordering com Snowflake por conversa, presence e catch-up offline, e sharding por conv_id pra preservar locality. A regra que sai daqui: connection model + fan-out pattern dominam o design de qualquer sistema real-time.',
+  durationMin: 65,
   audience: 'Hot Stuff · Big Tech · semana 3',
   nodes: [
+    // ──────────────── FOUNDATIONS ────────────────
+    {
+      id: 'f-write-heavy-estimation',
+      label: 'Capacity for write-heavy systems',
+      group: 'foundations',
+      teachFromZero: true,
+      oneLine:
+        'Em sistema write-heavy três números dominam o cálculo: write QPS no pico, storage por mês, e fan-out médio por mensagem.',
+      pass1:
+        'Antes de qualquer caixinha, três números importam mais do que qualquer outro num sistema write-heavy: quantas mensagens por segundo, quanto de storage por mês, e qual é o fan-out médio (quantas pessoas recebem cada mensagem escrita). A diferença pra sistemas read-heavy é que aqui o pico de escrita é o que define a arquitetura — cache não te salva quando cada item escrito é lido só uma vez por destinatário.',
+      pass2:
+        '**Write QPS**: pegue mensagens por dia, divida por 86400 pra ter a média, multiplique por 3 a 5 pra ter o pico. 1 bilhão de mensagens por dia dá cerca de 12 mil writes por segundo na média e 60 mil no pico. Esse número dita o tipo de storage (Cassandra append-only vence Postgres MVCC), o tipo de fila (Kafka aguenta, Redis Streams aguenta com limites) e a quantidade mínima de shards (uma instância não absorve 60 mil writes por segundo sozinha).\n\n**Storage growth**: 1 bilhão de mensagens × 500 bytes médios = 500 GB por dia, ou cerca de 15 TB por mês. Aqui shard é obrigatório desde o dia um. Compare com um sistema read-heavy típico, que pode acumular 250 GB ao longo de 5 anos — chat acumula isso em meio dia.\n\n**Fan-out médio**: 1 milhão de usuários ativos × fan-out médio de 20 destinatários por mensagem = 20 milhões de entregas por segundo no horário de pico. Esse número é o que distingue chat de outros sistemas write-heavy. Se você esquecer ele no dimensionamento, calibra o fan-out cluster pra baixo e ele cai no pico.\n\n**Connection count**: o quarto número, que aparece mais adiante. 1 milhão de usuários simultâneos online, com cerca de 50 mil conexões por servidor, dá 20 servidores de WebSocket. Cada um carrega estado in-memory (cursor de leitura, presence), então o scaling não é elástico — é discreto. Você adiciona servidor inteiro, não capacidade gradual.',
+      pass3: [
+        {
+          gotcha: 'Esquecer o fan-out na conta',
+          note: 'Calcula só write QPS e esquece que cada mensagem escrita vira N entregas. O sistema parece dimensionado, mas no pico o fan-out cluster cai porque ninguém somou as entregas.',
+        },
+        {
+          gotcha: 'Tratar storage anual igual a sistema read-heavy',
+          note: 'Em sistemas write-heavy storage acumula TB por mês, não por ano. Política de retenção e tiering (hot vs cold) entra no requisito desde cedo.',
+        },
+        {
+          gotcha: 'Misturar usuário ativo com usuário registrado',
+          note: '1 bilhão de usuários registrados não significa 1 bilhão online ao mesmo tempo. DAU pode ser 30 a 50% do total. Use o número certo pra estimar conexões abertas.',
+        },
+      ],
+      anchor:
+        'Pra um chat estilo WhatsApp com 1 bilhão de mensagens por dia, você precisa estimar 3 números antes de desenhar qualquer coisa. Quais?',
+      askWho: [
+        {
+          name: 'open',
+          why: 'Pergunta de aquecimento que pede só conta de matemática básica. Todos podem participar, e isso ajuda a alinhar a sala nos mesmos números antes da aula descer.',
+        },
+      ],
+      followup:
+        'OK, números na mesa. Antes de pensar em tecnologia, qual a primeira pergunta de design pra esse perfil específico?',
+      gotcha:
+        'Se alguém só fizer a conta de write QPS, devolva: "essas 12 mil mensagens por segundo viram quantas ENTREGAS por segundo?"',
+      scenarios: {
+        right: {
+          shape:
+            'Calcula write QPS (12 mil na média, 60 mil no pico), storage mensal (cerca de 15 TB), e multiplica por fan-out médio pra ter o número real de entregas. Reconhece que cache não resolve write-heavy do mesmo jeito que resolve read-heavy.',
+          redirect:
+            'Confirme os números (60 mil writes pico, 15 TB/mês, 20 M entregas/s) e avance: "agora pra esse perfil específico, qual a primeira pergunta de design?"',
+        },
+        close: {
+          shape:
+            'Faz a conta de write QPS e storage, mas esquece de multiplicar pelo fan-out. Acaba calibrando o sistema pra entregar 12 mil mensagens por segundo em vez das 20 milhões reais.',
+          redirect:
+            'Aponte o gap: "cada mensagem escrita vai pra quantos destinatários? Quantas entregas isso vira no agregado?"',
+        },
+        wayOff: {
+          shape:
+            'Pula a estimativa e parte direto pra "vou usar Kafka com Cassandra atrás" sem números.',
+          redirect:
+            'Interrompa: "espera, antes de escolher tecnologia — quantas writes por segundo o sistema vai aguentar no pico? Faça a conta no quadro." Force a fazer matemática antes de nomear tecnologia.',
+        },
+      },
+    },
     // ──────────────── CHAT ARC ────────────────
     {
       id: 'chat-requirements',
@@ -263,10 +322,76 @@ export const chatMessaging: Lesson = {
       },
     },
     {
+      id: 'chat-presence',
+      label: 'Presence & offline catch-up',
+      group: 'chat',
+      beat: 5,
+      oneLine:
+        'Quando o usuário sai e volta, precisa receber tudo que perdeu na ordem certa, sem travar a UI carregando o backlog inteiro.',
+      pass1:
+        'O sistema funciona em real-time enquanto o usuário está online, mas o caso real interessante é quando ele fecha o app, fica offline por horas, e volta. Precisa receber tudo que perdeu, na ordem certa, sem travar a interface tentando carregar 10 mil mensagens de uma vez. Esse beat trata dois problemas relacionados que aparecem juntos: presence (saber quem está online em tempo real) e catch-up (entregar o backlog de quem volta).',
+      pass2:
+        '**Presence (quem está online)**: cada conexão WebSocket aberta marca o usuário como online. Quando a conexão fecha, marca como offline. Em Redis, isso costuma ser uma chave por user_id com TTL curto (30 a 60 segundos), renovada por heartbeat do cliente. O servidor que mantém a conexão atualiza a presence direto — desacoplar isso de uma fonte central facilita o scaling. Limitação importante: presence em larga escala é caro de manter atualizado em tempo real. Discord paga esse preço, mas o WhatsApp simplifica mostrando só "online" ou "visto há X minutos" pra evitar a pressão constante de updates.\n\n**Offline detection**: o servidor detecta que a conexão caiu por TCP keepalive ou por timeout no ping/pong (geralmente 30 a 60 segundos sem resposta). Existe um trade-off entre velocidade e estabilidade: timeout curto detecta queda rápido mas gera falsos positivos em redes instáveis; timeout longo é mais tolerante mas demora a marcar o usuário como offline.\n\n**Catch-up por cursor**: cada cliente mantém um cursor `last_seen_message_id` por conversa. Quando reconecta, envia esse cursor pro servidor, que faz um range scan: `SELECT * FROM messages WHERE conv_id = ? AND message_id > cursor ORDER BY message_id LIMIT N`. A query é eficiente porque o message_id é ordenado (graças ao Snowflake do beat anterior), então o backlog vira leitura sequencial direta.\n\n**Paginação do backlog**: se o usuário tem 50 mensagens pendentes, manda em um burst. Se tem 10 mil mensagens de uma conversa abandonada, pagina — envia as últimas 50 e o cliente puxa mais quando o usuário scrollar pra cima. Sem paginação, o cliente trava por dezenas de segundos no spinner.\n\n**Push externo pra offline real**: quando o usuário está offline de verdade (app fechado, não só desconectado), o canal pra alcançá-lo é externo — APNS no iOS, FCM no Android. O fluxo muda: o servidor publica numa fila de notificações, e um worker dedicado dispara via API do provedor. Esse caminho não tem WebSocket envolvido.',
+      pass3: [
+        {
+          gotcha: 'Armazenar presence num único Redis central',
+          note: 'Vira gargalo no pico. Você precisa shardar a presence por user_id ou manter local em cada servidor WebSocket, sincronizando via PubSub se outro servidor precisar consultar.',
+        },
+        {
+          gotcha: 'Esquecer paginação no catch-up',
+          note: 'Cliente fica 30 segundos no spinner carregando 50 mil mensagens. Sempre pagine, entregue as últimas N primeiro, e deixe o usuário puxar histórico antigo quando quiser.',
+        },
+        {
+          gotcha: 'Confundir desconectado com offline real',
+          note: 'Desconectado (rede caiu) é diferente de offline (app fechado). O primeiro mantém estado no servidor por alguns segundos; o segundo precisa de push externo via APNS/FCM. O tratamento de delivery é diferente.',
+        },
+        {
+          gotcha: 'Salvar o cursor no servidor a cada mensagem lida',
+          note: '1 milhão de usuários ativos lendo 100 mensagens por minuto vira muito write desnecessário no banco. O cursor mora no cliente — o servidor só precisa dele quando há reconexão.',
+        },
+      ],
+      anchor:
+        'O usuário fechou o WhatsApp ontem, recebeu 200 mensagens em vários grupos, e abre o app agora. Como o sistema entrega tudo isso sem travar a interface?',
+      askWho: [
+        {
+          name: 'Eduardo Izawa',
+          why: 'Tem cache + replication na bagagem. Cursor é exatamente "estado do client" e o trade-off de onde manter cursor (cliente vs servidor) é uma decisão de consistency familiar pra ele.',
+        },
+        {
+          name: 'Maria Clara',
+          why: 'Backup com networking. Presence over WebSocket é um caso clássico de heartbeat — ela pode ajudar com a parte de detecção de queda.',
+        },
+      ],
+      followup:
+        'OK, online e offline resolvidos. Mas tudo isso fica num único servidor? Como você divide quando 1 milhão de usuários estão online ao mesmo tempo?',
+      gotcha:
+        'Se alguém propor armazenar cursor no servidor a cada msg lida: "1 milhão de usuários ativos lendo 100 mensagens por minuto — quantos updates por segundo isso vira no banco?"',
+      scenarios: {
+        right: {
+          shape:
+            'Presence em Redis com TTL curto e heartbeat, cursor last_seen_message_id mantido no cliente, catch-up paginado via range scan no message_id ordenado. Reconhece que push externo (APNS/FCM) é caminho separado pra usuário com app fechado.',
+          redirect:
+            'Avance pro sharding: "tudo isso funcionando num único servidor é uma coisa. Em 20 servidores WebSocket simultâneos, como você divide?"',
+        },
+        close: {
+          shape:
+            'Sabe que precisa de cursor mas armazena no banco a cada mensagem lida, sem perceber que isso vira write-heavy desnecessário. Ou tenta entregar todo o backlog num único burst.',
+          redirect:
+            'Aponte o custo escondido: "se cada msg lida vira um update no banco, 1 milhão de usuários ativos = quantos writes por segundo SÓ pra atualizar cursor?"',
+        },
+        wayOff: {
+          shape:
+            'Propõe armazenar todas as mensagens não lidas numa fila por usuário ("inbox por usuário"). Vira fan-out por usuário, que é exatamente o oposto da locality por conv que vai vir no próximo beat.',
+          redirect:
+            'Force a comparar: "fila por usuário, com 1 milhão de usuários, cada um podendo ter dezenas de grupos com mensagens pendentes. Quantas filas no total? Quem coordena escrever em todas elas quando uma msg chega num grupo de 50?"',
+        },
+      },
+    },
+    {
       id: 'chat-shard',
       label: 'Sharding by conversation',
       group: 'chat',
-      beat: 5,
+      beat: 6,
       oneLine:
         'A sharding key natural é `conv_id` por causa de locality — todas as conexões e mensagens da mesma conversa precisam viver no mesmo servidor.',
       pass1:
@@ -332,9 +457,9 @@ export const chatMessaging: Lesson = {
       oneLine:
         'Conexão persistente + ordering por partição + fan-out são as três restrições que dominam todo o resto do design.',
       pass1:
-        'Chat é o caso canônico do perfil real-time stateful, e os 5 beats te dão o vocabulário central que reaparece em qualquer sistema com perfil parecido — WebSocket com sticky sessions, fan-out híbrido (push para pequenos, pull para grandes), Snowflake pra ordering causal por partição, sharding por entidade que owna a operação. A regra que sai daqui é que o connection model (request-response vs persistent) é a primeira decisão, e ela cascateia em todas as outras.',
+        'Chat é o caso canônico do perfil real-time stateful, e os 6 beats te dão o vocabulário central que reaparece em qualquer sistema com perfil parecido — WebSocket com sticky sessions, fan-out híbrido (push para pequenos, pull para grandes), Snowflake pra ordering causal por partição, presence e catch-up por cursor, sharding por entidade que owna a operação. A regra que sai daqui é que o connection model (request-response vs persistent) é a primeira decisão, e ela cascateia em todas as outras.',
       pass2:
-        'O resumo das 5 decisões que tomamos, lado a lado com a restrição que guiou cada uma:\n\n**Statefulness é o salto fundamental**: chat exige conexão persistente, e isso muda tudo — load balancer com sticky sessions, deploy gracioso com drain, scaling discreto. Não é mais request-response stateless.\n\n**Transport (WebSocket)**: real-time bidirecional + custo de cerca de 10 KB por conexão dita a escala (10 mil a 100 mil conexões por servidor). SSE é alternativa unidirecional, long polling é legado.\n\n**Fan-out (PubSub híbrido)**: distribuição em tempo real pra N destinatários é o problema central. Push via PubSub pra grupos pequenos, pull/inbox pra mega-grupos. Tamanho de grupo determina a estratégia.\n\n**Ordering (Snowflake por partição)**: causal consistency dentro da conversa basta — ordering global cria coordenação desnecessária. Snowflake dá ID temporal + sequence sem coordenação central.\n\n**Sharding (por conv_id)**: locality força que toda atividade da mesma conversa fique no mesmo shard. O custo é que a query "convs do usuário X" deixa de ser point lookup, mas essa é a query rara.\n\nO ponto pedagógico final: connection model + fan-out pattern dominam o design. Tudo o que vem depois (banco, cache, replication) tem que respeitar essas duas decisões. Em entrevista, o candidato que estabelece essas duas restrições logo no começo é o que separa pleno de senior.',
+        'O resumo das 6 decisões que tomamos, lado a lado com a restrição que guiou cada uma:\n\n**Statefulness é o salto fundamental**: chat exige conexão persistente, e isso muda tudo — load balancer com sticky sessions, deploy gracioso com drain, scaling discreto. Não é mais request-response stateless.\n\n**Transport (WebSocket)**: real-time bidirecional + custo de cerca de 10 KB por conexão dita a escala (10 mil a 100 mil conexões por servidor). SSE é alternativa unidirecional, long polling é legado.\n\n**Fan-out (PubSub híbrido)**: distribuição em tempo real pra N destinatários é o problema central. Push via PubSub pra grupos pequenos, pull/inbox pra mega-grupos. Tamanho de grupo determina a estratégia.\n\n**Ordering (Snowflake por partição)**: causal consistency dentro da conversa basta — ordering global cria coordenação desnecessária. Snowflake dá ID temporal + sequence sem coordenação central.\n\n**Presence + offline catch-up**: presence em Redis com TTL curto e heartbeat, cursor mantido no cliente, backlog paginado por range scan. Push externo (APNS/FCM) é o caminho separado pra app fechado.\n\n**Sharding (por conv_id)**: locality força que toda atividade da mesma conversa fique no mesmo shard. O custo é que a query "convs do usuário X" deixa de ser point lookup, mas essa é a query rara.\n\nO ponto pedagógico final: connection model + fan-out pattern dominam o design. Tudo o que vem depois (banco, cache, replication) tem que respeitar essas duas decisões. Em entrevista, o candidato que estabelece essas duas restrições logo no começo é o que separa pleno de senior.',
       pass3: [
         {
           gotcha: 'Tratar chat como "request-response com WebSocket por cima"',
@@ -350,7 +475,7 @@ export const chatMessaging: Lesson = {
         },
       ],
       anchor:
-        'Liste as 3 decisões dessa aula que dependeram diretamente do connection model persistente.',
+        'Liste as 3 decisões dessa aula que dependeram diretamente do connection model persistente, e a que foi a mais surpresa pra você.',
       askWho: [
         {
           name: 'open',
@@ -358,7 +483,7 @@ export const chatMessaging: Lesson = {
         },
       ],
       followup:
-        'Em sistemas com perfil oposto (read-heavy, request-response, imutável), quais dessas 5 decisões teriam respostas completamente diferentes?',
+        'Em sistemas com perfil oposto (read-heavy, request-response, imutável), quais dessas 6 decisões teriam respostas completamente diferentes?',
       gotcha:
         'Se ninguém citar que cache de mensagens não resolve o problema de fan-out (resolve só presence), dê o insight e pergunte por quê — separa quem internalizou de quem só decorou.',
     },
