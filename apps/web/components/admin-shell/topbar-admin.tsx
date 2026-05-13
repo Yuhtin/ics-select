@@ -9,8 +9,8 @@ import {
   ClipboardList,
   ListChecks,
   LogOut,
+  Presentation,
   Settings,
-  Sparkles,
   Users,
 } from 'lucide-react';
 import { clsx } from 'clsx';
@@ -30,7 +30,7 @@ const NAV: readonly NavItem[] = [
   { href: '/admin/plans', label: 'Plans', icon: ListChecks },
   { href: '/admin/library', label: 'Library', icon: BookOpen },
   { href: '/admin/waitlist', label: 'Waitlist', icon: ClipboardList },
-  { href: '/admin/ai-usage', label: 'AI usage', icon: Sparkles },
+  { href: '/admin/meetings', label: 'Meetings', icon: Presentation },
   { href: '/admin/config', label: 'Config', icon: Settings },
 ];
 
