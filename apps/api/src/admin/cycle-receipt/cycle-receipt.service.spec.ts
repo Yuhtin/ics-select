@@ -136,3 +136,98 @@ describe('CycleReceiptService — totals + byTopic', () => {
     expect(outcomes).not.toContain('STUCK');
   });
 });
+
+describe('CycleReceiptService — knowledgeGrid', () => {
+  const cycleBase = {
+    id: 'c1', name: 'Ciclo 4', status: 'ACTIVE' as const,
+    startsAt: new Date('2026-04-01T00:00:00Z'),
+    endsAt: new Date('2026-06-01T00:00:00Z'),
+    memberships: [
+      { userId: 'u1', user: { id: 'u1', name: 'Alice', pictureUrl: null } },
+      { userId: 'u2', user: { id: 'u2', name: 'Bob', pictureUrl: null } },
+    ],
+  };
+
+  it('builds cells with itemsDone per (user, topic)', async () => {
+    const prisma = mockPrisma();
+    prisma.cycle.findUnique.mockResolvedValue(cycleBase);
+    prisma.weeklyPlanItem.findMany.mockImplementation((args: any) => {
+      // positive-only query — return two completions for u1 on t1
+      if (args.where.outcome?.in) {
+        return Promise.resolve([
+          { outcome: 'DONE_EASY', completedAt: new Date('2026-04-10T15:00:00Z'),
+            libraryItem: { estimatedMinutes: 60, topics: [{ topicId: 't1', topic: { id: 't1', slug: 'hashmap', label: 'Hashmap', order: 1 } }] },
+            weeklyPlan: { userId: 'u1' } },
+          { outcome: 'DONE_HARD', completedAt: new Date('2026-04-11T15:00:00Z'),
+            libraryItem: { estimatedMinutes: 60, topics: [{ topicId: 't1', topic: { id: 't1', slug: 'hashmap', label: 'Hashmap', order: 1 } }] },
+            weeklyPlan: { userId: 'u1' } },
+        ]);
+      }
+      // stuck/doubts query — empty
+      return Promise.resolve([]);
+    });
+    const svc = makeService(prisma);
+    const r = await svc.build('c1', new Date('2026-05-13'));
+    expect(r.knowledgeGrid.cells).toEqual([
+      { userId: 'u1', topicId: 't1', itemsDone: 2, hasStuckOrDoubts: false },
+    ]);
+  });
+
+  it('marks hasStuckOrDoubts=true when member has STUCK or DOUBTS on a topic item', async () => {
+    const prisma = mockPrisma();
+    prisma.cycle.findUnique.mockResolvedValue(cycleBase);
+    prisma.weeklyPlanItem.findMany.mockImplementation((args: any) => {
+      // The stuck/doubts query uses OR clause, not outcome.in
+      const isFlagQuery = !args.where.outcome?.in && Array.isArray(args.where.OR);
+      if (isFlagQuery) {
+        return Promise.resolve([
+          { outcome: 'STUCK',
+            libraryItem: { topics: [{ topicId: 't1', topic: { id: 't1' } }] },
+            weeklyPlan: { userId: 'u1' } },
+        ]);
+      }
+      return Promise.resolve([
+        { outcome: 'DONE_EASY', completedAt: new Date('2026-04-10T15:00:00Z'),
+          libraryItem: { estimatedMinutes: 60, topics: [{ topicId: 't1', topic: { id: 't1', slug: 'hashmap', label: 'Hashmap', order: 1 } }] },
+          weeklyPlan: { userId: 'u1' } },
+      ]);
+    });
+    const svc = makeService(prisma);
+    const r = await svc.build('c1', new Date('2026-05-13'));
+    expect(r.knowledgeGrid.cells[0].hasStuckOrDoubts).toBe(true);
+  });
+
+  it('lists members in alphabetical order', async () => {
+    const prisma = mockPrisma();
+    prisma.cycle.findUnique.mockResolvedValue({
+      ...cycleBase,
+      memberships: [
+        { userId: 'u2', user: { id: 'u2', name: 'Bob', pictureUrl: null } },
+        { userId: 'u1', user: { id: 'u1', name: 'Alice', pictureUrl: null } },
+      ],
+    });
+    const svc = makeService(prisma);
+    const r = await svc.build('c1', new Date('2026-05-13'));
+    expect(r.knowledgeGrid.members.map(m => m.name)).toEqual(['Alice', 'Bob']);
+  });
+
+  it('lists topics in Topic.order ascending', async () => {
+    const prisma = mockPrisma();
+    prisma.cycle.findUnique.mockResolvedValue(cycleBase);
+    prisma.weeklyPlanItem.findMany.mockImplementation((args: any) => {
+      if (args.where.outcome?.in) {
+        return Promise.resolve([
+          { outcome: 'DONE_EASY', completedAt: new Date('2026-04-10T15:00:00Z'),
+            libraryItem: { estimatedMinutes: 60, topics: [
+              { topicId: 't2', topic: { id: 't2', slug: 'tree', label: 'Tree', order: 2 } },
+              { topicId: 't1', topic: { id: 't1', slug: 'hashmap', label: 'Hashmap', order: 1 } },
+            ] }, weeklyPlan: { userId: 'u1' } },
+        ]);
+      }
+      return Promise.resolve([]);
+    });
+    const svc = makeService(prisma);
+    const r = await svc.build('c1', new Date('2026-05-13'));
+    expect(r.knowledgeGrid.topics.map(t => t.slug)).toEqual(['hashmap', 'tree']);
+  });
+});

@@ -35,9 +35,11 @@ export class CycleReceiptService {
 
   private async assembleResponse(cycle: any, asOf: Date): Promise<CycleReceiptResponse> {
     const items = await this.fetchItems(cycle.id, cycle.startsAt, asOf);
+    const stuckItems = await this.fetchStuckOrDoubtsItems(cycle.id, cycle.startsAt, asOf);
     const memberCount = cycle.memberships.length;
     const totalsBase = this.computeTotals(items, memberCount);
     const byTopic = this.computeByTopic(items, memberCount);
+    const knowledgeGrid = this.buildKnowledgeGrid(cycle, items, stuckItems);
     const mode = this.decideMode(cycle, asOf);
 
     return {
@@ -61,13 +63,83 @@ export class CycleReceiptService {
         attendanceRate: 0,
       },
       byTopic,
-      knowledgeGrid: { members: [], topics: [], cells: [] },
+      knowledgeGrid,
       topMovers: [],
       cycleTopMover: null,
       streakChampion: null,
       retroChampions: [],
       perfectAttendance: [],
     };
+  }
+
+  private async fetchStuckOrDoubtsItems(cycleId: string, startsAt: Date, asOf: Date) {
+    const asOfEnd = new Date(asOf);
+    asOfEnd.setUTCHours(23, 59, 59, 999);
+    return this.prisma.weeklyPlanItem.findMany({
+      where: {
+        weeklyPlan: { cycleId },
+        OR: [
+          { outcome: 'STUCK' },
+          { outcome: 'DOUBTS', completedAt: { gte: startsAt, lte: asOfEnd } },
+        ],
+      },
+      include: {
+        libraryItem: { include: { topics: { include: { topic: true } } } },
+        weeklyPlan: { select: { userId: true } },
+      },
+    });
+  }
+
+  private buildKnowledgeGrid(cycle: any, items: any[], stuckItems: any[]) {
+    const members = cycle.memberships
+      .map((m: any) => ({ userId: m.userId, name: m.user.name, pictureUrl: m.user.pictureUrl }))
+      .sort((a: any, b: any) => a.name.localeCompare(b.name));
+    const memberSet = new Set<string>(members.map((m: any) => m.userId));
+
+    const topicMap = new Map<string, { topicId: string; slug: string; label: string; order: number }>();
+    for (const it of items) {
+      for (const lt of it.libraryItem.topics) {
+        const t = lt.topic;
+        if (!topicMap.has(t.id)) {
+          topicMap.set(t.id, { topicId: t.id, slug: t.slug, label: t.label, order: t.order });
+        }
+      }
+    }
+    const topics = Array.from(topicMap.values()).sort((a, b) => a.order - b.order);
+
+    const counts = new Map<string, number>();
+    for (const it of items) {
+      const u = it.weeklyPlan.userId;
+      if (!memberSet.has(u)) continue;
+      for (const lt of it.libraryItem.topics) {
+        const key = `${u}|${lt.topic.id}`;
+        counts.set(key, (counts.get(key) ?? 0) + 1);
+      }
+    }
+
+    const stuckSet = new Set<string>();
+    for (const it of stuckItems) {
+      const u = it.weeklyPlan.userId;
+      if (!memberSet.has(u)) continue;
+      for (const lt of it.libraryItem.topics) {
+        stuckSet.add(`${u}|${lt.topic.id}`);
+      }
+    }
+
+    const cells: Array<{ userId: string; topicId: string; itemsDone: number; hasStuckOrDoubts: boolean }> = [];
+    const allKeys = new Set<string>([...counts.keys(), ...stuckSet]);
+    for (const key of allKeys) {
+      const [userId, topicId] = key.split('|');
+      if (!topicMap.has(topicId)) continue;
+      cells.push({
+        userId,
+        topicId,
+        itemsDone: counts.get(key) ?? 0,
+        hasStuckOrDoubts: stuckSet.has(key),
+      });
+    }
+
+    return { members, topics, cells };
   }
 
   private async fetchItems(cycleId: string, startsAt: Date, asOf: Date) {
