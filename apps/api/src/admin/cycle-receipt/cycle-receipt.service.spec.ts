@@ -231,3 +231,147 @@ describe('CycleReceiptService — knowledgeGrid', () => {
     expect(r.knowledgeGrid.topics.map(t => t.slug)).toEqual(['hashmap', 'tree']);
   });
 });
+
+describe('CycleReceiptService — nominal blocks', () => {
+  const cycleBase = {
+    id: 'c1', name: 'Ciclo 4', status: 'ACTIVE' as const,
+    startsAt: new Date('2026-04-01T00:00:00Z'),
+    endsAt: new Date('2026-06-01T00:00:00Z'),
+    memberships: [
+      { userId: 'u1', user: { id: 'u1', name: 'Alice', pictureUrl: null } },
+      { userId: 'u2', user: { id: 'u2', name: 'Bob', pictureUrl: null } },
+    ],
+  };
+
+  it('topMovers uses 7-day window ending at asOf and ranks by deltaItems', async () => {
+    const prisma = mockPrisma();
+    prisma.cycle.findUnique.mockResolvedValue(cycleBase);
+    const asOf = new Date('2026-05-12T20:00:00Z');
+    prisma.weeklyPlanItem.findMany.mockImplementation((args: any) => {
+      if (!args.where.outcome?.in) return Promise.resolve([]);
+      const gte: Date = args.where.completedAt.gte;
+      const windowMs = asOf.getTime() - gte.getTime();
+      const isSevenDayWindow = windowMs > 6 * 24 * 60 * 60 * 1000 && windowMs < 8 * 24 * 60 * 60 * 1000;
+      if (isSevenDayWindow) {
+        return Promise.resolve([
+          { libraryItem: { estimatedMinutes: 1, topics: [{ topicId: 't1', topic: { id: 't1', slug: 'hashmap', label: 'Hashmap', order: 1 } }] },
+            weeklyPlan: { userId: 'u1' }, completedAt: new Date('2026-05-12T10:00:00Z'), outcome: 'DONE_EASY' },
+          { libraryItem: { estimatedMinutes: 1, topics: [{ topicId: 't1', topic: { id: 't1', slug: 'hashmap', label: 'Hashmap', order: 1 } }] },
+            weeklyPlan: { userId: 'u1' }, completedAt: new Date('2026-05-12T11:00:00Z'), outcome: 'DONE_EASY' },
+          { libraryItem: { estimatedMinutes: 1, topics: [{ topicId: 't2', topic: { id: 't2', slug: 'tree', label: 'Tree', order: 2 } }] },
+            weeklyPlan: { userId: 'u2' }, completedAt: new Date('2026-05-10T11:00:00Z'), outcome: 'DONE_EASY' },
+        ]);
+      }
+      return Promise.resolve([]); // cumulative empty for simplicity
+    });
+    const svc = makeService(prisma);
+    const r = await svc.build('c1', asOf);
+    expect(r.topMovers.map(m => ({ userId: m.userId, deltaItems: m.deltaItems }))).toEqual([
+      { userId: 'u1', deltaItems: 2 },
+      { userId: 'u2', deltaItems: 1 },
+    ]);
+  });
+
+  it('cycleTopMover uses cumulative cycle items, not the 7-day window', async () => {
+    const prisma = mockPrisma();
+    prisma.cycle.findUnique.mockResolvedValue(cycleBase);
+    const asOf = new Date('2026-05-12T20:00:00Z');
+    prisma.weeklyPlanItem.findMany.mockImplementation((args: any) => {
+      if (!args.where.outcome?.in) return Promise.resolve([]);
+      const gte: Date | undefined = args.where.completedAt?.gte;
+      const isCumulative = gte?.getTime() === cycleBase.startsAt.getTime();
+      if (isCumulative) {
+        return Promise.resolve([
+          { libraryItem: { estimatedMinutes: 1, topics: [{ topicId: 't1', topic: { id: 't1', slug: 'hashmap', label: 'Hashmap', order: 1 } }] },
+            weeklyPlan: { userId: 'u2' }, completedAt: new Date('2026-04-05T10:00:00Z'), outcome: 'DONE_EASY' },
+          { libraryItem: { estimatedMinutes: 1, topics: [{ topicId: 't1', topic: { id: 't1', slug: 'hashmap', label: 'Hashmap', order: 1 } }] },
+            weeklyPlan: { userId: 'u2' }, completedAt: new Date('2026-04-06T10:00:00Z'), outcome: 'DONE_EASY' },
+          { libraryItem: { estimatedMinutes: 1, topics: [{ topicId: 't1', topic: { id: 't1', slug: 'hashmap', label: 'Hashmap', order: 1 } }] },
+            weeklyPlan: { userId: 'u2' }, completedAt: new Date('2026-04-07T10:00:00Z'), outcome: 'DONE_EASY' },
+          { libraryItem: { estimatedMinutes: 1, topics: [{ topicId: 't1', topic: { id: 't1', slug: 'hashmap', label: 'Hashmap', order: 1 } }] },
+            weeklyPlan: { userId: 'u1' }, completedAt: new Date('2026-04-08T10:00:00Z'), outcome: 'DONE_EASY' },
+        ]);
+      }
+      return Promise.resolve([]);
+    });
+    const svc = makeService(prisma);
+    const r = await svc.build('c1', asOf);
+    expect(r.cycleTopMover?.userId).toBe('u2');
+    expect(r.cycleTopMover?.deltaItems).toBe(3);
+  });
+
+  it('streakChampion uses BRT-day-aware streak from completions', async () => {
+    const prisma = mockPrisma();
+    prisma.cycle.findUnique.mockResolvedValue(cycleBase);
+    const asOf = new Date('2026-05-12T23:00:00Z'); // 20:00 BRT, May 12
+    prisma.weeklyPlanItem.findMany.mockImplementation((args: any) => {
+      if (!args.where.outcome?.in) return Promise.resolve([]);
+      const gte: Date | undefined = args.where.completedAt?.gte;
+      const isCumulative = gte?.getTime() === cycleBase.startsAt.getTime();
+      if (isCumulative) {
+        return Promise.resolve([
+          // u1: completions on May 12 and May 11 BRT → streak 2 ending at asOf
+          { libraryItem: { estimatedMinutes: 1, topics: [{ topicId: 't1', topic: { id: 't1', slug: 'h', label: 'H', order: 1 } }] },
+            weeklyPlan: { userId: 'u1' }, completedAt: new Date('2026-05-12T21:00:00Z'), outcome: 'DONE_EASY' },
+          { libraryItem: { estimatedMinutes: 1, topics: [{ topicId: 't1', topic: { id: 't1', slug: 'h', label: 'H', order: 1 } }] },
+            weeklyPlan: { userId: 'u1' }, completedAt: new Date('2026-05-11T21:00:00Z'), outcome: 'DONE_EASY' },
+          // u2: completion on May 9 (gap on May 10/11) → streak 0 from asOf
+          { libraryItem: { estimatedMinutes: 1, topics: [{ topicId: 't1', topic: { id: 't1', slug: 'h', label: 'H', order: 1 } }] },
+            weeklyPlan: { userId: 'u2' }, completedAt: new Date('2026-05-09T21:00:00Z'), outcome: 'DONE_EASY' },
+        ]);
+      }
+      return Promise.resolve([]);
+    });
+    const svc = makeService(prisma);
+    const r = await svc.build('c1', asOf);
+    expect(r.streakChampion?.userId).toBe('u1');
+    expect(r.streakChampion?.streakDays).toBe(2);
+  });
+
+  it('retroChampions returns top 3 by count', async () => {
+    const prisma = mockPrisma();
+    prisma.cycle.findUnique.mockResolvedValue(cycleBase);
+    prisma.weeklyRetro.groupBy.mockResolvedValue([
+      { userId: 'u1', _count: { _all: 5 } },
+      { userId: 'u2', _count: { _all: 3 } },
+    ]);
+    const svc = makeService(prisma);
+    const r = await svc.build('c1', new Date('2026-05-12T20:00:00Z'));
+    expect(r.retroChampions.map(c => ({ userId: c.userId, retros: c.retros }))).toEqual([
+      { userId: 'u1', retros: 5 },
+      { userId: 'u2', retros: 3 },
+    ]);
+    expect(r.totals.retros).toBe(8);
+  });
+
+  it('perfectAttendance lists members present at ALL classes held', async () => {
+    const prisma = mockPrisma();
+    prisma.cycle.findUnique.mockResolvedValue(cycleBase);
+    prisma.classSession.findMany.mockResolvedValue([
+      { id: 's1', scheduledAt: new Date('2026-04-10T20:00:00Z') },
+      { id: 's2', scheduledAt: new Date('2026-04-17T20:00:00Z') },
+      { id: 's3', scheduledAt: new Date('2026-06-30T20:00:00Z') }, // future, won't count
+    ]);
+    prisma.classAttendance.findMany.mockResolvedValue([
+      { classSessionId: 's1', userId: 'u1', status: 'PRESENT' },
+      { classSessionId: 's2', userId: 'u1', status: 'PRESENT' },
+      { classSessionId: 's1', userId: 'u2', status: 'PRESENT' },
+      { classSessionId: 's2', userId: 'u2', status: 'ABSENT' },
+    ]);
+    const svc = makeService(prisma);
+    const r = await svc.build('c1', new Date('2026-05-12T20:00:00Z'));
+    expect(r.totals.classesHeld).toBe(2);
+    expect(r.totals.classesTotal).toBe(3);
+    expect(r.totals.attendanceRate).toBeCloseTo(3 / (2 * 2));
+    expect(r.perfectAttendance.map(m => m.userId)).toEqual(['u1']);
+  });
+
+  it('perfectAttendance is empty when no classes held yet', async () => {
+    const prisma = mockPrisma();
+    prisma.cycle.findUnique.mockResolvedValue(cycleBase);
+    prisma.classSession.findMany.mockResolvedValue([]);
+    const svc = makeService(prisma);
+    const r = await svc.build('c1', new Date('2026-05-12T20:00:00Z'));
+    expect(r.perfectAttendance).toEqual([]);
+  });
+});

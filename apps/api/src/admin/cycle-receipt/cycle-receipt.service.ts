@@ -2,6 +2,7 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException }
 import { POSITIVE_OUTCOMES } from '@ics-select/shared';
 import { PrismaService } from '../../common/prisma/prisma.service.js';
 import type { CycleReceiptResponse, ReceiptMode } from './cycle-receipt.types.js';
+import { computeStreakDays } from './streak.js';
 
 @Injectable()
 export class CycleReceiptService {
@@ -36,10 +37,71 @@ export class CycleReceiptService {
   private async assembleResponse(cycle: any, asOf: Date): Promise<CycleReceiptResponse> {
     const items = await this.fetchItems(cycle.id, cycle.startsAt, asOf);
     const stuckItems = await this.fetchStuckOrDoubtsItems(cycle.id, cycle.startsAt, asOf);
+    const windowItems = await this.fetchWindowItems(cycle.id, asOf);
+    const retros = await this.fetchRetros(cycle.id, asOf);
+    const classes = await this.fetchClasses(cycle.id, asOf);
+
     const memberCount = cycle.memberships.length;
+    const members = cycle.memberships
+      .map((m: any) => ({ userId: m.userId, name: m.user.name, pictureUrl: m.user.pictureUrl }))
+      .sort((a: any, b: any) => a.name.localeCompare(b.name));
+    const memberSet = new Set<string>(members.map((m: any) => m.userId));
+
     const totalsBase = this.computeTotals(items, memberCount);
     const byTopic = this.computeByTopic(items, memberCount);
     const knowledgeGrid = this.buildKnowledgeGrid(cycle, items, stuckItems);
+
+    const allMovers = this.computeMovers(items, members);
+    const windowMovers = this.computeMovers(windowItems, members);
+    const topMovers = windowMovers.slice(0, 3);
+    const cycleTopMover = allMovers[0] ?? null;
+
+    const itemsByUser = new Map<string, Array<{ completedAt: Date | null }>>();
+    for (const it of items) {
+      const u = it.weeklyPlan.userId;
+      if (!memberSet.has(u)) continue;
+      if (!itemsByUser.has(u)) itemsByUser.set(u, []);
+      itemsByUser.get(u)!.push({ completedAt: it.completedAt });
+    }
+    const streaks = members
+      .map((m: any) => ({
+        ...m,
+        streakDays: computeStreakDays(itemsByUser.get(m.userId) ?? [], asOf),
+        itemCount: itemsByUser.get(m.userId)?.length ?? 0,
+      }))
+      .sort((a: any, b: any) => b.streakDays - a.streakDays || b.itemCount - a.itemCount);
+    const streakChampion = streaks[0] && streaks[0].streakDays > 0
+      ? { userId: streaks[0].userId, name: streaks[0].name, pictureUrl: streaks[0].pictureUrl, streakDays: streaks[0].streakDays }
+      : null;
+
+    const retroCountByUser = new Map<string, number>();
+    for (const r of retros) {
+      const raw = (r as any)._count;
+      const cnt = typeof raw === 'number' ? raw : raw?._all ?? raw?.userId ?? 0;
+      retroCountByUser.set((r as any).userId, Number(cnt));
+    }
+    const totalRetros = Array.from(retroCountByUser.values()).reduce((s, n) => s + n, 0);
+    const retroChampions = members
+      .map((m: any) => ({ ...m, retros: retroCountByUser.get(m.userId) ?? 0 }))
+      .filter((m: any) => m.retros > 0)
+      .sort((a: any, b: any) => b.retros - a.retros || a.name.localeCompare(b.name))
+      .slice(0, 3);
+
+    const classesHeld = classes.held.length;
+    const classesTotal = classes.sessions.length;
+    const presents = classes.attendance.filter((a: any) => a.status === 'PRESENT');
+    const attendanceRate = classesHeld > 0 && memberCount > 0
+      ? presents.length / (classesHeld * memberCount)
+      : 0;
+    const presentsByUser = new Map<string, Set<string>>();
+    for (const a of presents) {
+      if (!presentsByUser.has(a.userId)) presentsByUser.set(a.userId, new Set());
+      presentsByUser.get(a.userId)!.add(a.classSessionId);
+    }
+    const perfectAttendance = classesHeld > 0
+      ? members.filter((m: any) => (presentsByUser.get(m.userId)?.size ?? 0) === classesHeld)
+      : [];
+
     const mode = this.decideMode(cycle, asOf);
 
     return {
@@ -57,19 +119,91 @@ export class CycleReceiptService {
       totals: {
         members: memberCount,
         ...totalsBase,
-        retros: 0,
-        classesHeld: 0,
-        classesTotal: 0,
-        attendanceRate: 0,
+        retros: totalRetros,
+        classesHeld,
+        classesTotal,
+        attendanceRate,
       },
       byTopic,
       knowledgeGrid,
-      topMovers: [],
-      cycleTopMover: null,
-      streakChampion: null,
-      retroChampions: [],
-      perfectAttendance: [],
+      topMovers,
+      cycleTopMover,
+      streakChampion,
+      retroChampions,
+      perfectAttendance,
     };
+  }
+
+  private async fetchWindowItems(cycleId: string, asOf: Date) {
+    const gte = new Date(asOf.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const lte = new Date(asOf);
+    lte.setUTCHours(23, 59, 59, 999);
+    return this.prisma.weeklyPlanItem.findMany({
+      where: {
+        weeklyPlan: { cycleId },
+        completedAt: { gte, lte },
+        outcome: { in: Array.from(POSITIVE_OUTCOMES) },
+      },
+      include: {
+        libraryItem: { include: { topics: { include: { topic: true } } } },
+        weeklyPlan: { select: { userId: true } },
+      },
+    });
+  }
+
+  private computeMovers(items: any[], members: Array<{ userId: string; name: string; pictureUrl: string | null }>) {
+    const memberLookup = new Map(members.map(m => [m.userId, m]));
+    const acc = new Map<string, { delta: number; topicCounts: Map<string, number> }>();
+    for (const it of items) {
+      const u = it.weeklyPlan.userId;
+      if (!memberLookup.has(u)) continue;
+      let bucket = acc.get(u);
+      if (!bucket) { bucket = { delta: 0, topicCounts: new Map() }; acc.set(u, bucket); }
+      bucket.delta += 1;
+      for (const lt of it.libraryItem.topics) {
+        const label = lt.topic.label;
+        bucket.topicCounts.set(label, (bucket.topicCounts.get(label) ?? 0) + 1);
+      }
+    }
+    return Array.from(acc.entries())
+      .filter(([, b]) => b.delta > 0)
+      .map(([userId, b]) => {
+        const m = memberLookup.get(userId)!;
+        const topTopics = Array.from(b.topicCounts.entries())
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 3)
+          .map(([label]) => label);
+        return { userId, name: m.name, pictureUrl: m.pictureUrl, deltaItems: b.delta, topTopics };
+      })
+      .sort((a, b) => b.deltaItems - a.deltaItems || a.name.localeCompare(b.name));
+  }
+
+  private async fetchRetros(cycleId: string, asOf: Date) {
+    const asOfEnd = new Date(asOf);
+    asOfEnd.setUTCHours(23, 59, 59, 999);
+    return this.prisma.weeklyRetro.groupBy({
+      by: ['userId'],
+      _count: { _all: true },
+      where: { cycleId, submittedAt: { lte: asOfEnd } },
+    } as any);
+  }
+
+  private async fetchClasses(cycleId: string, asOf: Date) {
+    const asOfEnd = new Date(asOf);
+    asOfEnd.setUTCHours(23, 59, 59, 999);
+    const sessions = await this.prisma.classSession.findMany({
+      where: { cycleId },
+      select: { id: true, scheduledAt: true },
+    });
+    const held = sessions.filter(s => s.scheduledAt <= asOfEnd);
+    const heldIds = held.map(s => s.id);
+    const attendance = heldIds.length > 0
+      ? await this.prisma.classAttendance.findMany({
+          where: { classSessionId: { in: heldIds } },
+          select: { classSessionId: true, userId: true, status: true },
+        })
+      : [];
+    return { sessions, held, attendance };
   }
 
   private async fetchStuckOrDoubtsItems(cycleId: string, startsAt: Date, asOf: Date) {
