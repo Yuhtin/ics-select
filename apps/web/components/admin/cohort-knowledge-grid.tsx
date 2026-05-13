@@ -39,7 +39,6 @@ export function CohortKnowledgeGrid({
   const inverted = variant === 'inverted';
   const cellColor = (c: Cell | undefined) => {
     if (!c || c.itemsDone === 0) return inverted ? 'text-white/30' : 'text-ink-faint';
-    if (c.hasStuckOrDoubts) return 'text-outcome-stuck';
     if (c.itemsDone === 1) return inverted ? 'text-white/70' : 'text-ink-soft';
     return inverted ? 'text-white' : 'text-ink';
   };
