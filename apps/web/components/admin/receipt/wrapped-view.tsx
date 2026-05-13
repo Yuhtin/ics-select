@@ -98,6 +98,12 @@ export function WrappedView({ data }: { data: CycleReceiptResponse }) {
         <div className="space-y-6 text-left">
           {(
             [
+              data.engagementLeader && {
+                k: 'engagement',
+                eyebrow: 'top engagement',
+                name: data.engagementLeader.name,
+                detail: `score ${data.engagementLeader.score}`,
+              },
               data.streakChampion && {
                 k: 'streak',
                 eyebrow: 'streak',

@@ -123,28 +123,15 @@ export function ThermalReceiptView({ data }: { data: CycleReceiptResponse }) {
 
       <div className="my-5 text-center text-ink-faint">{divider}</div>
 
-      {data.engagementRanking.length > 0 && (
-        <>
-          <div className="mb-1 text-sm uppercase tracking-wider">Engagement ranking</div>
-          <div className="mb-3 text-ink-faint">{dashed}</div>
-          {data.engagementRanking.map((r, i) => (
-            <div
-              key={r.userId}
-              className="grid grid-cols-[2ch_1fr_auto] items-baseline gap-3 text-[13px] leading-6"
-            >
-              <span className="text-ink-mute">{(i + 1).toString().padStart(2, '0')}</span>
-              <span>{r.name}</span>
-              <span className="text-ink-soft">score {r.score}</span>
-            </div>
-          ))}
-          <div className="my-5 text-center text-ink-faint">{divider}</div>
-        </>
-      )}
-
       <div className="mb-1 text-sm uppercase tracking-wider">Hall of fame</div>
       <div className="mb-3 text-ink-faint">{dashed}</div>
       {(() => {
         const rows = [
+          data.engagementLeader && {
+            label: 'top engagement',
+            name: data.engagementLeader.name,
+            detail: `score ${data.engagementLeader.score}`,
+          },
           data.streakChampion && {
             label: 'streak champion',
             name: data.streakChampion.name,
