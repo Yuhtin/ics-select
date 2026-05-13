@@ -96,65 +96,73 @@ export function WrappedView({ data }: { data: CycleReceiptResponse }) {
           hall of fame
         </div>
         <div className="space-y-6 text-left">
-          {data.engagementLeader && (
-            <div>
+          {(
+            [
+              data.streakChampion && {
+                k: 'streak',
+                eyebrow: 'streak',
+                name: data.streakChampion.name,
+                detail: `${data.streakChampion.streakDays} days`,
+              },
+              data.mostHoursStudied && {
+                k: 'hours',
+                eyebrow: 'most hours',
+                name: data.mostHoursStudied.name,
+                detail: fmtHours(data.mostHoursStudied.minutes),
+              },
+              data.mostItemsCompleted && {
+                k: 'items',
+                eyebrow: 'most items done',
+                name: data.mostItemsCompleted.name,
+                detail: `${data.mostItemsCompleted.items} items`,
+              },
+              data.polymath && {
+                k: 'polymath',
+                eyebrow: 'polymath',
+                name: data.polymath.name,
+                detail: `${data.polymath.topics} topics`,
+              },
+              data.mostActiveDays && {
+                k: 'active',
+                eyebrow: 'most active days',
+                name: data.mostActiveDays.name,
+                detail: `${data.mostActiveDays.days} days`,
+              },
+              data.marathonDay && {
+                k: 'marathon',
+                eyebrow: 'marathon day',
+                name: data.marathonDay.name,
+                detail: `${data.marathonDay.items} items in one day`,
+              },
+              data.longestItem && {
+                k: 'longform',
+                eyebrow: 'long-form',
+                name: data.longestItem.name,
+                detail: `finished ${fmtHours(data.longestItem.minutes)} item`,
+              },
+            ].filter(Boolean) as Array<{ k: string; eyebrow: string; name: string; detail: string }>
+          ).map((row) => (
+            <div key={row.k}>
               <div className="font-mono text-[11px] uppercase tracking-label opacity-70">
-                top engagement
+                {row.eyebrow}
               </div>
               <div className="font-serif text-[40px] leading-none font-semibold">
-                {data.engagementLeader.name}
+                {row.name}
               </div>
-              <div className="font-mono text-xs opacity-80">
-                score {data.engagementLeader.score}
-              </div>
+              <div className="font-mono text-xs opacity-80">{row.detail}</div>
             </div>
-          )}
-          {data.streakChampion && (
-            <div>
-              <div className="font-mono text-[11px] uppercase tracking-label opacity-70">
-                streak
-              </div>
-              <div className="font-serif text-[40px] leading-none font-semibold">
-                {data.streakChampion.name}
-              </div>
-              <div className="font-mono text-xs opacity-80">
-                {data.streakChampion.streakDays} days
-              </div>
-            </div>
-          )}
-          {data.mostHoursStudied && (
-            <div>
-              <div className="font-mono text-[11px] uppercase tracking-label opacity-70">
-                most hours
-              </div>
-              <div className="font-serif text-[40px] leading-none font-semibold">
-                {data.mostHoursStudied.name}
-              </div>
-              <div className="font-mono text-xs opacity-80">
-                {fmtHours(data.mostHoursStudied.minutes)}
-              </div>
-            </div>
-          )}
-          {data.mostItemsCompleted && (
-            <div>
-              <div className="font-mono text-[11px] uppercase tracking-label opacity-70">
-                most items done
-              </div>
-              <div className="font-serif text-[40px] leading-none font-semibold">
-                {data.mostItemsCompleted.name}
-              </div>
-              <div className="font-mono text-xs opacity-80">
-                {data.mostItemsCompleted.items} items
-              </div>
-            </div>
-          )}
+          ))}
           {data.perfectAttendance.length > 0 && (
             <div>
               <div className="font-mono text-[11px] uppercase tracking-label opacity-70">
                 perfect attendance
               </div>
-              <div className="font-serif text-[28px] leading-tight font-semibold">
-                {data.perfectAttendance.map((m) => m.name).join(', ')}
+              <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 font-mono text-sm opacity-90">
+                {data.perfectAttendance.map((m) => (
+                  <span key={m.userId} className="whitespace-nowrap">
+                    {m.name}
+                  </span>
+                ))}
               </div>
             </div>
           )}

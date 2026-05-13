@@ -53,10 +53,15 @@ export type CycleReceiptResponse = {
   };
   topMovers: Array<ReceiptMember & { deltaItems: number; topTopics: string[] }>;
   cycleTopMover: (ReceiptMember & { deltaItems: number; topTopics: string[] }) | null;
+  engagementRanking: Array<ReceiptMember & { score: number }>;
   streakChampion: (ReceiptMember & { streakDays: number }) | null;
   engagementLeader: (ReceiptMember & { score: number }) | null;
   mostHoursStudied: (ReceiptMember & { minutes: number }) | null;
   mostItemsCompleted: (ReceiptMember & { items: number }) | null;
+  polymath: (ReceiptMember & { topics: number }) | null;
+  mostActiveDays: (ReceiptMember & { days: number }) | null;
+  marathonDay: (ReceiptMember & { date: string; items: number }) | null;
+  longestItem: (ReceiptMember & { itemTitle: string; minutes: number }) | null;
   perfectAttendance: ReceiptMember[];
 };
 

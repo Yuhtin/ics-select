@@ -129,6 +129,80 @@ export class CycleReceiptService {
     const mostHoursStudied = pickTop(minutesByUser, 'minutes' as const);
     const mostItemsCompleted = pickTop(itemsByUserCount, 'items' as const);
 
+    // Polymath: most distinct topics touched by a single member.
+    const topicsByUser = new Map<string, Set<string>>();
+    // Active days: distinct BRT calendar days with at least one completion.
+    const activeDaysByUser = new Map<string, Set<string>>();
+    // Marathon: items completed per (user, BRT-day) — the single biggest day wins.
+    const itemsPerUserDay = new Map<string, number>();
+    // Track the longest single item completed across the cycle.
+    let longestItem: (ReceiptMember & { itemTitle: string; minutes: number }) | null = null;
+
+    const BRT_OFFSET_MIN = -3 * 60;
+    const toBrtDateKey = (d: Date) => {
+      const shifted = new Date(d.getTime() + BRT_OFFSET_MIN * 60_000);
+      return shifted.toISOString().slice(0, 10);
+    };
+
+    for (const it of items) {
+      const u = it.weeklyPlan.userId;
+      if (!memberSet.has(u)) continue;
+
+      for (const lt of it.libraryItem?.topics ?? []) {
+        if (!topicsByUser.has(u)) topicsByUser.set(u, new Set());
+        topicsByUser.get(u)!.add(lt.topic.id);
+      }
+
+      if (it.completedAt) {
+        const dayKey = toBrtDateKey(it.completedAt);
+        if (!activeDaysByUser.has(u)) activeDaysByUser.set(u, new Set());
+        activeDaysByUser.get(u)!.add(dayKey);
+        const composite = `${u}|${dayKey}`;
+        itemsPerUserDay.set(composite, (itemsPerUserDay.get(composite) ?? 0) + 1);
+      }
+
+      const minutes = it.libraryItem?.estimatedMinutes ?? 0;
+      if (minutes > 0 && (longestItem === null || minutes > longestItem.minutes)) {
+        const m = members.find((x: any) => x.userId === u);
+        if (m && it.libraryItem?.title) {
+          longestItem = {
+            userId: m.userId,
+            name: m.name,
+            pictureUrl: m.pictureUrl,
+            itemTitle: it.libraryItem.title,
+            minutes,
+          };
+        }
+      }
+    }
+
+    const polymath = pickTop(
+      new Map([...topicsByUser.entries()].map(([u, s]) => [u, s.size])),
+      'topics' as const,
+    );
+    const mostActiveDays = pickTop(
+      new Map([...activeDaysByUser.entries()].map(([u, s]) => [u, s.size])),
+      'days' as const,
+    );
+
+    let marathonDay: (ReceiptMember & { date: string; items: number }) | null = null;
+    for (const [composite, count] of itemsPerUserDay.entries()) {
+      const [u, dayKey] = composite.split('|');
+      const m = members.find((x: any) => x.userId === u);
+      if (!m) continue;
+      if (!marathonDay || count > marathonDay.items) {
+        marathonDay = {
+          userId: m.userId,
+          name: m.name,
+          pictureUrl: m.pictureUrl,
+          date: dayKey!,
+          items: count,
+        };
+      }
+    }
+    // Don't celebrate a "marathon" of 1 item — it'd be misleading.
+    if (marathonDay && marathonDay.items < 2) marathonDay = null;
+
     const classesHeld = classes.held.length;
     const classesTotal = classes.sessions.length;
     const presents = classes.attendance.filter((a: any) => a.status === 'PRESENT');
@@ -172,9 +246,16 @@ export class CycleReceiptService {
         return { ...m, score };
       })
       .sort((a: any, b: any) => b.score - a.score || a.name.localeCompare(b.name));
-    const engagementLeader = ranked.length > 0 && ranked[0].score > 0
-      ? { userId: ranked[0].userId, name: ranked[0].name, pictureUrl: ranked[0].pictureUrl, score: Math.round(ranked[0].score) }
-      : null;
+    const engagementRanking = ranked
+      .filter((r: any) => r.score > 0)
+      .slice(0, 5)
+      .map((r: any) => ({
+        userId: r.userId,
+        name: r.name,
+        pictureUrl: r.pictureUrl,
+        score: Math.round(r.score),
+      }));
+    const engagementLeader = engagementRanking[0] ?? null;
     return {
       cycle: {
         id: cycle.id,
@@ -199,10 +280,15 @@ export class CycleReceiptService {
       knowledgeGrid,
       topMovers,
       cycleTopMover,
+      engagementRanking,
       streakChampion,
       engagementLeader,
       mostHoursStudied,
       mostItemsCompleted,
+      polymath,
+      mostActiveDays,
+      marathonDay,
+      longestItem,
       perfectAttendance,
     };
   }

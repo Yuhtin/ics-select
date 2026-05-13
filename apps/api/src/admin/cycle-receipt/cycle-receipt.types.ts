@@ -56,9 +56,16 @@ export type CycleReceiptResponse = {
     topTopics: string[];
   }) | null;
 
+  engagementRanking: Array<ReceiptMember & { score: number }>;
+
+  // Hall of Fame achievements — each is a "rare badge" awarded to a single winner.
   streakChampion: (ReceiptMember & { streakDays: number }) | null;
   engagementLeader: (ReceiptMember & { score: number }) | null;
   mostHoursStudied: (ReceiptMember & { minutes: number }) | null;
   mostItemsCompleted: (ReceiptMember & { items: number }) | null;
+  polymath: (ReceiptMember & { topics: number }) | null;
+  mostActiveDays: (ReceiptMember & { days: number }) | null;
+  marathonDay: (ReceiptMember & { date: string; items: number }) | null;
+  longestItem: (ReceiptMember & { itemTitle: string; minutes: number }) | null;
   perfectAttendance: ReceiptMember[];
 };

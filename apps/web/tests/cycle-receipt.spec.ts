@@ -81,10 +81,19 @@ const BASE_RECEIPT = {
     deltaItems: 6,
     topTopics: ['Hashmap', 'Tree', 'Graph'],
   },
+  engagementRanking: [
+    { userId: 'u1', name: 'Alice', pictureUrl: null, score: 78 },
+    { userId: 'u2', name: 'Bob', pictureUrl: null, score: 65 },
+    { userId: 'u3', name: 'Carol', pictureUrl: null, score: 52 },
+  ],
   streakChampion: { userId: 'u1', name: 'Alice', pictureUrl: null, streakDays: 5 },
   engagementLeader: { userId: 'u1', name: 'Alice', pictureUrl: null, score: 78 },
   mostHoursStudied: { userId: 'u1', name: 'Alice', pictureUrl: null, minutes: 360 },
   mostItemsCompleted: { userId: 'u1', name: 'Alice', pictureUrl: null, items: 8 },
+  polymath: { userId: 'u2', name: 'Bob', pictureUrl: null, topics: 6 },
+  mostActiveDays: { userId: 'u1', name: 'Alice', pictureUrl: null, days: 14 },
+  marathonDay: { userId: 'u3', name: 'Carol', pictureUrl: null, date: '2026-05-04', items: 5 },
+  longestItem: { userId: 'u1', name: 'Alice', pictureUrl: null, itemTitle: 'System Design Primer', minutes: 240 },
   perfectAttendance: [{ userId: 'u1', name: 'Alice', pictureUrl: null }],
 };
 

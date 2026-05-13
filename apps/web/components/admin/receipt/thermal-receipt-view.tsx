@@ -123,31 +123,88 @@ export function ThermalReceiptView({ data }: { data: CycleReceiptResponse }) {
 
       <div className="my-5 text-center text-ink-faint">{divider}</div>
 
+      {data.engagementRanking.length > 0 && (
+        <>
+          <div className="mb-1 text-sm uppercase tracking-wider">Engagement ranking</div>
+          <div className="mb-3 text-ink-faint">{dashed}</div>
+          {data.engagementRanking.map((r, i) => (
+            <div
+              key={r.userId}
+              className="grid grid-cols-[2ch_1fr_auto] items-baseline gap-3 text-[13px] leading-6"
+            >
+              <span className="text-ink-mute">{(i + 1).toString().padStart(2, '0')}</span>
+              <span>{r.name}</span>
+              <span className="text-ink-soft">score {r.score}</span>
+            </div>
+          ))}
+          <div className="my-5 text-center text-ink-faint">{divider}</div>
+        </>
+      )}
+
       <div className="mb-1 text-sm uppercase tracking-wider">Hall of fame</div>
       <div className="mb-3 text-ink-faint">{dashed}</div>
-      {data.engagementLeader && (
-        <div className="text-[13px] leading-5">
-          top engagement    ▸ {data.engagementLeader.name} · score {data.engagementLeader.score}
-        </div>
-      )}
-      {data.streakChampion && (
-        <div className="text-[13px] leading-5">
-          streak champion   ▸ {data.streakChampion.name} · {data.streakChampion.streakDays}d
-        </div>
-      )}
-      {data.mostHoursStudied && (
-        <div className="text-[13px] leading-5">
-          most hours        ▸ {data.mostHoursStudied.name} · {fmtHours(data.mostHoursStudied.minutes)}
-        </div>
-      )}
-      {data.mostItemsCompleted && (
-        <div className="text-[13px] leading-5">
-          most items done   ▸ {data.mostItemsCompleted.name} · {data.mostItemsCompleted.items}
-        </div>
-      )}
+      {(() => {
+        const rows = [
+          data.streakChampion && {
+            label: 'streak champion',
+            name: data.streakChampion.name,
+            detail: `${data.streakChampion.streakDays} day${data.streakChampion.streakDays === 1 ? '' : 's'}`,
+          },
+          data.mostHoursStudied && {
+            label: 'most hours',
+            name: data.mostHoursStudied.name,
+            detail: fmtHours(data.mostHoursStudied.minutes),
+          },
+          data.mostItemsCompleted && {
+            label: 'most items done',
+            name: data.mostItemsCompleted.name,
+            detail: `${data.mostItemsCompleted.items} items`,
+          },
+          data.polymath && {
+            label: 'polymath',
+            name: data.polymath.name,
+            detail: `${data.polymath.topics} topics`,
+          },
+          data.mostActiveDays && {
+            label: 'most active days',
+            name: data.mostActiveDays.name,
+            detail: `${data.mostActiveDays.days} days`,
+          },
+          data.marathonDay && {
+            label: 'marathon day',
+            name: data.marathonDay.name,
+            detail: `${data.marathonDay.items} items in one day`,
+          },
+          data.longestItem && {
+            label: 'long-form',
+            name: data.longestItem.name,
+            detail: `finished ${fmtHours(data.longestItem.minutes)} item`,
+          },
+        ].filter(Boolean) as Array<{ label: string; name: string; detail: string }>;
+        if (rows.length === 0) {
+          return (
+            <div className="text-[12px] text-ink-mute">no achievements yet — keep going</div>
+          );
+        }
+        return rows.map((r) => (
+          <div
+            key={r.label}
+            className="grid grid-cols-[18ch_1fr_auto] items-baseline gap-3 text-[13px] leading-6"
+          >
+            <span>{r.label}</span>
+            <span>{r.name}</span>
+            <span className="text-ink-soft">{r.detail}</span>
+          </div>
+        ));
+      })()}
       {data.perfectAttendance.length > 0 && (
-        <div className="text-[13px] leading-5">
-          perfect attend.   ▸ {data.perfectAttendance.map((m) => m.name).join(', ')}
+        <div className="mt-4">
+          <div className="text-[11px] uppercase tracking-label text-ink-mute">perfect attendance</div>
+          <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[13px] leading-6">
+            {data.perfectAttendance.map((m) => (
+              <span key={m.userId} className="whitespace-nowrap">{m.name}</span>
+            ))}
+          </div>
         </div>
       )}
 
