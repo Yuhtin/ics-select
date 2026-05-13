@@ -16,6 +16,14 @@ export type CohortKnowledgeGridProps = {
 
 const truncate = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
 
+// "Cauan da Rocha Martins" → "Cauan Martins"; "Maria Clara" → "Maria Clara";
+// single-word names pass through untouched.
+function shortName(full: string): string {
+  const parts = full.trim().split(/\s+/);
+  if (parts.length <= 1) return full;
+  return `${parts[0]} ${parts[parts.length - 1]}`;
+}
+
 export function CohortKnowledgeGrid({
   members,
   topics,
@@ -65,28 +73,30 @@ export function CohortKnowledgeGrid({
 
   return (
     <div className="overflow-x-auto">
-      <table className="font-mono text-xs">
+      <table className="font-mono text-xs" style={{ borderCollapse: 'separate' }}>
         <thead>
-          <tr>
-            <th className="w-[180px]" />
+          <tr style={{ height: 120 }}>
+            <th className="w-[150px]" />
             {topics.map((t, i) => (
               <th
                 key={t.topicId}
-                className={`px-2 pb-2 align-bottom ${
+                className={`relative px-2 align-bottom ${
                   i > 0 && i % 4 === 0
                     ? inverted
                       ? 'border-l border-white/20'
                       : 'border-l border-rule'
                     : ''
                 }`}
+                style={{ width: 28, minWidth: 28 }}
               >
                 <div
-                  className={`origin-bottom-left -rotate-45 whitespace-nowrap text-[10px] uppercase tracking-label ${
+                  className={`pointer-events-none absolute left-1/2 bottom-2 origin-bottom-left whitespace-nowrap text-[10px] uppercase tracking-label ${
                     inverted ? 'text-white/70' : 'text-ink-soft'
                   }`}
+                  style={{ transform: 'rotate(-55deg) translateX(2px)' }}
                   title={t.label}
                 >
-                  {truncate(t.label, 14)}
+                  {truncate(t.label, 18)}
                 </div>
               </th>
             ))}
@@ -99,13 +109,13 @@ export function CohortKnowledgeGrid({
               className={inverted ? 'hover:bg-white/5' : 'hover:bg-paper-warm'}
             >
               <td
-                className={`pr-3 ${
+                className={`whitespace-nowrap pr-3 ${
                   onMemberClick ? 'cursor-pointer underline-offset-2 hover:underline' : ''
                 }`}
                 onClick={onMemberClick ? () => onMemberClick(m.userId) : undefined}
                 title={m.name}
               >
-                {truncate(m.name, 22)}
+                {shortName(m.name)}
               </td>
               {topics.map((t, i) => {
                 const c = cellMap.get(`${m.userId}|${t.topicId}`);

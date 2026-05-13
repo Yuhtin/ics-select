@@ -96,6 +96,19 @@ export function WrappedView({ data }: { data: CycleReceiptResponse }) {
           hall of fame
         </div>
         <div className="space-y-6 text-left">
+          {data.engagementLeader && (
+            <div>
+              <div className="font-mono text-[11px] uppercase tracking-label opacity-70">
+                top engagement
+              </div>
+              <div className="font-serif text-[40px] leading-none font-semibold">
+                {data.engagementLeader.name}
+              </div>
+              <div className="font-mono text-xs opacity-80">
+                score {data.engagementLeader.score}
+              </div>
+            </div>
+          )}
           {data.streakChampion && (
             <div>
               <div className="font-mono text-[11px] uppercase tracking-label opacity-70">
@@ -109,16 +122,29 @@ export function WrappedView({ data }: { data: CycleReceiptResponse }) {
               </div>
             </div>
           )}
-          {data.retroChampions[0] && (
+          {data.mostHoursStudied && (
             <div>
               <div className="font-mono text-[11px] uppercase tracking-label opacity-70">
-                retros
+                most hours
               </div>
               <div className="font-serif text-[40px] leading-none font-semibold">
-                {data.retroChampions[0].name}
+                {data.mostHoursStudied.name}
               </div>
               <div className="font-mono text-xs opacity-80">
-                {data.retroChampions[0].retros} submitted
+                {fmtHours(data.mostHoursStudied.minutes)}
+              </div>
+            </div>
+          )}
+          {data.mostItemsCompleted && (
+            <div>
+              <div className="font-mono text-[11px] uppercase tracking-label opacity-70">
+                most items done
+              </div>
+              <div className="font-serif text-[40px] leading-none font-semibold">
+                {data.mostItemsCompleted.name}
+              </div>
+              <div className="font-mono text-xs opacity-80">
+                {data.mostItemsCompleted.items} items
               </div>
             </div>
           )}

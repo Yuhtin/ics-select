@@ -82,10 +82,9 @@ const BASE_RECEIPT = {
     topTopics: ['Hashmap', 'Tree', 'Graph'],
   },
   streakChampion: { userId: 'u1', name: 'Alice', pictureUrl: null, streakDays: 5 },
-  retroChampions: [
-    { userId: 'u1', name: 'Alice', pictureUrl: null, retros: 2 },
-    { userId: 'u2', name: 'Bob', pictureUrl: null, retros: 1 },
-  ],
+  engagementLeader: { userId: 'u1', name: 'Alice', pictureUrl: null, score: 78 },
+  mostHoursStudied: { userId: 'u1', name: 'Alice', pictureUrl: null, minutes: 360 },
+  mostItemsCompleted: { userId: 'u1', name: 'Alice', pictureUrl: null, items: 8 },
   perfectAttendance: [{ userId: 'u1', name: 'Alice', pictureUrl: null }],
 };
 

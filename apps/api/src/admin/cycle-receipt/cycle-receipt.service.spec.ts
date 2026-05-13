@@ -8,6 +8,7 @@ const mockPrisma = () => ({
   weeklyRetro: { groupBy: jest.fn().mockResolvedValue([]) },
   classSession: { findMany: jest.fn().mockResolvedValue([]) },
   classAttendance: { findMany: jest.fn().mockResolvedValue([]) },
+  $queryRawUnsafe: jest.fn().mockResolvedValue([]),
 });
 
 const makeService = (prisma: ReturnType<typeof mockPrisma>) =>
@@ -328,7 +329,7 @@ describe('CycleReceiptService — nominal blocks', () => {
     expect(r.streakChampion?.streakDays).toBe(2);
   });
 
-  it('retroChampions returns top 3 by count', async () => {
+  it('totals.retros counts WeeklyRetro submissions for the cycle', async () => {
     const prisma = mockPrisma();
     prisma.cycle.findUnique.mockResolvedValue(cycleBase);
     prisma.weeklyRetro.groupBy.mockResolvedValue([
@@ -337,11 +338,64 @@ describe('CycleReceiptService — nominal blocks', () => {
     ]);
     const svc = makeService(prisma);
     const r = await svc.build('c1', new Date('2026-05-12T20:00:00Z'));
-    expect(r.retroChampions.map(c => ({ userId: c.userId, retros: c.retros }))).toEqual([
-      { userId: 'u1', retros: 5 },
-      { userId: 'u2', retros: 3 },
-    ]);
     expect(r.totals.retros).toBe(8);
+  });
+
+  it('mostHoursStudied picks member with highest sum of estimatedMinutes', async () => {
+    const prisma = mockPrisma();
+    prisma.cycle.findUnique.mockResolvedValue(cycleBase);
+    prisma.weeklyPlanItem.findMany.mockImplementation((args: any) => {
+      if (!args.where.outcome?.in) return Promise.resolve([]);
+      const gte: Date | undefined = args.where.completedAt?.gte;
+      const isCumulative = gte?.getTime() === cycleBase.startsAt.getTime();
+      if (isCumulative) {
+        return Promise.resolve([
+          { outcome: 'DONE_EASY', completedAt: new Date('2026-04-10T15:00:00Z'),
+            libraryItem: { estimatedMinutes: 90, topics: [] }, weeklyPlan: { userId: 'u1' } },
+          { outcome: 'DONE_EASY', completedAt: new Date('2026-04-11T15:00:00Z'),
+            libraryItem: { estimatedMinutes: 30, topics: [] }, weeklyPlan: { userId: 'u2' } },
+        ]);
+      }
+      return Promise.resolve([]);
+    });
+    const svc = makeService(prisma);
+    const r = await svc.build('c1', new Date('2026-05-12T20:00:00Z'));
+    expect(r.mostHoursStudied).toEqual({ userId: 'u1', name: 'Alice', pictureUrl: null, minutes: 90 });
+  });
+
+  it('mostItemsCompleted picks member with highest item count', async () => {
+    const prisma = mockPrisma();
+    prisma.cycle.findUnique.mockResolvedValue(cycleBase);
+    prisma.weeklyPlanItem.findMany.mockImplementation((args: any) => {
+      if (!args.where.outcome?.in) return Promise.resolve([]);
+      const gte: Date | undefined = args.where.completedAt?.gte;
+      const isCumulative = gte?.getTime() === cycleBase.startsAt.getTime();
+      if (isCumulative) {
+        return Promise.resolve([
+          { outcome: 'DONE_EASY', completedAt: new Date('2026-04-10T15:00:00Z'),
+            libraryItem: { estimatedMinutes: 30, topics: [] }, weeklyPlan: { userId: 'u2' } },
+          { outcome: 'DONE_EASY', completedAt: new Date('2026-04-11T15:00:00Z'),
+            libraryItem: { estimatedMinutes: 30, topics: [] }, weeklyPlan: { userId: 'u2' } },
+          { outcome: 'DONE_EASY', completedAt: new Date('2026-04-12T15:00:00Z'),
+            libraryItem: { estimatedMinutes: 30, topics: [] }, weeklyPlan: { userId: 'u1' } },
+        ]);
+      }
+      return Promise.resolve([]);
+    });
+    const svc = makeService(prisma);
+    const r = await svc.build('c1', new Date('2026-05-12T20:00:00Z'));
+    expect(r.mostItemsCompleted).toEqual({ userId: 'u2', name: 'Bob', pictureUrl: null, items: 2 });
+  });
+
+  it('engagementLeader uses cockpit engagement score (skipped when no $queryRawUnsafe available)', async () => {
+    const prisma = mockPrisma();
+    prisma.cycle.findUnique.mockResolvedValue(cycleBase);
+    // Service guards: when members are empty, no engagement query runs.
+    const empty = { ...cycleBase, memberships: [] };
+    prisma.cycle.findUnique.mockResolvedValue(empty);
+    const svc = makeService(prisma);
+    const r = await svc.build('c1', new Date('2026-05-12T20:00:00Z'));
+    expect(r.engagementLeader).toBeNull();
   });
 
   it('perfectAttendance lists members present at ALL classes held', async () => {

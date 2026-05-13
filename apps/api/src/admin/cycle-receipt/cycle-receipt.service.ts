@@ -1,8 +1,18 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { POSITIVE_OUTCOMES } from '@ics-select/shared';
 import { PrismaService } from '../../common/prisma/prisma.service.js';
-import type { CycleReceiptResponse, ReceiptMode } from './cycle-receipt.types.js';
+import { computeEngagementScore } from '../cockpit/engagement-score.js';
+import { computeEngagementInputsForCohort } from '../cockpit/engagement-inputs.js';
+import type { CycleReceiptResponse, ReceiptMember, ReceiptMode } from './cycle-receipt.types.js';
 import { computeStreakDays } from './streak.js';
+
+function mondayUTC(d: Date): Date {
+  const out = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+  const day = out.getUTCDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  out.setUTCDate(out.getUTCDate() + diff);
+  return out;
+}
 
 @Injectable()
 export class CycleReceiptService {
@@ -89,11 +99,35 @@ export class CycleReceiptService {
       retroCountByUser.set((r as any).userId, Number(cnt));
     }
     const totalRetros = Array.from(retroCountByUser.values()).reduce((s, n) => s + n, 0);
-    const retroChampions = members
-      .map((m: any) => ({ ...m, retros: retroCountByUser.get(m.userId) ?? 0 }))
-      .filter((m: any) => m.retros > 0)
-      .sort((a: any, b: any) => b.retros - a.retros || a.name.localeCompare(b.name))
-      .slice(0, 3);
+
+    // Hall of Fame: most hours + most items (derived from cumulative items)
+    const minutesByUser = new Map<string, number>();
+    const itemsByUserCount = new Map<string, number>();
+    for (const it of items) {
+      const u = it.weeklyPlan.userId;
+      if (!memberSet.has(u)) continue;
+      minutesByUser.set(u, (minutesByUser.get(u) ?? 0) + (it.libraryItem?.estimatedMinutes ?? 0));
+      itemsByUserCount.set(u, (itemsByUserCount.get(u) ?? 0) + 1);
+    }
+    const pickTop = <K extends string>(
+      map: Map<string, number>,
+      key: K,
+    ): (ReceiptMember & Record<K, number>) | null => {
+      let best: { userId: string; value: number; name: string } | null = null;
+      for (const [userId, value] of map.entries()) {
+        if (value <= 0) continue;
+        const m = members.find((x: any) => x.userId === userId);
+        if (!m) continue;
+        if (!best || value > best.value || (value === best.value && m.name.localeCompare(best.name) < 0)) {
+          best = { userId, value, name: m.name };
+        }
+      }
+      if (!best) return null;
+      const m = members.find((x: any) => x.userId === best!.userId)!;
+      return { userId: m.userId, name: m.name, pictureUrl: m.pictureUrl, [key]: best.value } as any;
+    };
+    const mostHoursStudied = pickTop(minutesByUser, 'minutes' as const);
+    const mostItemsCompleted = pickTop(itemsByUserCount, 'items' as const);
 
     const classesHeld = classes.held.length;
     const classesTotal = classes.sessions.length;
@@ -117,6 +151,30 @@ export class CycleReceiptService {
     const weeksElapsed = Math.floor((asOf.getTime() - cycle.startsAt.getTime()) / MS_PER_WEEK);
     const weekNumber = Math.max(1, Math.min(weeksTotal, weeksElapsed + 1));
 
+    // Engagement leader — reuses cockpit/engagement math so the ranking on
+    // the receipt matches the one on the cycle overview page.
+    const userIds: string[] = members.map((m: any) => m.userId);
+    const cycleStartMonday = mondayUTC(cycle.startsAt);
+    const inputs = userIds.length > 0
+      ? await computeEngagementInputsForCohort(
+          this.prisma,
+          userIds,
+          cycle.id,
+          cycleStartMonday,
+          asOf,
+        )
+      : new Map();
+    const ranked = members
+      .map((m: any) => {
+        const input = inputs.get(m.userId);
+        if (!input) return { ...m, score: 0 };
+        const { score } = computeEngagementScore(input);
+        return { ...m, score };
+      })
+      .sort((a: any, b: any) => b.score - a.score || a.name.localeCompare(b.name));
+    const engagementLeader = ranked.length > 0 && ranked[0].score > 0
+      ? { userId: ranked[0].userId, name: ranked[0].name, pictureUrl: ranked[0].pictureUrl, score: Math.round(ranked[0].score) }
+      : null;
     return {
       cycle: {
         id: cycle.id,
@@ -142,7 +200,9 @@ export class CycleReceiptService {
       topMovers,
       cycleTopMover,
       streakChampion,
-      retroChampions,
+      engagementLeader,
+      mostHoursStudied,
+      mostItemsCompleted,
       perfectAttendance,
     };
   }

@@ -125,25 +125,28 @@ export function ThermalReceiptView({ data }: { data: CycleReceiptResponse }) {
 
       <div className="mb-1 text-sm uppercase tracking-wider">Hall of fame</div>
       <div className="mb-3 text-ink-faint">{dashed}</div>
+      {data.engagementLeader && (
+        <div className="text-[13px] leading-5">
+          top engagement    ▸ {data.engagementLeader.name} · score {data.engagementLeader.score}
+        </div>
+      )}
       {data.streakChampion && (
         <div className="text-[13px] leading-5">
           streak champion   ▸ {data.streakChampion.name} · {data.streakChampion.streakDays}d
         </div>
       )}
-      {data.retroChampions.length > 0 && (
-        <div className="mt-2 text-[13px] leading-5">
-          <div>
-            retros            ▸ {data.retroChampions[0]!.name} · {data.retroChampions[0]!.retros}
-          </div>
-          {data.retroChampions.slice(1).map((c) => (
-            <div key={c.userId} className="pl-[18ch]">
-              {c.name} · {c.retros}
-            </div>
-          ))}
+      {data.mostHoursStudied && (
+        <div className="text-[13px] leading-5">
+          most hours        ▸ {data.mostHoursStudied.name} · {fmtHours(data.mostHoursStudied.minutes)}
+        </div>
+      )}
+      {data.mostItemsCompleted && (
+        <div className="text-[13px] leading-5">
+          most items done   ▸ {data.mostItemsCompleted.name} · {data.mostItemsCompleted.items}
         </div>
       )}
       {data.perfectAttendance.length > 0 && (
-        <div className="mt-2 text-[13px] leading-5">
+        <div className="text-[13px] leading-5">
           perfect attend.   ▸ {data.perfectAttendance.map((m) => m.name).join(', ')}
         </div>
       )}

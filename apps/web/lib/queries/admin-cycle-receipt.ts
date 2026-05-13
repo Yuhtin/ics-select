@@ -54,7 +54,9 @@ export type CycleReceiptResponse = {
   topMovers: Array<ReceiptMember & { deltaItems: number; topTopics: string[] }>;
   cycleTopMover: (ReceiptMember & { deltaItems: number; topTopics: string[] }) | null;
   streakChampion: (ReceiptMember & { streakDays: number }) | null;
-  retroChampions: Array<ReceiptMember & { retros: number }>;
+  engagementLeader: (ReceiptMember & { score: number }) | null;
+  mostHoursStudied: (ReceiptMember & { minutes: number }) | null;
+  mostItemsCompleted: (ReceiptMember & { items: number }) | null;
   perfectAttendance: ReceiptMember[];
 };
 
