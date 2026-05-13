@@ -1,8 +1,10 @@
 import type { Lesson, MeetingSummary } from './lesson-types';
-import { urlShortenerVsChat } from './lessons/url-shortener-vs-chat';
+import { urlShortener } from './lessons/url-shortener';
+import { chatMessaging } from './lessons/chat-messaging';
 
 const LESSONS: Record<string, Lesson> = {
-  [urlShortenerVsChat.slug]: urlShortenerVsChat,
+  [urlShortener.slug]: urlShortener,
+  [chatMessaging.slug]: chatMessaging,
 };
 
 export function getLesson(slug: string): Lesson | undefined {

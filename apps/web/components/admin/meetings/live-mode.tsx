@@ -190,12 +190,12 @@ function FocusCard({ node }: { node: LessonNode }) {
               ))}
             </div>
           </div>
+
+          <PegadinhasList node={node} />
         </div>
 
         <div className="space-y-6 px-7 py-7">
           {node.scenarios && <ScenariosBlock scenarios={node.scenarios} />}
-
-          <PegadinhasList node={node} />
 
           <div className="rounded-input border border-warn/30 bg-warn-soft/40 p-4">
             <Eyebrow className="mb-2 text-warn">
