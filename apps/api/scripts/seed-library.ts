@@ -139,7 +139,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — ByteByteGo',
     tags: ['tradeoffs', 'cache-aside', 'read-through', 'write-through', 'write-back'],
-    topicOrder: { 'caching': 7 },
+    topicOrder: { 'caching': 5 },
   },
   {
     title: 'Cache Systems Every Developer Should Know',
@@ -167,7 +167,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — ByteByteGo',
     tags: ['concept', 'pitfalls', 'thundering-herd', 'stampede'],
-    topicOrder: { 'caching': 9 },
+    topicOrder: { 'caching': 8 },
   },
   {
     title: 'Cache Invalidation Explained',
@@ -182,20 +182,6 @@ const ITEMS: ItemSeed[] = [
     source: 'YouTube — ByteByteGo',
     tags: ['concept', 'cache-invalidation', 'consistency'],
     topicOrder: { 'caching': 6 },
-  },
-  {
-    title: 'Top Caching Strategies — ByteByteGo Blog',
-    url: 'https://blog.bytebytego.com/p/top-caching-strategies',
-    description:
-      'Alex Xu — versão escrita das estratégias de write (write-around, write-back, write-through) e read (cache-aside, read-through), com quando escolher cada uma.',
-    format: 'ARTICLE',
-    difficulty: 'MEDIUM',
-    estimatedMinutes: 15,
-    topicSlugs: ['caching'],
-    tracks: [],
-    source: 'Blog — ByteByteGo',
-    tags: ['tradeoffs', 'write-through', 'cache-aside', 'write-back'],
-    topicOrder: { 'caching': 8 },
   },
   // ---------------------------------------------------------------------------
   // databases (10 items) — 2026-04-19
@@ -254,7 +240,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — ByteByteGo',
     tags: ['concept', 'index', 'b-tree', 'hash-index'],
-    topicOrder: { 'databases': 6 },
+    topicOrder: { 'databases': 7 },
   },
   {
     title: "99% of Developers Don't Get PostgreSQL",
@@ -268,7 +254,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — The Coding Gopher',
     tags: ['concept', 'postgresql', 'mvcc', 'internals'],
-    topicOrder: { 'databases': 14 },
+    topicOrder: { 'databases': 16 },
   },
   {
     title: 'PostgreSQL Internal Architecture Explained',
@@ -282,7 +268,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Hussein Nasser',
     tags: ['concept', 'postgresql', 'architecture', 'mvcc', 'wal', 'internals'],
-    topicOrder: { 'databases': 15 },
+    topicOrder: { 'databases': 17 },
   },
   {
     title: 'A Deep Dive in How Slow SELECT * is',
@@ -296,7 +282,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Hussein Nasser',
     tags: ['concept', 'postgresql', 'query-performance', 'internals'],
-    topicOrder: { 'databases': 12 },
+    topicOrder: { 'databases': 14 },
   },
   {
     title: 'Database Indexing Strategies',
@@ -310,7 +296,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'Blog — ByteByteGo',
     tags: ['concept', 'index', 'clustered', 'covering-index'],
-    topicOrder: { 'databases': 7 },
+    topicOrder: { 'databases': 8 },
   },
   {
     title: '8 Data Structures That Power Your Databases',
@@ -324,7 +310,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'Guide — ByteByteGo',
     tags: ['concept', 'data-structures', 'b-tree', 'lsm-tree', 'bloom-filter'],
-    topicOrder: { 'databases': 9 },
+    topicOrder: { 'databases': 11 },
   },
   {
     title: 'Database Pages — A Deep Dive',
@@ -338,7 +324,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'Medium — Hussein Nasser',
     tags: ['concept', 'pages', 'storage', 'rows', 'internals'],
-    topicOrder: { 'databases': 11 },
+    topicOrder: { 'databases': 13 },
   },
   {
     title: 'Why Netflix, Instagram, and Twitter Pick Different Databases',
@@ -352,7 +338,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — ByteMonk',
     tags: ['case-study', 'database-selection', 'netflix', 'instagram', 'twitter'],
-    topicOrder: { 'databases': 18 },
+    topicOrder: { 'databases': 20 },
   },
 
   // ---------------------------------------------------------------------------
@@ -578,13 +564,13 @@ const ITEMS: ItemSeed[] = [
     description:
       'Fireship — 5 ED que você não vê na graduação: B-tree, radix tree, rope, bloom filter, cuckoo hashing.',
     format: 'VIDEO',
-    difficulty: 'EASY',
+    difficulty: 'MEDIUM',
     estimatedMinutes: 5,
     topicSlugs: ['tree', 'array', 'databases', 'trie'],
     tracks: [],
     source: 'YouTube — Fireship',
     tags: ['concept', 'b-tree', 'radix-tree', 'rope', 'bloom-filter', 'cuckoo-hashing', 'fireship'],
-    topicOrder: { 'array': 45, 'databases': 8, 'tree': 25, 'trie': 7 },
+    topicOrder: { 'array': 45, 'databases': 9, 'tree': 25, 'trie': 7 },
   },
   {
     title: 'Data structures: Introduction to Trees',
@@ -662,13 +648,13 @@ const ITEMS: ItemSeed[] = [
     description:
       'ByteByteGo — B-Tree (Postgres, MySQL) vs LSM-Tree (Cassandra, RocksDB): read vs write, write amplification, compaction.',
     format: 'ARTICLE',
-    difficulty: 'HARD',
+    difficulty: 'MEDIUM',
     estimatedMinutes: 12,
     topicSlugs: ['tree', 'databases'],
     tracks: [],
     source: 'Guide — ByteByteGo',
     tags: ['tradeoffs', 'b-tree', 'lsm-tree', 'storage-engine', 'write-amplification'],
-    topicOrder: { 'databases': 10, 'tree': 26 },
+    topicOrder: { 'databases': 12, 'tree': 26 },
   },
   {
     title: 'Grokking Data Structures — Trees (chapter)',
@@ -676,7 +662,7 @@ const ITEMS: ItemSeed[] = [
     description:
       'Capítulo de trees do Grokking Data Structures (La Rocca, Manning). Binary trees, BSTs, traversals, balanced trees no estilo visual-heavy do livro. Livro pago — ver biblioteca da Inteli ou Manning. O GitHub tem só o código de apoio, não o PDF.',
     format: 'BOOK',
-    difficulty: 'MEDIUM',
+    difficulty: 'EASY',
     estimatedMinutes: 25,
     topicSlugs: ['tree'],
     tracks: [],
@@ -727,7 +713,7 @@ const ITEMS: ItemSeed[] = [
     description:
       'mycodeschool — selection sort em diagrama: escolhe o mínimo e troca. Análise O(n²) com número exato de comparações/trocas.',
     format: 'VIDEO',
-    difficulty: 'MEDIUM',
+    difficulty: 'EASY',
     estimatedMinutes: 11,
     topicSlugs: ['sorting'],
     tracks: [],
@@ -868,7 +854,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Arthur Takeda',
     tags: ['concept', 'sharding', 'replication', 'scaling', 'horizontal-scale', 'pt-br'],
-    topicOrder: { 'databases': 17, 'sharding': 2 },
+    topicOrder: { 'databases': 19, 'sharding': 2 },
   },
   {
     title: 'Docker Explicado em 8 Minutos',
@@ -918,13 +904,13 @@ const ITEMS: ItemSeed[] = [
     description:
       'Arthur Takeda — como VPN realmente funciona em 8min: túnel IP, DNS leaks, o provedor virando o novo middleman.',
     format: 'VIDEO',
-    difficulty: 'MEDIUM',
+    difficulty: 'EASY',
     estimatedMinutes: 8,
     topicSlugs: ['networking', 'security'],
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Arthur Takeda',
     tags: ['tradeoffs', 'vpn', 'privacy', 'dns', 'networking', 'pt-br'],
-    topicOrder: { 'networking': 8, 'security': 11 },
+    topicOrder: { 'networking': 8, 'security': 13 },
   },
   {
     title: '10 Conceitos-Base de Computação Que Você Precisa Saber',
@@ -952,7 +938,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Arthur Takeda',
     tags: ['concept', 'design-patterns', 'gof', 'oop', 'pt-br'],
-    topicOrder: { 'design-patterns': 1 },
+    topicOrder: { 'design-patterns': 2 },
   },
 
   // ---------------------------------------------------------------------------
@@ -1057,7 +1043,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: "YouTube — Kiki's Bytes",
     tags: ['concept', 'system-design-overview', 'load-balancing', 'caching', 'cap-theorem', 'sql-vs-nosql'],
-    topicOrder: { 'cap-consistency': 4, 'load-balancers': 2, 'scalability': 1 },
+    topicOrder: { 'cap-consistency': 4, 'load-balancers': 3, 'scalability': 1 },
   },
 
   // ---------------------------------------------------------------------------
@@ -1374,20 +1360,6 @@ const ITEMS: ItemSeed[] = [
     topicOrder: { 'dp': 2, 'recursion': 2 },
   },
   {
-    title: 'Dynamic Programming | Leetcode 70 (Climbing Stairs)',
-    url: 'https://www.youtube.com/watch?v=sBZtJs0WmgQ',
-    description:
-      'Augusto Galego — climbing stairs (LC 70) com DP: identificar o subproblema e construir bottom-up.',
-    format: 'VIDEO',
-    difficulty: 'EASY',
-    estimatedMinutes: 8,
-    topicSlugs: ['dp'],
-    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
-    source: 'YouTube — Augusto Galego',
-    tags: ['concept', 'dp', 'climbing-stairs', 'leetcode-70', 'galego'],
-    topicOrder: { 'dp': 4 },
-  },
-  {
     title: 'Top 5 Dynamic Programming Patterns for Coding Interviews — For Beginners',
     url: 'https://www.youtube.com/watch?v=mBNrRy2_hVs',
     description:
@@ -1421,7 +1393,7 @@ const ITEMS: ItemSeed[] = [
     description:
       'Back to Back SWE — 0/1 Knapsack: tabela 2D itens × capacidade, decisão pegar ou não a cada passo.',
     format: 'VIDEO',
-    difficulty: 'HARD',
+    difficulty: 'MEDIUM',
     estimatedMinutes: 21,
     topicSlugs: ['dp'],
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
@@ -1435,7 +1407,7 @@ const ITEMS: ItemSeed[] = [
     description:
       'Back to Back SWE — Levenshtein/Edit Distance: tabela 2D, três operações (insert, delete, replace) custam 1 cada.',
     format: 'VIDEO',
-    difficulty: 'HARD',
+    difficulty: 'MEDIUM',
     estimatedMinutes: 17,
     topicSlugs: ['dp'],
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
@@ -1469,7 +1441,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Augusto Galego',
     tags: ['concept', 'replication', 'master-replica', 'sync-async', 'galego'],
-    topicOrder: { 'databases': 16 },
+    topicOrder: { 'databases': 18 },
   },
 
   // ---------------------------------------------------------------------------
@@ -1626,7 +1598,7 @@ const ITEMS: ItemSeed[] = [
     description:
       'AlgoViz — visualizador interativo de DFS: stack/recursão, exploração completa de cada caminho antes de retroceder. pt-BR.',
     format: 'ARTICLE',
-    difficulty: 'MEDIUM',
+    difficulty: 'EASY',
     estimatedMinutes: 8,
     topicSlugs: ['graph', 'recursion'],
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
@@ -1640,7 +1612,7 @@ const ITEMS: ItemSeed[] = [
     description:
       'AlgoViz — visualizador interativo de Dijkstra: priority queue, caminho mais curto em grafo com pesos não-negativos. pt-BR.',
     format: 'ARTICLE',
-    difficulty: 'HARD',
+    difficulty: 'MEDIUM',
     estimatedMinutes: 10,
     topicSlugs: ['graph', 'heap'],
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
@@ -1654,7 +1626,7 @@ const ITEMS: ItemSeed[] = [
     description:
       'AlgoViz — visualizador interativo de topological sort: DAG, ordem que respeita dependências, Kahn ou DFS-based. pt-BR.',
     format: 'ARTICLE',
-    difficulty: 'HARD',
+    difficulty: 'MEDIUM',
     estimatedMinutes: 10,
     topicSlugs: ['graph'],
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
@@ -1668,7 +1640,7 @@ const ITEMS: ItemSeed[] = [
     description:
       'AlgoViz — visualizador interativo de Union-Find (DSU): union, find, path compression, detecção de componentes conexos. pt-BR.',
     format: 'ARTICLE',
-    difficulty: 'HARD',
+    difficulty: 'MEDIUM',
     estimatedMinutes: 10,
     topicSlugs: ['graph'],
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
@@ -1716,7 +1688,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'Site — AlgoViz (Davi Duarte)',
     tags: ['concept', 'caching', 'lru', 'doubly-linked-list', 'hashmap', 'algoviz', 'visualization', 'pt-br'],
-    topicOrder: { 'caching': 5, 'hashmap': 11, 'lists': 18 },
+    topicOrder: { 'caching': 7, 'hashmap': 11, 'lists': 18 },
   },
   {
     title: 'AlgoViz — Trie (Prefix Tree)',
@@ -1742,7 +1714,7 @@ const ITEMS: ItemSeed[] = [
     description:
       'ByteByteGo — consistent hashing pra distribuir chaves em servidores: anel de hash, virtual nodes, rebalanceamento mínimo quando um servidor entra ou sai.',
     format: 'VIDEO',
-    difficulty: 'HARD',
+    difficulty: 'MEDIUM',
     estimatedMinutes: 9,
     topicSlugs: ['hashmap', 'sharding'],
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
@@ -1816,7 +1788,7 @@ const ITEMS: ItemSeed[] = [
     description:
       'Hussein Nasser — o que é message queue e quando usar: desacoplamento producer/consumer, retry, ordering, comparação Kafka vs RabbitMQ.',
     format: 'VIDEO',
-    difficulty: 'MEDIUM',
+    difficulty: 'EASY',
     estimatedMinutes: 14,
     topicSlugs: ['message-queues'],
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
@@ -1858,7 +1830,7 @@ const ITEMS: ItemSeed[] = [
     description:
       'ByteByteGo — por que Kafka é rápido: zero-copy, sequential I/O, batch + compression no producer.',
     format: 'VIDEO',
-    difficulty: 'HARD',
+    difficulty: 'MEDIUM',
     estimatedMinutes: 6,
     topicSlugs: ['message-queues'],
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
@@ -2100,7 +2072,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Hussein Nasser',
     tags: ['concept', 'networking', 'ssl', 'tls', 'certificates', 'security', 'hussein-nasser'],
-    topicOrder: { 'networking': 3, 'security': 10 },
+    topicOrder: { 'networking': 3, 'security': 12 },
   },
   {
     title: 'This is why gRPC was invented',
@@ -2154,7 +2126,7 @@ const ITEMS: ItemSeed[] = [
     description:
       'Augusto Galego — cache do zero em 19min: o que é, hit/miss, write-through vs write-back, expiração e invalidação.',
     format: 'VIDEO',
-    difficulty: 'EASY',
+    difficulty: 'MEDIUM',
     estimatedMinutes: 19,
     topicSlugs: ['caching'],
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
@@ -2230,7 +2202,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Augusto Galego',
     tags: ['tradeoffs', 'monolith', 'microservices', 'architecture', 'galego'],
-    topicOrder: { 'design-patterns': 4, 'scalability': 4 },
+    topicOrder: { 'design-patterns': 7, 'scalability': 4 },
   },
   {
     title: 'Princípios SOLID Pelos Olhos de um Dev Sr.',
@@ -2244,7 +2216,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Augusto Galego',
     tags: ['concept', 'solid', 'design-principles', 'srp', 'liskov', 'galego'],
-    topicOrder: { 'design-patterns': 2 },
+    topicOrder: { 'design-patterns': 3 },
   },
   {
     title: 'Padrão SAGA | Orquestrando diferentes microsserviços',
@@ -2258,7 +2230,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Augusto Galego',
     tags: ['concept', 'saga', 'microservices', 'distributed-transactions', 'compensation', 'galego'],
-    topicOrder: { 'design-patterns': 5, 'reliability': 6 },
+    topicOrder: { 'design-patterns': 9, 'reliability': 6 },
   },
   {
     title: 'Top 6 Load Balancing Algorithms Every Developer Should Know',
@@ -2272,7 +2244,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — ByteByteGo',
     tags: ['tradeoffs', 'load-balancer', 'algorithms', 'round-robin', 'least-connections', 'bytebytego'],
-    topicOrder: { 'load-balancers': 3 },
+    topicOrder: { 'load-balancers': 4 },
   },
 
   // ---------------------------------------------------------------------------
@@ -2400,7 +2372,7 @@ const ITEMS: ItemSeed[] = [
     description:
       'ByteByteGo — Cloud Native como prática: containers + microservices + orquestração + DevOps + observabilidade. Não é só rodar na cloud.',
     format: 'VIDEO',
-    difficulty: 'MEDIUM',
+    difficulty: 'EASY',
     estimatedMinutes: 8,
     topicSlugs: ['cloud'],
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
@@ -2414,7 +2386,7 @@ const ITEMS: ItemSeed[] = [
     description:
       'Fireship — serverless explicado: FaaS (Lambda, Cloud Functions), pay-per-execution, cold start, quando vale e quando não.',
     format: 'VIDEO',
-    difficulty: 'MEDIUM',
+    difficulty: 'EASY',
     estimatedMinutes: 17,
     topicSlugs: ['cloud'],
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
@@ -2474,13 +2446,13 @@ const ITEMS: ItemSeed[] = [
     description:
       'Fireship — 7 conceitos de criptografia: hashing, salting, symmetric/asymmetric encryption, signatures, MAC, key exchange.',
     format: 'VIDEO',
-    difficulty: 'MEDIUM',
+    difficulty: 'EASY',
     estimatedMinutes: 12,
     topicSlugs: ['security'],
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Fireship',
     tags: ['concept', 'security', 'cryptography', 'hashing', 'encryption', 'fireship'],
-    topicOrder: { 'security': 9 },
+    topicOrder: { 'security': 11 },
   },
   {
     title: 'OAuth 2 Explained In Simple Terms',
@@ -2488,13 +2460,13 @@ const ITEMS: ItemSeed[] = [
     description:
       'ByteByteGo — OAuth 2 sem jargão: roles (resource owner, client, auth server, resource server), flows authorization code e client credentials.',
     format: 'VIDEO',
-    difficulty: 'MEDIUM',
+    difficulty: 'EASY',
     estimatedMinutes: 5,
     topicSlugs: ['security'],
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — ByteByteGo',
     tags: ['concept', 'security', 'oauth', 'oauth2', 'authorization', 'bytebytego'],
-    topicOrder: { 'security': 8 },
+    topicOrder: { 'security': 10 },
   },
   {
     title: 'JSON Web Tokens (JWTs) Explained',
@@ -2508,7 +2480,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — The Coding Gopher',
     tags: ['concept', 'security', 'jwt', 'token', 'hmac', 'coding-gopher'],
-    topicOrder: { 'security': 7 },
+    topicOrder: { 'security': 9 },
   },
   {
     title: 'Five Password Authentications From Least to Most Secure (Explained with NodeJS & Postgres)',
@@ -2522,7 +2494,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Hussein Nasser',
     tags: ['concept', 'security', 'password', 'hashing', 'bcrypt', 'argon2', 'hussein-nasser'],
-    topicOrder: { 'security': 6 },
+    topicOrder: { 'security': 7 },
   },
   {
     title: 'Securing Backend Applications (OWASP recommendations)',
@@ -2562,7 +2534,7 @@ const ITEMS: ItemSeed[] = [
     description:
       'ByteByteGo — 7 padrões clássicos de sistemas distribuídos: leader/follower, consensus (Paxos/Raft), heartbeat, sharding, write-ahead log, gossip.',
     format: 'VIDEO',
-    difficulty: 'MEDIUM',
+    difficulty: 'EASY',
     estimatedMinutes: 7,
     topicSlugs: ['reliability', 'cap-consistency'],
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
@@ -2600,7 +2572,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — ByteByteGo',
     tags: ['concept', 'pubsub', 'architecture-patterns', 'overview', 'event-driven', 'bytebytego'],
-    topicOrder: { 'design-patterns': 3, 'pubsub': 1 },
+    topicOrder: { 'design-patterns': 1, 'pubsub': 1 },
   },
   {
     title: 'Publish-Subscribe Architecture (Explained by Example)',
@@ -2688,7 +2660,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Hussein Nasser',
     tags: ['concept', 'acid', 'transactions', 'isolation-levels', 'mvcc', 'postgres', 'hussein-nasser'],
-    topicOrder: { 'cap-consistency': 7, 'databases': 13 },
+    topicOrder: { 'cap-consistency': 7, 'databases': 15 },
   },
 
   // ---------------------------------------------------------------------------
@@ -2742,7 +2714,7 @@ const ITEMS: ItemSeed[] = [
     description:
       'Back to Back SWE — backtracking como paradigma: 3 perguntas-chave (escolha, restrições, fim) com template aplicável a qualquer problema.',
     format: 'VIDEO',
-    difficulty: 'HARD',
+    difficulty: 'MEDIUM',
     estimatedMinutes: 14,
     topicSlugs: ['recursion'],
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
@@ -2770,7 +2742,7 @@ const ITEMS: ItemSeed[] = [
     description:
       'Capítulo 3 do Grokking Algorithms (Bhargava, Manning). Recursion: base case, recursive case, stack das chamadas, exemplos visuais. Livro pago — ver biblioteca da Inteli ou Manning. O GitHub tem só o código de apoio, não o PDF.',
     format: 'BOOK',
-    difficulty: 'MEDIUM',
+    difficulty: 'EASY',
     estimatedMinutes: 25,
     topicSlugs: ['recursion'],
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
@@ -5588,7 +5560,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — PawelCodeStuff',
     tags: ['concept', 'index', 'database', 'pawel-code-stuff'],
-    topicOrder: { 'databases': 5 },
+    topicOrder: { 'databases': 6 },
   },
   {
     title: 'Auto-Increment vs UUID Explained in 5 Minutes',
@@ -5602,7 +5574,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — PawelCodeStuff',
     tags: ['tradeoffs', 'primary-key', 'uuid', 'auto-increment', 'database', 'pawel-code-stuff'],
-    topicOrder: { 'databases': 8 },
+    topicOrder: { 'databases': 10 },
   },
   {
     title: '3 Databases Built for Specific Problems',
@@ -5616,7 +5588,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — PawelCodeStuff',
     tags: ['tradeoffs', 'database-selection', 'time-series', 'vector-db', 'graph-db', 'pawel-code-stuff'],
-    topicOrder: { 'databases': 19 },
+    topicOrder: { 'databases': 21 },
   },
   {
     title: 'Why Good Password Hashing is Intentionally Slow',
@@ -5630,7 +5602,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — PawelCodeStuff',
     tags: ['concept', 'security', 'password', 'hashing', 'bcrypt', 'argon2', 'pawel-code-stuff'],
-    topicOrder: { 'security': 5 },
+    topicOrder: { 'security': 6 },
   },
   {
     title: 'Why Moving Your Mouse Generates Secure Keys',
@@ -5644,7 +5616,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — PawelCodeStuff',
     tags: ['concept', 'security', 'entropy', 'csprng', 'cryptography', 'pawel-code-stuff'],
-    topicOrder: { 'security': 12 },
+    topicOrder: { 'security': 14 },
   },
   {
     title: 'Why is rendering text so complicated?',
@@ -5688,6 +5660,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Vasilios Syrakis',
     tags: ['case-study', 'envoy', 'xds', 'proxy', 'aws', 'ami', 'load-balancing', 'edge-compute', 'atlassian'],
+    topicOrder: { 'load-balancers': 5, 'cloud': 8, 'networking': 9 },
   },
   {
     title: '20 System Design Concepts Explained in 10 Minutes',
@@ -5695,13 +5668,13 @@ const ITEMS: ItemSeed[] = [
     description:
       'NeetCode — panorama de 20 conceitos de system design em 12min: CAP, ACID, vertical vs horizontal scaling, load balancing, caching, sharding, replication, CDN, message queues, microservices, REST vs GraphQL vs gRPC.',
     format: 'VIDEO',
-    difficulty: 'EASY',
+    difficulty: 'MEDIUM',
     estimatedMinutes: 12,
     topicSlugs: ['foundations', 'scalability'],
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — NeetCode',
     tags: ['concept', 'system-design', 'overview', 'cap', 'acid', 'neetcode'],
-    topicOrder: { 'foundations': 9 },
+    topicOrder: { 'foundations': 9, 'scalability': 8 },
   },
   {
     title: 'Tiny URL — System Design Interview Question (URL shortener)',
@@ -5819,7 +5792,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH'],
     source: 'YouTube — Renato Augusto',
     tags: ['concept', 'sharding', 'shard-key', 'hotspot', 'horizontal-scaling', 're-sharding', 'renato-augusto'],
-    topicOrder: { 'sharding': 5 },
+    topicOrder: { 'sharding': 5, 'databases': 25 },
   },
 
   // --- databases batch — 2026-05-13 ---
@@ -5829,13 +5802,13 @@ const ITEMS: ItemSeed[] = [
     description:
       'Renato Augusto — 14min sobre por que FLOAT é impreciso pra valores monetários: armazenamento IEEE 754, exemplos reais de bugs por arredondamento, e como Python/Java/JS/PHP lidam com o problema. O que usar no lugar.',
     format: 'VIDEO',
-    difficulty: 'EASY',
+    difficulty: 'MEDIUM',
     estimatedMinutes: 14,
     topicSlugs: ['databases'],
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Renato Augusto',
     tags: ['concept', 'data-types', 'float', 'precision', 'money', 'ieee-754', 'renato-augusto'],
-    topicOrder: { 'databases': 20 },
+    topicOrder: { 'databases': 22 },
   },
   {
     title: 'Como Escolher o Banco de Dados Correto pra sua Aplicação',
@@ -5849,7 +5822,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Renato Augusto',
     tags: ['tradeoffs', 'sql', 'nosql', 'cap', 'pacelc', 'postgres', 'mongo', 'cassandra', 'dynamodb', 'cockroachdb', 'renato-augusto'],
-    topicOrder: { 'databases': 21, 'cap-consistency': 10 },
+    topicOrder: { 'databases': 23, 'cap-consistency': 10 },
   },
   {
     title: 'O Que Ninguém Te Ensinou Sobre Armazenar Senhas no Banco de Dados',
@@ -5863,7 +5836,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Renato Augusto',
     tags: ['concept', 'password-storage', 'bcrypt', 'argon2', 'pbkdf2', 'salt', 'md5', 'sha-1', 'renato-augusto'],
-    topicOrder: { 'databases': 22 },
+    topicOrder: { 'databases': 24, 'security': 8 },
   },
 
   // --- scalability batch — 2026-05-13 ---
@@ -5879,7 +5852,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Renato Augusto',
     tags: ['tradeoffs', 'microservices', 'monolith', 'modular-monolith', 'ddd', 'bounded-contexts', 'clean-architecture', 'renato-augusto'],
-    topicOrder: { 'scalability': 6 },
+    topicOrder: { 'scalability': 6, 'design-patterns': 8 },
   },
   {
     title: 'System Design: Escalando uma Arquitetura do Zero a Um Milhão de Usuários',
@@ -5955,6 +5928,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH'],
     source: 'YouTube — Renato Augusto',
     tags: ['case-study', 'google-drive', 'dropbox', 's3', 'object-storage', 'multipart-upload', 'signed-urls', 'sync', 'fault-tolerance', 'renato-augusto'],
+    topicOrder: { 'cloud': 7, 'scalability': 9 },
   },
   {
     title: 'ARQUITETANDO O TICKETMASTER NA PRÁTICA | SYSTEM DESIGN',
@@ -5968,6 +5942,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH'],
     source: 'YouTube — Renato Augusto',
     tags: ['case-study', 'ticketmaster', 'overselling', 'concurrency', 'race-conditions', 'queues', 'rate-limiting', 'locking', 'horizontal-scaling', 'renato-augusto'],
+    topicOrder: { 'cap-consistency': 11, 'rate-limiting': 7, 'scalability': 10 },
   },
 
   // --- Object Calisthenics série pra design-patterns — 2026-05-13 ---
@@ -5983,7 +5958,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Renato Augusto',
     tags: ['concept', 'object-calisthenics', 'primitive-obsession', 'value-objects', 'solid', 'srp', 'ddd', 'renato-augusto'],
-    topicOrder: { 'design-patterns': 6 },
+    topicOrder: { 'design-patterns': 4 },
   },
   {
     title: 'Object Calisthenics: Lei de Demeter — A Técnica Para Eliminar Dependências Ocultas',
@@ -5997,7 +5972,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Renato Augusto',
     tags: ['concept', 'object-calisthenics', 'law-of-demeter', 'coupling', 'oo', 'aggregate-root', 'ddd', 'renato-augusto'],
-    topicOrder: { 'design-patterns': 7 },
+    topicOrder: { 'design-patterns': 5 },
   },
   {
     title: 'Object Calisthenics: Técnicas Para Eliminar o ELSE do Seu Código',
@@ -6011,7 +5986,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Renato Augusto',
     tags: ['concept', 'object-calisthenics', 'guard-clauses', 'early-return', 'fail-fast', 'refactoring', 'renato-augusto'],
-    topicOrder: { 'design-patterns': 8 },
+    topicOrder: { 'design-patterns': 6 },
   },
 
   // --- caching CACHE-ASIDE deep-dive — 2026-05-13 ---
@@ -6027,7 +6002,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Renato Augusto',
     tags: ['concept', 'cache-aside', 'read-through', 'database-bottleneck', 'performance', 'renato-augusto'],
-    topicOrder: { 'caching': 10 },
+    topicOrder: { 'caching': 9 },
   },
 ];
 
