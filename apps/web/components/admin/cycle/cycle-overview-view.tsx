@@ -1,5 +1,6 @@
 'use client';
 import Link from 'next/link';
+import { Receipt } from 'lucide-react';
 import {
   useAdminTriage,
   useDismissAlert,
@@ -72,6 +73,27 @@ export function CycleOverviewView({ data }: { data: CycleOverviewResponse }) {
 
       <section>
         <SectionLabel>Members</SectionLabel>
+        {(() => {
+          const notStarted = new Date(data.cycle.startsAt) > new Date();
+          return notStarted ? (
+            <span
+              className="mb-4 inline-flex items-center gap-2 border border-dashed border-rule px-3 py-1.5 font-mono text-xs uppercase tracking-label text-ink-faint"
+              title="Cycle hasn't started yet"
+            >
+              <Receipt className="h-3.5 w-3.5" strokeWidth={1.5} />
+              Receipt
+            </span>
+          ) : (
+            <Link
+              href={`/admin/cycle/${data.cycle.id}/receipt`}
+              className="group mb-4 inline-flex items-center gap-2 border border-dashed border-rule px-3 py-1.5 font-mono text-xs uppercase tracking-label text-ink-soft hover:border-ink hover:text-ink"
+            >
+              <Receipt className="h-3.5 w-3.5" strokeWidth={1.5} />
+              Receipt
+              <span className="text-ink-faint group-hover:text-ink">→</span>
+            </Link>
+          );
+        })()}
         <CycleMembersGrid members={data.members} />
       </section>
 
