@@ -106,7 +106,7 @@ describe('GET /admin/cycle/:id/receipt (e2e)', () => {
     prisma.cycle.findUnique.mockResolvedValue({
       id: 'c3',
       name: 'Ciclo 5',
-      status: 'UPCOMING',
+      status: 'ACTIVE',
       startsAt: new Date('2030-01-01T00:00:00Z'),
       endsAt: new Date('2030-03-01T00:00:00Z'),
       memberships: [],

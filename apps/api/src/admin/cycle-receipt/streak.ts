@@ -23,7 +23,10 @@ export function computeStreakDays(
   let cursor = asOfKey;
   while (days.has(cursor)) {
     streak += 1;
-    const [y, m, d] = cursor.split('-').map(Number);
+    const parts = cursor.split('-').map(Number);
+    const y = parts[0]!;
+    const m = parts[1]!;
+    const d = parts[2]!;
     const prev = new Date(Date.UTC(y, m - 1, d - 1));
     cursor = prev.toISOString().slice(0, 10);
   }

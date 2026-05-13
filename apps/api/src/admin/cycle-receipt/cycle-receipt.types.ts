@@ -14,7 +14,7 @@ export type CycleReceiptResponse = {
     weeksTotal: number;
     startsAt: string;
     endsAt: string;
-    status: 'UPCOMING' | 'ACTIVE' | 'ARCHIVED';
+    status: 'ACTIVE' | 'ARCHIVED';
   };
   asOf: string;
   mode: ReceiptMode;

@@ -21,12 +21,12 @@ describe('CycleReceiptService — cycle metadata', () => {
     await expect(svc.build('nonexistent', new Date())).rejects.toThrow(NotFoundException);
   });
 
-  it('throws ConflictException for UPCOMING cycle that has not started', async () => {
+  it('throws ConflictException when cycle has not started yet (startsAt in the future)', async () => {
     const prisma = mockPrisma();
     prisma.cycle.findUnique.mockResolvedValue({
       id: 'c1',
       name: 'Ciclo 5',
-      status: 'UPCOMING',
+      status: 'ACTIVE',
       startsAt: new Date('2030-06-01T00:00:00Z'),
       endsAt: new Date('2030-08-01T00:00:00Z'),
       memberships: [],
@@ -194,7 +194,7 @@ describe('CycleReceiptService — knowledgeGrid', () => {
     });
     const svc = makeService(prisma);
     const r = await svc.build('c1', new Date('2026-05-13'));
-    expect(r.knowledgeGrid.cells[0].hasStuckOrDoubts).toBe(true);
+    expect(r.knowledgeGrid.cells[0]?.hasStuckOrDoubts).toBe(true);
   });
 
   it('lists members in alphabetical order', async () => {

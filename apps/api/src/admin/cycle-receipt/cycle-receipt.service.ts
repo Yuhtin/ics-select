@@ -20,7 +20,6 @@ export class CycleReceiptService {
       where: { id: cycleId },
       include: {
         memberships: {
-          where: { status: 'ACTIVE' },
           include: { user: { select: { id: true, name: true, pictureUrl: true } } },
         },
       },
@@ -28,7 +27,7 @@ export class CycleReceiptService {
     if (!cycle) throw new NotFoundException('Cycle not found');
 
     const now = new Date();
-    if (cycle.status === 'UPCOMING' && cycle.startsAt > now) {
+    if (cycle.startsAt > now) {
       throw new ConflictException({ error: { code: 'CYCLE_NOT_STARTED' } });
     }
 
@@ -277,7 +276,9 @@ export class CycleReceiptService {
     const cells: Array<{ userId: string; topicId: string; itemsDone: number; hasStuckOrDoubts: boolean }> = [];
     const allKeys = new Set<string>([...counts.keys(), ...stuckSet]);
     for (const key of allKeys) {
-      const [userId, topicId] = key.split('|');
+      const parts = key.split('|');
+      const userId = parts[0]!;
+      const topicId = parts[1]!;
       if (!topicMap.has(topicId)) continue;
       cells.push({
         userId,
