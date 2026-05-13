@@ -1,17 +1,13 @@
 import { ReceiptClient } from './receipt-client';
 
-export default function ReceiptPage({
+export default async function ReceiptPage({
   params,
   searchParams,
 }: {
-  params: { id: string };
-  searchParams: { asOf?: string; mode?: 'thermal' | 'wrapped' };
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ asOf?: string; mode?: 'thermal' | 'wrapped' }>;
 }) {
-  return (
-    <ReceiptClient
-      cycleId={params.id}
-      asOf={searchParams.asOf}
-      modeOverride={searchParams.mode}
-    />
-  );
+  const { id } = await params;
+  const { asOf, mode } = await searchParams;
+  return <ReceiptClient cycleId={id} asOf={asOf} modeOverride={mode} />;
 }
