@@ -375,3 +375,54 @@ describe('CycleReceiptService — nominal blocks', () => {
     expect(r.perfectAttendance).toEqual([]);
   });
 });
+
+describe('CycleReceiptService — week math + mode + cache', () => {
+  const cycleBase = {
+    id: 'c1', name: 'Ciclo 4', status: 'ACTIVE' as const,
+    startsAt: new Date('2026-04-13T00:00:00Z'), // Monday
+    endsAt: new Date('2026-06-08T00:00:00Z'),   // 8 weeks (56 days)
+    memberships: [],
+  };
+
+  it('weekNumber reflects asOf position from cycle.startsAt', async () => {
+    const prisma = mockPrisma();
+    prisma.cycle.findUnique.mockResolvedValue(cycleBase);
+    const svc = makeService(prisma);
+    const r1 = await svc.build('c1', new Date('2026-04-13T12:00:00Z'));
+    expect(r1.cycle.weekNumber).toBe(1);
+    expect(r1.cycle.weeksTotal).toBe(8);
+    const r4 = await svc.build('c1', new Date('2026-05-04T12:00:00Z'));
+    expect(r4.cycle.weekNumber).toBe(4);
+  });
+
+  it('mode is wrapped on cycle.endsAt date', async () => {
+    const prisma = mockPrisma();
+    prisma.cycle.findUnique.mockResolvedValue(cycleBase);
+    const svc = makeService(prisma);
+    // Use the same calendar day in UTC as endsAt; system "now" must be >= this for as-of validation to pass.
+    // Since cycle.endsAt is 2026-06-08 and now is 2026-05-13, this should fail as-of validation —
+    // adjust cycleBase end to something already past.
+    const archived = { ...cycleBase, endsAt: new Date('2026-05-10T00:00:00Z') };
+    prisma.cycle.findUnique.mockResolvedValue(archived);
+    const r = await svc.build('c1', archived.endsAt);
+    expect(r.mode).toBe('wrapped');
+  });
+
+  it('mode is wrapped on ARCHIVED cycle regardless of asOf', async () => {
+    const prisma = mockPrisma();
+    prisma.cycle.findUnique.mockResolvedValue({ ...cycleBase, status: 'ARCHIVED' });
+    const svc = makeService(prisma);
+    const r = await svc.build('c1', new Date('2026-05-04T12:00:00Z'));
+    expect(r.mode).toBe('wrapped');
+  });
+
+  it('cache reuses computed result within 5 minutes', async () => {
+    const prisma = mockPrisma();
+    prisma.cycle.findUnique.mockResolvedValue(cycleBase);
+    const svc = makeService(prisma);
+    const asOf = new Date('2026-05-04T12:00:00Z');
+    await svc.build('c1', asOf);
+    await svc.build('c1', asOf);
+    expect(prisma.cycle.findUnique).toHaveBeenCalledTimes(1);
+  });
+});

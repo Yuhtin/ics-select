@@ -6,9 +6,16 @@ import { computeStreakDays } from './streak.js';
 
 @Injectable()
 export class CycleReceiptService {
+  private readonly cache = new Map<string, { at: number; value: CycleReceiptResponse }>();
+  private readonly CACHE_TTL_MS = 5 * 60 * 1000;
+
   constructor(private readonly prisma: PrismaService) {}
 
   async build(cycleId: string, asOf: Date): Promise<CycleReceiptResponse> {
+    const cacheKey = `${cycleId}|${asOf.toISOString().slice(0, 10)}`;
+    const cached = this.cache.get(cacheKey);
+    if (cached && Date.now() - cached.at < this.CACHE_TTL_MS) return cached.value;
+
     const cycle = await this.prisma.cycle.findUnique({
       where: { id: cycleId },
       include: {
@@ -31,7 +38,9 @@ export class CycleReceiptService {
       throw new BadRequestException({ error: { code: 'INVALID_AS_OF' } });
     }
 
-    return this.assembleResponse(cycle, asOf);
+    const result = await this.assembleResponse(cycle, asOf);
+    this.cache.set(cacheKey, { at: Date.now(), value: result });
+    return result;
   }
 
   private async assembleResponse(cycle: any, asOf: Date): Promise<CycleReceiptResponse> {
@@ -104,12 +113,17 @@ export class CycleReceiptService {
 
     const mode = this.decideMode(cycle, asOf);
 
+    const MS_PER_WEEK = 7 * 24 * 60 * 60 * 1000;
+    const weeksTotal = Math.max(1, Math.ceil((cycle.endsAt.getTime() - cycle.startsAt.getTime()) / MS_PER_WEEK));
+    const weeksElapsed = Math.floor((asOf.getTime() - cycle.startsAt.getTime()) / MS_PER_WEEK);
+    const weekNumber = Math.max(1, Math.min(weeksTotal, weeksElapsed + 1));
+
     return {
       cycle: {
         id: cycle.id,
         name: cycle.name,
-        weekNumber: 0,
-        weeksTotal: 0,
+        weekNumber,
+        weeksTotal,
         startsAt: cycle.startsAt.toISOString(),
         endsAt: cycle.endsAt.toISOString(),
         status: cycle.status,
