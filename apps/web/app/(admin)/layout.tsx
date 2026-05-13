@@ -1,13 +1,18 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '../../lib/auth/auth-context';
 import { AdminShell } from '../../components/admin-shell/admin-shell';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const pathname = usePathname();
   const { user, isLoading } = useAuth();
+
+  // The cycle receipt view is screenshot-targeted and renders without the
+  // admin shell so the captured PNG isn't polluted by sidebar/topbar chrome.
+  const skipShell = pathname?.endsWith('/receipt') ?? false;
 
   useEffect(() => {
     if (isLoading) return;
@@ -23,5 +28,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     );
   }
 
+  if (skipShell) return <main className="min-h-screen bg-paper">{children}</main>;
   return <AdminShell>{children}</AdminShell>;
 }
