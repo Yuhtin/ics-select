@@ -5,8 +5,8 @@ export const chatMessaging: Lesson = {
   title: 'Chat & Messaging',
   subtitle: 'Stateful, real-time, ordered — o outro extremo do espectro.',
   blurb:
-    'O case clássico de chat real-time, do WhatsApp ao Discord. Foundation sobre estimativa de capacidade pra sistemas write-heavy, seguida de 6 beats que cobrem as primitivas centrais do perfil real-time com conexão persistente: requisitos, transport (WebSocket), fan-out (push via PubSub vs pull/inbox), ordering com Snowflake por conversa, presence e catch-up offline, e sharding por conv_id pra preservar locality. A regra que sai daqui: connection model + fan-out pattern dominam o design de qualquer sistema real-time.',
-  durationMin: 65,
+    'O case clássico de chat real-time, do WhatsApp ao Discord. Foundation sobre estimativa de capacidade pra sistemas write-heavy, seguida de 8 beats que cobrem as primitivas centrais do perfil real-time com conexão persistente: requisitos, transport (WebSocket), fan-out (push via PubSub vs pull/inbox), ordering com Snowflake por conversa, presence e catch-up offline, sharding por conv_id pra preservar locality, diagrama completo da arquitetura, e o mapping pra managed services da AWS (EC2 + Kafka + Cassandra, em vez de Lambda + DynamoDB). A regra que sai daqui: connection model + fan-out pattern dominam o design de qualquer sistema real-time.',
+  durationMin: 85,
   audience: 'Hot Stuff · Big Tech · semana 3',
   nodes: [
     // ──────────────── FOUNDATIONS ────────────────
@@ -425,7 +425,7 @@ export const chatMessaging: Lesson = {
         },
       ],
       followup:
-        'Como você lista todos os convs do usuário X agora que cada conv vive em um shard diferente?',
+        'OK, as 6 decisões de design estão na mesa. Agora desenha no quadro: a mensagem sai do remetente, por onde ela passa até chegar nos destinatários?',
       gotcha:
         'Se ele disser "sharda por user_id" sem hesitar: "usuário num grupo de 50, fan-out toca quantos shards?"',
       scenarios: {
@@ -433,7 +433,7 @@ export const chatMessaging: Lesson = {
           shape:
             'Hash de conv_id com locality — todas as conexões WebSocket de uma conversa vão pro mesmo servidor. Antecipa que "listar convs do user" deixa de ser point lookup e aceita o custo de manter índice inverso. Menciona hot partition e estratégia de split ou replicação.',
           redirect:
-            'Avance pro fechamento: "aula fechada. Quais foram as 3 decisões aqui que dependeram diretamente de conexão persistente + ordering por partição?"',
+            'Avance pra arquitetura: "OK, as 6 decisões de design fechadas. Agora desenha no quadro o fluxo completo — mensagem sai do remetente, por onde ela passa até chegar nos destinatários online E offline?"',
         },
         close: {
           shape:
@@ -449,6 +449,134 @@ export const chatMessaging: Lesson = {
         },
       },
     },
+    {
+      id: 'chat-architecture',
+      label: 'Architecture: o fluxo completo',
+      group: 'chat',
+      beat: 7,
+      oneLine:
+        'Walkthrough do fluxo: conexão WebSocket, write path com Kafka, fan-out via PubSub, persistência paralela, e push externo pra app fechado.',
+      pass1:
+        'Agora a gente junta as 6 peças que decidimos. Você tem WebSocket persistente, fan-out híbrido, ordering causal por conversa, presence em Redis, sharding por conv_id. Esse beat é desenhar no quadro como tudo isso se conecta — onde a conexão entra, como uma mensagem viaja do remetente até os destinatários, e que caminho alternativo serve pra entregar quando o app está fechado. É o teste de coerência de todas as decisões dos beats anteriores.',
+      pass2:
+        '**Conexão** (acontece uma vez, e mantém aberta). O cliente abre WebSocket via DNS → load balancer pra conexões persistentes → instância de WS gateway. O gateway carrega na memória o estado da sessão (cursor, presence), marca o usuário como online no Redis com TTL, e fica aguardando heartbeat e mensagens.\n\n**Write path** (a mensagem viaja). O usuário manda mensagem pelo WebSocket aberto. O gateway recebe, atribui Snowflake ID, publica em uma message queue durável (Kafka). A queue tem dois consumers paralelos: um escreve no banco append-only (Cassandra ou equivalente, particionado por conv_id e ordenado por message_id), outro publica num bus PubSub interno usando o tópico conv:{conv_id}. Todos os outros WS servers que têm conexão pra esse conv estão subscritos no tópico, recebem a notificação, e empurram pela conexão. Latência típica de 10 a 50ms.\n\n**Read path em catch-up** (usuário reconectou). O cliente envia o `last_seen_message_id` por conversa. O gateway faz range scan no banco (partition key conv_id, clustering key message_id maior que cursor), pagina o resultado (50 msgs por vez), e devolve em ordem.\n\n**Push externo** (app fechado, sem conexão). Quando o destinatário não tem conexão ativa, o consumer de fan-out publica numa fila secundária de notificações. Um worker consome essa fila e dispara via APNS (iOS) ou FCM (Android). O conteúdo da push é só "tem mensagem nova" — quando o usuário abre o app, ele reconecta e entra no catch-up path.\n\n**Camadas que você desenha**: DNS → load balancer WS-capable → WS gateway (com session affinity por conv_id) → message queue (Kafka) → 2 caminhos paralelos: banco append-only e PubSub interno. Caminhos secundários: presence cache (Redis) e push externo (APNS/FCM).\n\n**Asymmetry crítica**: a conexão é persistente e stateful, mas o write é stateless até chegar no PubSub. Essa separação permite escalar gateway separadamente do storage — você pode adicionar instâncias de WS sem mexer no Kafka.',
+      pass3: [
+        {
+          gotcha: 'Desenhar `cliente → API → DB` igual a um CRUD',
+          note: 'Esse desenho ignora que a conexão é persistente. Sem WebSocket no diagrama, todo o resto colapsa — fan-out, presence, catch-up não fazem sentido em arquitetura request-response.',
+        },
+        {
+          gotcha: 'Esquecer o message queue intermediário',
+          note: 'Sem Kafka (ou similar) entre o gateway e o storage, quando o banco fica lento todo o fan-out trava. A queue desacopla escrita de delivery e absorve picos.',
+        },
+        {
+          gotcha: 'Misturar push externo no caminho normal',
+          note: 'Push externo (APNS/FCM) é um caminho SECUNDÁRIO, não substitui o WebSocket. É só pra app fechado. Misturar os dois confunde o desenho e a arquitetura.',
+        },
+        {
+          gotcha: 'Não marcar onde o estado in-memory vive',
+          note: 'Session affinity, cursor, presence — esses três vivem in-memory no WS gateway. Marcar isso no diagrama deixa claro por que sticky sessions é obrigatório.',
+        },
+      ],
+      anchor:
+        'Mensagem sai do remetente. Desenha no quadro CADA caminho que ela percorre até chegar nos 50 destinatários — online e offline.',
+      askWho: [
+        {
+          name: 'Eduardo Izawa',
+          why: 'Tem replication + cache + sharding na bagagem, então consegue puxar o diagrama inteiro coerentemente. Lidera o desenho.',
+        },
+        {
+          name: 'Maria Clara',
+          why: 'Tem networking + pubsub — pode preencher os dois caminhos que ela liderou nos beats anteriores. Se Eduardo desenhar o esqueleto, ela ajuda no fan-out e na conexão.',
+        },
+      ],
+      followup:
+        'OK, diagrama no quadro. Pra cada caixa, qual managed service da AWS você usaria? E onde Lambda NÃO serve?',
+      gotcha:
+        'Se desenharem só `cliente → server → DB`, devolva: "essa arquitetura recebe 1 milhão de mensagens por segundo via HTTP polling? Como o servidor sabe quem mandar de volta?"',
+      scenarios: {
+        right: {
+          shape:
+            'Desenha 6+ camadas: DNS, load balancer WS-capable, WS gateway com session affinity, message queue (Kafka), banco append-only, PubSub interno, presence cache, e push externo como caminho secundário. Marca explicitamente onde o estado in-memory vive.',
+          redirect:
+            'Avance pro deploy: "pra cada caixa, qual managed service AWS escolheria? E onde Lambda definitivamente não serve, por quê?"',
+        },
+        close: {
+          shape:
+            'Desenha as camadas principais (WS, banco, PubSub) mas esquece o message queue como buffer, ou não mostra o push externo, ou não diferencia caminhos online vs offline.',
+          redirect:
+            'Aponte o caminho que faltou: "esse diagrama assume que todo destinatário está online. Como o WhatsApp avisa o iPhone bloqueado no bolso? Por onde essa mensagem passa?"',
+        },
+        wayOff: {
+          shape:
+            'Desenha "cliente → API REST → banco" como se fosse uma arquitetura HTTP tradicional. Não pensa em conexão persistente nem em fan-out.',
+          redirect:
+            'Volte pro problema: "1 milhão de usuários online, 100 mensagens por segundo no agregado, cada uma vai pra 20 destinatários em menos de 1 segundo. Esse desenho de 3 caixas aguenta? Onde a mensagem do servidor encontra o cliente?"',
+        },
+      },
+    },
+    {
+      id: 'chat-aws',
+      label: 'AWS: managed services por camada',
+      group: 'chat',
+      beat: 8,
+      oneLine:
+        'Stateful + real-time obriga EC2 com Auto Scaling em vez de Lambda. NLB pra WS, MSK pra Kafka, Keyspaces pra Cassandra, SNS pra push.',
+      pass1:
+        'Você tem o desenho do chat. Agora pra cada caixa, qual managed service da AWS escolheria pra deployar? Esse beat é onde a galera que aprendeu "Lambda pra tudo" toma uma chacoalhada — Lambda não serve pra conexão persistente. As escolhas aqui são fundamentalmente diferentes das do encurtador, e o motivo é o connection model.',
+      pass2:
+        '**DNS: Route 53**. Mesmo papel do encurtador. Geo-routing pra mandar usuário pro endpoint mais próximo.\n\n**Load balancer: NLB (Network LB)**. Pra WebSocket, NLB é a escolha. ALB suporta WebSocket também, mas NLB tem custo menor por conexão persistente, faz pass-through TCP cru sem inspecionar HTTP, e mantém a conexão por mais tempo com idle timeout configurável (até 350s).\n\n**Compute (WS gateway): EC2 com Auto Scaling Group**. Esse é o ponto não-óbvio. **Lambda não serve aqui** — Lambda tem timeout máximo de 15min, custo proibitivo pra conexão de horas, e não suporta state in-memory por sessão. EC2 com ASG é o caminho: cada instância segura entre 10 mil e 100 mil conexões, e a ASG adiciona instâncias quando a média de conexões por instância passa de um threshold. Lembrando que scaling aqui é discreto (instância nova recebe conexões novas, antigas continuam onde estavam até reconectar).\n\n**Message queue: Amazon MSK** (managed Kafka). Pra desacoplar gateway de storage e absorver picos. Suporta replicação multi-AZ automática e integra com IAM pra auth.\n\n**Banco append-only: Amazon Keyspaces** (managed Cassandra). Wide-column, partition por conv_id, clustering por message_id em ordem decrescente. Cobra por request + storage, escala sem precisar gerenciar nós. DynamoDB também serve mas Cassandra encaixa mais natural no padrão de range scan por partição.\n\n**Cache: ElastiCache (Redis)**. Pra presence, com TTL curto e heartbeat. Também serve pra cachear as últimas N mensagens das conversas mais ativas.\n\n**Push externo: SNS (Simple Notification Service)**. SNS faz a ponte com APNS (iOS) e FCM (Android) através de Platform Applications. Você publica uma mensagem em SNS, ele entrega via o provedor certo baseado no token do device.\n\n**Object storage (anexos): S3**. Pra imagens, vídeos, arquivos compartilhados no chat. CloudFront na frente pra cache de mídia.\n\n**Observabilidade: CloudWatch + X-Ray**. Métricas importantes pra chat: conexões abertas por instância (pra ASG decidir scaling), latência p99 de delivery, taxa de reconexão, fila de push externo backlog.\n\n**Resumo do contraste vs encurtador**: ali Lambda + DynamoDB + CloudFront formavam o stack canônico. Aqui EC2 + Kafka + Cassandra + Redis + SNS. A mesma cloud, mas serviços diferentes — porque o connection model é diferente.',
+      pass3: [
+        {
+          gotcha: 'Defender Lambda pro WS gateway',
+          note: 'Lambda tem timeout máximo de 15min e cold-start de cada invocação, mas o problema real é que ela não suporta estado in-memory por sessão. Não serve pra conexão persistente. EC2 com ASG é a única opção realista.',
+        },
+        {
+          gotcha: 'Escolher ALB sem considerar NLB',
+          note: 'ALB suporta WebSocket mas inspeciona HTTP e cobra por hora + por LCU. NLB faz pass-through TCP, custa menos por conexão persistente, e o idle timeout é configurável até 350s — importante pra evitar reconexões desnecessárias.',
+        },
+        {
+          gotcha: 'Esquecer SNS pra push externo',
+          note: 'Quando o app está fechado, WebSocket não alcança. Sem SNS (ou solução equivalente) pra disparar APNS/FCM, o usuário só recebe a mensagem quando reabrir o app — que é UX inaceitável.',
+        },
+        {
+          gotcha: 'Achar que DynamoDB serve igual pra mensagens',
+          note: 'DynamoDB funciona, mas tem item size limit de 400KB (mensagem longa com mídia inline estoura) e o modelo de partition + sort key é menos natural pra range scan grande. Keyspaces (Cassandra) foi pensado pra esse padrão.',
+        },
+      ],
+      anchor:
+        'Pro chat, qual a sua escolha de compute pro WebSocket gateway — Lambda ou EC2? Justifica em uma frase.',
+      askWho: [
+        {
+          name: 'Eduardo Izawa',
+          why: 'Cache + database + scale + replication na bagagem. As decisões aqui (EC2 vs Lambda, NLB vs ALB, Keyspaces vs DynamoDB) caem exatamente nesse vocabulário.',
+        },
+      ],
+      followup:
+        'OK, stack escolhida. Qual a parte mais ARRISCADA dessa stack — o que pode quebrar primeiro no pico?',
+      gotcha:
+        'Se alguém disser Lambda pro WS gateway, devolva: "Lambda mantém conexão TCP aberta por 4 horas? E estado in-memory entre invocações?"',
+      scenarios: {
+        right: {
+          shape:
+            'EC2 com ASG pro WS gateway, NLB pra balanceamento, MSK pra queue, Keyspaces ou DynamoDB pra mensagens, ElastiCache pra presence, SNS pra push externo. Justifica cada escolha pelo connection model + read/write pattern.',
+          redirect:
+            'Avance pro fechamento: "stack montada. Quais escolhas dessa lista mudaram em comparação com o stack do encurtador, e por quê?"',
+        },
+        close: {
+          shape:
+            'Escolhe os serviços certos mas erra em uma camada — por exemplo, escolhe ALB em vez de NLB, ou esquece SNS pro push externo. Mostra que entendeu o macro mas perdeu uma sutileza operacional.',
+          redirect:
+            'Aponte a camada que precisa de revisão: "ALB ou NLB pra WebSocket — qual a diferença em custo e em idle timeout?" Ou "app fechado, como o usuário recebe a mensagem?"',
+        },
+        wayOff: {
+          shape:
+            'Propõe Lambda pro WS gateway, ou propõe RDS pra mensagens. Mostra que não internalizou o connection model nem o write QPS.',
+          redirect:
+            'Pra Lambda: "WebSocket fica aberto por horas. Lambda tem timeout máximo de 15min. Como conectam?" Pra RDS: "60 mil writes por segundo no pico, com retenção em TB. RDS Postgres aguenta isso single-instance?"',
+        },
+      },
+    },
     // ──────────────── SYNTHESIS ────────────────
     {
       id: 'synthesis',
@@ -457,9 +585,9 @@ export const chatMessaging: Lesson = {
       oneLine:
         'Conexão persistente + ordering por partição + fan-out são as três restrições que dominam todo o resto do design.',
       pass1:
-        'Chat é o caso canônico do perfil real-time stateful, e os 6 beats te dão o vocabulário central que reaparece em qualquer sistema com perfil parecido — WebSocket com sticky sessions, fan-out híbrido (push para pequenos, pull para grandes), Snowflake pra ordering causal por partição, presence e catch-up por cursor, sharding por entidade que owna a operação. A regra que sai daqui é que o connection model (request-response vs persistent) é a primeira decisão, e ela cascateia em todas as outras.',
+        'Chat é o caso canônico do perfil real-time stateful, e os 8 beats te dão o vocabulário central que reaparece em qualquer sistema com perfil parecido — WebSocket com sticky sessions, fan-out híbrido (push para pequenos, pull para grandes), Snowflake pra ordering causal por partição, presence e catch-up por cursor, sharding por entidade que owna a operação, e o stack de managed services que materializa isso. A regra que sai daqui é que o connection model (request-response vs persistent) é a primeira decisão, e ela cascateia em todas as outras.',
       pass2:
-        'O resumo das 6 decisões que tomamos, lado a lado com a restrição que guiou cada uma:\n\n**Statefulness é o salto fundamental**: chat exige conexão persistente, e isso muda tudo — load balancer com sticky sessions, deploy gracioso com drain, scaling discreto. Não é mais request-response stateless.\n\n**Transport (WebSocket)**: real-time bidirecional + custo de cerca de 10 KB por conexão dita a escala (10 mil a 100 mil conexões por servidor). SSE é alternativa unidirecional, long polling é legado.\n\n**Fan-out (PubSub híbrido)**: distribuição em tempo real pra N destinatários é o problema central. Push via PubSub pra grupos pequenos, pull/inbox pra mega-grupos. Tamanho de grupo determina a estratégia.\n\n**Ordering (Snowflake por partição)**: causal consistency dentro da conversa basta — ordering global cria coordenação desnecessária. Snowflake dá ID temporal + sequence sem coordenação central.\n\n**Presence + offline catch-up**: presence em Redis com TTL curto e heartbeat, cursor mantido no cliente, backlog paginado por range scan. Push externo (APNS/FCM) é o caminho separado pra app fechado.\n\n**Sharding (por conv_id)**: locality força que toda atividade da mesma conversa fique no mesmo shard. O custo é que a query "convs do usuário X" deixa de ser point lookup, mas essa é a query rara.\n\nO ponto pedagógico final: connection model + fan-out pattern dominam o design. Tudo o que vem depois (banco, cache, replication) tem que respeitar essas duas decisões. Em entrevista, o candidato que estabelece essas duas restrições logo no começo é o que separa pleno de senior.',
+        'O resumo das 8 decisões que tomamos, lado a lado com a restrição que guiou cada uma:\n\n**Statefulness é o salto fundamental**: chat exige conexão persistente, e isso muda tudo — load balancer com sticky sessions, deploy gracioso com drain, scaling discreto. Não é mais request-response stateless.\n\n**Transport (WebSocket)**: real-time bidirecional + custo de cerca de 10 KB por conexão dita a escala (10 mil a 100 mil conexões por servidor). SSE é alternativa unidirecional, long polling é legado.\n\n**Fan-out (PubSub híbrido)**: distribuição em tempo real pra N destinatários é o problema central. Push via PubSub pra grupos pequenos, pull/inbox pra mega-grupos. Tamanho de grupo determina a estratégia.\n\n**Ordering (Snowflake por partição)**: causal consistency dentro da conversa basta — ordering global cria coordenação desnecessária. Snowflake dá ID temporal + sequence sem coordenação central.\n\n**Presence + offline catch-up**: presence em Redis com TTL curto e heartbeat, cursor mantido no cliente, backlog paginado por range scan. Push externo (APNS/FCM) é o caminho separado pra app fechado.\n\n**Sharding (por conv_id)**: locality força que toda atividade da mesma conversa fique no mesmo shard. O custo é que a query "convs do usuário X" deixa de ser point lookup, mas essa é a query rara.\n\n**Architecture diagram**: 6+ camadas separando conexão (stateful in-memory), write path (assíncrono via Kafka), e push externo (caminho secundário pra app fechado). O message queue entre gateway e storage é o que permite escalar as duas pontas separadamente.\n\n**AWS stack**: EC2 com ASG + NLB + MSK + Keyspaces + ElastiCache + SNS. Lambda definitivamente NÃO serve aqui — connection model persistente exige compute always-on. Comparado com o stack de um sistema read-heavy (Lambda + DynamoDB + CloudFront), as escolhas mudam quase todas.\n\nO ponto pedagógico final: connection model + fan-out pattern dominam o design. Tudo o que vem depois (banco, cache, replication, escolha de cloud service) tem que respeitar essas duas decisões. Em entrevista, o candidato que estabelece essas duas restrições logo no começo é o que separa pleno de senior.',
       pass3: [
         {
           gotcha: 'Tratar chat como "request-response com WebSocket por cima"',
@@ -483,7 +611,7 @@ export const chatMessaging: Lesson = {
         },
       ],
       followup:
-        'Em sistemas com perfil oposto (read-heavy, request-response, imutável), quais dessas 6 decisões teriam respostas completamente diferentes?',
+        'Em sistemas com perfil oposto (read-heavy, request-response, imutável), quais dessas 8 decisões teriam respostas completamente diferentes?',
       gotcha:
         'Se ninguém citar que cache de mensagens não resolve o problema de fan-out (resolve só presence), dê o insight e pergunte por quê — separa quem internalizou de quem só decorou.',
     },

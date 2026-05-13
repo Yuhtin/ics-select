@@ -63,6 +63,18 @@ Before authoring, confirm:
 - **Foundations needed?** Concepts the room hasn't seen that the class needs to "teach from zero" before the beats start (e.g., capacity estimation, load balancers basics, message queues basics)
 - **Audience track and cycle** (e.g., Hot Stuff, Big Tech, week 3) — feeds into estimating depth and naming the audience field
 
+### Required structural beats — every lesson has these
+
+Two beats are **mandatory and come at the end**, right before synthesis. They make the lesson concrete and deployable instead of academic:
+
+**1. Architecture: o fluxo completo** — the second-to-last beat. Walks the full request flow as prose: from the user's browser through every layer (DNS, CDN, load balancer, compute, cache, primary store, cold storage, async paths) until the response or delivery comes back. Always separates **read path** from **write path** because the asymmetry between them is often the design's key insight. Mentions where state lives, where early-exits happen, and where the heavy lifting actually concentrates. The anchor question is typically "request entra. Desenha CADA camada que ela atravessa." The asker is usually whoever has the deepest mental model of the full stack (look for cache + database + replication in the cohort knowledge map).
+
+**2. AWS: managed services por camada** — the last beat before synthesis. Maps each box of the architecture diagram to a specific AWS managed service, with concrete tradeoffs (Lambda vs EC2, DynamoDB vs RDS, NLB vs ALB, MSK vs SQS, CloudFront vs nothing). Always use **AWS** as the cloud (project default). The pedagogical point is that managed-service choice is dictated by the load profile, not by personal familiarity — Lambda fits write-rare + stateless workloads, EC2 with ASG fits persistent connections, etc.
+
+For both, the standard fields apply (oneLine, pass1, pass2, pass3, anchor, askWho, followup, gotcha, scenarios). The architecture beat's followup naturally bridges into the AWS beat ("OK, diagrama no quadro. Pra cada caixa, qual managed service?"). The AWS beat's followup bridges into synthesis ("Quais escolhas mudaram em comparação com sistemas de perfil oposto?").
+
+Both beats reference and synthesize the design decisions from the earlier beats — they're integration moments, not new content. If you find yourself introducing a new concept in either beat that should have been covered earlier, escalate to revise the earlier beats instead.
+
 ### Step 3 — Pull the cohort knowledge map
 
 This is the crucial step that makes the lesson personal. Before writing any beat, you need to know **who studied what** so you can assign the right asker per beat.

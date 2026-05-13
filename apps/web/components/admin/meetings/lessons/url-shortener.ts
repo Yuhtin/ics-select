@@ -5,8 +5,8 @@ export const urlShortener: Lesson = {
   title: 'URL Shortener',
   subtitle: 'Read-heavy, immutable, point lookup — o caso canônico.',
   blurb:
-    'O case clássico de system design pra entender o perfil read-heavy. A gente percorre 6 beats que cobrem o vocabulário central — geração de short key em base62, escolha de KV store, cache write-around, consistent hashing — usando o profile de carga como bússola pra cada decisão. A regra que sai daqui: read/write ratio, mutabilidade e consistency aceitável ditam 80% da arquitetura antes de qualquer caixa ser desenhada.',
-  durationMin: 60,
+    'O case clássico de system design pra entender o perfil read-heavy. A gente percorre 8 beats que cobrem o vocabulário central — geração de short key em base62, escolha de KV store, cache write-around, consistent hashing, diagrama completo da arquitetura, e o mapping pra managed services da AWS — usando o profile de carga como bússola pra cada decisão. A regra que sai daqui: read/write ratio, mutabilidade e consistency aceitável ditam 80% da arquitetura antes de qualquer caixa ser desenhada.',
+  durationMin: 80,
   audience: 'Hot Stuff · Big Tech · semana 3',
   nodes: [
     // ──────────────── FOUNDATIONS ────────────────
@@ -419,7 +419,7 @@ export const urlShortener: Lesson = {
         },
       ],
       followup:
-        'OK, as 6 decisões estão na mesa. Antes de fechar, quais dessas decisões dependeram diretamente do perfil read-heavy + imutável?',
+        'OK, as 6 decisões de design estão na mesa. Agora desenha no quadro: o request do usuário entra, quais camadas ele atravessa?',
       gotcha:
         'Se Eduardo só disser "hash mod N", pergunte: "adicionei o servidor 11. Quantas keys vão precisar se mover entre shards?" Força ele a falar de consistent hashing.',
       scenarios: {
@@ -443,6 +443,134 @@ export const urlShortener: Lesson = {
         },
       },
     },
+    {
+      id: 'url-architecture',
+      label: 'Architecture: o fluxo completo',
+      group: 'url',
+      beat: 7,
+      oneLine:
+        'Walkthrough do request: do navegador até o banco e de volta. Mostra como as decisões dos beats anteriores se compõem em camadas.',
+      pass1:
+        'Agora a gente junta as peças. Nos beats anteriores você decidiu base62, KV store, cache com write-around, consistent hashing. Esse beat é desenhar no quadro como tudo isso se conecta — por onde a request entra, em que camadas ela passa, e onde termina. É um teste de coerência: se alguma das decisões anteriores não fizer sentido no diagrama, é hora de voltar e revisar.',
+      pass2:
+        '**Read path** (o caminho mais comum, cerca de 99% do tráfego). O navegador resolve o domínio via DNS e bate em um edge node do CDN. Se o CDN tem o 301 cacheado (e como o link é imutável, isso acontece muito), devolve direto e nunca chega no nosso sistema. Se não tem, passa pro load balancer, que distribui pra uma instância de compute via round-robin. A instância consulta o cache distribuído (Redis) primeiro. Cache hit retorna o long_url e termina. Cache miss faz a instância buscar no banco primário, popular o cache, e responder com 301. O CDN cacheia esse 301 com TTL longo, então o próximo request da mesma key nunca mais chega no origin.\n\n**Write path** (raro, cerca de 1% do tráfego). O navegador bate no CDN, que detecta o método POST e passa pro load balancer (CDN não cacheia writes). O load balancer encaminha pra compute. A instância gera o short_key (counter via Snowflake ou similar), confirma unicidade via constraint atômica, escreve no banco primário, e devolve a key gerada. Não popula cache no write — write-around deixa o primeiro read fazer isso.\n\n**Camadas que você desenha**: edge (CDN) → load balancer → compute → cache distribuído → banco primário → storage frio (S3 com index pra URLs antigas). Setas separadas pra leitura e escrita. Marca o cache hit como early-exit no read path. Marca o CDN cache como o early-exit ainda mais cedo. Esses dois early-exits são onde 95% do tráfego sai sem nunca tocar no banco.\n\n**Asymmetry crítica**: o read path tem 3 níveis de cache (CDN, cache distribuído, e implicitamente o cache local da instância). O write path tem zero cache. Isso é o reflexo direto do read/write ratio 1:100 — investir em hierarquia de cache na leitura compensa, no write não.',
+      pass3: [
+        {
+          gotcha: 'Desenhar só `LB → API → DB`',
+          note: 'É o desenho de um CRUD genérico. Falta o CDN (que absorve 70% do tráfego no padrão real do Bit.ly) e falta o cache distribuído (que absorve mais 20%). Esses dois sumiram do diagrama e com eles a maior parte da arquitetura.',
+        },
+        {
+          gotcha: 'Misturar read path e write path no mesmo desenho',
+          note: 'Os perfis são tão diferentes (read tem 3 camadas de cache, write tem zero) que merecem setas e cores distintas. Misturar esconde a assimetria que é a chave do design.',
+        },
+        {
+          gotcha: 'Esquecer o storage frio',
+          note: 'URLs com 2 anos sem acesso podem viver em S3 com um índice apontando. Esse hot/cold split só é possível porque o dado é imutável, e cabe um bullet no diagrama mesmo que seja "opcional".',
+        },
+        {
+          gotcha: 'Não marcar onde os early-exits acontecem',
+          note: 'O CDN serve 70% sem chegar no origin. O cache distribuído serve mais 20%. Marcar esses dois pontos com "X% sai aqui" deixa o diagrama tão claro quanto a prosa.',
+        },
+      ],
+      anchor:
+        'Request do navegador entra. Desenha no quadro CADA camada que ela passa antes do 301 voltar pro usuário.',
+      askWho: [
+        {
+          name: 'Eduardo Izawa',
+          why: 'Tem cache + replication + sharding na bagagem — é a pessoa que consegue puxar o diagrama inteiro sem esquecer camada. Se ele engatar bem, deixa ele guiar a sala.',
+        },
+        {
+          name: 'Leunam Sousa',
+          why: 'Backup com cache + database. Se Eduardo esquecer algo, ele pode preencher os buracos.',
+        },
+      ],
+      followup:
+        'OK, diagrama no quadro. Pra cada caixa, qual serviço da AWS você usaria pra deployar?',
+      gotcha:
+        'Se desenharem só `LB → API → DB`, devolva: "cadê o CDN? Onde mora os 70% do tráfego do Bit.ly real?"',
+      scenarios: {
+        right: {
+          shape:
+            'Desenha as 5 camadas (CDN, load balancer, compute, cache, banco) com setas separadas pra read e write paths. Marca explicitamente o CDN como primeiro early-exit e o cache como segundo. Cita imutabilidade como o que destrava esse hierarchy.',
+          redirect:
+            'Avance pro deploy: "agora pra cada caixa, qual serviço AWS escolheria? Justifica pelo perfil de carga, não pela preferência."',
+        },
+        close: {
+          shape:
+            'Desenha as camadas principais mas esquece o CDN (foca só no cache distribuído), ou não separa read e write paths, ou esquece de marcar os early-exits.',
+          redirect:
+            'Aponte o gap: "esse desenho assume que toda request chega no seu servidor. Mas no padrão real do Bit.ly, quanto % do tráfego SAI antes de chegar?" Force chegar em CDN.',
+        },
+        wayOff: {
+          shape:
+            'Desenha "usuário → servidor → banco" como se fosse uma arquitetura monolítica. Não pensa em camadas nem em onde o tráfego é filtrado.',
+          redirect:
+            'Volte aos fatos: "1B URLs, 20 mil QPS no pico, p99 abaixo de 100ms. Esse desenho de 3 caixas aguenta isso? Onde o tráfego é absorvido?"',
+        },
+      },
+    },
+    {
+      id: 'url-aws',
+      label: 'AWS: managed services por camada',
+      group: 'url',
+      beat: 8,
+      oneLine:
+        'Cada caixa do diagrama mapeia pra um managed service. Pro perfil read-heavy + write-rare, o stack canônico é Lambda + DynamoDB + ElastiCache + CloudFront.',
+      pass1:
+        'Você tem o desenho da arquitetura. Agora pra cada caixa, qual managed service da AWS você usaria pra deployar? Esse beat é sobre tradeoffs operacionais reais — Lambda versus EC2, DynamoDB versus RDS, CloudFront versus colocar Nginx na sua frente. A regra é a mesma de antes: a escolha depende do perfil da carga, não da preferência ou da familiaridade.',
+      pass2:
+        '**CDN: CloudFront**. Edge global da AWS, cacheia o 301 com TTL longo. Integra direto com Route 53 e ALB. Cobra por GB de transferência e por request, mas pra encurtador (onde 70% do tráfego sai aqui) é barato e indispensável.\n\n**DNS: Route 53**. O DNS authoritative da AWS. Aceita geo-routing pra mandar usuário pro CloudFront mais próximo. Latency-based routing pro próprio API endpoint.\n\n**Load balancer: ALB ou API Gateway**. Pra Lambda, API Gateway entra naturalmente. Pra EC2, ALB. Não precisa de NLB nesse caso porque a conexão é HTTP curta, não persistente.\n\n**Compute: Lambda**. Esse é o ponto interessante. Lambda funciona muito bem aqui porque o write QPS é baixo (200 no pico), e a maior parte do tráfego de leitura já foi absorvido pelo CloudFront e pelo ElastiCache antes de chegar. A Lambda invoca raramente, paga por invocação, e escala automaticamente. EC2 seria justificado só se você precisasse de cold-start zero ou de uma biblioteca pesada que não cabe em Lambda.\n\n**Cache: ElastiCache (Redis)**. Cluster Redis gerenciado. Read-through pattern pra cache hit em poucos ms. Suporta autoscaling de nós e replicação automática.\n\n**Banco primário: DynamoDB**. KV gerenciado, hash partition automática na short_key, leitura O(1) em poucos ms. Cobra por request + storage. DynamoDB Streams pode disparar Lambda em cada write se precisar de analytics.\n\n**Cold storage: S3 + Athena**. URLs antigas migram pra S3 (cobrança por GB armazenado, muito barata) e ficam queryáveis via Athena se algum dia for preciso. Hot path nunca toca esse storage.\n\n**Observabilidade: CloudWatch + X-Ray**. Métricas (cache hit rate, p99 latência, erro %) em CloudWatch, distributed tracing em X-Ray. Alarmes em métricas críticas.\n\n**Infra como código: CDK ou Terraform**. Não importa muito qual — o ponto é que a stack inteira é definida em código e versionada.',
+      pass3: [
+        {
+          gotcha: 'Escolher EC2 sem justificar',
+          note: 'EC2 cobra 24/7 mesmo quando não tem tráfego, e o write QPS aqui é baixo o suficiente pra Lambda absorver sem nem cold-start ser problema. Sem justificativa concreta (latência mínima, biblioteca pesada), Lambda vence.',
+        },
+        {
+          gotcha: 'Defender RDS pra esse caso',
+          note: 'RDS (Postgres ou MySQL gerenciado) cobra por instância 24/7, faz MVCC e WAL que não usamos, e tem limite de conexões. DynamoDB encaixa no padrão de uso (point lookup) e cobra por request — paga só o que usa.',
+        },
+        {
+          gotcha: 'Esquecer o CloudFront',
+          note: 'Sem CloudFront, todo o tráfego bate no ALB e na sua compute. Isso multiplica custo de Lambda por 5× e mata o p99. CloudFront cacheia 70% do tráfego antes — não é opcional, é central no design.',
+        },
+        {
+          gotcha: 'Não pensar em DynamoDB on-demand vs provisioned',
+          note: 'On-demand cobra por request, escala automaticamente, ótimo pra tráfego irregular ou desconhecido. Provisioned reserva capacidade e é mais barato em volume previsível. Pra encurtador novo, on-demand pra começar; provisioned quando o tráfego estabiliza.',
+        },
+      ],
+      anchor:
+        'Pro encurtador, qual a sua escolha de compute — Lambda ou EC2? Justifica pelo perfil de carga.',
+      askWho: [
+        {
+          name: 'Eduardo Izawa',
+          why: 'Tem cache + database + scale na bagagem. As decisões aqui (Lambda vs EC2, DynamoDB vs RDS, escolha de cache) caem exatamente nos topics que ele estudou. Ótimo pra puxar tradeoffs.',
+        },
+      ],
+      followup:
+        'OK, stack escolhida. Em que ordem você ia deployar pra subir um MVP e depois escalar?',
+      gotcha:
+        'Se alguém escolher EC2 sem justificar, devolva: "quantas writes por segundo a Lambda absorve no pico aqui? E quanto custa uma instância EC2 t3.medium 24/7 idle?"',
+      scenarios: {
+        right: {
+          shape:
+            'Lambda + DynamoDB + ElastiCache + CloudFront + Route 53 + S3 pra long tail. Justifica cada escolha pelo perfil — Lambda porque write é raro e read já foi absorvido por cache, DynamoDB porque point lookup é o padrão de acesso, CloudFront porque a operação é GET de dado imutável.',
+          redirect:
+            'Avance pro fechamento: "cadeia montada. Quais decisões dessa stack são consequência direta do read/write ratio 1:100?"',
+        },
+        close: {
+          shape:
+            'Escolhe os serviços certos (Lambda, DynamoDB, ElastiCache) mas não justifica pelo perfil de carga. A resposta sai como uma lista de "uso isso, isso e isso" sem o "por quê".',
+          redirect:
+            'Force o porquê: "Lambda em vez de EC2 — qual número específico do nosso perfil justifica essa escolha?"',
+        },
+        wayOff: {
+          shape:
+            'Vai de EC2 + RDS porque "é o que eu conheço". Não considera Lambda nem KV gerenciado.',
+          redirect:
+            'Aterre numericamente: "1 instância EC2 t3.medium custa 30 dólares por mês idle. Lambda com nosso volume custaria quanto? RDS provisioned custa 100+ dólares; DynamoDB on-demand com nosso volume custa quanto?"',
+        },
+      },
+    },
     // ──────────────── SYNTHESIS ────────────────
     {
       id: 'synthesis',
@@ -451,9 +579,9 @@ export const urlShortener: Lesson = {
       oneLine:
         'O perfil de carga (read-heavy + imutável + eventual OK) dita 80% da arquitetura antes de qualquer caixa ser desenhada.',
       pass1:
-        'URL Shortener é o caso canônico read-heavy com point lookup, e os 6 beats que acabamos de cobrir te dão o vocabulário central que reaparece em qualquer sistema com perfil parecido — base62, KV store, cache write-around, consistent hashing. A regra que sai daqui não é nenhum nome de tecnologia específico, e sim que o perfil de carga (read/write ratio + mutabilidade + consistency aceitável) dita 80% das decisões antes de você desenhar qualquer caixa.',
+        'URL Shortener é o caso canônico read-heavy com point lookup, e os 8 beats que acabamos de cobrir te dão o vocabulário central que reaparece em qualquer sistema com perfil parecido — base62, KV store, cache write-around, consistent hashing, e o stack de managed services que materializa isso na nuvem. A regra que sai daqui não é nenhum nome de tecnologia específico, e sim que o perfil de carga (read/write ratio + mutabilidade + consistency aceitável) dita 80% das decisões antes de você desenhar qualquer caixa.',
       pass2:
-        'O resumo das 6 decisões que tomamos, lado a lado com o critério que guiou cada uma:\n\n**Keygen** (base62 + Snowflake): perfil pede unicidade distribuída sem coordenação central, e legibilidade pra caber em link. Base62 ganha de UUID e de hash truncado.\n\n**Collision handling**: race condition de dedup é diferente de collision matemática, e cada uma tem sua solução. Imutabilidade ajuda — o dado nunca muda depois, então o retry é seguro.\n\n**Storage choice** (KV): o access pattern é point lookup puro, sem JOIN nem range. Relacional é overkill, e Redis como source of truth é desperdício de RAM.\n\n**Cache** (read-through, write-around): a distribuição de leitura é skewed (lei de potência), o write é raro, e o dado é imutável. Esses três fatos juntos quase escrevem a estratégia de cache sozinhos.\n\n**Sharding** (hash partition): point lookup uniformemente distribuído resolve com hash mod N + consistent hashing pra rebalanço. Sem cross-shard query no caminho quente.\n\n**CDN edge** (301): porque o dado é imutável e a operação é GET, o CDN faz cache automático e absorve a maior parte do tráfego antes de chegar no origin.\n\nO ponto pedagógico final: nenhuma dessas decisões foi tomada por "é o padrão". Cada uma seguiu do perfil específico do sistema. Em entrevista, o candidato que articula essa lógica (perfil → decisão → trade-off) é o que separa pleno de senior.',
+        'O resumo das 8 decisões que tomamos, lado a lado com o critério que guiou cada uma:\n\n**Keygen** (base62 + Snowflake): perfil pede unicidade distribuída sem coordenação central, e legibilidade pra caber em link. Base62 ganha de UUID e de hash truncado.\n\n**Collision handling**: race condition de dedup é diferente de collision matemática, e cada uma tem sua solução. Imutabilidade ajuda — o dado nunca muda depois, então o retry é seguro.\n\n**Storage choice** (KV): o access pattern é point lookup puro, sem JOIN nem range. Relacional é overkill, e Redis como source of truth é desperdício de RAM.\n\n**Cache** (read-through, write-around): a distribuição de leitura é skewed (lei de potência), o write é raro, e o dado é imutável. Esses três fatos juntos quase escrevem a estratégia de cache sozinhos.\n\n**Sharding** (hash partition): point lookup uniformemente distribuído resolve com hash mod N + consistent hashing pra rebalanço. Sem cross-shard query no caminho quente.\n\n**Architecture diagram**: cinco camadas separando read path (com 3 níveis de cache) de write path (sem cache). O CDN absorve 70% do tráfego, o cache distribuído absorve mais 20%, e só 10% chega no banco — assimetria que reflete diretamente o ratio 1:100.\n\n**AWS stack**: Lambda + DynamoDB + ElastiCache + CloudFront + Route 53. Cada escolha justificada pelo perfil — Lambda porque o write é raro e a Lambda escala bem, DynamoDB porque point lookup é o access pattern, CloudFront porque o dado é imutável e a operação é GET cacheável.\n\nO ponto pedagógico final: nenhuma dessas decisões foi tomada por "é o padrão". Cada uma seguiu do perfil específico do sistema. Em entrevista, o candidato que articula essa lógica (perfil → decisão → trade-off → managed service) é o que separa pleno de senior.',
       pass3: [
         {
           gotcha: 'Aceitar "uso o padrão" como justificativa',

@@ -401,3 +401,63 @@ html:has(.landing-stage) {
 [data-theme='light'] .recharts-text {
   fill: hsl(var(--fg-mute));
 }
+
+/* ============================================================
+   Print — meetings PDF
+   Force a light-on-white look regardless of theme, page-break
+   the major sections, and let the document use full page width.
+   ============================================================ */
+@media print {
+  @page {
+    size: A4;
+    margin: 16mm 14mm;
+  }
+
+  :root,
+  [data-theme='light'],
+  [data-theme='dark'] {
+    --bg: 0 0% 100%;
+    --bg-subtle: 220 14% 97%;
+    --surface: 0 0% 100%;
+    --fg: 0 0% 12%;
+    --fg-soft: 0 0% 25%;
+    --fg-mute: 0 0% 40%;
+    --fg-faint: 0 0% 55%;
+    --border: 0 0% 85%;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  .print-document {
+    color: #000;
+  }
+
+  .print-cover {
+    min-height: calc(100vh - 32mm);
+    page-break-after: always;
+  }
+
+  .print-chapter {
+    page-break-before: always;
+  }
+
+  .print-chapter-cover {
+    padding-bottom: 1rem;
+    border-bottom: 1px solid hsl(var(--border));
+    margin-bottom: 2rem;
+  }
+
+  .print-node {
+    page-break-inside: avoid;
+  }
+
+  /* Anchor questions, lists, scenario cards should stay together */
+  article,
+  li {
+    page-break-inside: avoid;
+  }
+}
