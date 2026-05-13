@@ -10,6 +10,17 @@ export type Pegadinha = {
   note: string;
 };
 
+export type Scenario = {
+  shape: string;
+  redirect: string;
+};
+
+export type ResponseScenarios = {
+  right: Scenario;
+  close: Scenario;
+  wayOff: Scenario;
+};
+
 export type LessonNode = {
   id: string;
   label: string;
@@ -24,6 +35,7 @@ export type LessonNode = {
   askWho: Asker[];
   followup: string;
   gotcha: string;
+  scenarios?: ResponseScenarios;
 };
 
 export type Lesson = {

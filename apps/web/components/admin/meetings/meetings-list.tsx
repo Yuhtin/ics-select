@@ -13,7 +13,7 @@ export function MeetingsList({ meetings }: { meetings: MeetingSummary[] }) {
         <h1 className="font-serif text-5xl font-semibold tracking-tight text-fg">
           Aulas
         </h1>
-        <p className="max-w-2xl font-serif text-lg italic leading-snug text-fg-soft">
+        <p className="max-w-2xl font-sans text-lg leading-snug text-fg-soft">
           Roteiros prontos pra facilitar — cada aula tem Study Mode pra você
           preparar e Live Mode pra navegar durante o encontro.
         </p>
@@ -47,7 +47,7 @@ function MeetingCard({ meeting }: { meeting: MeetingSummary }) {
             <h2 className="font-serif text-3xl font-semibold leading-tight tracking-tight text-fg">
               {meeting.title}
             </h2>
-            <p className="font-serif text-base italic leading-snug text-fg-soft">
+            <p className="font-sans text-base leading-snug text-fg-soft">
               {meeting.subtitle}
             </p>
             <p className="max-w-2xl text-sm leading-relaxed text-fg-soft">
@@ -82,7 +82,7 @@ function MeetingCard({ meeting }: { meeting: MeetingSummary }) {
 function EmptyState() {
   return (
     <div className="rounded-card border border-dashed border-border-token bg-bg-subtle/40 p-12 text-center">
-      <p className="font-serif text-lg italic text-fg-soft">
+      <p className="font-sans text-lg text-fg-soft">
         Sem aulas montadas ainda.
       </p>
     </div>

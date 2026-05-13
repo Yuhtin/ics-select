@@ -55,21 +55,21 @@ export const urlShortenerVsChat: Lesson = {
       oneLine:
         'O que perguntar antes de uma linha de código. Read/write ratio dita 80% da arquitetura.',
       pass1:
-        'Antes de qualquer arquitetura, você pergunta: quem usa, quanto, com que padrão. Para URL Shortener, três respostas definem tudo o que vem depois: (1) write-light, read-heavy (1:100 fácil); (2) URL é imutável depois de criada; (3) consistency frouxa OK — se um usuário não vê o seu link recém-criado por 100ms, ninguém liga.',
+        'Antes de desenhar qualquer caixinha, você precisa entender o problema. Pra um encurtador, três respostas vão guiar todo o resto: quem usa e quanto, se a URL pode mudar depois de criada, e qual é a proporção entre leituras e escritas. Tudo o que vem depois — banco, cache, sharding — depende dessas respostas.',
       pass2:
-        'Funcional: encurtar (URL longa → key curta), expandir (key → 301/302), analytics opcional. Non-functional: alta disponibilidade (link quebrado = brand damage), latência baixa na leitura (<100ms p99), custom slugs opcionais, expiração opcional. O killer feature é a IMMUTABILITY: uma vez criada, a tupla `short_key → long_url` nunca muda. Isso libera cache agressivo, libera réplicas read-only com lag, libera CDN edge caching. Nada disso seria possível num sistema mutável. Esse é o argumento que você fecha aqui — write-once + read-many + immutable = arquitetura completamente diferente de "outro CRUD qualquer".',
+        'O que perguntar, em ordem de prioridade.\n\n**Volume e proporção**: quantas URLs criadas por dia? Quantas leituras por URL? URL Shortener tem ratio típico de 1:100 — pra cada URL criada, ela é clicada 100 vezes. Esse número é o que separa "preciso de cache" de "uma instância dá conta".\n\n**Imutabilidade**: a URL longa pode ser alterada depois de criada? Pode ser deletada? A resposta na maioria dos casos é "não" — e isso é libertador, porque permite estratégias de armazenamento e replicação muito mais simples mais à frente.\n\n**Consistência aceitável**: se o usuário criar um link e ver "404" por 200ms enquanto a réplica recebe a escrita, isso é tolerável? Quase sempre sim. Confirmar isso aqui evita debate desnecessário sobre transações ACID lá na frente.\n\n**Escopo**: o que NÃO vamos resolver? Analytics? Custom slugs? Expiração? Anti-abuse? Liste o que ficou de fora pra não inflar o problema sozinho. Em entrevista, o entrevistador escolhe o que aprofundar — você não precisa antecipar tudo.',
       pass3: [
         {
+          gotcha: 'Pular direto pra implementação',
+          note: 'Começar desenhando "Load Balancer → API → DB" antes de perguntar nada é o erro mais comum. O entrevistador quer ver você FRAMING o problema antes de resolver. Pergunte primeiro.',
+        },
+        {
           gotcha: 'Trazer features que não foram pedidas',
-          note: 'Analytics, A/B test de slugs, link com expiração, anti-abuse — tudo opcional. Foque no core primeiro. Em entrevista, o entrevistador escolhe o que aprofundar.',
+          note: 'Analytics, A/B test de slugs, expiração de link, anti-abuse — tudo opcional. Liste e pergunte "isso está no escopo?". Não invente requisitos.',
         },
         {
-          gotcha: 'Assumir strong consistency',
-          note: 'Não precisa. Read-after-write próprio só (eventual replicas OK). Isso é GIGANTE pro design.',
-        },
-        {
-          gotcha: 'Esquecer que a operação é GET, não POST',
-          note: 'Cacheável em CDN. Browsers cacheiam 301. O sistema pode "morrer" e ainda servir.',
+          gotcha: 'Esquecer de perguntar volume',
+          note: 'Sem volume, você não pode dimensionar nada depois. "Quantas URLs criadas por mês?" e "quantas leituras por URL?" são as duas perguntas que mais destravam.',
         },
       ],
       anchor:
@@ -88,6 +88,26 @@ export const urlShortenerVsChat: Lesson = {
         'Quantas leituras pra cada escrita você acha que isso tem? E isso muda alguma coisa?',
       gotcha:
         'Quando alguém disser "preciso de consistência forte", devolva: "se um usuário viu o link 200ms depois de criar, alguém perde a vida?"',
+      scenarios: {
+        right: {
+          shape:
+            'Lista perguntas concretas antes de qualquer solução: quantos usuários, quantas URLs criadas vs lidas, se URL pode ser editada depois, qual latência é aceitável. Reconhece que essas respostas vão definir o resto — não tenta resolver ainda.',
+          redirect:
+            'Confirme as premissas com a turma (1:100 reads, imutável, eventual OK) e avance pra próxima pergunta: "agora que sabemos o problema, como o sistema gera o `abc123`?"',
+        },
+        close: {
+          shape:
+            'Faz algumas perguntas de requisito (volume, latência) mas esquece de perguntar a coisa mais importante: a proporção entre leituras e escritas.',
+          redirect:
+            'Devolva: "dos requisitos que você listou, qual a pergunta que muda mais a arquitetura?" Guie até read/write ratio.',
+        },
+        wayOff: {
+          shape:
+            'Já começa desenhando caixinhas no quadro ("Load Balancer, API Gateway, Database...") sem perguntar nada sobre o uso do sistema.',
+          redirect:
+            'Interrompa: "espera — antes de desenhar nada, que perguntas você precisaria responder pra saber se essa arquitetura faz sentido?" Force voltar pra requisitos.',
+        },
+      },
     },
     {
       id: 'url-keygen',
@@ -114,6 +134,26 @@ export const urlShortenerVsChat: Lesson = {
           note: 'Counter único global = bottleneck. Solução: blocos de IDs pré-alocados por server (Ticket Server pattern do Flickr/Bit.ly).',
         },
       ],
+      scenarios: {
+        right: {
+          shape:
+            'Explica counter → base62 (sem +/=, URL-safe), 7 chars dá 3.5T keys, mostra a divisão sucessiva por 62. Cita Snowflake ou Ticket Server pra distribuir o counter sem bottleneck.',
+          redirect:
+            'Avance: "se duas pessoas submetem URLs DIFERENTES e bate o mesmo hash, ou submetem a MESMA URL ao mesmo tempo — o que acontece?"',
+        },
+        close: {
+          shape:
+            'Sabe base62 e justifica vs base64, mas defende hash truncado da URL sem mencionar que truncar gera colisão. OU usa counter mas global single-instance.',
+          redirect:
+            'Pergunte: "1 bilhão de URLs geradas, hash de 7 chars em base62. Qual a probabilidade de duas URLs darem a mesma key?" Força ver birthday paradox.',
+        },
+        wayOff: {
+          shape:
+            'Propõe UUID v4 ("é único, problema resolvido"). Não considera tamanho do link nem legibilidade.',
+          redirect:
+            'Mostre a comparação visual: "bit.ly/abc123 vs bit.ly/3f4a7c2b-1d0e-4f8a-9b3c-7e1d2a8f5c4b. Qual cabe num tweet?" Não derrube a ideia — força perceber o tradeoff.',
+        },
+      },
       anchor:
         'Tenho um contador 1, 2, 3, ... no DB. Como ele vira `abc123`? E por que base62 e não base64?',
       askWho: [
@@ -175,6 +215,26 @@ export const urlShortenerVsChat: Lesson = {
       followup: 'OK, decidida a estratégia. Onde isso mora? Postgres ou Redis?',
       gotcha:
         'Se ninguém pensar em race: "Redis e Postgres são single-threaded por shard?" Provoca eles a separarem concorrência lógica de concorrência física.',
+      scenarios: {
+        right: {
+          shape:
+            'Separa colisão de hash (URLs diferentes, mesma key) de race condition (mesma URL, dois writes). Propõe UNIQUE constraint do DB ou Redis SETNX + retry com salt. Menciona retry budget.',
+          redirect:
+            'Avance: "OK, estratégia decidida. Onde isso mora — Postgres, Redis, ou Cassandra?"',
+        },
+        close: {
+          shape:
+            'Fala de UNIQUE constraint mas confunde os dois problemas — trata race de dedup como se fosse o mesmo que hash colision. OU resolve um e esquece o outro.',
+          redirect:
+            'Force a separar: "duas URLs DIFERENTES dando a mesma key — UNIQUE resolve? E a MESMA URL submetida duas vezes — UNIQUE resolve igual?"',
+        },
+        wayOff: {
+          shape:
+            'Diz "uso um Set em memória pra checar se a key já existe".',
+          redirect:
+            'Lembre o contexto: "tem 10 servers atendendo. Set local de cada server não conversa com o do outro. O que acontece?"',
+        },
+      },
     },
     {
       id: 'url-storage',
@@ -217,6 +277,26 @@ export const urlShortenerVsChat: Lesson = {
         'Beleza, KV de primary. E pra escala de leitura — vamos só na primary store?',
       gotcha:
         'Se alguém disser "Redis como source of truth": "250GB em RAM custa quanto/mês?"',
+      scenarios: {
+        right: {
+          shape:
+            'Argumenta access pattern: point lookup + immutability ⇒ KV (DynamoDB/Cassandra). Postgres só se volume baixo. Redis pra cache, S3 pra cold storage de URLs antigas. Justifica pelo padrão de uso, não por familiaridade.',
+          redirect:
+            'Avance: "agora 1B URLs no total, working set quente são uns 20% — como cacheia?"',
+        },
+        close: {
+          shape:
+            'Vai de Postgres por reflexo ("é o que eu conheço"). Reconhece que KV poderia ser opção mas não defende com argumento técnico.',
+          redirect:
+            'Pergunte: "que feature do Postgres você está USANDO aqui? JOIN? Range scan? Transação multi-row?" Força ver que paga overhead por features não usadas.',
+        },
+        wayOff: {
+          shape:
+            'Propõe Redis como source of truth ("é rápido"). Não considera custo de RAM nem durabilidade.',
+          redirect:
+            'Compare numericamente: "250GB em RAM no AWS ElastiCache custa ~$3000/mês. Em SSD no S3 custa ~$6/mês. Vale a diferença pra um sistema que aceita 10ms de latência?"',
+        },
+      },
     },
     {
       id: 'url-cache',
@@ -263,6 +343,26 @@ export const urlShortenerVsChat: Lesson = {
         '1 bilhão de URLs no total. Cabe num server? E se não cabe?',
       gotcha:
         'Se eles travarem em "que TTL?": "imutável tem TTL?" — força ver que TTL aqui é de eviction, não de staleness.',
+      scenarios: {
+        right: {
+          shape:
+            'Read-through Redis, write-around (writes raros, não vale poluir cache). LRU clássica. Menciona thundering herd e protege com single-flight. Cita CDN cacheando o 301 como "free win".',
+          redirect:
+            'Avance: "OK, cache resolve. Mas 1B URLs ainda não cabem num server só. Como divide?"',
+        },
+        close: {
+          shape:
+            'Sabe cache mas diz "read-through E write-through". Esquece que write-rare + read-heavy favorece write-around.',
+          redirect:
+            'Pergunte: "se você popular o cache no write, e 90% das URLs nunca recebem hit, o que aconteceu com a sua RAM?"',
+        },
+        wayOff: {
+          shape:
+            'Diz que cache não é necessário porque "o DB já é rápido".',
+          redirect:
+            'Aterre nos números: "20k QPS no pico, p99 < 100ms exigido, working set de ~10GB. DB sozinho aguentando isso custa quanto? E sobrevive um pico 5×?"',
+        },
+      },
     },
     {
       id: 'url-shard',
@@ -274,7 +374,7 @@ export const urlShortenerVsChat: Lesson = {
       pass1:
         'Quando 1 instância não cabe (storage OU throughput), você shard. Pra URL Shortener é o caso mais fácil possível: lookup é sempre por short_key, então `shard_id = hash(short_key) % N` resolve. Sem cross-shard query, sem range, sem JOIN. É quase trivial — mas tem armadilhas de rebalanço.',
       pass2:
-        'Hash partition simples (`mod N`) funciona, mas quando N muda (adicionar shard) você precisa relocar `(N-1)/N` das keys — quase tudo. Solução: **consistent hashing** (com virtual nodes) — adicionar shard remove só `1/N` das keys. Cada shard guarda um pedaço da tabela `short_key → long_url`. O router (proxy ou client-side) calcula `hash(short_key)` e roteia. Replicação: cada shard tem master + 2 replicas (read replicas pra absorver leitura, master pra write). Failover automático via Raft/Zookeeper. Hot shard? Em URL Shortener é raro porque `hash(key)` distribui uniformemente — uma URL viral só está em UM shard, mas o WORKING SET viral está distribuído. Cache aliviz o hot shard problem aqui. Pra contraste com Chat (beat 11): URL shard por `hash(key)` é stateless. Chat shard por `hash(conv_id)` é stateful — todas as conexões WS de um conv vão pro mesmo server (locality).',
+        'Hash partition simples (`mod N`) funciona, mas quando N muda (adicionar shard) você precisa relocar `(N-1)/N` das keys — quase tudo. A solução é **consistent hashing** (com virtual nodes): adicionar shard remove só `1/N` das keys. Cada shard guarda um pedaço da tabela `short_key → long_url`. O router (proxy ou client-side) calcula `hash(short_key)` e roteia.\n\nReplicação: cada shard tem master + 2 réplicas. As réplicas absorvem leitura, o master recebe write. Failover automático via Raft/Zookeeper.\n\nHot shard? Em URL Shortener é raro. `hash(key)` distribui uniformemente — uma URL viral está em UM shard só, mas o working set viral fica espalhado por muitas keys diferentes. O cache da etapa anterior também ajuda — o hot path quase não chega ao DB.',
       pass3: [
         {
           gotcha: 'Sharding por geographic region',
@@ -301,6 +401,26 @@ export const urlShortenerVsChat: Lesson = {
         'Beleza, URL Shortener fechado. Mesma arquitetura serve pro WhatsApp? O que muda?',
       gotcha:
         'Se Eduardo só falar "hash mod N": pergunta "e quando adiciona o servidor 11?" — força ele a vomitar consistent hashing.',
+      scenarios: {
+        right: {
+          shape:
+            'Hash partition por short_key. Reconhece que `hash mod N` quebra ao adicionar shard e propõe consistent hashing com virtual nodes. Diferencia hash partition de range partition.',
+          redirect:
+            'Avance pro pivot: "URL Shortener fechado. Mesma arquitetura serve pro WhatsApp? Lista 3 coisas que mudam."',
+        },
+        close: {
+          shape:
+            'Hash mod N sem mencionar problema de rebalanço. Sabe shardear mas não pensou em adicionar capacidade depois.',
+          redirect:
+            '"Adicionei o shard #11. Quantas keys vão precisar se mover entre shards?" Força chegar em consistent hashing.',
+        },
+        wayOff: {
+          shape:
+            'Sharda por geographic region "pra latência". Ou shardar por intervalo alfabético (a-f no shard 1, g-l no shard 2).',
+          redirect:
+            'Devolva: "URL Shortener é global. Um brasileiro clica em link criado por um americano. Em que shard a key está?" Força ver que geo não casa com o access pattern.',
+        },
+      },
     },
     // ──────────────── PIVOT ────────────────
     {
@@ -340,6 +460,26 @@ export const urlShortenerVsChat: Lesson = {
         'Statefulness é o salto maior. Por que HTTP polling não basta?',
       gotcha:
         'Se alguém disser "uso o mesmo DB": "qual o write QPS agora? E o storage cresce no mesmo ritmo?"',
+      scenarios: {
+        right: {
+          shape:
+            'Lista 3+ diferenças concretas: read/write ratio inverte, statefulness do WebSocket, ordering causal por conv. Reconhece que primitivas são as mesmas (DB, cache, shard) mas a config muda.',
+          redirect:
+            'Avance pra transport: "statefulness é o salto maior. Por que HTTP polling não basta?"',
+        },
+        close: {
+          shape:
+            'Diz "preciso de WebSocket" mas trata o resto como se fosse igual. Não menciona ordering nem o fato do storage crescer em outra ordem de magnitude.',
+          redirect:
+            'Pegue uma dimensão por vez: "storage cresce no mesmo ritmo? Read/write ratio é parecido? Cache resolve a mesma coisa?"',
+        },
+        wayOff: {
+          shape:
+            'Diz que é a mesma arquitetura, só muda o schema do banco. Não percebe a mudança de profile.',
+          redirect:
+            'Aterre com um cenário: "msg num grupo de 50 pessoas, todas online — como as 50 recebem em <1s?" Quando ele tentar HTTP request por destinatário, conte o QPS.',
+        },
+      },
     },
     // ──────────────── CHAT ARC ────────────────
     {
@@ -387,6 +527,26 @@ export const urlShortenerVsChat: Lesson = {
         'OK, conexão aberta. Você manda msg num grupo de 50. Como as 50 recebem?',
       gotcha:
         'Se alguém disser "manda HTTP request pra cada um": "1M users online, 100 mil grupos, fan-out médio 20 — quantas requests por segundo isso vira?"',
+      scenarios: {
+        right: {
+          shape:
+            'WebSocket pra bidirecional, sticky sessions no load balancer, custo de ~10-100k conexões por server por causa de FD + RAM. Menciona deploy graceful (drain) e reconnect exponencial. Sabe que SSE seria opção pra unidirecional.',
+          redirect:
+            'Avance pro fan-out: "OK, 1M conexões abertas, distribuídas em N servers. Você manda numa conversa de 50 — como as 50 recebem?"',
+        },
+        close: {
+          shape:
+            'Sabe WebSocket bidirecional e que é "stateful", mas não articula o CUSTO concreto: file descriptors, RAM por conn, problema de deploy.',
+          redirect:
+            'Aterre num número: "quantas conexões cabem num server de 16GB de RAM? Por quê?" Força ver os limites operacionais.',
+        },
+        wayOff: {
+          shape:
+            'Defende que long polling resolve tudo. Ou propõe HTTP/2 push como se substituísse WebSocket.',
+          redirect:
+            'Para long polling: "30 segundos de latência entre mensagens é OK pra chat?" Pra HTTP/2 push: "ele empurra do server pro cliente um stream de mensagens arbitrárias, ou só resource hints?"',
+        },
+      },
     },
     {
       id: 'chat-fanout',
@@ -429,6 +589,26 @@ export const urlShortenerVsChat: Lesson = {
         'Se a mensagem viajou via pubsub, ela está persistida? Onde?',
       gotcha:
         'Se Maria Clara matar push rápido: "OK, e grupo de 100 mil membros — Discord?" Força ela a chegar em pull/inbox.',
+      scenarios: {
+        right: {
+          shape:
+            'Push via PubSub (Redis ou Kafka) com tópico por conv para grupos pequenos-médios. Reconhece o problema de megagrupo e propõe pull/inbox. Diferencia PubSub (efêmero) de Message Queue (durável) — sabe que precisa dos dois.',
+          redirect:
+            'Avance: "OK, msg saiu via pubsub. Ela está PERSISTIDA? Onde, em que ordem, e o que acontece se um user reconectar amanhã?"',
+        },
+        close: {
+          shape:
+            'Push pra todos os destinatários online sempre. Não menciona o problema do megagrupo nem distingue PubSub de Message Queue.',
+          redirect:
+            'Aterre no megagrupo: "canal do Discord com 100 mil membros. Cada mensagem dispara 100 mil pushes — quantas msgs por segundo isso tem que aguentar no pico?"',
+        },
+        wayOff: {
+          shape:
+            'Manda HTTP request do server pra cada destinatário individual. Ou propõe que cada cliente faça poll de um endpoint próprio.',
+          redirect:
+            'Faça a conta junto: "1M usuários online, fan-out médio 20, 100 msgs/s no agregado. Quantas requests HTTP isso vira? Compare com um único publish no PubSub."',
+        },
+      },
     },
     {
       id: 'chat-ordering',
@@ -471,6 +651,26 @@ export const urlShortenerVsChat: Lesson = {
         'Se Snowflake gera o ID, como isso afeta o sharding?',
       gotcha:
         'Se alguém disser "uso timestamp Unix em ms": "dois writes no mesmo ms?"',
+      scenarios: {
+        right: {
+          shape:
+            'Snowflake ID (timestamp+machine+sequence) ordenado POR conv, não global. Partition key = conv_id, clustering key = message_id DESC pra Cassandra. Causal consistency dentro da partição. Menciona read-after-write próprio (cursor cliente).',
+          redirect:
+            'Avance pro sharding: "se o ID é gerado por conv, qual a sharding key natural?"',
+        },
+        close: {
+          shape:
+            'Usa timestamp Unix em ms ou UUID v7 como message_id. Sabe que precisa ordenar mas não pensa em coliscão de timestamp ou na vantagem do Snowflake sequence.',
+          redirect:
+            '"Dois writes chegam no mesmo ms no gateway. Quem fica em primeiro lugar? Qual usuário vê A → B e qual vê B → A?"',
+        },
+        wayOff: {
+          shape:
+            'Defende strong consistency global pra todas as mensagens. Ou usa UUID v4 (random) sem perceber que perde range scan.',
+          redirect:
+            'Para strong global: "ordering entre o seu conv com seu pai e o conv de outro user com a esposa dele — isso importa pra UI?" Pra UUID v4: "como você busca \'últimas 50 mensagens\' nesse modelo?"',
+        },
+      },
     },
     {
       id: 'chat-shard',
@@ -513,6 +713,26 @@ export const urlShortenerVsChat: Lesson = {
         'Listar todos os convs do usuário X. Onde isso mora?',
       gotcha:
         'Se ele disser "shardo por user_id": "user num grupo de 50, fan-out toca quantos shards?"',
+      scenarios: {
+        right: {
+          shape:
+            'Hash(conv_id) com locality — todas as conexões WS de um conv vão pro mesmo server. Contrasta explicitamente com URL (hash(short_key), stateless). Antecipa que "listar convs do user" precisa de índice inverso e aceita o custo. Menciona hot partition + estratégia (split / replicar).',
+          redirect:
+            'Avance pro fechamento: "URL e Chat usam as mesmas primitivas (cache, shard, replica, fan-out). Liste 3 coisas que CADA uma respondeu de maneira diferente."',
+        },
+        close: {
+          shape:
+            'Sharda por conv_id mas não percebe que "todos os convs do user X" deixa de ser point lookup. Ou não fala de hot partition.',
+          redirect:
+            '"Cliente abre o app — você precisa carregar a lista de convs dele. Como você acha esses convs se eles estão espalhados por shards diferentes?"',
+        },
+        wayOff: {
+          shape:
+            'Sharda por user_id "porque o cliente faz request com user_id". Não pensa em onde a mensagem vive.',
+          redirect:
+            '"Grupo com 50 pessoas. User A manda mensagem. A mensagem precisa ir pra storage — em QUAL shard? E os outros 49 — precisam consultar quantos shards pra LER essa mensagem?"',
+        },
+      },
     },
     // ──────────────── SYNTHESIS ────────────────
     {

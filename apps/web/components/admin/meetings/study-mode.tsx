@@ -183,7 +183,7 @@ function NodeSection({ node, pass }: { node: LessonNode; pass: Pass }) {
         <h2 className="font-serif text-3xl font-semibold tracking-tight text-fg lg:text-4xl">
           {node.label}
         </h2>
-        <p className="max-w-2xl font-serif italic text-lg leading-relaxed text-fg-soft">
+        <p className="max-w-2xl font-sans text-[17px] leading-relaxed text-fg-soft">
           {node.oneLine}
         </p>
       </div>
@@ -208,8 +208,8 @@ function NodeSection({ node, pass }: { node: LessonNode; pass: Pass }) {
 
 function OverviewPass({ node }: { node: LessonNode }) {
   return (
-    <div className="max-w-2xl space-y-4">
-      <p className="font-serif text-[17px] leading-[1.7] text-fg-soft">
+    <div className="max-w-[640px] space-y-5">
+      <p className="font-sans text-[17px] leading-[1.75] text-fg-soft">
         {node.pass1}
       </p>
       <AskerBadgeRow node={node} />
@@ -221,11 +221,11 @@ function DeepPass({ node }: { node: LessonNode }) {
   const paragraphs = node.pass2.split(/\n\n+/);
   return (
     <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_280px]">
-      <div className="min-w-0 max-w-2xl space-y-4">
+      <div className="min-w-0 max-w-[640px] space-y-5">
         {paragraphs.map((p, i) => (
           <p
             key={i}
-            className="font-serif text-[17px] leading-[1.7] text-fg-soft"
+            className="font-sans text-[17px] leading-[1.75] text-fg-soft"
             dangerouslySetInnerHTML={renderInline(p)}
           />
         ))}

@@ -30,7 +30,7 @@ export function LessonView({ lesson }: { lesson: Lesson }) {
           <h1 className="font-serif text-5xl font-semibold leading-[1.05] tracking-tight text-fg">
             {lesson.title}
           </h1>
-          <p className="max-w-2xl font-serif text-lg italic leading-snug text-fg-soft">
+          <p className="max-w-2xl font-sans text-lg leading-snug text-fg-soft">
             {lesson.subtitle}
           </p>
           <p className="font-mono text-[11px] uppercase tracking-eyebrow text-fg-mute">

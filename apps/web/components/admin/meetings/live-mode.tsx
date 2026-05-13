@@ -3,8 +3,16 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { clsx } from 'clsx';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, ArrowRight, CircleAlert, Users, X } from 'lucide-react';
-import type { Lesson, LessonNode } from './lesson-types';
+import {
+  ArrowLeft,
+  ArrowRight,
+  Check,
+  CircleAlert,
+  CircleDashed,
+  Users,
+  X,
+} from 'lucide-react';
+import type { Lesson, LessonNode, Scenario } from './lesson-types';
 import { GROUP_META } from './group-meta';
 import { Eyebrow } from '../../ui/eyebrow';
 
@@ -94,7 +102,7 @@ function BeatStepper({
                 type="button"
                 onClick={() => onSelect(i)}
                 className={clsx(
-                  'group flex w-[126px] flex-col items-start gap-1.5 rounded-card border px-3 py-2.5 text-left transition-all',
+                  'group flex h-full min-h-[78px] w-[126px] flex-col items-start gap-1.5 rounded-card border px-3 py-2.5 text-left transition-all',
                   active
                     ? 'border-fg bg-surface shadow-sm'
                     : passed
@@ -154,7 +162,9 @@ function FocusCard({ node }: { node: LessonNode }) {
             <p className="font-serif text-2xl leading-snug text-fg lg:text-[26px]">
               "{node.anchor}"
             </p>
-            <p className="mt-4 font-serif italic text-fg-soft">{node.oneLine}</p>
+            <p className="mt-4 font-sans text-[15px] leading-relaxed text-fg-soft">
+              {node.oneLine}
+            </p>
           </div>
 
           <div>
@@ -182,7 +192,9 @@ function FocusCard({ node }: { node: LessonNode }) {
           </div>
         </div>
 
-        <div className="space-y-5 px-7 py-7">
+        <div className="space-y-6 px-7 py-7">
+          {node.scenarios && <ScenariosBlock scenarios={node.scenarios} />}
+
           <PegadinhasList node={node} />
 
           <div className="rounded-input border border-warn/30 bg-warn-soft/40 p-4">
@@ -194,7 +206,7 @@ function FocusCard({ node }: { node: LessonNode }) {
           </div>
 
           <div className="rounded-input border border-border-token bg-bg-subtle/50 p-4">
-            <Eyebrow className="mb-2">Pergunta-ponte</Eyebrow>
+            <Eyebrow className="mb-2">Default forward</Eyebrow>
             <p className="flex items-start gap-2 text-sm leading-relaxed text-fg">
               <ArrowRight
                 className="mt-1 h-4 w-4 shrink-0 text-fg-faint"
@@ -204,6 +216,111 @@ function FocusCard({ node }: { node: LessonNode }) {
             </p>
           </div>
         </div>
+      </div>
+    </article>
+  );
+}
+
+type ScenarioKind = 'right' | 'close' | 'wayOff';
+
+const SCENARIO_META: Record<
+  ScenarioKind,
+  {
+    label: string;
+    redirectLabel: string;
+    Icon: typeof Check;
+    iconClass: string;
+    borderClass: string;
+    bgClass: string;
+  }
+> = {
+  right: {
+    label: 'Acertou',
+    redirectLabel: 'Como avançar',
+    Icon: Check,
+    iconClass: 'bg-success-soft text-success',
+    borderClass: 'border-success/30',
+    bgClass: 'bg-success-soft/30',
+  },
+  close: {
+    label: 'Tá quase lá',
+    redirectLabel: 'Como completar',
+    Icon: CircleDashed,
+    iconClass: 'bg-warn-soft text-warn',
+    borderClass: 'border-warn/30',
+    bgClass: 'bg-warn-soft/30',
+  },
+  wayOff: {
+    label: 'Passou longe',
+    redirectLabel: 'Como redirecionar',
+    Icon: X,
+    iconClass: 'bg-danger-soft text-danger',
+    borderClass: 'border-danger/30',
+    bgClass: 'bg-danger-soft/25',
+  },
+};
+
+function ScenariosBlock({
+  scenarios,
+}: {
+  scenarios: { right: Scenario; close: Scenario; wayOff: Scenario };
+}) {
+  const order: ScenarioKind[] = ['right', 'close', 'wayOff'];
+  return (
+    <div>
+      <Eyebrow className="mb-3">Cenários de resposta</Eyebrow>
+      <div className="space-y-3">
+        {order.map((kind) => (
+          <ScenarioCard key={kind} kind={kind} scenario={scenarios[kind]} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ScenarioCard({
+  kind,
+  scenario,
+}: {
+  kind: ScenarioKind;
+  scenario: Scenario;
+}) {
+  const meta = SCENARIO_META[kind];
+  const Icon = meta.Icon;
+  return (
+    <article
+      className={clsx(
+        'rounded-input border p-4',
+        meta.borderClass,
+        meta.bgClass,
+      )}
+    >
+      <header className="flex items-center gap-2.5">
+        <span
+          className={clsx(
+            'inline-flex h-5 w-5 items-center justify-center rounded-full',
+            meta.iconClass,
+          )}
+        >
+          <Icon className="h-3 w-3" strokeWidth={2.4} />
+        </span>
+        <p className="font-sans text-[13px] font-semibold text-fg">
+          {meta.label}
+        </p>
+      </header>
+      <div className="mt-3 space-y-2.5 text-[13px] leading-relaxed text-fg-soft">
+        <p>
+          <span className="font-mono text-[10px] uppercase tracking-eyebrow text-fg-mute">
+            Forma:
+          </span>{' '}
+          {scenario.shape}
+        </p>
+        <p>
+          <span className="font-mono text-[10px] uppercase tracking-eyebrow text-fg-mute">
+            {meta.redirectLabel}:
+          </span>{' '}
+          {scenario.redirect}
+        </p>
       </div>
     </article>
   );
