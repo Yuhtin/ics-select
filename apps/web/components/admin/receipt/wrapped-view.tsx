@@ -172,6 +172,9 @@ export function WrappedView({ data }: { data: CycleReceiptResponse }) {
         <div className="mt-8 font-mono text-xs uppercase tracking-label opacity-70">
           see you in the next cycle
         </div>
+        <div className="mt-12 font-mono text-[10px] uppercase tracking-label opacity-50">
+          by davi duarte · github.com/Yuhtin
+        </div>
       </WrappedBlock>
     </div>
   );

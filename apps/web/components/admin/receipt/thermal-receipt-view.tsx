@@ -157,6 +157,9 @@ export function ThermalReceiptView({ data }: { data: CycleReceiptResponse }) {
         <div className="uppercase tracking-wider">Thank you for studying</div>
         <div className="mt-1 text-base">★ ★ ★ ★ ★</div>
         <div className="mt-3 text-ink-mute">─ keep going ─</div>
+        <div className="mt-6 text-[10px] uppercase tracking-label text-ink-faint">
+          by davi duarte · github.com/Yuhtin
+        </div>
       </div>
     </ThermalPaper>
   );
