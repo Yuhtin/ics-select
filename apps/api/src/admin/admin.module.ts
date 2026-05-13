@@ -9,6 +9,7 @@ import { MemberDetailModule } from './member-detail/member-detail.module.js';
 import { PlansOverviewModule } from './plans-overview/plans-overview.module.js';
 import { InvitesModule } from './invites/invites.module.js';
 import { CockpitModule } from './cockpit/cockpit.module.js';
+import { CycleReceiptModule } from './cycle-receipt/cycle-receipt.module.js';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { CockpitModule } from './cockpit/cockpit.module.js';
     PlansOverviewModule,
     InvitesModule,
     CockpitModule,
+    CycleReceiptModule,
   ],
   exports: [InvitesModule],
 })
