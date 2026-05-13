@@ -7,6 +7,7 @@ import { AlertTriangle, ArrowRight, Users } from 'lucide-react';
 import type { Lesson, LessonNode } from './lesson-types';
 import { GROUP_META } from './group-meta';
 import { Eyebrow } from '../../ui/eyebrow';
+import { Glossarized } from './glossarized';
 
 type Pass = 'overview' | 'deep' | 'mastery';
 
@@ -44,13 +45,28 @@ export function StudyMode({ lesson }: { lesson: Lesson }) {
         <SidebarNav lesson={lesson} activeId={activeId} />
       </aside>
 
-      <div className="min-w-0 space-y-12">
-        <PassSwitcher pass={pass} onChange={setPass} />
-        <div className="space-y-16">
-          {lesson.nodes.map((node) => (
-            <NodeSection key={node.id} node={node} pass={pass} />
-          ))}
-        </div>
+      <PassContent lesson={lesson} pass={pass} onPassChange={setPass} />
+    </div>
+  );
+}
+
+function PassContent({
+  lesson,
+  pass,
+  onPassChange,
+}: {
+  lesson: Lesson;
+  pass: Pass;
+  onPassChange: (p: Pass) => void;
+}) {
+  const seen = new Set<string>();
+  return (
+    <div className="min-w-0 space-y-12">
+      <PassSwitcher pass={pass} onChange={onPassChange} />
+      <div className="space-y-16">
+        {lesson.nodes.map((node) => (
+          <NodeSection key={node.id} node={node} pass={pass} seen={seen} />
+        ))}
       </div>
     </div>
   );
@@ -174,7 +190,15 @@ function PassSwitcher({
   );
 }
 
-function NodeSection({ node, pass }: { node: LessonNode; pass: Pass }) {
+function NodeSection({
+  node,
+  pass,
+  seen,
+}: {
+  node: LessonNode;
+  pass: Pass;
+  seen: Set<string>;
+}) {
   const meta = GROUP_META[node.group];
   return (
     <section
@@ -206,7 +230,7 @@ function NodeSection({ node, pass }: { node: LessonNode; pass: Pass }) {
           {node.label}
         </h2>
         <p className="max-w-2xl font-sans text-[17px] leading-relaxed text-fg-soft">
-          {node.oneLine}
+          <Glossarized text={node.oneLine} seen={seen} keyPrefix={`${node.id}-one`} />
         </p>
       </div>
 
@@ -219,27 +243,27 @@ function NodeSection({ node, pass }: { node: LessonNode; pass: Pass }) {
           transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
           className="mt-8"
         >
-          {pass === 'overview' && <OverviewPass node={node} />}
-          {pass === 'deep' && <DeepPass node={node} />}
-          {pass === 'mastery' && <MasteryPass node={node} />}
+          {pass === 'overview' && <OverviewPass node={node} seen={seen} />}
+          {pass === 'deep' && <DeepPass node={node} seen={seen} />}
+          {pass === 'mastery' && <MasteryPass node={node} seen={seen} />}
         </motion.div>
       </AnimatePresence>
     </section>
   );
 }
 
-function OverviewPass({ node }: { node: LessonNode }) {
+function OverviewPass({ node, seen }: { node: LessonNode; seen: Set<string> }) {
   return (
     <div className="max-w-[640px] space-y-5">
       <p className="font-sans text-[17px] leading-[1.75] text-fg-soft">
-        {node.pass1}
+        <Glossarized text={node.pass1} seen={seen} keyPrefix={`${node.id}-p1`} />
       </p>
       <AskerBadgeRow node={node} />
     </div>
   );
 }
 
-function DeepPass({ node }: { node: LessonNode }) {
+function DeepPass({ node, seen }: { node: LessonNode; seen: Set<string> }) {
   const paragraphs = node.pass2.split(/\n\n+/);
   return (
     <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_280px]">
@@ -248,19 +272,20 @@ function DeepPass({ node }: { node: LessonNode }) {
           <p
             key={i}
             className="font-sans text-[17px] leading-[1.75] text-fg-soft"
-            dangerouslySetInnerHTML={renderInline(p)}
-          />
+          >
+            <Glossarized text={p} seen={seen} keyPrefix={`${node.id}-p2-${i}`} />
+          </p>
         ))}
       </div>
       <aside className="space-y-5">
-        <AnchorCard node={node} />
-        <AskerCard node={node} />
+        <AnchorCard node={node} seen={seen} />
+        <AskerCard node={node} seen={seen} />
       </aside>
     </div>
   );
 }
 
-function MasteryPass({ node }: { node: LessonNode }) {
+function MasteryPass({ node, seen }: { node: LessonNode; seen: Set<string> }) {
   return (
     <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_280px]">
       <div className="min-w-0 space-y-4">
@@ -275,10 +300,18 @@ function MasteryPass({ node }: { node: LessonNode }) {
               </span>
               <div className="min-w-0 flex-1">
                 <h4 className="font-sans text-sm font-semibold text-fg">
-                  {p.gotcha}
+                  <Glossarized
+                    text={p.gotcha}
+                    seen={seen}
+                    keyPrefix={`${node.id}-p3-${i}-g`}
+                  />
                 </h4>
                 <p className="mt-2 text-sm leading-relaxed text-fg-soft">
-                  {p.note}
+                  <Glossarized
+                    text={p.note}
+                    seen={seen}
+                    keyPrefix={`${node.id}-p3-${i}-n`}
+                  />
                 </p>
               </div>
             </div>
@@ -286,23 +319,25 @@ function MasteryPass({ node }: { node: LessonNode }) {
         ))}
       </div>
       <aside className="space-y-5">
-        <GotchaCard node={node} />
-        <FollowupCard node={node} />
+        <GotchaCard node={node} seen={seen} />
+        <FollowupCard node={node} seen={seen} />
       </aside>
     </div>
   );
 }
 
-function AnchorCard({ node }: { node: LessonNode }) {
+function AnchorCard({ node, seen }: { node: LessonNode; seen: Set<string> }) {
   return (
     <div className="rounded-card border border-border-token bg-surface p-5">
       <Eyebrow className="mb-2">Pergunta-âncora</Eyebrow>
-      <p className="font-serif text-lg leading-snug text-fg">"{node.anchor}"</p>
+      <p className="font-serif text-lg leading-snug text-fg">
+        "<Glossarized text={node.anchor} seen={seen} keyPrefix={`${node.id}-anc`} />"
+      </p>
     </div>
   );
 }
 
-function AskerCard({ node }: { node: LessonNode }) {
+function AskerCard({ node, seen }: { node: LessonNode; seen: Set<string> }) {
   return (
     <div className="rounded-card border border-border-token bg-surface p-5">
       <Eyebrow className="mb-3">Pra quem perguntar</Eyebrow>
@@ -316,7 +351,13 @@ function AskerCard({ node }: { node: LessonNode }) {
               <p className="font-sans text-sm font-semibold text-fg">
                 {a.name === 'open' ? 'Pergunta aberta ao grupo' : a.name}
               </p>
-              <p className="mt-1 text-xs leading-relaxed text-fg-mute">{a.why}</p>
+              <p className="mt-1 text-xs leading-relaxed text-fg-mute">
+                <Glossarized
+                  text={a.why}
+                  seen={seen}
+                  keyPrefix={`${node.id}-ask-${i}`}
+                />
+              </p>
             </div>
           </li>
         ))}
@@ -325,16 +366,18 @@ function AskerCard({ node }: { node: LessonNode }) {
   );
 }
 
-function GotchaCard({ node }: { node: LessonNode }) {
+function GotchaCard({ node, seen }: { node: LessonNode; seen: Set<string> }) {
   return (
     <div className="rounded-card border border-warn/30 bg-warn-soft/40 p-5">
       <Eyebrow className="mb-2 text-warn">Gotcha da sala</Eyebrow>
-      <p className="text-sm leading-relaxed text-fg">{node.gotcha}</p>
+      <p className="text-sm leading-relaxed text-fg">
+        <Glossarized text={node.gotcha} seen={seen} keyPrefix={`${node.id}-got`} />
+      </p>
     </div>
   );
 }
 
-function FollowupCard({ node }: { node: LessonNode }) {
+function FollowupCard({ node, seen }: { node: LessonNode; seen: Set<string> }) {
   return (
     <div className="rounded-card border border-border-token bg-surface p-5">
       <Eyebrow className="mb-2">Pergunta-ponte</Eyebrow>
@@ -343,7 +386,9 @@ function FollowupCard({ node }: { node: LessonNode }) {
           className="mt-1 h-4 w-4 shrink-0 text-fg-faint"
           strokeWidth={1.8}
         />
-        <p className="text-sm leading-relaxed text-fg">{node.followup}</p>
+        <p className="text-sm leading-relaxed text-fg">
+          <Glossarized text={node.followup} seen={seen} keyPrefix={`${node.id}-fol`} />
+        </p>
       </div>
     </div>
   );
@@ -369,19 +414,3 @@ function AskerBadgeRow({ node }: { node: LessonNode }) {
   );
 }
 
-function renderInline(text: string): { __html: string } {
-  const escaped = text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-  const bold = escaped.replace(
-    /\*\*(.+?)\*\*/g,
-    '<strong class="font-semibold text-fg">$1</strong>',
-  );
-  const code = bold.replace(
-    /`([^`]+)`/g,
-    '<code class="rounded bg-bg-subtle px-1 py-0.5 font-mono text-[0.85em] text-fg">$1</code>',
-  );
-  const bullets = code.replace(/\n• /g, '<br/>• ');
-  return { __html: bullets };
-}

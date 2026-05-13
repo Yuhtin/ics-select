@@ -15,6 +15,7 @@ import {
 import type { Lesson, LessonNode, Scenario } from './lesson-types';
 import { GROUP_META } from './group-meta';
 import { Eyebrow } from '../../ui/eyebrow';
+import { Glossarized } from './glossarized';
 
 export function LiveMode({ lesson }: { lesson: Lesson }) {
   const beats = useMemo(
@@ -145,6 +146,7 @@ function BeatStepper({
 
 function FocusCard({ node }: { node: LessonNode }) {
   const meta = GROUP_META[node.group];
+  const seen = new Set<string>();
   return (
     <article className="relative overflow-hidden rounded-card border border-border-token bg-surface">
       <span
@@ -171,10 +173,10 @@ function FocusCard({ node }: { node: LessonNode }) {
           <div>
             <Eyebrow className="mb-3">Pergunta-âncora</Eyebrow>
             <p className="font-serif text-2xl leading-snug text-fg lg:text-[26px]">
-              "{node.anchor}"
+              "<Glossarized text={node.anchor} seen={seen} keyPrefix={`${node.id}-anc`} />"
             </p>
             <p className="mt-4 font-sans text-[15px] leading-relaxed text-fg-soft">
-              {node.oneLine}
+              <Glossarized text={node.oneLine} seen={seen} keyPrefix={`${node.id}-one`} />
             </p>
           </div>
 
@@ -194,7 +196,11 @@ function FocusCard({ node }: { node: LessonNode }) {
                       {a.name === 'open' ? 'Pergunta aberta ao grupo' : a.name}
                     </p>
                     <p className="mt-1 text-xs leading-relaxed text-fg-soft">
-                      {a.why}
+                      <Glossarized
+                        text={a.why}
+                        seen={seen}
+                        keyPrefix={`${node.id}-ask-${i}`}
+                      />
                     </p>
                   </div>
                 </div>
@@ -202,18 +208,22 @@ function FocusCard({ node }: { node: LessonNode }) {
             </div>
           </div>
 
-          <PegadinhasList node={node} />
+          <PegadinhasList node={node} seen={seen} />
         </div>
 
         <div className="space-y-6 px-7 py-7">
-          {node.scenarios && <ScenariosBlock scenarios={node.scenarios} />}
+          {node.scenarios && (
+            <ScenariosBlock scenarios={node.scenarios} seen={seen} nodeId={node.id} />
+          )}
 
           <div className="rounded-input border border-warn/30 bg-warn-soft/40 p-4">
             <Eyebrow className="mb-2 text-warn">
               <CircleAlert className="-mt-0.5 mr-1 inline h-3 w-3" strokeWidth={2} />
               Provocação
             </Eyebrow>
-            <p className="text-sm leading-relaxed text-fg">{node.gotcha}</p>
+            <p className="text-sm leading-relaxed text-fg">
+              <Glossarized text={node.gotcha} seen={seen} keyPrefix={`${node.id}-got`} />
+            </p>
           </div>
 
           <div className="rounded-input border border-border-token bg-bg-subtle/50 p-4">
@@ -223,7 +233,13 @@ function FocusCard({ node }: { node: LessonNode }) {
                 className="mt-1 h-4 w-4 shrink-0 text-fg-faint"
                 strokeWidth={1.8}
               />
-              {node.followup}
+              <span>
+                <Glossarized
+                  text={node.followup}
+                  seen={seen}
+                  keyPrefix={`${node.id}-fol`}
+                />
+              </span>
             </p>
           </div>
         </div>
@@ -273,8 +289,12 @@ const SCENARIO_META: Record<
 
 function ScenariosBlock({
   scenarios,
+  seen,
+  nodeId,
 }: {
   scenarios: { right: Scenario; close: Scenario; wayOff: Scenario };
+  seen: Set<string>;
+  nodeId: string;
 }) {
   const order: ScenarioKind[] = ['right', 'close', 'wayOff'];
   return (
@@ -282,7 +302,13 @@ function ScenariosBlock({
       <Eyebrow className="mb-3">Cenários de resposta</Eyebrow>
       <div className="space-y-3">
         {order.map((kind) => (
-          <ScenarioCard key={kind} kind={kind} scenario={scenarios[kind]} />
+          <ScenarioCard
+            key={kind}
+            kind={kind}
+            scenario={scenarios[kind]}
+            seen={seen}
+            nodeId={nodeId}
+          />
         ))}
       </div>
     </div>
@@ -292,9 +318,13 @@ function ScenariosBlock({
 function ScenarioCard({
   kind,
   scenario,
+  seen,
+  nodeId,
 }: {
   kind: ScenarioKind;
   scenario: Scenario;
+  seen: Set<string>;
+  nodeId: string;
 }) {
   const meta = SCENARIO_META[kind];
   const Icon = meta.Icon;
@@ -324,20 +354,28 @@ function ScenarioCard({
           <span className="font-mono text-[10px] uppercase tracking-eyebrow text-fg-mute">
             Forma:
           </span>{' '}
-          {scenario.shape}
+          <Glossarized
+            text={scenario.shape}
+            seen={seen}
+            keyPrefix={`${nodeId}-sc-${kind}-s`}
+          />
         </p>
         <p>
           <span className="font-mono text-[10px] uppercase tracking-eyebrow text-fg-mute">
             {meta.redirectLabel}:
           </span>{' '}
-          {scenario.redirect}
+          <Glossarized
+            text={scenario.redirect}
+            seen={seen}
+            keyPrefix={`${nodeId}-sc-${kind}-r`}
+          />
         </p>
       </div>
     </article>
   );
 }
 
-function PegadinhasList({ node }: { node: LessonNode }) {
+function PegadinhasList({ node, seen }: { node: LessonNode; seen: Set<string> }) {
   const top = node.pass3.slice(0, 3);
   if (top.length === 0) return null;
   return (
@@ -351,9 +389,19 @@ function PegadinhasList({ node }: { node: LessonNode }) {
             </span>
             <div className="min-w-0 flex-1">
               <p className="font-sans text-[13px] font-semibold leading-tight text-fg">
-                {p.gotcha}
+                <Glossarized
+                  text={p.gotcha}
+                  seen={seen}
+                  keyPrefix={`${node.id}-peg-${i}-g`}
+                />
               </p>
-              <p className="mt-1 text-xs leading-relaxed text-fg-soft">{p.note}</p>
+              <p className="mt-1 text-xs leading-relaxed text-fg-soft">
+                <Glossarized
+                  text={p.note}
+                  seen={seen}
+                  keyPrefix={`${node.id}-peg-${i}-n`}
+                />
+              </p>
             </div>
           </li>
         ))}
