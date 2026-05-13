@@ -5526,20 +5526,6 @@ const ITEMS: ItemSeed[] = [
     topicOrder: { hashmap: 2 },
   },
   {
-    title: 'Dictionaries in Python',
-    url: 'https://realpython.com/python-dicts/',
-    description:
-      'Real Python — dict em Python na prática: literals, dict(), get/setdefault/update, iteração e padrões comuns de uso.',
-    format: 'ARTICLE',
-    difficulty: 'EASY',
-    estimatedMinutes: 25,
-    topicSlugs: ['hashmap'],
-    tracks: [],
-    source: 'Blog — Real Python',
-    tags: ['concept', 'hashmap', 'python', 'dict', 'real-python'],
-    topicOrder: { hashmap: 5 },
-  },
-  {
     title: 'Python behind the scenes #10: how Python dictionaries work',
     url: 'https://tenthousandmeters.com/blog/python-behind-the-scenes-10-how-python-dictionaries-work/',
     description:
@@ -5687,6 +5673,361 @@ const ITEMS: ItemSeed[] = [
     source: 'YouTube — PawelCodeStuff',
     tags: ['concept', 'fundamentals', 'compression', 'huffman', 'lz77', 'curiosity', 'pawel-code-stuff'],
     topicOrder: { 'foundations': 8 },
+  },
+
+  // --- senior-eng case studies + URL shortener case + SD overview — 2026-05-13 ---
+  {
+    title: 'I was laid off by Atlassian',
+    url: 'https://www.youtube.com/watch?v=55pTFVoclvE',
+    description:
+      'Vasilios Syrakis — 41min de relato técnico do que ele construiu como senior eng na Atlassian: Open Service Broker, Envoy como proxy com XDS Control Plane, AMI na AWS, extending load balancing platform, edge compute, manutenção long-term. Capítulos no vídeo pra navegar.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 41,
+    topicSlugs: ['load-balancers', 'cloud', 'networking'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Vasilios Syrakis',
+    tags: ['case-study', 'envoy', 'xds', 'proxy', 'aws', 'ami', 'load-balancing', 'edge-compute', 'atlassian'],
+  },
+  {
+    title: '20 System Design Concepts Explained in 10 Minutes',
+    url: 'https://www.youtube.com/watch?v=i53Gi_K3o7I',
+    description:
+      'NeetCode — panorama de 20 conceitos de system design em 12min: CAP, ACID, vertical vs horizontal scaling, load balancing, caching, sharding, replication, CDN, message queues, microservices, REST vs GraphQL vs gRPC.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 12,
+    topicSlugs: ['foundations', 'scalability'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — NeetCode',
+    tags: ['concept', 'system-design', 'overview', 'cap', 'acid', 'neetcode'],
+    topicOrder: { 'foundations': 9 },
+  },
+  {
+    title: 'Tiny URL — System Design Interview Question (URL shortener)',
+    url: 'https://www.youtube.com/watch?v=Cg3XIqs_-4c',
+    description:
+      'TechPrep — 10min de TinyURL: API design, schema do DB, geração de short code, base62, trade-offs de hash vs counter.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 10,
+    topicSlugs: ['case-url-shortener'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH'],
+    source: 'YouTube — TechPrep',
+    tags: ['case-study', 'url-shortener', 'base62', 'api-design'],
+    topicOrder: { 'case-url-shortener': 1 },
+  },
+  {
+    title: 'System Design Interview Question: Design URL Shortener',
+    url: 'https://www.youtube.com/watch?v=16d35un5a9Q',
+    description:
+      'Hayk Simonyan — 14min de URL shortener: requirements, geração de short URL (base62, MD5 + tratamento de colisão), schema do DB, cache layer, rate limiting.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 14,
+    topicSlugs: ['case-url-shortener'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH'],
+    source: 'YouTube — Hayk Simonyan',
+    tags: ['case-study', 'url-shortener', 'base62', 'md5', 'rate-limiting', 'cache'],
+    topicOrder: { 'case-url-shortener': 2 },
+  },
+
+  // --- Renato Augusto (BR) — primeiro item, 2026-05-13 ---
+  {
+    title: 'Arquitetando um Encurtador de URL: O Maior Desafio dos Programadores em Entrevistas de System Design',
+    url: 'https://www.youtube.com/watch?v=m_anIoKW7Jg',
+    description:
+      'Renato Augusto — 48min de URL shortener arquitetado do zero: geração de IDs (Hashids, Base62, Redis), modelagem de dados, cache-aside pattern, colisões e gargalos, escalabilidade horizontal e particionamento. Diagrama no Miro linkado na descrição.',
+    format: 'VIDEO',
+    difficulty: 'HARD',
+    estimatedMinutes: 48,
+    topicSlugs: ['case-url-shortener'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH'],
+    source: 'YouTube — Renato Augusto',
+    tags: ['case-study', 'url-shortener', 'base62', 'hashids', 'redis', 'cache-aside', 'sharding', 'renato-augusto'],
+    topicOrder: { 'case-url-shortener': 3 },
+  },
+
+  // --- case-streaming ladder — 2026-05-13 ---
+  {
+    title: 'Netflix: What Happens When You Press Play?',
+    url: 'https://blog.bytebytego.com/p/netflix-what-happens-when-you-press',
+    description:
+      'ByteByteGo — capítulo de "Explain the Cloud Like I\'m 10". O que acontece da hora que você aperta play: CDN Open Connect, ABR (adaptive bitrate), transcoding em múltiplas qualidades, AWS backend.',
+    format: 'ARTICLE',
+    difficulty: 'EASY',
+    estimatedMinutes: 12,
+    topicSlugs: ['case-streaming'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH'],
+    source: 'ByteByteGo Blog',
+    tags: ['case-study', 'netflix', 'cdn', 'open-connect', 'abr', 'bytebytego'],
+    topicOrder: { 'case-streaming': 1 },
+  },
+  {
+    title: 'Demystifying the Unusual Evolution of the Netflix API Architecture',
+    url: 'https://www.youtube.com/watch?v=Uu32ggF-DWg',
+    description:
+      'ByteByteGo — 5min sobre a evolução da API do Netflix: monolito → microsserviços → BFF (backend-for-frontend) com GraphQL Federation. Por que a evolução foi "unusual".',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 5,
+    topicSlugs: ['case-streaming'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH'],
+    source: 'YouTube — ByteByteGo',
+    tags: ['case-study', 'netflix', 'api', 'microservices', 'graphql', 'bff', 'bytebytego'],
+    topicOrder: { 'case-streaming': 2 },
+  },
+  {
+    title: 'System Design Netflix — A Complete Architecture',
+    url: 'https://www.geeksforgeeks.org/system-design/system-design-netflix-a-complete-architecture/',
+    description:
+      'GeeksforGeeks — overview da arquitetura do Netflix: AWS backend, Open Connect CDN, EVCache + Cassandra + MySQL, Zuul/Eureka, ABR streaming, Kafka pra eventos.',
+    format: 'ARTICLE',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 25,
+    topicSlugs: ['case-streaming'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH'],
+    source: 'GeeksforGeeks',
+    tags: ['case-study', 'netflix', 'cdn', 'evcache', 'cassandra', 'zuul', 'kafka', 'abr'],
+    topicOrder: { 'case-streaming': 3 },
+  },
+  {
+    title: 'ARQUITETANDO O YOUTUBE NA PRÁTICA | SYSTEM DESIGN',
+    url: 'https://www.youtube.com/watch?v=JBivKeZVex0',
+    description:
+      'Renato Augusto — 50min do YouTube arquitetado: upload pipeline com Multipart Upload, object storage distribuído, encoding em múltiplas qualidades, CDNs pra entrega global, escalabilidade horizontal pra bilhões de vídeos. Diagrama no Miro linkado.',
+    format: 'VIDEO',
+    difficulty: 'HARD',
+    estimatedMinutes: 50,
+    topicSlugs: ['case-streaming'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH'],
+    source: 'YouTube — Renato Augusto',
+    tags: ['case-study', 'youtube', 'multipart-upload', 'object-storage', 'encoding', 'cdn', 'horizontal-scaling', 'renato-augusto'],
+    topicOrder: { 'case-streaming': 4 },
+  },
+
+  // --- sharding HARD deep-dive — 2026-05-13 ---
+  {
+    title: 'Aprenda a Escalar Bancos de Dados Usando SHARDING',
+    url: 'https://www.youtube.com/watch?v=xJllDyCIyws',
+    description:
+      'Renato Augusto — 44min de sharding na prática: shard keys e como evitar hotspots, problema de IDs sequenciais resolvido com hash, joins/transactions/migrations/re-sharding, quando NÃO usar sharding, ligações com microsserviços e DDD.',
+    format: 'VIDEO',
+    difficulty: 'HARD',
+    estimatedMinutes: 44,
+    topicSlugs: ['sharding', 'databases'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH'],
+    source: 'YouTube — Renato Augusto',
+    tags: ['concept', 'sharding', 'shard-key', 'hotspot', 'horizontal-scaling', 're-sharding', 'renato-augusto'],
+    topicOrder: { 'sharding': 5 },
+  },
+
+  // --- databases batch — 2026-05-13 ---
+  {
+    title: 'Por Que Você NUNCA Deve Usar FLOAT pra Representar Dinheiro no Código',
+    url: 'https://www.youtube.com/watch?v=vFBUWtrzz48',
+    description:
+      'Renato Augusto — 14min sobre por que FLOAT é impreciso pra valores monetários: armazenamento IEEE 754, exemplos reais de bugs por arredondamento, e como Python/Java/JS/PHP lidam com o problema. O que usar no lugar.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 14,
+    topicSlugs: ['databases'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Renato Augusto',
+    tags: ['concept', 'data-types', 'float', 'precision', 'money', 'ieee-754', 'renato-augusto'],
+    topicOrder: { 'databases': 20 },
+  },
+  {
+    title: 'Como Escolher o Banco de Dados Correto pra sua Aplicação',
+    url: 'https://www.youtube.com/watch?v=bhw4-Kq_RPs',
+    description:
+      'Renato Augusto — 45min escolhendo BD na prática: diferenças SQL vs NoSQL, Teorema CAP e PACELC, quando usar PostgreSQL/MongoDB/Cassandra/DynamoDB/CockroachDB. Diagrama no Miro linkado.',
+    format: 'VIDEO',
+    difficulty: 'HARD',
+    estimatedMinutes: 45,
+    topicSlugs: ['databases', 'cap-consistency'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Renato Augusto',
+    tags: ['tradeoffs', 'sql', 'nosql', 'cap', 'pacelc', 'postgres', 'mongo', 'cassandra', 'dynamodb', 'cockroachdb', 'renato-augusto'],
+    topicOrder: { 'databases': 21, 'cap-consistency': 10 },
+  },
+  {
+    title: 'O Que Ninguém Te Ensinou Sobre Armazenar Senhas no Banco de Dados',
+    url: 'https://www.youtube.com/watch?v=VW2mywTTz80',
+    description:
+      'Renato Augusto — 39min sobre a evolução do armazenamento de senhas: plaintext → MD5/SHA-1 → salt → bcrypt/PBKDF2/Argon2id. Linha do tempo dos ataques e das soluções, e os erros graves que empresas ainda cometem hoje.',
+    format: 'VIDEO',
+    difficulty: 'HARD',
+    estimatedMinutes: 39,
+    topicSlugs: ['security', 'databases'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Renato Augusto',
+    tags: ['concept', 'password-storage', 'bcrypt', 'argon2', 'pbkdf2', 'salt', 'md5', 'sha-1', 'renato-augusto'],
+    topicOrder: { 'databases': 22 },
+  },
+
+  // --- scalability batch — 2026-05-13 ---
+  {
+    title: 'Microsserviços: A Maior Armadilha da Arquitetura Moderna | E o Que Domain Driven Design Tem a Ver?',
+    url: 'https://www.youtube.com/watch?v=JXeJUfBCg4U',
+    description:
+      'Renato Augusto — 18min sobre por que microsserviços prematuramente é tiro no pé: monolito modular como ponto de partida, Domain Driven Design + Clean Architecture, Bounded Contexts. Amazon (re)adotando essa abordagem.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 18,
+    topicSlugs: ['scalability', 'design-patterns'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Renato Augusto',
+    tags: ['tradeoffs', 'microservices', 'monolith', 'modular-monolith', 'ddd', 'bounded-contexts', 'clean-architecture', 'renato-augusto'],
+    topicOrder: { 'scalability': 6 },
+  },
+  {
+    title: 'System Design: Escalando uma Arquitetura do Zero a Um Milhão de Usuários',
+    url: 'https://www.youtube.com/watch?v=9g7twJrXqoY',
+    description:
+      'Renato Augusto — 40min escalando arquitetura web do zero a 1M usuários: como responder esse cenário em entrevistas, decisões de arquitetura, performance e escalabilidade conforme o sistema cresce. Diagrama no Miro linkado.',
+    format: 'VIDEO',
+    difficulty: 'HARD',
+    estimatedMinutes: 40,
+    topicSlugs: ['scalability'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Renato Augusto',
+    tags: ['case-study', 'scaling', 'load-balancing', 'caching', 'database-scaling', 'cdn', 'renato-augusto'],
+    topicOrder: { 'scalability': 7 },
+  },
+
+  // --- pubsub/message-queues — 2026-05-13 ---
+  {
+    title: 'Arquitetura Orientada a Eventos | O Guia Completo para ESCALAR MICROSSERVIÇOS do Jeito Certo',
+    url: 'https://www.youtube.com/watch?v=8xFBQc1A4B8',
+    description:
+      'Renato Augusto — 42min sobre Event Driven Architecture: por que request/response síncrono quebra em escala, acoplamento temporal e cascata de falhas, produtores/consumidores/eventos, Event Storming + DDD na modelagem. Como Netflix, Uber e Amazon usam.',
+    format: 'VIDEO',
+    difficulty: 'HARD',
+    estimatedMinutes: 42,
+    topicSlugs: ['pubsub', 'message-queues'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Renato Augusto',
+    tags: ['concept', 'event-driven', 'eda', 'microservices', 'event-storming', 'ddd', 'coupling', 'renato-augusto'],
+    topicOrder: { 'pubsub': 6, 'message-queues': 8 },
+  },
+
+  // --- foundations disaster storytelling — 2026-05-13 ---
+  {
+    title: 'O Erro de Software Mais Letal da História | THERAC-25',
+    url: 'https://www.youtube.com/watch?v=4WCYIdJxTQw',
+    description:
+      'Renato Augusto — 31min sobre o Therac-25: a máquina médica controlada por software que matou pacientes por bugs de concorrência, estados globais e ausência de testes. Falhas de projeto e responsabilidade técnica em sistema crítico.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 31,
+    topicSlugs: ['foundations'],
+    tracks: [],
+    source: 'YouTube — Renato Augusto',
+    tags: ['case-study', 'software-failure', 'concurrency', 'critical-systems', 'testing', 'renato-augusto'],
+    topicOrder: { 'foundations': 10 },
+  },
+  {
+    title: 'A História Não Contada do Desastre do Ariane 5',
+    url: 'https://www.youtube.com/watch?v=fybymNqbzLg',
+    description:
+      'Renato Augusto — 44min sobre o desastre do Ariane 5: o erro de conversão float→inteiro explicado bit a bit, reaproveitamento de código do Ariane 4 sem validar, ausência de testes com dados reais. Análise da comissão Jacques-Louis Lions e paralelos com o Challenger.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 44,
+    topicSlugs: ['foundations'],
+    tracks: [],
+    source: 'YouTube — Renato Augusto',
+    tags: ['case-study', 'software-failure', 'type-conversion', 'testing', 'critical-systems', 'code-reuse', 'renato-augusto'],
+    topicOrder: { 'foundations': 11 },
+  },
+
+  // --- Renato case-studies: Google Drive + Ticketmaster — 2026-05-13 ---
+  {
+    title: 'ARQUITETANDO O GOOGLE DRIVE NA PRÁTICA | SYSTEM DESIGN',
+    url: 'https://www.youtube.com/watch?v=qMPfjCH3qQU',
+    description:
+      'Renato Augusto — 45min do Google Drive arquitetado: Signed URLs e Multipart Upload pra arquivos grandes, Amazon S3 como object storage, sincronização local↔nuvem com inotify/FSEvents, retomada de upload e tolerância a falhas, download direto do Object Storage.',
+    format: 'VIDEO',
+    difficulty: 'HARD',
+    estimatedMinutes: 45,
+    topicSlugs: ['cloud', 'scalability'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH'],
+    source: 'YouTube — Renato Augusto',
+    tags: ['case-study', 'google-drive', 'dropbox', 's3', 'object-storage', 'multipart-upload', 'signed-urls', 'sync', 'fault-tolerance', 'renato-augusto'],
+  },
+  {
+    title: 'ARQUITETANDO O TICKETMASTER NA PRÁTICA | SYSTEM DESIGN',
+    url: 'https://www.youtube.com/watch?v=3XSijmIZxXU',
+    description:
+      'Renato Augusto — 50min do Ticketmaster: como evitar overselling em picos massivos de acesso, reserva temporária de ingressos (locking/hold de assentos), filas + rate limiting + processamento assíncrono, controle de concorrência, escalabilidade horizontal.',
+    format: 'VIDEO',
+    difficulty: 'HARD',
+    estimatedMinutes: 50,
+    topicSlugs: ['cap-consistency', 'rate-limiting', 'scalability'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH'],
+    source: 'YouTube — Renato Augusto',
+    tags: ['case-study', 'ticketmaster', 'overselling', 'concurrency', 'race-conditions', 'queues', 'rate-limiting', 'locking', 'horizontal-scaling', 'renato-augusto'],
+  },
+
+  // --- Object Calisthenics série pra design-patterns — 2026-05-13 ---
+  {
+    title: 'Object Calisthenics: A Armadilha dos Tipos Primitivos',
+    url: 'https://www.youtube.com/watch?v=YGNH71KPIes',
+    description:
+      'Renato Augusto — 29min sobre primitive obsession: usar int/string/boolean pra tudo viola coesão, encapsulamento e SRP. Como encapsular dados em Value Objects e alinhar com SOLID e DDD.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 29,
+    topicSlugs: ['design-patterns'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Renato Augusto',
+    tags: ['concept', 'object-calisthenics', 'primitive-obsession', 'value-objects', 'solid', 'srp', 'ddd', 'renato-augusto'],
+    topicOrder: { 'design-patterns': 6 },
+  },
+  {
+    title: 'Object Calisthenics: Lei de Demeter — A Técnica Para Eliminar Dependências Ocultas',
+    url: 'https://www.youtube.com/watch?v=KXaPJhG9yCk',
+    description:
+      'Renato Augusto — 17min sobre a Lei de Demeter (não fale com estranhos): chamadas encadeadas, dependências ocultas, e como aplicar pra desacoplar o código. Relação com Aggregate Root do DDD. Antes-depois de refactor agnóstico de linguagem.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 17,
+    topicSlugs: ['design-patterns'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Renato Augusto',
+    tags: ['concept', 'object-calisthenics', 'law-of-demeter', 'coupling', 'oo', 'aggregate-root', 'ddd', 'renato-augusto'],
+    topicOrder: { 'design-patterns': 7 },
+  },
+  {
+    title: 'Object Calisthenics: Técnicas Para Eliminar o ELSE do Seu Código',
+    url: 'https://www.youtube.com/watch?v=pW9Bb4PteWU',
+    description:
+      'Renato Augusto — 25min eliminando o else: Guard Clauses, Early Return, Fail Fast, e padrões de projeto que substituem cadeias de else.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 25,
+    topicSlugs: ['design-patterns'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Renato Augusto',
+    tags: ['concept', 'object-calisthenics', 'guard-clauses', 'early-return', 'fail-fast', 'refactoring', 'renato-augusto'],
+    topicOrder: { 'design-patterns': 8 },
+  },
+
+  // --- caching CACHE-ASIDE deep-dive — 2026-05-13 ---
+  {
+    title: 'CACHE-ASIDE: Escalabilidade, Performance e Arquitetura de Software pra Mandar Bem na Entrevista',
+    url: 'https://www.youtube.com/watch?v=vRO0UfvsbDw',
+    description:
+      'Renato Augusto — 30min sobre o padrão Cache-Aside: por que queries repetidas viram gargalo invisível, fluxo aplicação→cache→DB com fallback, write strategy, e o que isso te dá em escalabilidade e performance.',
+    format: 'VIDEO',
+    difficulty: 'HARD',
+    estimatedMinutes: 30,
+    topicSlugs: ['caching'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Renato Augusto',
+    tags: ['concept', 'cache-aside', 'read-through', 'database-bottleneck', 'performance', 'renato-augusto'],
+    topicOrder: { 'caching': 10 },
   },
 ];
 
