@@ -1,4 +1,5 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { POSITIVE_OUTCOMES } from '@ics-select/shared';
 import { PrismaService } from '../../common/prisma/prisma.service.js';
 import type { CycleReceiptResponse, ReceiptMode } from './cycle-receipt.types.js';
 
@@ -33,7 +34,12 @@ export class CycleReceiptService {
   }
 
   private async assembleResponse(cycle: any, asOf: Date): Promise<CycleReceiptResponse> {
+    const items = await this.fetchItems(cycle.id, cycle.startsAt, asOf);
+    const memberCount = cycle.memberships.length;
+    const totalsBase = this.computeTotals(items, memberCount);
+    const byTopic = this.computeByTopic(items, memberCount);
     const mode = this.decideMode(cycle, asOf);
+
     return {
       cycle: {
         id: cycle.id,
@@ -47,16 +53,14 @@ export class CycleReceiptService {
       asOf: asOf.toISOString(),
       mode,
       totals: {
-        members: cycle.memberships.length,
-        totalMinutes: 0,
-        avgMinutesPerMember: 0,
-        itemsCompleted: 0,
+        members: memberCount,
+        ...totalsBase,
         retros: 0,
         classesHeld: 0,
         classesTotal: 0,
         attendanceRate: 0,
       },
-      byTopic: [],
+      byTopic,
       knowledgeGrid: { members: [], topics: [], cells: [] },
       topMovers: [],
       cycleTopMover: null,
@@ -64,6 +68,66 @@ export class CycleReceiptService {
       retroChampions: [],
       perfectAttendance: [],
     };
+  }
+
+  private async fetchItems(cycleId: string, startsAt: Date, asOf: Date) {
+    const asOfEnd = new Date(asOf);
+    asOfEnd.setUTCHours(23, 59, 59, 999);
+    return this.prisma.weeklyPlanItem.findMany({
+      where: {
+        weeklyPlan: { cycleId },
+        completedAt: { gte: startsAt, lte: asOfEnd },
+        outcome: { in: Array.from(POSITIVE_OUTCOMES) },
+      },
+      include: {
+        libraryItem: { include: { topics: { include: { topic: true } } } },
+        weeklyPlan: { select: { userId: true } },
+      },
+    });
+  }
+
+  private computeTotals(items: any[], memberCount: number) {
+    const totalMinutes = items.reduce(
+      (s, it) => s + (it.libraryItem?.estimatedMinutes ?? 0),
+      0,
+    );
+    return {
+      totalMinutes,
+      itemsCompleted: items.length,
+      avgMinutesPerMember: memberCount > 0 ? Math.round(totalMinutes / memberCount) : 0,
+    };
+  }
+
+  private computeByTopic(items: any[], memberCount: number) {
+    const acc = new Map<string, {
+      topicId: string; slug: string; label: string; order: number;
+      members: Set<string>; itemsCompleted: number;
+    }>();
+    for (const it of items) {
+      const userId = it.weeklyPlan.userId;
+      for (const lt of it.libraryItem.topics) {
+        const t = lt.topic;
+        let bucket = acc.get(t.id);
+        if (!bucket) {
+          bucket = {
+            topicId: t.id, slug: t.slug, label: t.label, order: t.order,
+            members: new Set(), itemsCompleted: 0,
+          };
+          acc.set(t.id, bucket);
+        }
+        bucket.members.add(userId);
+        bucket.itemsCompleted += 1;
+      }
+    }
+    return Array.from(acc.values())
+      .filter(b => b.members.size > 0)
+      .map(b => ({
+        topicId: b.topicId, slug: b.slug, label: b.label, order: b.order,
+        membersReached: b.members.size,
+        itemsCompleted: b.itemsCompleted,
+        coveragePct: memberCount > 0 ? b.members.size / memberCount : 0,
+      }))
+      .sort((a, b) => b.coveragePct - a.coveragePct || a.order - b.order);
   }
 
   private decideMode(cycle: any, asOf: Date): ReceiptMode {
