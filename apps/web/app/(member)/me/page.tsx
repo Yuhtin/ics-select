@@ -2,16 +2,18 @@
 
 import { isPositiveOutcome } from '@ics-select/shared';
 import { useMeHome } from '../../../lib/queries/me-home';
+import { useMeCohort } from '../../../lib/queries/me-cohort';
 import { HeroScene } from '../../../components/member/hero-scene';
 import { DayList } from '../../../components/member/day-list';
-import { DayRingCard } from '../../../components/member/day-ring-card';
 import { CarryOverReflectionCard } from '../../../components/member/carry-over-reflection-card';
 import { TopicCoverageHeatmap } from '../../../components/member/topic-coverage-heatmap';
+import { TopRankingCard } from '../../../components/member/top-ranking-card';
 import { StreakCard } from '../../../components/ui/streak-card';
 import { formatMinutes } from '../../../lib/format/time';
 
 export default function MeHomePage() {
   const { data, isLoading, error } = useMeHome();
+  const { data: cohort } = useMeCohort();
 
   if (isLoading) {
     return (
@@ -103,7 +105,9 @@ export default function MeHomePage() {
       </div>
 
       <aside className="flex flex-col gap-5">
-        <DayRingCard items={ringItems} nowItemId={activeItemId} />
+        {cohort?.ranking && cohort.ranking.length > 0 && (
+          <TopRankingCard ranking={cohort.ranking} />
+        )}
         <StreakCard current={data.streak.current} last7={data.streak.last7} />
         {data.topicCoverage.length > 0 && (
           <section className="rounded-tile border border-border-token bg-surface p-6">

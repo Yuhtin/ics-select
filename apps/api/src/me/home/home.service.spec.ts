@@ -181,6 +181,36 @@ describe('HomeService', () => {
     }
   });
 
+  it('keeps "today" anchored to BRT after 21:00 local (= UTC date already rolled over)', async () => {
+    // 23:30 BRT on 2026-04-17 = 02:30 UTC on 2026-04-18.
+    // The 09:00 BRT item for 2026-04-18 (= 12:00 UTC) must NOT appear in
+    // Today — it belongs to tomorrow's bucket. Pre-fix this was the bug:
+    // sameUtcDay() said yes because both Dates share the UTC date 2026-04-18.
+    prisma.weeklyPlan.findFirst.mockResolvedValue(PLAN);
+    prisma.__setTodayItems([
+      {
+        id: 'tonight', weeklyPlanId: 'plan-1', order: 1, outcome: 'PENDING',
+        reflection: null, completedAt: null, carriedFromItemId: null,
+        // 22:00 BRT on 2026-04-17 = 01:00 UTC on 2026-04-18.
+        scheduledAt: new Date('2026-04-18T01:00:00Z'), scheduledMinutes: 30,
+        libraryItem: { title: 'Tonight', format: 'VIDEO', estimatedMinutes: 30, url: null, topics: [] },
+      },
+      {
+        id: 'tomorrow-am', weeklyPlanId: 'plan-1', order: 2, outcome: 'PENDING',
+        reflection: null, completedAt: null, carriedFromItemId: null,
+        // 09:00 BRT on 2026-04-18 = 12:00 UTC on 2026-04-18.
+        scheduledAt: new Date('2026-04-18T12:00:00Z'), scheduledMinutes: 45,
+        libraryItem: { title: 'Tomorrow morning', format: 'PROBLEM', estimatedMinutes: 45, url: null, topics: [] },
+      },
+    ]);
+
+    // Now = 23:30 BRT on 2026-04-17 = 02:30 UTC on 2026-04-18.
+    const result = await service.getHome('user-1', new Date('2026-04-18T02:30:00Z'));
+    expect(result.today.map((i) => i.id)).toEqual(['tonight']);
+    expect(result.days).toHaveLength(1);
+    expect(result.days[0]?.items.map((i) => i.id)).toEqual(['tomorrow-am']);
+  });
+
   it('exposes latest DOUBTS/STUCK reflection as carryOverReflection', async () => {
     prisma.weeklyPlan.findFirst.mockResolvedValue(PLAN);
     prisma.__setTodayItems([]);

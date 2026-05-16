@@ -1,5 +1,5 @@
 import { clsx } from 'clsx';
-import type { ItemOutcome } from '@ics-select/shared';
+import { isPositiveOutcome, type ItemOutcome } from '@ics-select/shared';
 import type { ReactNode } from 'react';
 import { OutcomeDot } from './outcome-dot';
 
@@ -87,8 +87,7 @@ export function ListRow({
           <p
             className={clsx(
               'font-sans text-[15px] font-semibold leading-snug tracking-tight text-ink',
-              outcome === 'DONE_EASY' && 'text-ink-mute line-through font-medium',
-              outcome === 'SKIPPED' && 'text-ink-mute line-through font-medium',
+              isPositiveOutcome(outcome) && 'text-ink-mute line-through font-medium',
               'group-hover:text-ink',
             )}
           >

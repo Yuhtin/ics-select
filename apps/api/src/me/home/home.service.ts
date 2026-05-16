@@ -61,12 +61,25 @@ export type HomeResponse = {
 
 const NOW_WINDOW_MINUTES = 15;
 
-function sameUtcDay(a: Date, b: Date): boolean {
-  return (
-    a.getUTCFullYear() === b.getUTCFullYear() &&
-    a.getUTCMonth() === b.getUTCMonth() &&
-    a.getUTCDate() === b.getUTCDate()
-  );
+// All "today / day" comparisons happen in America/Sao_Paulo (UTC-3, no DST).
+// Without this, items scheduled for "tomorrow morning" appear in the Today
+// list once local clock passes 21:00 BRT — because by then the UTC date has
+// already rolled over.
+const BRT_TZ = 'America/Sao_Paulo';
+
+const BRT_DATE_FMT = new Intl.DateTimeFormat('en-CA', {
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  timeZone: BRT_TZ,
+});
+
+function toBrtDate(d: Date): string {
+  return BRT_DATE_FMT.format(d);
+}
+
+function sameBrtDay(a: Date, b: Date): boolean {
+  return toBrtDate(a) === toBrtDate(b);
 }
 
 function formatDayLabel(d: Date): string {
@@ -74,12 +87,8 @@ function formatDayLabel(d: Date): string {
     weekday: 'short',
     month: 'short',
     day: 'numeric',
-    timeZone: 'UTC',
+    timeZone: BRT_TZ,
   }).format(d);
-}
-
-function toIsoDate(d: Date): string {
-  return d.toISOString().slice(0, 10);
 }
 
 function toHomeItem(row: any): HomeItem {
@@ -168,10 +177,10 @@ export class HomeService {
         continue;
       }
       const at = new Date(item.scheduledAt);
-      if (sameUtcDay(at, now)) {
+      if (sameBrtDay(at, now)) {
         today.push(item);
       } else if (at > now) {
-        const key = toIsoDate(at);
+        const key = toBrtDate(at);
         const arr = futureByDay.get(key) ?? [];
         arr.push(item);
         futureByDay.set(key, arr);
@@ -191,7 +200,10 @@ export class HomeService {
       .sort(([a], [b]) => (a < b ? -1 : 1))
       .map(([date, dayItems]) => ({
         date,
-        label: formatDayLabel(new Date(date + 'T00:00:00Z')),
+        // Format from one of the bucket's scheduled timestamps — it's
+        // guaranteed to land on the same BRT day, so the en-US weekday/month
+        // formatter (also BRT-anchored) renders the correct label.
+        label: formatDayLabel(new Date(dayItems[0]!.scheduledAt!)),
         items: dayItems.sort((a, b) => (a.scheduledAt! < b.scheduledAt! ? -1 : 1)),
       }));
 
@@ -342,9 +354,10 @@ export class HomeService {
   }
 
   private async computeStreak(userId: string, now: Date): Promise<{ current: number; last7: boolean[] }> {
-    // Look back up to 30 days; pull items with positive outcomes grouped by day.
-    const thirtyDaysAgo = new Date(now);
-    thirtyDaysAgo.setUTCDate(thirtyDaysAgo.getUTCDate() - 30);
+    // Bucket completedAt by BRT day, not UTC day. Brazil has no DST so plain
+    // 24h-millisecond offsets are safe for "the day N days ago in BRT".
+    const DAY_MS = 86_400_000;
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * DAY_MS);
 
     const rows = await this.prisma.weeklyPlanItem.findMany({
       where: {
@@ -358,24 +371,22 @@ export class HomeService {
     const positiveDays = new Set<string>();
     for (const row of rows) {
       if (!row.completedAt) continue;
-      positiveDays.add(toIsoDate(row.completedAt));
+      positiveDays.add(toBrtDate(row.completedAt));
     }
 
-    // last 7 days, oldest first
+    // last 7 days, oldest first — keyed by BRT date.
     const last7: boolean[] = [];
     for (let offset = 6; offset >= 0; offset--) {
-      const day = new Date(now);
-      day.setUTCDate(day.getUTCDate() - offset);
-      last7.push(positiveDays.has(toIsoDate(day)));
+      const day = new Date(now.getTime() - offset * DAY_MS);
+      last7.push(positiveDays.has(toBrtDate(day)));
     }
 
     // current streak: walk backwards from today; break when two consecutive zero-positive days occur
     let current = 0;
     let zeroStreak = 0;
     for (let offset = 0; offset < 30; offset++) {
-      const day = new Date(now);
-      day.setUTCDate(day.getUTCDate() - offset);
-      const hasPositive = positiveDays.has(toIsoDate(day));
+      const day = new Date(now.getTime() - offset * DAY_MS);
+      const hasPositive = positiveDays.has(toBrtDate(day));
       if (hasPositive) {
         current++;
         zeroStreak = 0;
