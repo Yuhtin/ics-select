@@ -19,6 +19,7 @@ export type AvailabilityResponse = {
   sundayMinutes: number | null;
   preferredSessionMinutes: number;
   timezone: string;
+  calendarBusy: boolean;
   slots: AvailabilitySlot[];
 };
 

@@ -14,6 +14,9 @@ export type AvailabilityPatchInput = {
   sundayMinutes?: number | null;
   preferredSessionMinutes?: number;
   timezone?: string;
+  // When false, ICS-created study events show as Free on Google Calendar so
+  // peers can still book 1:1s over the block. Defaults to true on insert.
+  calendarBusy?: boolean;
   slots?: AvailabilitySlotInput[];
   clearDays?: number[]; // weekdays whose slots should be wiped
 };
@@ -28,6 +31,7 @@ export type AvailabilityFullResponse = {
   sundayMinutes: number | null;
   preferredSessionMinutes: number;
   timezone: string;
+  calendarBusy: boolean;
   slots: Array<{
     id: string;
     dayOfWeek: number;

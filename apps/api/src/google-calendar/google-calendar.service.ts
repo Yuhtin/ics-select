@@ -21,6 +21,9 @@ export type CreateEventInput = {
   start: Date;
   end: Date;
   icsId?: { planId: string; itemId: string };
+  // Google Calendar event.transparency: 'opaque' = blocks the timeslot (Busy),
+  // 'transparent' = does not block (Free). Omitted → Google's default ('opaque').
+  transparency?: 'opaque' | 'transparent';
 };
 
 export type FreeBusyBlock = { start: Date; end: Date };
@@ -160,6 +163,7 @@ export class GoogleCalendarService {
         start: { dateTime: input.start.toISOString() },
         end: { dateTime: input.end.toISOString() },
         extendedProperties,
+        ...(input.transparency && { transparency: input.transparency }),
       },
     });
     const apiMs = Date.now() - tApi;

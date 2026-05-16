@@ -34,6 +34,7 @@ const AvailabilityPatchSchema = z.object({
   sundayMinutes: nullableDayCap,
   preferredSessionMinutes: z.number().int().min(15).max(240).optional(),
   timezone: z.string().optional(),
+  calendarBusy: z.boolean().optional(),
   slots: z.array(SlotSchema).optional(),
   clearDays: z.array(z.number().int().min(0).max(6)).optional(),
 });

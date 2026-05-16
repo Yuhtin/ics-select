@@ -199,6 +199,11 @@ model MemberAvailability {
   sundayMinutes           Int?
   preferredSessionMinutes Int      @default(60)
   timezone                String   @default("America/Sao_Paulo")
+  // When false, study events created by ICS show as "Free" on Google Calendar
+  // (events.transparency = 'transparent') so other people scheduling 1:1s on
+  // this member's calendar can still book over the study block. Default true
+  // preserves the legacy behavior (study time blocks the calendar).
+  calendarBusy            Boolean  @default(true)
   updatedAt               DateTime @updatedAt
   user                    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

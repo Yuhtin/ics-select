@@ -54,6 +54,22 @@ type SchedulerAvailability = {
 // the api scheduler agree on the per-item calendar block size. Re-exported
 // above for downstream importers that already pull from this file.
 
+// Resolve the per-member preference into Google Calendar's `transparency` value.
+// `calendarBusy: true` (legacy default) → omit the field so Google uses 'opaque'
+// (Busy). `false` → 'transparent' (Free), letting peers schedule 1:1s over the
+// study block. Returns `undefined` if no MemberAvailability row exists, since
+// the default in that case matches Google's default ('opaque').
+async function resolveCalendarTransparency(
+  prisma: { memberAvailability: any },
+  userId: string,
+): Promise<'transparent' | undefined> {
+  const row = await prisma.memberAvailability.findUnique({
+    where: { userId },
+    select: { calendarBusy: true },
+  });
+  return row?.calendarBusy === false ? 'transparent' : undefined;
+}
+
 async function loadSchedulerAvailability(
   prisma: { memberAvailability: any; availabilitySlot: any },
   userId: string,
@@ -335,6 +351,7 @@ export class PublicationService {
 
     const tAvail = Date.now();
     const availability = await loadSchedulerAvailability(this.prisma, plan.userId, { force });
+    const transparency = await resolveCalendarTransparency(this.prisma, plan.userId);
     const availMs = Date.now() - tAvail;
 
     const tScheduler = Date.now();
@@ -372,6 +389,7 @@ export class PublicationService {
             start: session.scheduledAt,
             end: eventEnd,
             icsId: { planId: plan.id, itemId: item.id },
+            transparency,
           });
           return { ok: true as const, itemId: item.id, googleEventId };
         } catch (err) {
@@ -505,6 +523,7 @@ export class PublicationService {
 
     const tAvail = Date.now();
     const availability = await loadSchedulerAvailability(this.prisma, plan.userId, { force });
+    const transparency = await resolveCalendarTransparency(this.prisma, plan.userId);
     const availMs = Date.now() - tAvail;
 
     const input: SchedulerInput = {
@@ -552,6 +571,7 @@ export class PublicationService {
             start: session.scheduledAt,
             end: eventEnd,
             icsId: { planId: plan.id, itemId: item.id },
+            transparency,
           });
           return { ok: true as const, itemId: item.id, googleEventId };
         } catch (err) {
@@ -879,6 +899,8 @@ export class PublicationService {
       return { sessionsCreated: 0, sessionsFailed: 0, overflow: [], placements: [] };
     }
 
+    const transparency = await resolveCalendarTransparency(this.prisma, plan.userId);
+
     // Re-fetch the freshly-created items to get their DB ids.
     const newItems = await this.prisma.weeklyPlanItem.findMany({
       where: {
@@ -931,6 +953,7 @@ export class PublicationService {
             start: session.scheduledAt,
             end: eventEnd,
             icsId: { planId: plan.id, itemId: item.id },
+            transparency,
           });
           return { ok: true as const, itemId: item.id, googleEventId };
         } catch (err) {

@@ -59,6 +59,7 @@ export class AvailabilityService {
       sundayMinutes: availability.sundayMinutes ?? null,
       preferredSessionMinutes: availability.preferredSessionMinutes,
       timezone: availability.timezone,
+      calendarBusy: availability.calendarBusy,
       slots: slots.map((s) => ({
         id: s.id,
         dayOfWeek: s.dayOfWeek,
@@ -106,6 +107,7 @@ export class AvailabilityService {
           ...capsData,
           preferredSessionMinutes: input.preferredSessionMinutes ?? 60,
           timezone: input.timezone ?? 'America/Sao_Paulo',
+          ...(input.calendarBusy !== undefined && { calendarBusy: input.calendarBusy }),
         },
         update: {
           ...capsData,
@@ -113,6 +115,7 @@ export class AvailabilityService {
             preferredSessionMinutes: input.preferredSessionMinutes,
           }),
           ...(input.timezone !== undefined && { timezone: input.timezone }),
+          ...(input.calendarBusy !== undefined && { calendarBusy: input.calendarBusy }),
         },
       });
 

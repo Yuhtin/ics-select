@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { Switch, Tooltip } from '@heroui/react';
+import { HelpCircle } from 'lucide-react';
 import type { AvailabilityResponse } from '../../lib/queries/me-settings';
 import { useUpdateAvailability } from '../../lib/queries/me-settings';
 import { useAutoSaveField } from '../../lib/forms/use-auto-save-field';
@@ -24,6 +26,7 @@ const DEFAULTS: AvailabilityResponse = {
   sundayMinutes: null,
   preferredSessionMinutes: 30,
   timezone: 'America/Sao_Paulo',
+  calendarBusy: true,
   slots: [],
 };
 
@@ -56,6 +59,7 @@ export function AvailabilityGrid({ initial }: Props) {
       sundayMinutes: nextForm.sundayMinutes,
       preferredSessionMinutes: nextForm.preferredSessionMinutes,
       timezone: nextForm.timezone,
+      calendarBusy: nextForm.calendarBusy,
       slots: nextForm.slots.map((s) => ({
         dayOfWeek: s.dayOfWeek,
         startMinute: s.startMinute,
@@ -114,6 +118,50 @@ export function AvailabilityGrid({ initial }: Props) {
 
   return (
     <div className="space-y-8">
+      <div>
+        <div className="flex items-start justify-between gap-4 rounded-md border border-border-token bg-paper-warm px-4 py-3">
+          <div className="flex-1">
+            <div className="flex items-center gap-1.5">
+              <SectionLabel className="mb-0">Block calendar as Busy</SectionLabel>
+              <Tooltip
+                content={
+                  <div className="max-w-xs font-sans text-xs leading-snug">
+                    When <strong>on</strong> (default), study events created by ICS show as
+                    <em> Busy</em> on Google Calendar, so people scheduling meetings see the block.
+                    <br />
+                    <br />
+                    Turn <strong>off</strong> if you'd rather keep ICS sessions as <em>Free</em> —
+                    useful when others (mentors, peers) book 1:1s directly on your calendar and
+                    those should win over study time.
+                  </div>
+                }
+                placement="top"
+                showArrow
+              >
+                <button
+                  type="button"
+                  aria-label="What does this do?"
+                  className="text-ink-mute hover:text-ink-soft focus:outline-none focus:ring-1 focus:ring-primary rounded-full"
+                >
+                  <HelpCircle size={14} strokeWidth={1.5} />
+                </button>
+              </Tooltip>
+            </div>
+            <p className="mt-1 font-sans text-sm text-fg-soft">
+              {form.calendarBusy
+                ? 'Study events block your calendar — people scheduling on you see Busy.'
+                : 'Study events show as Free — others can still book 1:1s over them.'}
+            </p>
+          </div>
+          <Switch
+            isSelected={form.calendarBusy}
+            onValueChange={(next) => setAndCommit('calendarBusy', next)}
+            aria-label="Block calendar as Busy"
+            size="sm"
+          />
+        </div>
+      </div>
+
       <div>
         <SectionLabel>Available time slots</SectionLabel>
         <p className="mt-1 font-sans text-sm text-fg-soft">
