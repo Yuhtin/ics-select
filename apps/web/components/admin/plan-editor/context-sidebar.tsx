@@ -1,8 +1,17 @@
 'use client';
+import { Eyebrow } from '../../ui/eyebrow';
 import { SectionLabel } from '../../ui/section-label';
 import type { PlanContextResponse } from '../../../lib/queries/admin-plan-context';
 import { CarryOverList } from './carry-over-list';
 import { TopicCoverageMini } from './topic-coverage-mini';
+
+const TRACK_LABEL: Record<string, string> = {
+  BIG_TECH: 'Big Tech',
+  CONSULTING_TECH: 'Consulting Tech',
+  COMPETITIVE_PROGRAMMING: 'Competitive',
+  STARTUP: 'Startup',
+  OTHER: 'Other',
+};
 
 interface ContextSidebarProps {
   data: PlanContextResponse;
@@ -29,7 +38,21 @@ export function ContextSidebar({
 
   return (
     <div className="space-y-8 rounded-card border border-rule bg-surface p-4">
-      <section>
+      <header>
+        <Eyebrow>Editing plan for</Eyebrow>
+        <h2 className="mt-2 font-serif-tool text-xl font-semibold tracking-tight text-ink">
+          {data.member.name}
+        </h2>
+        <p className="mt-1 font-mono text-[11px] text-ink-mute">
+          {data.member.track
+            ? (TRACK_LABEL[data.member.track] ?? data.member.track)
+            : 'No track'}
+          {' · '}
+          {data.cycle.name} · week {data.cycle.weekNumber} of {data.cycle.weeksTotal}
+        </p>
+      </header>
+
+      <section className="border-t border-rule pt-6">
         <SectionLabel>Last week · {totalOutcomes} outcomes</SectionLabel>
         <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1.5">
           <OutcomeRow dot="bg-outcome-done-easy" label="Nailed it" count={o.done_easy} />
