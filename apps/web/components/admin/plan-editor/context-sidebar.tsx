@@ -3,7 +3,10 @@ import { Eyebrow } from '../../ui/eyebrow';
 import { SectionLabel } from '../../ui/section-label';
 import type { PlanContextResponse } from '../../../lib/queries/admin-plan-context';
 import { CarryOverList } from './carry-over-list';
-import { TopicCoverageMini } from './topic-coverage-mini';
+import {
+  TopicCoverageHeatmap,
+  type CoverageTopic,
+} from '../../member/topic-coverage-heatmap';
 
 const TRACK_LABEL: Record<string, string> = {
   BIG_TECH: 'Big Tech',
@@ -35,6 +38,15 @@ export function ContextSidebar({
   const o = data.lastWeek.outcomes;
   const totalOutcomes =
     o.done_easy + o.done_hard + o.doubts + o.stuck + o.skipped + o.pending;
+
+  const coverageTopics: CoverageTopic[] = data.topicCoverage.map((t) => ({
+    topicId: t.topicId,
+    slug: t.topicSlug,
+    label: t.topicLabel,
+    order: t.order,
+    itemsPlanned: t.itemsPlanned,
+    itemsDone: t.itemsDone,
+  }));
 
   return (
     <div className="space-y-8 rounded-card border border-rule bg-surface p-4">
@@ -113,7 +125,11 @@ export function ContextSidebar({
       <section className="border-t border-rule pt-6">
         <SectionLabel>Topic coverage · this cycle</SectionLabel>
         <div className="mt-3">
-          <TopicCoverageMini topics={data.topicCoverage} />
+          <TopicCoverageHeatmap
+            topics={coverageTopics}
+            tileSize={16}
+            showLegend={false}
+          />
         </div>
       </section>
     </div>
