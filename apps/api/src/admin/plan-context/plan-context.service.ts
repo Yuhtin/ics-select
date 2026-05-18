@@ -173,6 +173,8 @@ export type PlanContextResponse = {
     remainingCapacityMinutes: number | null;
     /** Days from today through Sunday with remainingCapacityMinutes > 0. */
     daysRemaining: number;
+    /** Declared availability slots — used by the plan editor week preview. */
+    slots: Array<{ dayOfWeek: number; startMinute: number; endMinute: number }>;
   };
 };
 
@@ -376,7 +378,7 @@ export class PlanContextService {
       slots: slotRows,
       availability: availabilityRow,
     });
-    const availability = this.buildAvailability(availabilityRow, remaining);
+    const availability = this.buildAvailability(availabilityRow, remaining, slotRows);
 
     // Latest outcome per library item — first occurrence wins because the query
     // ordered weekStart desc.
@@ -543,6 +545,7 @@ export class PlanContextService {
   private buildAvailability(
     row: AvailabilityRow | null,
     remaining: { remainingCapacityMinutes: number | null; daysRemaining: number },
+    slots: Array<{ dayOfWeek: number; startMinute: number; endMinute: number }>,
   ): PlanContextResponse['availability'] {
     const source = row ?? DEFAULT_AVAILABILITY;
     const weeklyBudgetMinutes =
@@ -566,6 +569,11 @@ export class PlanContextService {
       timezone: source.timezone,
       remainingCapacityMinutes: remaining.remainingCapacityMinutes,
       daysRemaining: remaining.daysRemaining,
+      slots: slots.map((s) => ({
+        dayOfWeek: s.dayOfWeek,
+        startMinute: s.startMinute,
+        endMinute: s.endMinute,
+      })),
     };
   }
 
