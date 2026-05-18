@@ -181,31 +181,39 @@ export default function PlanEditorPage({
     [plan?.items],
   );
 
+  const persistedPlacements = useMemo<SchedulingPlacement[]>(
+    () =>
+      (plan?.items ?? [])
+        .filter((i) => i.scheduledAt && i.scheduledMinutes)
+        .map((i) => ({
+          itemId: i.libraryItemId,
+          scheduledAt: i.scheduledAt!,
+          durationMinutes: i.scheduledMinutes!,
+        })),
+    [plan?.items],
+  );
+
+  const hasPersisted = persistedPlacements.length > 0;
+
+  // Preview runs for DRAFT plans AND for PUBLISHED plans whose autoSchedule
+  // failed (no item.scheduledAt set yet) — that way the editor doesn't go
+  // blank after an overflow on publish; admin still sees what would fit.
   const previewEnabled = Boolean(
-    plan && plan.status === 'DRAFT' && previewItems.length > 0 && context?.availability,
+    plan && previewItems.length > 0 && context?.availability && !hasPersisted,
   );
 
   const preview = useSchedulingPreview(plan?.id ?? null, previewItems, previewEnabled);
 
   const placements = useMemo<SchedulingPlacement[]>(() => {
-    if (!plan) return [];
-    if (plan.status === 'DRAFT') {
-      return (preview.data?.placements ?? []).map((p) => ({
-        itemId: p.itemId,
-        scheduledAt: p.scheduledAt,
-        durationMinutes: p.durationMinutes,
-      }));
-    }
-    return plan.items
-      .filter((i) => i.scheduledAt && i.scheduledMinutes)
-      .map((i) => ({
-        itemId: i.libraryItemId,
-        scheduledAt: i.scheduledAt!,
-        durationMinutes: i.scheduledMinutes!,
-      }));
-  }, [plan, preview.data]);
+    if (hasPersisted) return persistedPlacements;
+    return (preview.data?.placements ?? []).map((p) => ({
+      itemId: p.itemId,
+      scheduledAt: p.scheduledAt,
+      durationMinutes: p.durationMinutes,
+    }));
+  }, [hasPersisted, persistedPlacements, preview.data]);
 
-  const overflow = plan?.status === 'DRAFT' ? (preview.data?.overflow ?? []) : [];
+  const overflow = hasPersisted ? [] : (preview.data?.overflow ?? []);
 
   const overflowItemIds = useMemo(
     () => new Set(overflow.map((o) => o.itemId)),
@@ -727,8 +735,8 @@ export default function PlanEditorPage({
                   placements={placements}
                   items={plan.items}
                   overflowItemIds={overflowItemIds}
-                  isUpdating={plan.status === 'DRAFT' && preview.isFetching}
-                  isStale={plan.status === 'DRAFT' && Boolean(preview.error)}
+                  isUpdating={!hasPersisted && preview.isFetching}
+                  isStale={!hasPersisted && Boolean(preview.error)}
                   onItemClick={handleHighlightItemRow}
                 />
               ) : (

@@ -76,6 +76,10 @@ export class SchedulingPreviewService {
       .getWeekBusy(plan.userId, plan.weekStart, plan.weekEnd)
       .catch(() => [] as Array<{ start: Date; end: Date }>);
 
+    // Pass `now` so the preview mirrors what `publish` / `autoSchedule` will
+    // actually do — the scheduler skips intervals that ended before `now`.
+    // Without this, the editor optimistically claims days that have already
+    // passed are still schedulable, then publish later returns overflow.
     const result = this.scheduler.plan({
       weekStart: plan.weekStart,
       availability,
@@ -85,6 +89,7 @@ export class SchedulingPreviewService {
         order: i.order,
         estimatedMinutes: i.estimatedMinutes ?? 60,
       })),
+      now: new Date(),
     });
 
     return {
