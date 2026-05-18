@@ -9,6 +9,8 @@ export type WeeklyPlanItem = {
   order: number;
   outcome: ItemOutcome;
   skippable: boolean;
+  scheduledAt: string | null;
+  scheduledMinutes: number | null;
   libraryItem: {
     id: string;
     title: string;
