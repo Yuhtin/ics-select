@@ -27,7 +27,7 @@ import {
 import { useTopics } from '../../../../../../../lib/queries/admin-topics';
 import type { LibraryItem } from '../../../../../../../lib/queries/library-search';
 import { apiFetch, ApiErrorResponse } from '../../../../../../../lib/api/client';
-import { ContextStrip } from '../../../../../../../components/admin/plan-editor/context-strip';
+import { ContextSidebar } from '../../../../../../../components/admin/plan-editor/context-sidebar';
 import { AiSuggestDrawer } from '../../../../../../../components/admin/plan-editor/ai-suggest-drawer';
 import {
   WeekPreview,
@@ -35,7 +35,6 @@ import {
 } from '../../../../../../../components/admin/plan-editor/week-preview';
 import type { DayCardSlot } from '../../../../../../../components/admin/plan-editor/week-day-card';
 import { UnscheduledSection } from '../../../../../../../components/admin/plan-editor/unscheduled-section';
-import { CarryOverList } from '../../../../../../../components/admin/plan-editor/carry-over-list';
 import { EditablePlanPanel } from '../../../../../../../components/admin/plan-editor/editable-plan-panel';
 import {
   SchedulingModal,
@@ -684,8 +683,6 @@ export default function PlanEditorPage({
           </p>
         ) : (
           <>
-            <ContextStrip data={context} />
-
             <div className="grid grid-cols-12 gap-6">
               <div className="col-span-8">
                 <EditablePlanPanel
@@ -712,18 +709,13 @@ export default function PlanEditorPage({
                   applyingEdit={editPublished.isPending}
                 />
               </div>
-              {plan.status === 'DRAFT' && context.carryOverCandidates.length > 0 && (
+              {plan.status === 'DRAFT' && (
                 <aside className="col-span-4">
-                  <div className="rounded-card border border-rule bg-surface p-4">
-                    <p className="mb-3 font-mono text-[10px] font-semibold uppercase tracking-eyebrow text-ink-mute">
-                      Carry-over
-                    </p>
-                    <CarryOverList
-                      candidates={context.carryOverCandidates}
-                      value={carryOverIds}
-                      onChange={setCarryOverIds}
-                    />
-                  </div>
+                  <ContextSidebar
+                    data={context}
+                    carryOverIds={carryOverIds}
+                    onCarryOverChange={setCarryOverIds}
+                  />
                 </aside>
               )}
             </div>
