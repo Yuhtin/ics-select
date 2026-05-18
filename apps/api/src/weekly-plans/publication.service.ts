@@ -6,10 +6,7 @@ import { GoogleCalendarService } from '../google-calendar/google-calendar.servic
 import { BusyCacheService } from '../google-calendar/busy-cache.service.js';
 import { WhatsappService } from '../whatsapp/whatsapp.service.js';
 import { WhatsappTemplateService } from '../whatsapp/whatsapp-template.service.js';
-import {
-  loadSchedulerAvailability,
-  type SchedulerAvailability,
-} from '../scheduler/availability-loader.js';
+import { loadSchedulerAvailability } from '../scheduler/availability-loader.js';
 
 export { allocatedMinutes };
 
