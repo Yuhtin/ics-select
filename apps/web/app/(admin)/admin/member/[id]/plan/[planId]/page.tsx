@@ -709,15 +709,14 @@ export default function PlanEditorPage({
                   applyingEdit={editPublished.isPending}
                 />
               </div>
-              {plan.status === 'DRAFT' && (
-                <aside className="col-span-4">
-                  <ContextSidebar
-                    data={context}
-                    carryOverIds={carryOverIds}
-                    onCarryOverChange={setCarryOverIds}
-                  />
-                </aside>
-              )}
+              <aside className="col-span-4">
+                <ContextSidebar
+                  data={context}
+                  carryOverIds={carryOverIds}
+                  onCarryOverChange={setCarryOverIds}
+                  hideCarryOver={plan.status !== 'DRAFT'}
+                />
+              </aside>
             </div>
 
             <div className="mt-8">

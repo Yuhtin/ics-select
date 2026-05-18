@@ -8,6 +8,8 @@ interface ContextSidebarProps {
   data: PlanContextResponse;
   carryOverIds: string[];
   onCarryOverChange: (ids: string[]) => void;
+  /** Hide the carry-over checkboxes (e.g. on PUBLISHED plans where they are inert). */
+  hideCarryOver?: boolean;
 }
 
 function formatDate(iso: string | null): string {
@@ -19,6 +21,7 @@ export function ContextSidebar({
   data,
   carryOverIds,
   onCarryOverChange,
+  hideCarryOver = false,
 }: ContextSidebarProps) {
   const o = data.lastWeek.outcomes;
   const totalOutcomes =
@@ -38,16 +41,18 @@ export function ContextSidebar({
         </div>
       </section>
 
-      <section className="border-t border-rule pt-6">
-        <SectionLabel>Carry-over candidates</SectionLabel>
-        <div className="mt-3">
-          <CarryOverList
-            candidates={data.carryOverCandidates}
-            value={carryOverIds}
-            onChange={onCarryOverChange}
-          />
-        </div>
-      </section>
+      {!hideCarryOver && (
+        <section className="border-t border-rule pt-6">
+          <SectionLabel>Carry-over candidates</SectionLabel>
+          <div className="mt-3">
+            <CarryOverList
+              candidates={data.carryOverCandidates}
+              value={carryOverIds}
+              onChange={onCarryOverChange}
+            />
+          </div>
+        </section>
+      )}
 
       <section className="border-t border-rule pt-6">
         <SectionLabel>
