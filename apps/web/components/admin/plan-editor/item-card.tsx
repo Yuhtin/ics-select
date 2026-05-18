@@ -48,6 +48,7 @@ export function ItemCard({
 
   return (
     <div
+      id={`plan-item-${item.libraryItemId}`}
       className={clsx(
         'group flex items-start gap-3 rounded-card p-3 transition-colors',
         outcomeBorder

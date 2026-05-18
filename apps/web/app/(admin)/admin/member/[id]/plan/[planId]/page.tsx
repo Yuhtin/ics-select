@@ -2,7 +2,7 @@
 import { use, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Sparkles } from 'lucide-react';
 import { addToast } from '@heroui/react';
 import { useAdminPlanContext } from '../../../../../../../lib/queries/admin-plan-context';
 import {
@@ -20,13 +20,23 @@ import {
   type AiDraft,
   type SchedulingPlacement,
 } from '../../../../../../../lib/queries/admin-plan-editor';
+import {
+  useSchedulingPreview,
+  type PreviewItem,
+} from '../../../../../../../lib/queries/admin-plan-preview';
 import { useTopics } from '../../../../../../../lib/queries/admin-topics';
 import type { LibraryItem } from '../../../../../../../lib/queries/library-search';
 import { apiFetch, ApiErrorResponse } from '../../../../../../../lib/api/client';
-import { ContextPanel } from '../../../../../../../components/admin/plan-editor/context-panel';
-import { AiDraftPanel } from '../../../../../../../components/admin/plan-editor/ai-draft-panel';
+import { ContextStrip } from '../../../../../../../components/admin/plan-editor/context-strip';
+import { AiSuggestDrawer } from '../../../../../../../components/admin/plan-editor/ai-suggest-drawer';
+import {
+  WeekPreview,
+  type WeekAvailability,
+} from '../../../../../../../components/admin/plan-editor/week-preview';
+import type { DayCardSlot } from '../../../../../../../components/admin/plan-editor/week-day-card';
+import { UnscheduledSection } from '../../../../../../../components/admin/plan-editor/unscheduled-section';
+import { CarryOverList } from '../../../../../../../components/admin/plan-editor/carry-over-list';
 import { EditablePlanPanel } from '../../../../../../../components/admin/plan-editor/editable-plan-panel';
-import { RegenerateBriefModal } from '../../../../../../../components/admin/plan-editor/regenerate-brief-modal';
 import {
   SchedulingModal,
   type SchedulingPhase,
@@ -72,7 +82,7 @@ export default function PlanEditorPage({
   const [carryOverIds, setCarryOverIds] = useState<string[]>([]);
   const [carryOverInitialized, setCarryOverInitialized] = useState(false);
   const [aiDraft, setAiDraft] = useState<AiDraft | null>(null);
-  const [briefOpen, setBriefOpen] = useState(false);
+  const [aiDrawerOpen, setAiDrawerOpen] = useState(false);
   const [scheduling, setScheduling] = useState<SchedulingState>(INITIAL_SCHEDULING_STATE);
   const [rescheduleConfirmOpen, setRescheduleConfirmOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -162,6 +172,91 @@ export default function PlanEditorPage({
   const editPublished = useEditPublishedPlan();
   const reschedulePending = useReschedulePending();
 
+  const previewItems: PreviewItem[] = useMemo(
+    () =>
+      (plan?.items ?? []).map((i) => ({
+        libraryItemId: i.libraryItemId,
+        order: i.order,
+        estimatedMinutes: i.libraryItem.estimatedMinutes,
+      })),
+    [plan?.items],
+  );
+
+  const previewEnabled = Boolean(
+    plan && plan.status === 'DRAFT' && previewItems.length > 0 && context?.availability,
+  );
+
+  const preview = useSchedulingPreview(plan?.id ?? null, previewItems, previewEnabled);
+
+  const placements = useMemo<SchedulingPlacement[]>(() => {
+    if (!plan) return [];
+    if (plan.status === 'DRAFT') {
+      return (preview.data?.placements ?? []).map((p) => ({
+        itemId: p.itemId,
+        scheduledAt: p.scheduledAt,
+        durationMinutes: p.durationMinutes,
+      }));
+    }
+    return plan.items
+      .filter((i) => i.scheduledAt && i.scheduledMinutes)
+      .map((i) => ({
+        itemId: i.libraryItemId,
+        scheduledAt: i.scheduledAt!,
+        durationMinutes: i.scheduledMinutes!,
+      }));
+  }, [plan, preview.data]);
+
+  const overflow = plan?.status === 'DRAFT' ? (preview.data?.overflow ?? []) : [];
+
+  const overflowItemIds = useMemo(
+    () => new Set(overflow.map((o) => o.itemId)),
+    [overflow],
+  );
+
+  const weekAvailability = useMemo<WeekAvailability>(() => {
+    if (!context?.availability) {
+      return {
+        timezone: 'America/Sao_Paulo',
+        capByWeekday: [null, null, null, null, null, null, null],
+        slotsByWeekday: [[], [], [], [], [], [], []],
+      };
+    }
+    const a = context.availability;
+    const slotsByWeekday: DayCardSlot[][] = [[], [], [], [], [], [], []];
+    for (const slot of a.slots ?? []) {
+      if (slot.dayOfWeek < 0 || slot.dayOfWeek > 6) continue;
+      slotsByWeekday[slot.dayOfWeek]!.push({
+        startMinute: slot.startMinute,
+        endMinute: slot.endMinute,
+      });
+    }
+    for (const bucket of slotsByWeekday) {
+      bucket.sort((s1, s2) => s1.startMinute - s2.startMinute);
+    }
+    return {
+      timezone: a.timezone,
+      capByWeekday: [
+        a.mondayMinutes,
+        a.tuesdayMinutes,
+        a.wednesdayMinutes,
+        a.thursdayMinutes,
+        a.fridayMinutes,
+        a.saturdayMinutes,
+        a.sundayMinutes,
+      ].map((m) => (m > 0 ? m : null)),
+      slotsByWeekday,
+    };
+  }, [context]);
+
+  function handleHighlightItemRow(libId: string) {
+    if (typeof document === 'undefined') return;
+    const el = document.getElementById(`plan-item-${libId}`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el.classList.add('ring-2', 'ring-focus/40');
+    setTimeout(() => el.classList.remove('ring-2', 'ring-focus/40'), 2000);
+  }
+
   const fetchMissingLibraryItems = async (ids: string[]): Promise<void> => {
     const unique = Array.from(new Set(ids));
     const missing = unique.filter((id) => !libraryItems.has(id));
@@ -193,7 +288,6 @@ export default function PlanEditorPage({
       ...res.draft.alternates.map((a) => a.libraryItemId),
     ];
     await fetchMissingLibraryItems(ids);
-    setBriefOpen(false);
   }
 
   async function handleAddItem(libraryItemId: string) {
@@ -533,6 +627,16 @@ export default function PlanEditorPage({
               {plan.status} · plan {plan.id.slice(0, 6)}
             </span>
           )}
+          {plan && plan.status === 'DRAFT' && (
+            <button
+              type="button"
+              onClick={() => setAiDrawerOpen(true)}
+              className="ml-auto inline-flex items-center gap-1.5 rounded-pill border border-rule px-3 py-1 font-mono text-[10px] uppercase tracking-label text-ink-soft hover:border-ink-soft hover:bg-paper-warm"
+            >
+              <Sparkles className="h-3 w-3" strokeWidth={1.5} />
+              Sugerir com IA
+            </button>
+          )}
           {plan && plan.status === 'PUBLISHED' && (
             <button
               type="button"
@@ -548,7 +652,7 @@ export default function PlanEditorPage({
               type="button"
               onClick={() => setDeleteConfirmOpen(true)}
               disabled={deletePlan.isPending}
-              className={`${plan.status === 'PUBLISHED' ? '' : 'ml-auto '}inline-flex items-center gap-1.5 rounded-pill border border-outcome-stuck/40 px-3 py-1 font-mono text-[10px] uppercase tracking-label text-outcome-stuck hover:border-outcome-stuck hover:bg-outcome-stuck/5 disabled:opacity-50`}
+              className={`${plan.status === 'DRAFT' || plan.status === 'PUBLISHED' ? '' : 'ml-auto '}inline-flex items-center gap-1.5 rounded-pill border border-outcome-stuck/40 px-3 py-1 font-mono text-[10px] uppercase tracking-label text-outcome-stuck hover:border-outcome-stuck hover:bg-outcome-stuck/5 disabled:opacity-50`}
             >
               {deletePlan.isPending ? 'Deleting…' : 'Delete plan'}
             </button>
@@ -579,70 +683,93 @@ export default function PlanEditorPage({
             Loading context…
           </p>
         ) : (
-          <div className="grid grid-cols-12 gap-6">
-            <div className="col-span-4 max-h-[calc(100vh-8rem)] overflow-y-auto pr-2">
-              <ContextPanel
-                data={context}
-                carryOverIds={carryOverIds}
-                onCarryOverChange={setCarryOverIds}
-              />
+          <>
+            <ContextStrip data={context} />
+
+            <div className="grid grid-cols-12 gap-6">
+              <div className="col-span-8">
+                <EditablePlanPanel
+                  plan={plan}
+                  context={context}
+                  topicNameById={topicNameById}
+                  carryOverLibraryItemIds={carryOverLibraryItemIds}
+                  onItemsChange={handleItemsChange}
+                  onAdminNotesChange={handleAdminNotesChange}
+                  onAddLibraryItem={(id) => {
+                    void handleAddItem(id);
+                  }}
+                  onSaveDraft={() => {
+                    void handleSaveDraft();
+                  }}
+                  onPublish={(options) => {
+                    void handlePublish(options);
+                  }}
+                  onApplyEdit={() => {
+                    void handleApplyEdit();
+                  }}
+                  saving={updatePlan.isPending}
+                  publishing={publishPlan.isPending || autoSchedule.isPending}
+                  applyingEdit={editPublished.isPending}
+                />
+              </div>
+              {plan.status === 'DRAFT' && context.carryOverCandidates.length > 0 && (
+                <aside className="col-span-4">
+                  <div className="rounded-card border border-rule bg-surface p-4">
+                    <p className="mb-3 font-mono text-[10px] font-semibold uppercase tracking-eyebrow text-ink-mute">
+                      Carry-over
+                    </p>
+                    <CarryOverList
+                      candidates={context.carryOverCandidates}
+                      value={carryOverIds}
+                      onChange={setCarryOverIds}
+                    />
+                  </div>
+                </aside>
+              )}
             </div>
-            <div className="col-span-4 max-h-[calc(100vh-8rem)] overflow-y-auto pr-2">
-              <AiDraftPanel
-                draft={aiDraft}
-                libraryById={libraryItems}
-                topicNameById={topicNameById}
-                carryOverLibraryItemIds={carryOverLibraryItemIds}
-                addedLibraryItemIds={
-                  new Set(plan.items.map((i) => i.libraryItemId))
-                }
-                loading={draftMutation.isPending}
-                onGenerate={(brief) => {
-                  void generateDraft(brief);
-                }}
-                onOpenBrief={() => setBriefOpen(true)}
-                onAddItem={(id) => {
-                  void handleAddItem(id);
-                }}
-              />
+
+            <div className="mt-8">
+              {context.availability ? (
+                <WeekPreview
+                  weekStart={plan.weekStart}
+                  availability={weekAvailability}
+                  placements={placements}
+                  items={plan.items}
+                  overflowItemIds={overflowItemIds}
+                  isUpdating={plan.status === 'DRAFT' && preview.isFetching}
+                  isStale={plan.status === 'DRAFT' && Boolean(preview.error)}
+                  onItemClick={handleHighlightItemRow}
+                />
+              ) : (
+                <NoAvailabilityBanner memberId={memberId} />
+              )}
             </div>
-            <div className="col-span-4 max-h-[calc(100vh-8rem)] overflow-y-auto pr-2">
-              <EditablePlanPanel
-                plan={plan}
-                context={context}
-                topicNameById={topicNameById}
-                carryOverLibraryItemIds={carryOverLibraryItemIds}
-                onItemsChange={handleItemsChange}
-                onAdminNotesChange={handleAdminNotesChange}
-                onAddLibraryItem={(id) => {
-                  void handleAddItem(id);
-                }}
-                onSaveDraft={() => {
-                  void handleSaveDraft();
-                }}
-                onPublish={(options) => {
-                  void handlePublish(options);
-                }}
-                onApplyEdit={() => {
-                  void handleApplyEdit();
-                }}
-                saving={updatePlan.isPending}
-                publishing={
-                  publishPlan.isPending || autoSchedule.isPending
-                }
-                applyingEdit={editPublished.isPending}
-              />
-            </div>
-          </div>
+
+            <UnscheduledSection
+              overflow={overflow}
+              items={plan.items}
+              memberId={memberId}
+            />
+          </>
         )}
 
-        <RegenerateBriefModal
-          open={briefOpen}
-          onClose={() => setBriefOpen(false)}
-          onSubmit={(brief) => {
+        <AiSuggestDrawer
+          open={aiDrawerOpen}
+          onClose={() => setAiDrawerOpen(false)}
+          draft={aiDraft}
+          libraryById={libraryItems}
+          topicNameById={topicNameById}
+          carryOverLibraryItemIds={carryOverLibraryItemIds}
+          addedLibraryItemIds={
+            new Set(plan?.items.map((i) => i.libraryItemId) ?? [])
+          }
+          loading={draftMutation.isPending}
+          onGenerate={(brief) => {
             void generateDraft(brief);
           }}
-          loading={draftMutation.isPending}
+          onAddItem={(id) => {
+            void handleAddItem(id);
+          }}
         />
         <SchedulingModal
           open={scheduling.open}
@@ -697,5 +824,26 @@ export default function PlanEditorPage({
         isLoading={deletePlan.isPending}
       />
     </>
+  );
+}
+
+function NoAvailabilityBanner({ memberId }: { memberId: string }) {
+  return (
+    <div className="rounded-card border border-outcome-stuck/40 p-6">
+      <p className="mb-2 font-serif-tool text-base text-ink">
+        Membro não configurou disponibilidade
+      </p>
+      <p className="mb-4 font-sans text-sm text-ink-soft">
+        Não dá pra prever a agenda sem isso.
+      </p>
+      <a
+        href={`/admin/member/${memberId}/availability`}
+        target="_blank"
+        rel="noreferrer"
+        className="inline-flex items-center gap-1.5 rounded-pill bg-ink px-3 py-1.5 font-mono text-[11px] uppercase tracking-label text-paper hover:opacity-90"
+      >
+        Abrir availability
+      </a>
+    </div>
   );
 }
