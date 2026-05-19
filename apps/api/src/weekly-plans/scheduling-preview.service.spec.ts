@@ -24,10 +24,8 @@ function fakePrisma(opts: {
   };
 }
 
-const busyCache = {
-  getWeekBusy: jest.fn(async (): Promise<Array<{ start: Date; end: Date }>> => []),
-  invalidate: jest.fn(),
-  invalidateAllForUser: jest.fn(),
+const calendarMock = {
+  getFreeBusy: jest.fn(async (): Promise<Array<{ start: Date; end: Date }>> => []),
 };
 
 const PLAN = {
@@ -60,12 +58,13 @@ const SLOTS = [
 
 function buildService(prisma: any) {
   const scheduler = new SchedulerService();
-  return new SchedulingPreviewService(prisma as any, scheduler, busyCache as any);
+  return new SchedulingPreviewService(prisma as any, scheduler, calendarMock as any);
+
 }
 
 describe('SchedulingPreviewService', () => {
   beforeEach(() => {
-    busyCache.getWeekBusy.mockClear();
+    calendarMock.getFreeBusy.mockClear();
   });
 
   it('returns empty placements when items array is empty', async () => {

@@ -23,7 +23,7 @@ import request from 'supertest';
 import { SchedulingPreviewController } from '../src/weekly-plans/scheduling-preview.controller';
 import { SchedulingPreviewService } from '../src/weekly-plans/scheduling-preview.service';
 import { SchedulerService } from '../src/scheduler/scheduler.service';
-import { BusyCacheService } from '../src/google-calendar/busy-cache.service';
+import { GoogleCalendarService } from '../src/google-calendar/google-calendar.service';
 import { PrismaService } from '../src/common/prisma/prisma.service';
 
 @Injectable()
@@ -70,10 +70,8 @@ function makeFakePrisma(plan: any | null) {
   };
 }
 
-const busyCacheMock = {
-  getWeekBusy: jest.fn().mockResolvedValue([]),
-  invalidate: jest.fn(),
-  invalidateAllForUser: jest.fn(),
+const calendarMock = {
+  getFreeBusy: jest.fn().mockResolvedValue([]),
 };
 
 async function buildApp(plan: any | null): Promise<INestApplication> {
@@ -83,7 +81,7 @@ async function buildApp(plan: any | null): Promise<INestApplication> {
       SchedulingPreviewService,
       SchedulerService,
       { provide: PrismaService, useValue: makeFakePrisma(plan) },
-      { provide: BusyCacheService, useValue: busyCacheMock },
+      { provide: GoogleCalendarService, useValue: calendarMock },
       { provide: APP_GUARD, useClass: AllowAllGuard },
     ],
   }).compile();

@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, Logger, NotFoundException } from '@nes
 import { allocatedMinutes } from '@ics-select/shared';
 import { PrismaService } from '../common/prisma/prisma.service.js';
 import { SchedulerService } from '../scheduler/scheduler.service.js';
-import { BusyCacheService } from '../google-calendar/busy-cache.service.js';
+import { GoogleCalendarService } from '../google-calendar/google-calendar.service.js';
 import { loadSchedulerAvailability } from '../scheduler/availability-loader.js';
 
 export class NoAvailabilityError extends BadRequestException {
@@ -58,7 +58,7 @@ export class SchedulingPreviewService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly scheduler: SchedulerService,
-    private readonly busyCache: BusyCacheService,
+    private readonly calendar: GoogleCalendarService,
   ) {}
 
   async preview(planId: string, body: PreviewBody): Promise<PreviewResult> {
@@ -86,8 +86,16 @@ export class SchedulingPreviewService {
     if (!availabilityRow) throw new NoAvailabilityError();
 
     const availability = await loadSchedulerAvailability(this.prisma, plan.userId);
-    const busyBlocks = await this.busyCache
-      .getWeekBusy(plan.userId, plan.weekStart, plan.weekEnd)
+    // Use `getFreeBusy` directly instead of BusyCacheService so the preview
+    // sees the same real-time calendar data that `publish` / `editPublished`
+    // will see. The cache uses stale-while-revalidate (60 s), which means a
+    // stale or empty entry causes the preview to show "fits" when the live
+    // calendar would overflow — exactly the gap admins hit when the numbers
+    // disagree between preview and Apply Changes. Since preview is debounced
+    // 500 ms on the frontend this direct call only fires ≤2× per second.
+    const now = new Date();
+    const busyBlocks = await this.calendar
+      .getFreeBusy(plan.userId, now, plan.weekEnd)
       .catch(() => [] as Array<{ start: Date; end: Date }>);
 
     // Pass `now` so the preview mirrors what `publish` / `autoSchedule` will
