@@ -231,7 +231,10 @@ export default function PlanEditorPage({
       .filter((i) => i.outcome === 'PENDING' && !i.scheduledAt)
       .map((i) => ({
         itemId: i.libraryItemId,
-        minutesRequired: i.libraryItem.estimatedMinutes,
+        minutesRequired: allocatedMinutes(
+          i.libraryItem.estimatedMinutes,
+          i.libraryItem.format,
+        ),
       }));
   }, [plan, hasPersisted, preview.data]);
 
