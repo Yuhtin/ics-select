@@ -30,6 +30,7 @@ export function useSchedulingPreview(
   planId: string | null,
   items: PreviewItem[],
   enabled: boolean,
+  busyBlocks?: Array<{ start: string; end: string }>,
 ) {
   const debouncedItems = useDebouncedValue(items, 500);
   const hash = useMemo(
@@ -45,7 +46,12 @@ export function useSchedulingPreview(
     queryFn: () =>
       apiFetch<SchedulingPreview>(`/plans/${planId}/preview-scheduling`, {
         method: 'POST',
-        body: JSON.stringify({ items: debouncedItems }),
+        body: JSON.stringify({
+          items: debouncedItems,
+          // Pass pre-fetched busy blocks so the server skips its own
+          // getFreeBusy call — one Calendar API round-trip per page load.
+          ...(busyBlocks && busyBlocks.length > 0 ? { busyBlocks } : {}),
+        }),
       }),
     enabled: Boolean(planId) && planId !== 'new' && enabled,
     placeholderData: (previous) => previous,

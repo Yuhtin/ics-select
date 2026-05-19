@@ -8,6 +8,7 @@ import { SchedulingPreviewService } from './scheduling-preview.service.js';
 type PreviewBodyDto = {
   items?: Array<{ libraryItemId: string; order: number; estimatedMinutes?: number }>;
   relaxOrder?: boolean;
+  busyBlocks?: Array<{ start: string; end: string }>;
 };
 
 @Controller()
@@ -35,6 +36,7 @@ export class SchedulingPreviewController {
     return this.preview.preview(id, {
       items: body?.items,
       relaxOrder: body?.relaxOrder ?? false,
+      busyBlocks: body?.busyBlocks,
     });
   }
 }

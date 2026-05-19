@@ -27,6 +27,12 @@ export type PreviewBody = {
   items?: PreviewItemInput[];
   /** When true, scheduler packs by descending duration instead of order. */
   relaxOrder?: boolean;
+  /**
+   * Google Calendar busy blocks pre-fetched by the plan-context endpoint.
+   * When provided the service skips its own getFreeBusy call, reusing the
+   * same data the page already loaded — one Calendar API call per page load.
+   */
+  busyBlocks?: Array<{ start: string; end: string }>;
 };
 
 export type PreviewPlacement = {
@@ -86,17 +92,22 @@ export class SchedulingPreviewService {
     if (!availabilityRow) throw new NoAvailabilityError();
 
     const availability = await loadSchedulerAvailability(this.prisma, plan.userId);
-    // Use `getFreeBusy` directly instead of BusyCacheService so the preview
-    // sees the same real-time calendar data that `publish` / `editPublished`
-    // will see. The cache uses stale-while-revalidate (60 s), which means a
-    // stale or empty entry causes the preview to show "fits" when the live
-    // calendar would overflow — exactly the gap admins hit when the numbers
-    // disagree between preview and Apply Changes. Since preview is debounced
-    // 500 ms on the frontend this direct call only fires ≤2× per second.
+    // Prefer busy blocks pre-fetched by the plan-context endpoint (passed in
+    // the body) so the page makes only one getFreeBusy call per load instead
+    // of one per debounced preview request. Fall back to a fresh getFreeBusy
+    // when the body doesn't include them (e.g., first load race or older client).
     const now = new Date();
-    const busyBlocks = await this.calendar
-      .getFreeBusy(plan.userId, now, plan.weekEnd)
-      .catch(() => [] as Array<{ start: Date; end: Date }>);
+    let busyBlocks: Array<{ start: Date; end: Date }>;
+    if (body.busyBlocks && body.busyBlocks.length > 0) {
+      busyBlocks = body.busyBlocks.map((b) => ({
+        start: new Date(b.start),
+        end: new Date(b.end),
+      }));
+    } else {
+      busyBlocks = await this.calendar
+        .getFreeBusy(plan.userId, now, plan.weekEnd)
+        .catch(() => [] as Array<{ start: Date; end: Date }>);
+    }
 
     // Pass `now` so the preview mirrors what `publish` / `autoSchedule` will
     // actually do — the scheduler skips intervals that ended before `now`.

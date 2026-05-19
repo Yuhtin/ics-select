@@ -70,6 +70,7 @@ export type PlanContextResponse = {
     /** Days from today through Sunday with non-zero remaining capacity. */
     daysRemaining: number;
     slots: Array<{ dayOfWeek: number; startMinute: number; endMinute: number }>;
+    busyBlocks: Array<{ start: string; end: string }>;
   };
   memberHistory: Array<{
     libraryItemId: string;

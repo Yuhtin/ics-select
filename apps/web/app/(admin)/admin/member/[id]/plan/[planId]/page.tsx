@@ -210,7 +210,12 @@ export default function PlanEditorPage({
     plan && previewItems.length > 0 && context?.availability && !hasPersisted,
   );
 
-  const preview = useSchedulingPreview(plan?.id ?? null, previewItems, previewEnabled);
+  const preview = useSchedulingPreview(
+    plan?.id ?? null,
+    previewItems,
+    previewEnabled,
+    context?.availability?.busyBlocks,
+  );
 
   const placements = useMemo<SchedulingPlacement[]>(() => {
     if (hasPersisted) return persistedPlacements;
@@ -847,7 +852,7 @@ export default function PlanEditorPage({
                   weekStart={plan.weekStart}
                   availability={weekAvailability}
                   placements={placements}
-                  busyBlocks={preview.data?.busyBlocks ?? []}
+                  busyBlocks={preview.data?.busyBlocks ?? context?.availability?.busyBlocks ?? []}
                   items={plan.items}
                   overflowItemIds={overflowItemIds}
                   isUpdating={!hasPersisted && preview.isFetching}

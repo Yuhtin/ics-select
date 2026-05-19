@@ -175,6 +175,10 @@ export type PlanContextResponse = {
     daysRemaining: number;
     /** Declared availability slots — used by the plan editor week preview. */
     slots: Array<{ dayOfWeek: number; startMinute: number; endMinute: number }>;
+    /** Raw Google Calendar busy blocks for this week. Passed through to the
+     *  preview endpoint so the editor reuses the same getFreeBusy result
+     *  instead of making a fresh call on every debounced edit. */
+    busyBlocks: Array<{ start: string; end: string }>;
   };
 };
 
@@ -544,7 +548,7 @@ export class PlanContextService {
 
   private buildAvailability(
     row: AvailabilityRow | null,
-    remaining: { remainingCapacityMinutes: number | null; daysRemaining: number },
+    remaining: { remainingCapacityMinutes: number | null; daysRemaining: number; busyBlocks: BusyBlock[] },
     slots: Array<{ dayOfWeek: number; startMinute: number; endMinute: number }>,
   ): PlanContextResponse['availability'] {
     const source = row ?? DEFAULT_AVAILABILITY;
@@ -574,6 +578,10 @@ export class PlanContextService {
         startMinute: s.startMinute,
         endMinute: s.endMinute,
       })),
+      busyBlocks: remaining.busyBlocks.map((b) => ({
+        start: b.start.toISOString(),
+        end: b.end.toISOString(),
+      })),
     };
   }
 
@@ -602,10 +610,17 @@ export class PlanContextService {
     now: Date;
     slots: AvailabilitySlotInput[];
     availability: AvailabilityRow | null;
-  }): Promise<{ remainingCapacityMinutes: number | null; daysRemaining: number }> {
+  }): Promise<{
+    remainingCapacityMinutes: number | null;
+    daysRemaining: number;
+    /** Raw Google Calendar busy blocks for the week. Exposed so the plan
+     *  editor can pass them directly to the preview endpoint — one getFreeBusy
+     *  call per page load instead of one per debounced preview request. */
+    busyBlocks: BusyBlock[];
+  }> {
     // Past weeks have no addable capacity; skip the calendar call entirely.
     if (params.weekEnd.getTime() <= params.now.getTime()) {
-      return { remainingCapacityMinutes: 0, daysRemaining: 0 };
+      return { remainingCapacityMinutes: 0, daysRemaining: 0, busyBlocks: [] };
     }
     const av = params.availability ?? DEFAULT_AVAILABILITY;
     const caps: (number | null)[] = [
@@ -627,7 +642,7 @@ export class PlanContextService {
       this.logger.warn(
         `plan-context: getFreeBusy failed for user=${params.userId} · ${String(err)}`,
       );
-      return { remainingCapacityMinutes: null, daysRemaining: 0 };
+      return { remainingCapacityMinutes: null, daysRemaining: 0, busyBlocks: [] };
     }
 
     const ownIntervals = await this.loadOwnPlanIntervals(
@@ -647,6 +662,7 @@ export class PlanContextService {
     return {
       remainingCapacityMinutes: out.totalMinutes,
       daysRemaining: out.daysRemaining,
+      busyBlocks: busy,
     };
   }
 
