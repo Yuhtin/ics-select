@@ -63,7 +63,8 @@ export function WeekDayCard(props: WeekDayCardProps) {
   const scheduledMinutes = props.items.reduce((sum, i) => sum + i.durationMinutes, 0);
   // How many minutes does Calendar busy consume *inside* the future slots?
   // Anything outside the slots doesn't reduce free capacity (the member never
-  // claimed it as study time).
+  // claimed it as study time). busyBlocks are already adjusted (own ICS events
+  // subtracted) so they represent only external conflicts.
   const busyInSlots = (props.busyBlocks ?? []).reduce((sum, b) => {
     for (const s of futureSlots) {
       const overlap = Math.max(
@@ -74,10 +75,15 @@ export function WeekDayCard(props: WeekDayCardProps) {
     }
     return sum;
   }, 0);
+  // The scheduler inserts a 10-min buffer between consecutive items in the same
+  // slot. Account for this so "free" reflects what truly fits next, not the raw
+  // remaining minutes minus items.
+  const BUFFER_MINUTES = 10;
+  const bufferCost = props.items.length > 0 ? BUFFER_MINUTES : 0;
   const free =
     isOff || noSlots || allPast
       ? 0
-      : Math.max(0, (props.capMinutes ?? 0) - scheduledMinutes - busyInSlots);
+      : Math.max(0, (props.capMinutes ?? 0) - scheduledMinutes - busyInSlots - bufferCost);
 
   return (
     <div

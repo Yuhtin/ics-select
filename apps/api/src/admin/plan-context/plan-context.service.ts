@@ -662,7 +662,10 @@ export class PlanContextService {
     return {
       remainingCapacityMinutes: out.totalMinutes,
       daysRemaining: out.daysRemaining,
-      busyBlocks: busy,
+      // Expose the adjusted busy (own ICS events subtracted) so the plan
+      // editor day cards don't show study sessions as ⊘ conflicts, and the
+      // preview scheduler uses the same view — only external events count.
+      busyBlocks: adjustedBusy,
     };
   }
 
