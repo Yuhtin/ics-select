@@ -221,7 +221,19 @@ export default function PlanEditorPage({
     }));
   }, [hasPersisted, persistedPlacements, preview.data]);
 
-  const overflow = hasPersisted ? [] : (preview.data?.overflow ?? []);
+  const overflow = useMemo<Array<{ itemId: string; minutesRequired: number }>>(() => {
+    if (!plan) return [];
+    if (!hasPersisted) return preview.data?.overflow ?? [];
+    // PUBLISHED (or otherwise persisted) state: any PENDING item without a
+    // scheduledAt is effectively overflow — the autoSchedule didn't find a
+    // window for it. Surface them so the admin can reorganize.
+    return plan.items
+      .filter((i) => i.outcome === 'PENDING' && !i.scheduledAt)
+      .map((i) => ({
+        itemId: i.libraryItemId,
+        minutesRequired: i.libraryItem.estimatedMinutes,
+      }));
+  }, [plan, hasPersisted, preview.data]);
 
   const overflowItemIds = useMemo(
     () => new Set(overflow.map((o) => o.itemId)),
@@ -274,6 +286,10 @@ export default function PlanEditorPage({
 
   async function handleReorganize() {
     if (!plan || previewItems.length === 0) return;
+    if (plan.status === 'PUBLISHED') {
+      await handleReorganizePublished();
+      return;
+    }
     try {
       const res = await reorganize.mutateAsync({
         planId: plan.id,
@@ -312,6 +328,45 @@ export default function PlanEditorPage({
         color: res.overflow.length === 0 ? 'success' : 'warning',
       });
     } catch (err) {
+      addToast({
+        title: 'Reorganize falhou',
+        description: err instanceof Error ? err.message : 'Unknown error',
+        color: 'danger',
+      });
+    }
+  }
+
+  async function handleReorganizePublished() {
+    if (!plan) return;
+    const pendingCount = plan.items.filter((i) => i.outcome === 'PENDING').length;
+    if (pendingCount === 0) {
+      addToast({
+        title: 'Nada pra reorganizar',
+        description: 'Todos os items já têm outcome — só items PENDING são reescalados.',
+        color: 'warning',
+      });
+      return;
+    }
+    try {
+      await reschedulePending.mutateAsync({
+        planId: plan.id,
+        relaxOrder: true,
+      });
+      addToast({
+        title: 'Reorganizado · items PENDING reescalados',
+        description: `${pendingCount} item${pendingCount === 1 ? '' : 's'} redistribuído${pendingCount === 1 ? '' : 's'} no calendário. Items já marcados não foram tocados.`,
+        color: 'success',
+      });
+    } catch (err) {
+      const overflow = extractOverflow(err);
+      if (overflow !== null) {
+        addToast({
+          title: 'Reorganize · ainda sobrou overflow',
+          description: `${overflow.length} item${overflow.length === 1 ? '' : 'ns'} continuam sem janela. Aumente disponibilidade ou remova items.`,
+          color: 'warning',
+        });
+        return;
+      }
       addToast({
         title: 'Reorganize falhou',
         description: err instanceof Error ? err.message : 'Unknown error',
@@ -804,14 +859,10 @@ export default function PlanEditorPage({
               overflow={overflow}
               items={plan.items}
               memberId={memberId}
-              onReorganize={
-                plan.status === 'DRAFT'
-                  ? () => {
-                      void handleReorganize();
-                    }
-                  : undefined
-              }
-              reorganizing={reorganize.isPending}
+              onReorganize={() => {
+                void handleReorganize();
+              }}
+              reorganizing={reorganize.isPending || reschedulePending.isPending}
             />
           </>
         )}

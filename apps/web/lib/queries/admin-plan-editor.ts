@@ -203,10 +203,18 @@ export function useEditPublishedPlan() {
 export function useReschedulePending() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (planId: string) => {
-      await apiFetch<void>(`/plans/${planId}/reschedule-pending`, { method: 'POST' });
+    mutationFn: async (input: string | { planId: string; relaxOrder?: boolean; force?: boolean }) => {
+      const params = typeof input === 'string' ? { planId: input } : input;
+      const search = new URLSearchParams();
+      if (params.force) search.set('force', 'true');
+      if (params.relaxOrder) search.set('relax', 'true');
+      const qs = search.toString() ? `?${search}` : '';
+      await apiFetch<void>(`/plans/${params.planId}/reschedule-pending${qs}`, {
+        method: 'POST',
+      });
     },
-    onSuccess: (_data, planId) => {
+    onSuccess: (_data, input) => {
+      const planId = typeof input === 'string' ? input : input.planId;
       qc.invalidateQueries({ queryKey: ['plan', planId] });
     },
   });

@@ -71,8 +71,12 @@ export class WeeklyPlansController {
   async reschedulePending(
     @Param('id') id: string,
     @Query('force') force: string | undefined,
+    @Query('relax') relax: string | undefined,
   ) {
-    await this.publication.reschedulePending(id, { force: force === 'true' });
+    await this.publication.reschedulePending(id, {
+      force: force === 'true',
+      relaxOrder: relax === 'true',
+    });
   }
 
   @Post('plans/:id/auto-schedule')

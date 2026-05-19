@@ -224,11 +224,12 @@ export class PublicationService {
   // re-schedule them into the remaining days of the week.
   async reschedulePending(
     planId: string,
-    options: { now?: Date; force?: boolean } = {},
+    options: { now?: Date; force?: boolean; relaxOrder?: boolean } = {},
   ): Promise<void> {
     const tTotal = Date.now();
     const now = options.now ?? new Date();
     const force = options.force ?? false;
+    const relaxOrder = options.relaxOrder ?? false;
 
     const tFind = Date.now();
     const plan = await this.prisma.weeklyPlan.findUnique({
@@ -299,6 +300,7 @@ export class PublicationService {
         order: i.order,
       })),
       now,
+      relaxOrder,
     });
     const schedulerMs = Date.now() - tScheduler;
 
