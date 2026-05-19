@@ -72,8 +72,17 @@ export function phase1(
       const iv = intervals[idx]!;
       const intervalSize = iv.endMinute - iv.startMinute;
 
-      // Rule iii.
-      if (intervalSize < pref && iv.slotSize >= pref) continue;
+      // Rule iii: skip sub-pref remnants carved out of slots larger than pref.
+      // The intent is to avoid burning a small leftover window on a residue
+      // chunk when the original big slot still has a larger interval available
+      // that could host a full session.
+      //
+      // We use slotSize > pref (strictly greater) rather than >= pref:
+      // when slotSize == pref the slot was only ever big enough for one full
+      // session, so any carved remnant is the only option — skipping it creates
+      // avoidable overflow (e.g. a 60-min slot carved to 45 min by an existing
+      // own-event; a 30-min residue chunk fits there but would be rejected).
+      if (intervalSize < pref && iv.slotSize > pref) continue;
 
       const intervalStartMOW = iv.dayIdx * 1440 + iv.startMinute;
 
