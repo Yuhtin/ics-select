@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Sparkles } from 'lucide-react';
 import { addToast } from '@heroui/react';
+import { allocatedMinutes } from '@ics-select/shared';
 import { useAdminPlanContext } from '../../../../../../../lib/queries/admin-plan-context';
 import {
   useGetOrCreateDraft,
@@ -176,7 +177,12 @@ export default function PlanEditorPage({
       (plan?.items ?? []).map((i) => ({
         libraryItemId: i.libraryItemId,
         order: i.order,
-        estimatedMinutes: i.libraryItem.estimatedMinutes,
+        // Match what publish/autoSchedule will actually request from the
+        // scheduler. VIDEO formats double in `allocatedMinutes` (we know mexer
+        // com vídeo custa o dobro do duration cru). Passing the raw value here
+        // made the preview optimistic — it would show items fitting that
+        // publish later kicked into overflow.
+        estimatedMinutes: allocatedMinutes(i.libraryItem.estimatedMinutes, i.libraryItem.format),
       })),
     [plan?.items],
   );
