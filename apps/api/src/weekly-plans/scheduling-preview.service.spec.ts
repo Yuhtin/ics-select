@@ -76,6 +76,7 @@ describe('SchedulingPreviewService', () => {
 
     expect(result.placements).toEqual([]);
     expect(result.overflow).toEqual([]);
+    expect(result.busyBlocks).toEqual([]);
     expect(result.weekStart).toBe(PLAN.weekStart.toISOString());
     expect(result.weekEnd).toBe(PLAN.weekEnd.toISOString());
   });

@@ -16,12 +16,14 @@ export type DayCardItem = {
 };
 
 export type DayCardSlot = { startMinute: number; endMinute: number };
+export type DayCardBusyBlock = { startMinute: number; endMinute: number };
 
 export type WeekDayCardProps = {
   label: string;
   dateLabel: string;
   capMinutes: number | null;
   slots: DayCardSlot[];
+  busyBlocks?: DayCardBusyBlock[];
   items: DayCardItem[];
   contributesOverflow?: boolean;
   onItemClick?: (libraryItemId: string) => void;
@@ -50,7 +52,23 @@ export function WeekDayCard(props: WeekDayCardProps) {
   // footer.
   const noSlots = !isOff && props.slots.length === 0;
   const scheduledMinutes = props.items.reduce((sum, i) => sum + i.durationMinutes, 0);
-  const free = isOff || noSlots ? 0 : Math.max(0, (props.capMinutes ?? 0) - scheduledMinutes);
+  // How many minutes does Calendar busy consume *inside* the declared slots?
+  // Anything outside the slots doesn't reduce free capacity (the member never
+  // claimed it as study time).
+  const busyInSlots = (props.busyBlocks ?? []).reduce((sum, b) => {
+    for (const s of props.slots) {
+      const overlap = Math.max(
+        0,
+        Math.min(b.endMinute, s.endMinute) - Math.max(b.startMinute, s.startMinute),
+      );
+      sum += overlap;
+    }
+    return sum;
+  }, 0);
+  const free =
+    isOff || noSlots
+      ? 0
+      : Math.max(0, (props.capMinutes ?? 0) - scheduledMinutes - busyInSlots);
 
   return (
     <div
@@ -88,6 +106,19 @@ export function WeekDayCard(props: WeekDayCardProps) {
               {formatSlot(s)}
             </p>
           ))}
+        {!isOff && !noSlots && (props.busyBlocks ?? []).length > 0 && (
+          <div className="space-y-0.5 pt-1">
+            {(props.busyBlocks ?? []).map((b, idx) => (
+              <p
+                key={idx}
+                className="font-mono text-[10px] tabular-nums text-outcome-stuck"
+                title="Google Calendar busy"
+              >
+                ⊘ busy {formatSlot(b)}
+              </p>
+            ))}
+          </div>
+        )}
       </div>
 
       <hr className="my-2 border-rule" />

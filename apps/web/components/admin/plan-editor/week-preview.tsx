@@ -1,9 +1,17 @@
 'use client';
 import { useMemo } from 'react';
 import { SectionLabel } from '../../ui/section-label';
-import { WeekDayCard, type DayCardItem, type DayCardSlot } from './week-day-card';
+import {
+  WeekDayCard,
+  type DayCardBusyBlock,
+  type DayCardItem,
+  type DayCardSlot,
+} from './week-day-card';
 import type { WeeklyPlanItem } from '../../../lib/queries/admin-plan-editor';
-import type { SchedulingPlacement } from '../../../lib/queries/admin-plan-preview';
+import type {
+  PreviewBusyBlock,
+  SchedulingPlacement,
+} from '../../../lib/queries/admin-plan-preview';
 
 export type WeekAvailability = {
   timezone: string;
@@ -15,6 +23,11 @@ export type WeekPreviewProps = {
   weekStart: string;
   availability: WeekAvailability;
   placements: SchedulingPlacement[];
+  /**
+   * Google Calendar busy blocks the scheduler saw. Rendered per day so the
+   * admin sees why a "free" slot is actually unschedulable.
+   */
+  busyBlocks?: PreviewBusyBlock[];
   items: WeeklyPlanItem[];
   overflowItemIds: Set<string>;
   isUpdating?: boolean;
@@ -66,6 +79,42 @@ export function WeekPreview(props: WeekPreviewProps) {
 
   const totalMinutes = props.placements.reduce((sum, p) => sum + p.durationMinutes, 0);
 
+  const busyByWeekday = useMemo(() => {
+    const buckets: DayCardBusyBlock[][] = [[], [], [], [], [], [], []];
+    const start = new Date(props.weekStart);
+    for (const b of props.busyBlocks ?? []) {
+      const bStart = new Date(b.start);
+      const bEnd = new Date(b.end);
+      const dayDiff = Math.floor(
+        (bStart.getTime() - start.getTime()) / (24 * 60 * 60 * 1000),
+      );
+      if (dayDiff < 0 || dayDiff > 6) continue;
+      // Render in BRT-local minutes since the day card slots are local minutes.
+      const localMinutes = (d: Date) => {
+        const parts = new Intl.DateTimeFormat('en-GB', {
+          timeZone: props.availability.timezone,
+          hour: '2-digit',
+          minute: '2-digit',
+          hourCycle: 'h23',
+        })
+          .formatToParts(d)
+          .reduce<Record<string, string>>((acc, p) => {
+            if (p.type !== 'literal') acc[p.type] = p.value;
+            return acc;
+          }, {});
+        return Number(parts.hour) * 60 + Number(parts.minute);
+      };
+      buckets[dayDiff]!.push({
+        startMinute: localMinutes(bStart),
+        endMinute: localMinutes(bEnd),
+      });
+    }
+    for (const bucket of buckets) {
+      bucket.sort((a, b) => a.startMinute - b.startMinute);
+    }
+    return buckets;
+  }, [props.busyBlocks, props.weekStart, props.availability.timezone]);
+
   return (
     <section>
       <div className="mb-3 flex items-baseline justify-between">
@@ -96,6 +145,7 @@ export function WeekPreview(props: WeekPreviewProps) {
               dateLabel={dateLabel}
               capMinutes={props.availability.capByWeekday[idx] ?? null}
               slots={props.availability.slotsByWeekday[idx] ?? []}
+              busyBlocks={busyByWeekday[idx]}
               items={cards.buckets[idx]!}
               contributesOverflow={cards.dayHasOverflow[idx]}
               onItemClick={props.onItemClick}

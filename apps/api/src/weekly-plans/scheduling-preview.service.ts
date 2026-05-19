@@ -35,9 +35,18 @@ export type PreviewPlacement = {
   durationMinutes: number;
 };
 
+export type PreviewBusyBlock = { start: string; end: string };
+
 export type PreviewResult = {
   placements: PreviewPlacement[];
   overflow: Array<{ itemId: string; minutesRequired: number }>;
+  /**
+   * Google Calendar busy blocks overlapping the plan's week, as the scheduler
+   * saw them. Surfaced so the editor can render them on day cards — otherwise
+   * admin sees "FREE 60m" on a slot that was actually fully consumed by a
+   * meeting and wonders why the scheduler skipped the day.
+   */
+  busyBlocks: PreviewBusyBlock[];
   weekStart: string;
   weekEnd: string;
 };
@@ -65,6 +74,7 @@ export class SchedulingPreviewService {
       return {
         placements: [],
         overflow: [],
+        busyBlocks: [],
         weekStart: plan.weekStart.toISOString(),
         weekEnd: plan.weekEnd.toISOString(),
       };
@@ -104,6 +114,10 @@ export class SchedulingPreviewService {
         durationMinutes: s.durationMinutes,
       })),
       overflow: result.overflow,
+      busyBlocks: busyBlocks.map((b) => ({
+        start: b.start.toISOString(),
+        end: b.end.toISOString(),
+      })),
       weekStart: plan.weekStart.toISOString(),
       weekEnd: plan.weekEnd.toISOString(),
     };

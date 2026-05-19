@@ -844,6 +844,7 @@ export default function PlanEditorPage({
                   weekStart={plan.weekStart}
                   availability={weekAvailability}
                   placements={placements}
+                  busyBlocks={preview.data?.busyBlocks ?? []}
                   items={plan.items}
                   overflowItemIds={overflowItemIds}
                   isUpdating={!hasPersisted && preview.isFetching}

@@ -10,9 +10,12 @@ export type SchedulingPlacement = {
   durationMinutes: number;
 };
 
+export type PreviewBusyBlock = { start: string; end: string };
+
 export type SchedulingPreview = {
   placements: SchedulingPlacement[];
   overflow: Array<{ itemId: string; minutesRequired: number }>;
+  busyBlocks: PreviewBusyBlock[];
   weekStart: string;
   weekEnd: string;
 };
