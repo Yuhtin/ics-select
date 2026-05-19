@@ -23,6 +23,7 @@ import {
 } from '../../../../../../../lib/queries/admin-plan-editor';
 import {
   useSchedulingPreview,
+  useReorganizeForFit,
   type PreviewItem,
 } from '../../../../../../../lib/queries/admin-plan-preview';
 import { useTopics } from '../../../../../../../lib/queries/admin-topics';
@@ -171,6 +172,7 @@ export default function PlanEditorPage({
   const deletePlan = useDeletePlan();
   const editPublished = useEditPublishedPlan();
   const reschedulePending = useReschedulePending();
+  const reorganize = useReorganizeForFit();
 
   const previewItems: PreviewItem[] = useMemo(
     () =>
@@ -268,6 +270,54 @@ export default function PlanEditorPage({
     el.scrollIntoView({ behavior: 'smooth', block: 'center' });
     el.classList.add('ring-2', 'ring-focus/40');
     setTimeout(() => el.classList.remove('ring-2', 'ring-focus/40'), 2000);
+  }
+
+  async function handleReorganize() {
+    if (!plan || previewItems.length === 0) return;
+    try {
+      const res = await reorganize.mutateAsync({
+        planId: plan.id,
+        items: previewItems,
+      });
+      // Rebuild the editor list order from the relaxed result: items grouped
+      // by earliest scheduledAt asc; items still in overflow appended after.
+      const earliestByLibId = new Map<string, string>();
+      for (const p of res.placements) {
+        const prev = earliestByLibId.get(p.itemId);
+        if (!prev || p.scheduledAt < prev) earliestByLibId.set(p.itemId, p.scheduledAt);
+      }
+      const placed = plan.items
+        .filter((i) => earliestByLibId.has(i.libraryItemId))
+        .sort((a, b) =>
+          earliestByLibId.get(a.libraryItemId)!.localeCompare(
+            earliestByLibId.get(b.libraryItemId)!,
+          ),
+        );
+      const overflowIds = new Set(res.overflow.map((o) => o.itemId));
+      const overflowItems = plan.items.filter((i) => overflowIds.has(i.libraryItemId));
+      const reordered = [...placed, ...overflowItems].map((i, idx) => ({
+        ...i,
+        order: idx,
+      }));
+      setPlan({ ...plan, items: reordered });
+      const fit = res.placements.length > 0 ? new Set(res.placements.map((p) => p.itemId)).size : 0;
+      const total = previewItems.length;
+      addToast({
+        title:
+          res.overflow.length === 0
+            ? `Reorganizado · ${fit}/${total} encaixaram`
+            : `Reorganizado · ${fit}/${total} encaixaram · ${res.overflow.length} ainda fora`,
+        description:
+          'A ordem pedagógica foi relaxada. Salve o draft pra persistir.',
+        color: res.overflow.length === 0 ? 'success' : 'warning',
+      });
+    } catch (err) {
+      addToast({
+        title: 'Reorganize falhou',
+        description: err instanceof Error ? err.message : 'Unknown error',
+        color: 'danger',
+      });
+    }
   }
 
   const fetchMissingLibraryItems = async (ids: string[]): Promise<void> => {
@@ -754,6 +804,14 @@ export default function PlanEditorPage({
               overflow={overflow}
               items={plan.items}
               memberId={memberId}
+              onReorganize={
+                plan.status === 'DRAFT'
+                  ? () => {
+                      void handleReorganize();
+                    }
+                  : undefined
+              }
+              reorganizing={reorganize.isPending}
             />
           </>
         )}

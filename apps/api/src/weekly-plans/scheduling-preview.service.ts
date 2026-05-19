@@ -23,7 +23,11 @@ export type PreviewItemInput = {
   estimatedMinutes?: number;
 };
 
-export type PreviewBody = { items?: PreviewItemInput[] };
+export type PreviewBody = {
+  items?: PreviewItemInput[];
+  /** When true, scheduler packs by descending duration instead of order. */
+  relaxOrder?: boolean;
+};
 
 export type PreviewPlacement = {
   itemId: string;
@@ -90,6 +94,7 @@ export class SchedulingPreviewService {
         estimatedMinutes: i.estimatedMinutes ?? 60,
       })),
       now: new Date(),
+      relaxOrder: body.relaxOrder ?? false,
     });
 
     return {

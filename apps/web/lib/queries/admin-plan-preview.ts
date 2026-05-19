@@ -1,6 +1,6 @@
 'use client';
 import { useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { apiFetch } from '../api/client';
 import { useDebouncedValue } from '../hooks/use-debounced-value';
 
@@ -46,5 +46,24 @@ export function useSchedulingPreview(
       }),
     enabled: Boolean(planId) && planId !== 'new' && enabled,
     placeholderData: (previous) => previous,
+  });
+}
+
+/**
+ * Run the preview with relaxOrder=true to compute the best-fitting order.
+ * Returns placements + overflow; caller decides how to re-sequence the
+ * editor list (typically: items grouped by scheduledAt ascending; overflow
+ * appended to the tail).
+ */
+export function useReorganizeForFit() {
+  return useMutation({
+    mutationFn: (input: { planId: string; items: PreviewItem[] }) =>
+      apiFetch<SchedulingPreview>(
+        `/plans/${input.planId}/preview-scheduling`,
+        {
+          method: 'POST',
+          body: JSON.stringify({ items: input.items, relaxOrder: true }),
+        },
+      ),
   });
 }

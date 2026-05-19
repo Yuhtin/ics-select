@@ -111,6 +111,27 @@ describe('SchedulingPreviewService', () => {
     expect(result.overflow.length).toBeGreaterThan(0);
   });
 
+  it('relaxOrder places at least as many items as strict order', async () => {
+    // Setup: 5 items where strict order forces overflow because the first big
+    // item consumes a slot that later items can't share. Relaxed FFD packs
+    // larger first and should fit more.
+    const prisma = fakePrisma({ plan: PLAN, availability: AVAILABILITY, slots: SLOTS });
+    const svc = buildService(prisma);
+
+    const items = [
+      { libraryItemId: 'lib-A', order: 0, estimatedMinutes: 90 },
+      { libraryItemId: 'lib-B', order: 1, estimatedMinutes: 30 },
+      { libraryItemId: 'lib-C', order: 2, estimatedMinutes: 30 },
+      { libraryItemId: 'lib-D', order: 3, estimatedMinutes: 60 },
+      { libraryItemId: 'lib-E', order: 4, estimatedMinutes: 30 },
+    ];
+
+    const strict = await svc.preview('plan-1', { items, relaxOrder: false });
+    const relaxed = await svc.preview('plan-1', { items, relaxOrder: true });
+
+    expect(relaxed.placements.length).toBeGreaterThanOrEqual(strict.placements.length);
+  });
+
   it('throws NotFoundException when plan is missing', async () => {
     const prisma = fakePrisma({ plan: null });
     const svc = buildService(prisma);

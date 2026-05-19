@@ -23,6 +23,13 @@ export type SchedulerInput = {
   busyBlocks: BusyBlock[];
   items: ItemInput[];
   now?: Date;
+  /**
+   * When true, the scheduler drops the strict `item.order` constraint and
+   * packs chunks by descending duration (first-fit-decreasing). Used by the
+   * admin's "Reorganizar pra encaixar" action to maximize fit when a strict
+   * ordering produced overflow. Pedagogical order is lost.
+   */
+  relaxOrder?: boolean;
 };
 
 export type PlannedSession = {

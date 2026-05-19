@@ -33,10 +33,18 @@ export function phase1(
   intervals: EffectiveInterval[],
   caps: (number | null)[],
   pref: number,
+  relaxOrder = false,
 ): Solution {
-  const ordered = [...chunks].sort((a, b) =>
-    a.order - b.order || a.seq - b.seq,
-  );
+  // Strict mode (default): place chunks in (order, seq) — pedagogical sequence
+  // is preserved, and the wall-clock cursor below prevents reordering.
+  // Relaxed mode: first-fit-decreasing — pack larger chunks first to maximize
+  // total minutes placed. Within equal sizes, keep (order, seq) for determinism.
+  const ordered = relaxOrder
+    ? [...chunks].sort(
+        (a, b) =>
+          b.minutes - a.minutes || a.order - b.order || a.seq - b.seq,
+      )
+    : [...chunks].sort((a, b) => a.order - b.order || a.seq - b.seq);
 
   const states: IntervalState[] = intervals.map(() => ({
     cursorOffset: 0,
@@ -71,8 +79,12 @@ export function phase1(
 
       // Earliest offset honoring (a) what's already placed in this interval and
       // (b) the global wall-clock cursor (no chunk may start before the previous
-      // chunk's end).
-      const minOffsetByCursor = Math.max(0, cursorMOW - intervalStartMOW);
+      // chunk's end). In relaxed mode, the wall-clock cursor is dropped so
+      // chunks can be packed in any time order — only intra-interval cursor
+      // (cursorOffset) still prevents overlap.
+      const minOffsetByCursor = relaxOrder
+        ? 0
+        : Math.max(0, cursorMOW - intervalStartMOW);
       const offset = Math.max(states[idx]!.cursorOffset, minOffsetByCursor);
 
       if (offset + chunk.minutes > intervalSize) continue;

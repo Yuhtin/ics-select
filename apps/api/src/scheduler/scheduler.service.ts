@@ -42,7 +42,13 @@ export class SchedulerService {
     const chunksMs = Date.now() - tChunks;
 
     const tPhase1 = Date.now();
-    const solution = phase1(chunks, intervals, input.availability.caps, pref);
+    const solution = phase1(
+      chunks,
+      intervals,
+      input.availability.caps,
+      pref,
+      input.relaxOrder ?? false,
+    );
     const phase1Ms = Date.now() - tPhase1;
 
     const tCost = Date.now();

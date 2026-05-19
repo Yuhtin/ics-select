@@ -7,6 +7,7 @@ import { SchedulingPreviewService } from './scheduling-preview.service.js';
 
 type PreviewBodyDto = {
   items?: Array<{ libraryItemId: string; order: number; estimatedMinutes?: number }>;
+  relaxOrder?: boolean;
 };
 
 @Controller()
@@ -31,6 +32,9 @@ export class SchedulingPreviewController {
     if (user.role !== 'ADMIN' && plan.userId !== user.sub) {
       throw new NotFoundException('plan not found');
     }
-    return this.preview.preview(id, { items: body?.items });
+    return this.preview.preview(id, {
+      items: body?.items,
+      relaxOrder: body?.relaxOrder ?? false,
+    });
   }
 }

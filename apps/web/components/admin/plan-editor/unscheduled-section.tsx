@@ -1,5 +1,5 @@
 'use client';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Shuffle } from 'lucide-react';
 import { SectionLabel } from '../../ui/section-label';
 import { detectPlatform, platformLabel } from '../../../lib/format/platform';
 import { formatMinutes } from '../../../lib/format/time';
@@ -9,12 +9,16 @@ export type UnscheduledSectionProps = {
   overflow: Array<{ itemId: string; minutesRequired: number }>;
   items: WeeklyPlanItem[];
   memberId: string;
+  onReorganize?: () => void;
+  reorganizing?: boolean;
 };
 
 export function UnscheduledSection({
   overflow,
   items,
   memberId,
+  onReorganize,
+  reorganizing = false,
 }: UnscheduledSectionProps) {
   if (overflow.length === 0) return null;
 
@@ -36,6 +40,17 @@ export function UnscheduledSection({
           />
           Unscheduled · {overflow.length} {overflow.length === 1 ? 'item' : 'items'}
         </SectionLabel>
+        {onReorganize && (
+          <button
+            type="button"
+            onClick={onReorganize}
+            disabled={reorganizing}
+            className="inline-flex items-center gap-1.5 rounded-pill border border-ink/30 bg-ink px-3 py-1 font-mono text-[10px] uppercase tracking-label text-paper hover:opacity-90 disabled:opacity-50"
+          >
+            <Shuffle className="h-3 w-3" strokeWidth={1.5} />
+            {reorganizing ? 'Reorganizando…' : 'Reorganizar pra encaixar'}
+          </button>
+        )}
       </div>
       <p className="mb-3 font-sans text-sm italic text-ink-soft">
         Não cabem na disponibilidade declarada esta semana.
