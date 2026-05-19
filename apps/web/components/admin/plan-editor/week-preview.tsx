@@ -44,6 +44,44 @@ function dayIdxOf(iso: string, weekStartIso: string): number {
   return Math.max(0, Math.min(6, diff));
 }
 
+/**
+ * Compute the UTC milliseconds for a (year, month, day, hour, minute) tuple
+ * interpreted in `tz`. Mirrors the backend `localMinuteToUtc` so frontend
+ * past-slot detection matches what the scheduler considered past.
+ */
+function localToUtcMs(
+  year: number,
+  month: number,
+  day: number,
+  hour: number,
+  minute: number,
+  tz: string,
+): number {
+  const naiveUtc = Date.UTC(year, month - 1, day, hour, minute);
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: tz,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(new Date(naiveUtc));
+  const map: Record<string, string> = {};
+  for (const p of parts) if (p.type !== 'literal') map[p.type] = p.value;
+  const asUtcMs = Date.UTC(
+    Number(map.year),
+    Number(map.month) - 1,
+    Number(map.day),
+    Number(map.hour),
+    Number(map.minute),
+    Number(map.second),
+  );
+  const offsetMin = Math.round((asUtcMs - naiveUtc) / 60_000);
+  return naiveUtc - offsetMin * 60_000;
+}
+
 export function WeekPreview(props: WeekPreviewProps) {
   const itemsByLibId = useMemo(() => {
     const map = new Map<string, WeeklyPlanItem>();
@@ -138,13 +176,29 @@ export function WeekPreview(props: WeekPreviewProps) {
             month: 'short',
             timeZone: 'UTC',
           })}`;
+          // Mark slots whose end is already past in the member's timezone, so
+          // the card distinguishes "free but past" from "free and bookable".
+          const nowMs = Date.now();
+          const tz = props.availability.timezone;
+          const rawSlots = props.availability.slotsByWeekday[idx] ?? [];
+          const slotsWithPast = rawSlots.map((s) => {
+            const endUtcMs = localToUtcMs(
+              dayDate.getUTCFullYear(),
+              dayDate.getUTCMonth() + 1,
+              dayDate.getUTCDate(),
+              Math.floor(s.endMinute / 60),
+              s.endMinute % 60,
+              tz,
+            );
+            return { ...s, isPast: endUtcMs <= nowMs };
+          });
           return (
             <WeekDayCard
               key={label}
               label={label}
               dateLabel={dateLabel}
               capMinutes={props.availability.capByWeekday[idx] ?? null}
-              slots={props.availability.slotsByWeekday[idx] ?? []}
+              slots={slotsWithPast}
               busyBlocks={busyByWeekday[idx]}
               items={cards.buckets[idx]!}
               contributesOverflow={cards.dayHasOverflow[idx]}

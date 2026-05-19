@@ -15,7 +15,12 @@ export type DayCardItem = {
   durationMinutes: number;
 };
 
-export type DayCardSlot = { startMinute: number; endMinute: number };
+export type DayCardSlot = {
+  startMinute: number;
+  endMinute: number;
+  /** Slot end already passed in the member's timezone. */
+  isPast?: boolean;
+};
 export type DayCardBusyBlock = { startMinute: number; endMinute: number };
 
 export type WeekDayCardProps = {
@@ -51,12 +56,16 @@ export function WeekDayCard(props: WeekDayCardProps) {
   // "no slots" rather than free time to avoid misleading "FREE Nm" in the
   // footer.
   const noSlots = !isOff && props.slots.length === 0;
+  const futureSlots = props.slots.filter((s) => !s.isPast);
+  // All declared slots are already in the past in the member's timezone —
+  // scheduler can't use this day anymore. Treat similarly to noSlots.
+  const allPast = !isOff && !noSlots && futureSlots.length === 0;
   const scheduledMinutes = props.items.reduce((sum, i) => sum + i.durationMinutes, 0);
-  // How many minutes does Calendar busy consume *inside* the declared slots?
+  // How many minutes does Calendar busy consume *inside* the future slots?
   // Anything outside the slots doesn't reduce free capacity (the member never
   // claimed it as study time).
   const busyInSlots = (props.busyBlocks ?? []).reduce((sum, b) => {
-    for (const s of props.slots) {
+    for (const s of futureSlots) {
       const overlap = Math.max(
         0,
         Math.min(b.endMinute, s.endMinute) - Math.max(b.startMinute, s.startMinute),
@@ -66,7 +75,7 @@ export function WeekDayCard(props: WeekDayCardProps) {
     return sum;
   }, 0);
   const free =
-    isOff || noSlots
+    isOff || noSlots || allPast
       ? 0
       : Math.max(0, (props.capMinutes ?? 0) - scheduledMinutes - busyInSlots);
 
@@ -75,7 +84,7 @@ export function WeekDayCard(props: WeekDayCardProps) {
       className={clsx(
         'rounded-card border bg-surface p-3 min-w-0',
         props.contributesOverflow ? 'border-l-2 border-l-outcome-stuck' : 'border-rule',
-        (isOff || noSlots) && 'bg-paper-warm',
+        (isOff || noSlots || allPast) && 'bg-paper-warm',
       )}
     >
       <header className="mb-2">
@@ -89,7 +98,7 @@ export function WeekDayCard(props: WeekDayCardProps) {
         <p
           className={clsx(
             'font-mono text-[10px] uppercase tracking-label',
-            isOff || noSlots ? 'italic text-ink-mute' : 'text-ink-soft',
+            isOff || noSlots || allPast ? 'italic text-ink-mute' : 'text-ink-soft',
           )}
         >
           {isOff ? 'OFF' : `${props.capMinutes}m cap`}
@@ -97,11 +106,17 @@ export function WeekDayCard(props: WeekDayCardProps) {
         {noSlots && (
           <p className="font-mono text-[10px] italic text-ink-mute">no slot · sem janela</p>
         )}
+        {allPast && (
+          <p className="font-mono text-[10px] italic text-ink-mute">passou · slots no passado</p>
+        )}
         {!isOff &&
           props.slots.map((s, idx) => (
             <p
               key={idx}
-              className="font-mono text-[10px] text-ink-mute tabular-nums"
+              className={clsx(
+                'font-mono text-[10px] tabular-nums',
+                s.isPast ? 'text-ink-faint line-through' : 'text-ink-mute',
+              )}
             >
               {formatSlot(s)}
             </p>
@@ -167,14 +182,14 @@ export function WeekDayCard(props: WeekDayCardProps) {
       <p
         className={clsx(
           'font-mono text-[10px] uppercase tracking-label',
-          isOff || noSlots
+          isOff || noSlots || allPast
             ? 'italic text-ink-mute'
             : free > 0
               ? 'text-outcome-done-easy'
               : 'text-ink-mute',
         )}
       >
-        {isOff || noSlots ? '—' : `free ${free}m`}
+        {isOff || noSlots || allPast ? '—' : `free ${free}m`}
       </p>
     </div>
   );
