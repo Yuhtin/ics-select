@@ -128,6 +128,9 @@ export function EditablePlanPanel({
     <div className="space-y-8">
       <header className="space-y-2">
         <Eyebrow>The plan · editable</Eyebrow>
+        <p className="font-serif-tool text-lg font-semibold text-ink-soft">
+          {context.member.name}
+        </p>
         <h2 className="font-serif-tool text-2xl font-semibold tracking-tight text-ink">
           Week {context.cycle.weekNumber} · {formatShort(plan.weekStart)} — {formatShort(plan.weekEnd)}
         </h2>

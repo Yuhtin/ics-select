@@ -3,6 +3,13 @@ import { GripVertical, X } from 'lucide-react';
 import { clsx } from 'clsx';
 import type { WeeklyPlanItem } from '../../../lib/queries/admin-plan-editor';
 
+function formatScheduled(iso: string, minutes: number | null): string {
+  const d = new Date(iso);
+  const day = d.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' });
+  const time = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  return minutes ? `${day} · ${time} · ${minutes}m` : `${day} · ${time}`;
+}
+
 const OUTCOME_BORDER: Record<WeeklyPlanItem['outcome'], string | null> = {
   PENDING: null,
   DONE_EASY: 'border-2 border-outcome-done-easy',
@@ -97,6 +104,14 @@ export function ItemCard({
           )}
           <span>·</span>
           <span>{item.libraryItem.estimatedMinutes}m</span>
+          {item.scheduledAt && (
+            <>
+              <span>·</span>
+              <span className="text-ink-soft">
+                {formatScheduled(item.scheduledAt, item.scheduledMinutes)}
+              </span>
+            </>
+          )}
         </div>
       </div>
       <div className="flex flex-col items-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity font-mono text-xs">

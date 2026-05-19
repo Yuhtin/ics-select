@@ -44,15 +44,20 @@ function formatSlot(s: DayCardSlot): string {
 
 export function WeekDayCard(props: WeekDayCardProps) {
   const isOff = !props.capMinutes || props.capMinutes === 0;
+  // Cap is set but the member has no AvailabilitySlot rows for this weekday —
+  // scheduler has no window to place anything, so the cap is dead. Treat as
+  // "no slots" rather than free time to avoid misleading "FREE Nm" in the
+  // footer.
+  const noSlots = !isOff && props.slots.length === 0;
   const scheduledMinutes = props.items.reduce((sum, i) => sum + i.durationMinutes, 0);
-  const free = isOff ? 0 : Math.max(0, (props.capMinutes ?? 0) - scheduledMinutes);
+  const free = isOff || noSlots ? 0 : Math.max(0, (props.capMinutes ?? 0) - scheduledMinutes);
 
   return (
     <div
       className={clsx(
         'rounded-card border bg-surface p-3 min-w-0',
         props.contributesOverflow ? 'border-l-2 border-l-outcome-stuck' : 'border-rule',
-        isOff && 'bg-paper-warm',
+        (isOff || noSlots) && 'bg-paper-warm',
       )}
     >
       <header className="mb-2">
@@ -66,11 +71,14 @@ export function WeekDayCard(props: WeekDayCardProps) {
         <p
           className={clsx(
             'font-mono text-[10px] uppercase tracking-label',
-            isOff ? 'italic text-ink-mute' : 'text-ink-soft',
+            isOff || noSlots ? 'italic text-ink-mute' : 'text-ink-soft',
           )}
         >
           {isOff ? 'OFF' : `${props.capMinutes}m cap`}
         </p>
+        {noSlots && (
+          <p className="font-mono text-[10px] italic text-ink-mute">no slot · sem janela</p>
+        )}
         {!isOff &&
           props.slots.map((s, idx) => (
             <p
@@ -128,14 +136,14 @@ export function WeekDayCard(props: WeekDayCardProps) {
       <p
         className={clsx(
           'font-mono text-[10px] uppercase tracking-label',
-          isOff
+          isOff || noSlots
             ? 'italic text-ink-mute'
             : free > 0
               ? 'text-outcome-done-easy'
               : 'text-ink-mute',
         )}
       >
-        {isOff ? '—' : `free ${free}m`}
+        {isOff || noSlots ? '—' : `free ${free}m`}
       </p>
     </div>
   );
