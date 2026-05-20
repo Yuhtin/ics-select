@@ -336,3 +336,7 @@ Platform colors appear as **3px vertical stripes** before item titles in list ro
 - Commit messages follow `type(scope): subject` (see `git log`). Merges to `main` use `--no-ff` and the release tags follow `vX.Y.Z`.
 - **Never `git add -A` / `git add .`** when committing. The repo regularly carries uncommitted WIP across unrelated paths; sweeping it all into a focused commit produces a misleading message and ships unreviewed work. Always stage by explicit path, then `git status` to confirm before committing. (This burned us once; the fix isn't worth force-pushing.)
 - The three PDFs at the repo root (`Apresentação.pdf`, `Plano Educacional.pdf`, `Proposta.pdf`) are program reference material only; they are gitignored and never committed (the Apresentação exceeds GitHub's 100MB hard limit).
+
+## External resources
+
+- **Architecture icons**: https://github.com/cloudflightio/architecture-icons — SVG icons for cloud services (AWS, GCP, Azure, etc.) used in class lesson diagrams.

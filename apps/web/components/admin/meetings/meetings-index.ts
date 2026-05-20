@@ -1,10 +1,12 @@
 import type { Lesson, MeetingSummary, NodeGroup } from './lesson-types';
 import { urlShortener } from './lessons/url-shortener';
 import { chatMessaging } from './lessons/chat-messaging';
+import { deployJourney } from './lessons/deploy-journey';
 
 const LESSONS: Record<string, Lesson> = {
   [urlShortener.slug]: urlShortener,
   [chatMessaging.slug]: chatMessaging,
+  [deployJourney.slug]: deployJourney,
 };
 
 export function getLesson(slug: string): Lesson | undefined {

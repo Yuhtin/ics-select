@@ -1,4 +1,14 @@
-export type NodeGroup = 'foundations' | 'url' | 'pivot' | 'chat' | 'synthesis';
+export type NodeGroup =
+  | 'foundations'
+  | 'url'
+  | 'pivot'
+  | 'chat'
+  | 'synthesis'
+  | 'local'
+  | 'containers'
+  | 'cloud'
+  | 'scale'
+  | 'devops';
 
 export type Asker = {
   name: string;
@@ -36,6 +46,8 @@ export type LessonNode = {
   followup: string;
   gotcha: string;
   scenarios?: ResponseScenarios;
+  /** Mermaid diagram source — render in Obsidian or any Mermaid-compatible viewer */
+  diagram?: string;
 };
 
 export type Lesson = {
