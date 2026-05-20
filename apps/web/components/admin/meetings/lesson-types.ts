@@ -8,7 +8,8 @@ export type NodeGroup =
   | 'containers'
   | 'cloud'
   | 'scale'
-  | 'devops';
+  | 'devops'
+  | 'infra';
 
 export type Asker = {
   name: string;
@@ -48,6 +49,10 @@ export type LessonNode = {
   scenarios?: ResponseScenarios;
   /** Mermaid diagram source — render in Obsidian or any Mermaid-compatible viewer */
   diagram?: string;
+  /** URL or /public path to a rendered diagram image (PNG/SVG). Takes precedence over diagram when set. */
+  diagramUrl?: string;
+  /** Terms introduced in this beat — shown as chips in the section header */
+  tags?: string[];
 };
 
 export type Lesson = {

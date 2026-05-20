@@ -90,4 +90,12 @@ export const GROUP_META: Record<NodeGroup, GroupVisual> = {
     stripeClass: 'bg-success',
     tintClass: 'bg-success-soft/40',
   },
+  infra: {
+    label: 'Infra Decisions',
+    eyebrow: 'Infra',
+    accentClass: 'text-reflect',
+    ringClass: 'bg-reflect',
+    stripeClass: 'bg-reflect',
+    tintClass: 'bg-reflect-soft/40',
+  },
 };

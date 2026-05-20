@@ -41,7 +41,7 @@ export function StudyMode({ lesson }: { lesson: Lesson }) {
 
   return (
     <div className="grid gap-10 lg:grid-cols-[240px_minmax(0,1fr)]">
-      <aside className="lg:sticky lg:top-20 lg:self-start">
+      <aside className="lg:sticky lg:top-20 lg:self-start lg:max-h-[calc(100vh-5rem)] lg:overflow-y-auto">
         <SidebarNav lesson={lesson} activeId={activeId} />
       </aside>
 
@@ -233,6 +233,7 @@ function NodeSection({
         <p className="max-w-2xl font-sans text-[17px] leading-relaxed text-fg-soft">
           <Glossarized text={node.oneLine} seen={seen} keyPrefix={`${node.id}-one`} />
         </p>
+        {node.tags && node.tags.length > 0 && <TagsRow tags={node.tags} />}
       </div>
 
       <AnimatePresence mode="wait">
@@ -253,19 +254,45 @@ function NodeSection({
   );
 }
 
-function DiagramBlock({ diagram }: { diagram: string }) {
+function TagsRow({ tags }: { tags: string[] }) {
   return (
-    <div className="rounded-card border border-border-token bg-bg-subtle">
-      <div className="border-b border-border-token px-4 py-2">
-        <span className="font-mono text-[10px] uppercase tracking-eyebrow text-fg-mute">
-          Diagrama · Mermaid
+    <div className="flex flex-wrap gap-1.5">
+      {tags.map((tag) => (
+        <span
+          key={tag}
+          className="inline-flex items-center rounded-pill border border-border-token bg-surface px-2 py-0.5 font-mono text-[10px] uppercase tracking-eyebrow text-fg-mute"
+        >
+          {tag}
         </span>
-      </div>
-      <pre className="overflow-x-auto p-4 font-mono text-xs leading-relaxed text-fg-soft">
-        <code>{diagram}</code>
-      </pre>
+      ))}
     </div>
   );
+}
+
+function DiagramMedia({ node }: { node: LessonNode }) {
+  if (node.diagramUrl) {
+    return (
+      <div className="overflow-hidden rounded-card border border-border-token">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={node.diagramUrl} alt={`Diagrama: ${node.label}`} className="w-full" />
+      </div>
+    );
+  }
+  if (node.diagram) {
+    return (
+      <div className="rounded-card border border-border-token bg-bg-subtle">
+        <div className="border-b border-border-token px-4 py-2">
+          <span className="font-mono text-[10px] uppercase tracking-eyebrow text-fg-mute">
+            Diagrama · Mermaid
+          </span>
+        </div>
+        <pre className="overflow-x-auto p-4 font-mono text-xs leading-relaxed text-fg-soft">
+          <code>{node.diagram}</code>
+        </pre>
+      </div>
+    );
+  }
+  return null;
 }
 
 function OverviewPass({ node, seen }: { node: LessonNode; seen: Set<string> }) {
@@ -274,7 +301,7 @@ function OverviewPass({ node, seen }: { node: LessonNode; seen: Set<string> }) {
       <p className="font-sans text-[17px] leading-[1.75] text-fg-soft">
         <Glossarized text={node.pass1} seen={seen} keyPrefix={`${node.id}-p1`} />
       </p>
-      {node.diagram && <DiagramBlock diagram={node.diagram} />}
+      <DiagramMedia node={node} />
       <AskerBadgeRow node={node} />
     </div>
   );
@@ -300,7 +327,7 @@ function DeepPass({ node, seen }: { node: LessonNode; seen: Set<string> }) {
           <AskerCard node={node} seen={seen} />
         </aside>
       </div>
-      {node.diagram && <DiagramBlock diagram={node.diagram} />}
+      <DiagramMedia node={node} />
     </div>
   );
 }
@@ -358,14 +385,15 @@ function AnchorCard({ node, seen }: { node: LessonNode; seen: Set<string> }) {
 }
 
 function AskerCard({ node, seen }: { node: LessonNode; seen: Set<string> }) {
+  const top3 = node.askWho.slice(0, 3);
   return (
     <div className="rounded-card border border-border-token bg-surface p-5">
-      <Eyebrow className="mb-3">Pra quem perguntar</Eyebrow>
+      <Eyebrow className="mb-3">Top 3 pra perguntar</Eyebrow>
       <ul className="space-y-3">
-        {node.askWho.map((a, i) => (
+        {top3.map((a, i) => (
           <li key={i} className="flex items-start gap-3">
-            <span className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-bg-subtle text-fg-soft">
-              <Users className="h-3 w-3" strokeWidth={1.8} />
+            <span className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-bg-subtle font-mono text-[11px] font-bold text-fg-mute">
+              {i + 1}
             </span>
             <div className="min-w-0 flex-1">
               <p className="font-sans text-sm font-semibold text-fg">
@@ -415,21 +443,15 @@ function FollowupCard({ node, seen }: { node: LessonNode; seen: Set<string> }) {
 }
 
 function AskerBadgeRow({ node }: { node: LessonNode }) {
-  if (node.askWho.length === 0) return null;
+  const top3 = node.askWho.slice(0, 3);
+  if (top3.length === 0) return null;
+  const names = top3
+    .map((a) => (a.name === 'open' ? 'grupo' : a.name.split(' ')[0]))
+    .join(', ');
   return (
-    <div className="mt-6 flex flex-wrap items-center gap-2">
-      <span className="font-mono text-[10px] uppercase tracking-eyebrow text-fg-mute">
-        Ask:
-      </span>
-      {node.askWho.map((a) => (
-        <span
-          key={a.name}
-          className="inline-flex items-center gap-1 rounded-pill border border-border-token bg-surface px-2.5 py-1 font-sans text-xs text-fg"
-        >
-          <Users className="h-3 w-3 text-fg-faint" strokeWidth={1.8} />
-          {a.name === 'open' ? 'grupo aberto' : a.name}
-        </span>
-      ))}
+    <div className="mt-4 flex items-center gap-2 text-[13px] text-fg-mute">
+      <Users className="h-3.5 w-3.5 shrink-0" strokeWidth={1.8} />
+      <span>({names})</span>
     </div>
   );
 }

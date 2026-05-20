@@ -155,17 +155,31 @@ function FocusCard({ node }: { node: LessonNode }) {
       />
       <header
         className={clsx(
-          'flex flex-wrap items-baseline justify-between gap-3 border-b border-border-token px-7 py-4',
+          'border-b border-border-token px-7 py-4',
           meta.tintClass,
         )}
       >
-        <Eyebrow className={meta.accentClass}>
-          {meta.eyebrow}
-          {typeof node.beat === 'number' && (
-            <span className="ml-2 text-fg-mute">· beat #{node.beat}</span>
-          )}
-        </Eyebrow>
-        <h2 className="font-serif text-xl font-semibold text-fg">{node.label}</h2>
+        <div className="flex flex-wrap items-baseline justify-between gap-3">
+          <Eyebrow className={meta.accentClass}>
+            {meta.eyebrow}
+            {typeof node.beat === 'number' && (
+              <span className="ml-2 text-fg-mute">· beat #{node.beat}</span>
+            )}
+          </Eyebrow>
+          <h2 className="font-serif text-xl font-semibold text-fg">{node.label}</h2>
+        </div>
+        {node.tags && node.tags.length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {node.tags.map((tag) => (
+              <span
+                key={tag}
+                className="inline-flex items-center rounded-pill border border-border-token/60 bg-bg-subtle/80 px-2 py-0.5 font-mono text-[10px] uppercase tracking-eyebrow text-fg-mute"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
       </header>
 
       <div className="grid gap-0 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] lg:divide-x lg:divide-border-token">
@@ -178,7 +192,12 @@ function FocusCard({ node }: { node: LessonNode }) {
             <p className="mt-4 font-sans text-[15px] leading-relaxed text-fg-soft">
               <Glossarized text={node.oneLine} seen={seen} keyPrefix={`${node.id}-one`} />
             </p>
-            {node.diagram && (
+            {node.diagramUrl ? (
+              <div className="mt-5 overflow-hidden rounded-card border border-border-token">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={node.diagramUrl} alt={`Diagrama: ${node.label}`} className="w-full" />
+              </div>
+            ) : node.diagram ? (
               <div className="mt-5 rounded-card border border-border-token bg-bg-subtle">
                 <div className="border-b border-border-token px-3 py-1.5">
                   <span className="font-mono text-[10px] uppercase tracking-eyebrow text-fg-mute">
@@ -189,19 +208,19 @@ function FocusCard({ node }: { node: LessonNode }) {
                   <code>{node.diagram}</code>
                 </pre>
               </div>
-            )}
+            ) : null}
           </div>
 
           <div>
-            <Eyebrow className="mb-3">Pra quem perguntar</Eyebrow>
+            <Eyebrow className="mb-3">Top 3 pra perguntar</Eyebrow>
             <div className="flex flex-col gap-2.5">
-              {node.askWho.map((a, i) => (
+              {node.askWho.slice(0, 3).map((a, i) => (
                 <div
                   key={i}
                   className="flex items-start gap-3 rounded-input border border-border-token bg-bg-subtle/50 p-3"
                 >
-                  <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-surface text-fg-soft">
-                    <Users className="h-3.5 w-3.5" strokeWidth={1.8} />
+                  <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-surface font-mono text-[11px] font-bold text-fg-mute">
+                    {i + 1}
                   </span>
                   <div className="min-w-0 flex-1">
                     <p className="font-sans text-sm font-semibold leading-tight text-fg">
