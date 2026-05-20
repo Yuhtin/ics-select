@@ -176,6 +176,12 @@ const slides = [
     title: 'Você muda <span class="text-cyan-400">uma linha</span> de TypeScript.<br/>Roda <code class="mono text-cyan-400">docker build</code> de novo.<br/>O que precisa rodar?',
     subtitle: 'O primeiro build demora minutos. Os próximos voltam em segundos. Por quê?',
     tags: ['FROM', 'COPY', 'RUN', 'CMD', 'layer-cache', 'multi-stage'] },
+  { type: 'diagramFull', group: 'containers', beat: 4,
+    img: `${D}/external/docker-layer-cache.png`,
+    title: 'Cada instrução do Dockerfile vira uma camada. O build empilha de baixo pra cima.' },
+  { type: 'diagramFull', group: 'containers', beat: 4,
+    img: `${D}/external/docker-layer-cache-invalidated.png`,
+    title: 'Mudou uma camada do meio? Tudo que vem depois reexecuta. Por isso o código vai por último.' },
   { type: 'code', group: 'containers', beat: 4,
     title: 'Dockerfile · ordem importa',
     code: [
@@ -209,6 +215,9 @@ const slides = [
   { type: 'diagram', group: 'containers', beat: 5,
     caption: 'Containers se acham pelo nome do serviço (db, não localhost). Browser só vê portas mapeadas.',
     img: `${D}/docker-compose.png` },
+  { type: 'diagramFull', group: 'containers', beat: 5,
+    img: `${D}/external/docker-bridge-network.png`,
+    title: 'Por baixo: cada container tem um veth ligado ao bridge virtual no host. É um switch L2 em software.' },
 
   // ─── CLOUD ──────────────────────────────────────────────────────
   { type: 'divider', group: 'cloud', num: '03', label: 'Cloud · AWS',
@@ -247,6 +256,9 @@ const slides = [
   { type: 'diagram', group: 'cloud', beat: 7,
     caption: 'O container assume uma IAM Role. Sem access keys, sem WhatsApp.',
     img: `${D}/aws-ssm.png` },
+  { type: 'diagramFull', group: 'cloud', beat: 7,
+    img: `${D}/external/aws-ec2-iam-role.png`,
+    title: 'O fluxo de IAM Role na AWS, em 4 passos: admin cria, dev anexa na instância, app lê credencial via instance metadata, app acessa S3.' },
 
   { type: 'hook', group: 'cloud', beat: 8,
     title: 'Seu Dockerfile funciona local.<br/>Você quer <span class="text-orange-400">subir na AWS</span>.<br/>EC2 ou ECS?',
@@ -265,6 +277,9 @@ const slides = [
   { type: 'diagram', group: 'cloud', beat: 8,
     caption: 'git push → CI builda → ECR armazena → ECS roda. Você nunca faz SSH.',
     img: `${D}/cloud-deploy.png` },
+  { type: 'diagramFull', group: 'cloud', beat: 8,
+    img: `${D}/external/aws-shared-responsibility.jpg`,
+    title: 'Shared Responsibility Model: a linha vai subindo conforme você sai de EC2 e vai pra ECS, Fargate, Lambda. Quanto mais alto, menos sua a operação.' },
 
   // ─── INFRA DECISIONS ────────────────────────────────────────────
   { type: 'divider', group: 'infra', num: '04', label: 'Infra Decisions',
@@ -287,6 +302,9 @@ const slides = [
         'Acesso root, total controle', 'Você gerencia patching, OS', 'A partir de ~$8/mês', 'ML, hardware específico',
       ]},
     ]},
+  { type: 'diagramFull', group: 'infra', beat: 9,
+    img: `${D}/external/vercel-dashboard.png`,
+    title: 'É essa cara que o deploy do Vercel tem. Cada projeto vira um card com preview da home, status do deploy, branch e domínio.' },
 
   { type: 'hook', group: 'infra', beat: 10,
     title: 'O projeto da EJ começa <span class="text-purple-400">amanhã</span>.<br/>Qual banco você sobe primeiro<br/>e por quê?',
@@ -308,6 +326,9 @@ const slides = [
   { type: 'diagram', group: 'infra', beat: 10,
     caption: 'Para EJ: começa com Supabase + Upstash. Cresceu? Migra pra RDS + ElastiCache.',
     img: `${D}/db-cache.png` },
+  { type: 'diagramFull', group: 'infra', beat: 10,
+    img: `${D}/external/supabase-studio.png`,
+    title: 'O Studio do Supabase: editor de tabela visual, auth, storage, tudo num lugar só. Por isso é tão rápido começar.' },
 
   // ─── DEVOPS ─────────────────────────────────────────────────────
   { type: 'divider', group: 'devops', num: '05', label: 'DevOps',
@@ -337,6 +358,9 @@ const slides = [
   { type: 'diagram', group: 'devops', beat: 11,
     caption: 'Test passou → build → push → ECS rolling update. Falhou? Pipeline para.',
     img: `${D}/cicd.png` },
+  { type: 'diagramFull', group: 'devops', beat: 11,
+    img: `${D}/external/github-actions-workflow.png`,
+    title: 'Visualização do GitHub Actions: cada job aparece como um nó, com bolinha de status e linha mostrando dependência. Esse é o pipeline rodando ao vivo.' },
 
   // ─── SYNTHESIS ──────────────────────────────────────────────────
   { type: 'divider', group: 'synthesis', num: '06', label: 'Synthesis',
