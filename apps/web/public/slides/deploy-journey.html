@@ -89,7 +89,8 @@ const slides = [
     text: 'O ponto zero. Você roda npm run dev e funciona — mas tudo isso depende de uma máquina específica.' },
 
   { type: 'hook', group: 'local', beat: 1,
-    title: 'O que acontece quando você roda<br/><span class="text-blue-400">npm run dev</span>?',
+    title: 'Você aperta <span class="text-blue-400">Enter</span> em <code class="mono text-blue-400">npm run dev</code>.<br/>O que acontece até <span class="text-blue-400">localhost:3000</span> responder?',
+    subtitle: 'Liste, em ordem, cada coisa que sobe entre a sua tecla e a primeira request.',
     tags: ['npm', 'node.js', 'porta', 'processo', 'runtime'] },
   { type: 'diagram', group: 'local', beat: 1,
     caption: 'Um processo Node.js sobe na porta 3000. Browser fala TCP com ele.',
@@ -117,8 +118,8 @@ const slides = [
     text: 'Para resolver as 5 camadas de uma vez, você empacota tudo junto. Esse pacote se chama container.' },
 
   { type: 'hook', group: 'containers', beat: 3,
-    title: 'Container <span class="text-neutral-600">vs</span> Máquina virtual.',
-    subtitle: 'O que muda quando você isola um processo via namespaces em vez de emular hardware inteiro?',
+    title: 'Você roda <code class="mono text-cyan-400">docker run</code> no Mac.<br/>Seu colega roda no <span class="text-cyan-400">Linux</span>.<br/>Mesmo comportamento. Como?',
+    subtitle: 'Diferente de instalar dependências numa VM, o container compartilha algo crítico com o host.',
     tags: ['container', 'imagem', 'namespace', 'cgroups', 'kernel'] },
   { type: 'compare', group: 'containers', beat: 3,
     title: 'Container vs VM',
@@ -135,7 +136,8 @@ const slides = [
     img: `${D}/docker-container.png` },
 
   { type: 'hook', group: 'containers', beat: 4,
-    title: 'Cada linha do Dockerfile<br/>vira <span class="text-cyan-400">uma camada cacheada</span>.',
+    title: 'Você muda <span class="text-cyan-400">uma linha</span> de TypeScript.<br/>Roda <code class="mono text-cyan-400">docker build</code> de novo.<br/>O que precisa rodar?',
+    subtitle: 'O build leva minutos da primeira vez e segundos depois. Onde está esse atalho?',
     tags: ['FROM', 'COPY', 'RUN', 'CMD', 'layer-cache', 'multi-stage'] },
   { type: 'code', group: 'containers', beat: 4,
     title: 'Dockerfile · ordem importa',
@@ -150,7 +152,8 @@ const slides = [
     ]},
 
   { type: 'hook', group: 'containers', beat: 5,
-    title: 'Sua API precisa de banco.<br/>Como rodar <span class="text-cyan-400">os dois juntos</span>?',
+    title: 'Sua API roda em <span class="text-cyan-400">um container</span>.<br/>O Postgres em outro.<br/>Como eles se acham?',
+    subtitle: 'A API tem que abrir conexão com o banco. Mas <code class="mono">localhost:5432</code> dentro do container da API aponta pra quem?',
     tags: ['compose', 'service', 'bridge-network', 'volume'] },
   { type: 'code', group: 'containers', beat: 5,
     title: 'docker-compose.yml',
@@ -175,7 +178,8 @@ const slides = [
     text: 'Funciona nos dois PCs. Mas tem credenciais sendo trocadas no WhatsApp, e ninguém configurou um servidor real ainda.' },
 
   { type: 'hook', group: 'cloud', beat: 6,
-    title: '<code class="mono">.env</code> no WhatsApp.<br/><span class="text-orange-400">Três problemas que não somem.</span>',
+    title: 'Você manda o <code class="mono text-orange-400">.env</code> de produção pelo WhatsApp.<br/>6 meses depois, o colega <span class="text-orange-400">sai da empresa</span>.<br/>E aí?',
+    subtitle: 'Liste, antes de avançar: o que você precisa fazer agora — e o que já é tarde demais?',
     tags: ['secret', 'git-history', 'rotação', 'least-privilege'] },
   { type: 'list', group: 'cloud', beat: 6,
     title: 'Por que .env via WhatsApp é perigoso',
@@ -186,8 +190,8 @@ const slides = [
     ]},
 
   { type: 'hook', group: 'cloud', beat: 7,
-    title: 'AWS SSM<br/><span class="text-orange-400">Parameter Store</span>',
-    subtitle: 'Credenciais centralizadas, criptografadas, com acesso controlado por IAM.',
+    title: 'Seu container em produção precisa da <span class="text-orange-400">senha do banco</span>.<br/>Não pode commitar. Não pode env var.<br/>De onde ele lê?',
+    subtitle: 'A AWS te dá um cofre central — e um jeito de o container provar quem ele é sem carregar nenhuma chave.',
     tags: ['ssm', 'iam-role', 'kms', 'aws-sdk'] },
   { type: 'code', group: 'cloud', beat: 7,
     title: 'No app · SDK call',
@@ -208,7 +212,8 @@ const slides = [
     img: `${D}/aws-ssm.png` },
 
   { type: 'hook', group: 'cloud', beat: 8,
-    title: 'Onde rodar o container?<br/><span class="text-orange-400">EC2 ou ECS Fargate?</span>',
+    title: 'Seu Dockerfile funciona local.<br/>Você quer <span class="text-orange-400">subir na AWS</span>.<br/>EC2 ou ECS?',
+    subtitle: 'Quem gerencia o OS? Quem reinicia o container se ele cair? A resposta muda as duas escolhas.',
     tags: ['ec2', 'ecs', 'fargate', 'ecr', 'task-definition'] },
   { type: 'compare', group: 'cloud', beat: 8,
     title: 'EC2 · ECS Fargate',
@@ -229,7 +234,8 @@ const slides = [
     text: 'Para cada projeto existe um compute ideal e um banco ideal. A escolha é guiada pelo perfil de carga — não por familiaridade.' },
 
   { type: 'hook', group: 'infra', beat: 9,
-    title: 'Você terminou o backend da EJ.<br/><span class="text-purple-400">Onde colocar no ar?</span>',
+    title: 'Você terminou o backend da EJ <span class="text-purple-400">ontem à noite</span>.<br/>Tem que estar no ar até amanhã.<br/>Vercel, ECS ou EC2?',
+    subtitle: 'Não é "qual é o melhor" — é "qual encaixa nesse projeto, nesse prazo, nesse perfil de carga".',
     tags: ['vercel', 'ecs', 'ec2', 'serverless', 'paas'] },
   { type: 'compare3', group: 'infra', beat: 9,
     title: 'Vercel · ECS · EC2',
@@ -246,7 +252,8 @@ const slides = [
     ]},
 
   { type: 'hook', group: 'infra', beat: 10,
-    title: 'E o <span class="text-purple-400">banco</span>?<br/>E o <span class="text-purple-400">cache</span>?',
+    title: 'O projeto da EJ começa <span class="text-purple-400">amanhã</span>.<br/>Qual banco você sobe primeiro<br/>— e por quê?',
+    subtitle: 'Migrar banco em produção é doloroso. A escolha de hoje vai te seguir por meses.',
     tags: ['supabase', 'rds', 'postgresql', 'redis', 'upstash'] },
   { type: 'compare3', group: 'infra', beat: 10,
     title: 'Supabase · RDS · Redis',
@@ -270,7 +277,8 @@ const slides = [
     text: 'O processo manual é frágil. Cada deploy precisa testar, buildar, e atualizar — sem etapa esquecida.' },
 
   { type: 'hook', group: 'devops', beat: 11,
-    title: 'Do commit ao deploy<br/>em <span class="text-green-400">um pipeline</span>.',
+    title: 'Você faz <code class="mono text-green-400">git push main</code>.<br/>Quantas coisas precisam acontecer<br/>até estar em <span class="text-green-400">produção</span>?',
+    subtitle: 'Liste cada etapa. Depois pergunte: quais delas você ainda faz manualmente hoje?',
     tags: ['ci', 'cd', 'github-actions', 'sha-tag', 'rolling-deploy'] },
   { type: 'code', group: 'devops', beat: 11,
     title: '.github/workflows/deploy.yml',
@@ -306,8 +314,8 @@ const slides = [
     title: 'O fluxo completo · leitura e escrita assimétricas' },
 
   { type: 'hookBig', group: 'synthesis', beat: 13,
-    title: 'Pra cada caixa,<br/>um <span class="text-emerald-400">managed service</span>.',
-    subtitle: 'A escolha é guiada pelo perfil de carga — não por familiaridade.',
+    title: 'Olha a arquitetura que você desenhou.<br/>Pra cada caixa,<br/><span class="text-emerald-400">qual AWS service</span> e por quê?',
+    subtitle: 'Não é decoreba — é justificar a escolha pelo perfil de carga daquela caixa específica.',
     tags: ['route53', 'cloudfront', 'alb', 'fargate', 'aurora', 'elasticache', 'ssm', 'cloudwatch'] },
   { type: 'diagramFull', group: 'synthesis', beat: 13,
     img: `${D}/aws-services.png`,
