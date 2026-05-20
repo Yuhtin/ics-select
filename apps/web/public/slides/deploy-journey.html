@@ -57,11 +57,44 @@
 
   /* Print mode: all slides stack, one per page */
   @media print {
-    @page { size: landscape; margin: 0; }
-    html, body { overflow: visible !important; height: auto !important; background: #0a0a0a !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .slide { display: flex !important; height: 100vh !important; width: 100vw !important; page-break-after: always; break-after: page; animation: none !important; }
-    .slide:last-child { page-break-after: avoid; }
-    .slide *, .slide *::before, .slide *::after { animation: none !important; transition: none !important; }
+    @page { size: 1600px 900px; margin: 0; }
+    html, body {
+      overflow: visible !important;
+      height: auto !important;
+      width: auto !important;
+      background: #0a0a0a !important;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    /* Critical: the deck container clips slides in screen mode; release it for print */
+    #deck {
+      overflow: visible !important;
+      height: auto !important;
+      width: auto !important;
+      display: block !important;
+      position: static !important;
+    }
+    .slide {
+      display: flex !important;
+      width: 1600px !important;
+      height: 900px !important;
+      min-height: 900px !important;
+      max-height: 900px !important;
+      page-break-after: always !important;
+      page-break-inside: avoid !important;
+      break-after: page !important;
+      break-inside: avoid !important;
+      animation: none !important;
+      position: relative !important;
+    }
+    .slide:last-child {
+      page-break-after: avoid !important;
+      break-after: avoid !important;
+    }
+    .slide *, .slide *::before, .slide *::after {
+      animation: none !important;
+      transition: none !important;
+    }
     /* Hide live nav indicator */
     body > div.fixed { display: none !important; }
   }

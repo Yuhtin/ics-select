@@ -7,12 +7,14 @@ description: Use when planning a class for ICS (or another interview-prep audien
 
 ## What this skill produces
 
-A typed `Lesson` file at `apps/web/components/admin/meetings/lessons/<slug>.ts`, registered in `apps/web/components/admin/meetings/meetings-index.ts`. Once registered, it renders automatically at `/admin/meetings/<slug>` with two modes:
+A typed `Lesson` file at `apps/web/components/admin/meetings/lessons/<slug>.ts`, registered in `apps/web/components/admin/meetings/meetings-index.ts`. Once registered, it renders automatically at `/admin/meetings/<slug>` with two facilitator views, an export menu, and an optional student-facing slide deck:
 
-- **Study Mode** — sidebar nav, 3 toggle-able passes (Overview / Deep dive / Mastery) for solo prep
-- **Live Mode** — 11-beat stepper + focus card with anchor question, asker mapping with cohort names, 3 response scenarios (🟢 Acertou / 🟡 Tá quase / 🔴 Passou longe), pegadinhas, provocação, default forward
+- **Study Mode** — sidebar nav, 3 toggle-able passes (Overview / Deep dive / Mastery) for solo prep. Tags chips per beat, diagram image if present.
+- **Live Mode** — beat stepper + focus card with anchor question, top-3 asker mapping with cohort names, 3 response scenarios (Acertou / Tá quase / Passou longe), pegadinhas, provocação, default forward, diagram image.
+- **Exportar menu** — dropdown on both tabs with Slides PDF + Material PDF (uses the print() flow on the slide deck HTML and the existing PrintView).
+- **Slides (optional)** — a self-contained HTML deck at `apps/web/public/slides/<slug>.html` for student-facing presentation. Different audience from the Study/Live modes, different design rules.
 
-You do not write any HTML or React. The system renders the data structure.
+You do not write any HTML or React for the lesson page itself. The system renders the typed data structure. If you add slides, you write the deck HTML by hand (or copy the deploy-journey.html template).
 
 ## When to use
 
@@ -129,37 +131,72 @@ For EACH beat, complete every field of `LessonNode`. The contract is:
 {
   id: string,              // kebab-case: 'url-cache', 'chat-fanout'
   label: string,           // short title for sidebar + stepper
-  group: NodeGroup,        // 'foundations' | <case-a-slug> | 'pivot' | <case-b-slug> | 'synthesis'
+  group: NodeGroup,        // 'foundations' | <section-slug> | 'pivot' | 'synthesis' | one of: 'local','containers','cloud','scale','devops','infra'
   beat?: number,           // 1..N for beats; omit for foundations/synthesis (study-only)
-  teachFromZero?: boolean, // true if the room hasn't seen this — mark explicitly
+  teachFromZero?: boolean, // true if the room hasn't seen this concept before, mark explicitly
+  tags?: string[],         // 4-8 terms introduced in this beat (kebab-case). Shown as chips in both modes. Tags help the teacher seed vocabulary and signal what's about to come.
   oneLine: string,         // 1 sentence; appears as subtitle in both modes
   pass1: string,           // Overview, 1 short paragraph (~60 words). What this beat is about.
   pass2: string,           // Deep dive, 3-5 short paragraphs. Use \n\n between paragraphs and **bold** for key terms.
   pass3: Pegadinha[],      // 3-5 mastery pegadinhas: { gotcha: string, note: string }
   anchor: string,          // The anchor question, in your voice as facilitator. Will display in quotes.
-  askWho: Asker[],         // 1-2 cohort members with name + 1-line justification
+  askWho: Asker[],         // EXACTLY 3 cohort members ranked by relevance + 1-line justification each. See "Authoring askWho" below.
   followup: string,        // Default forward question for after this beat
   gotcha: string,          // A provocation YOU throw if the room engages too easily
   scenarios: {             // The 3 response cards in Live Mode
     right:  { shape: string, redirect: string },
     close:  { shape: string, redirect: string },
     wayOff: { shape: string, redirect: string },
-  }
+  },
+  diagram?: string,        // Optional Mermaid source. Used as a fallback when no diagramUrl is set. Stored in the .ts file for version control.
+  diagramUrl?: string,     // Optional path under /public to a rendered diagram PNG (e.g. '/diagrams/<slug>/<beat-id>.png'). Takes precedence over `diagram` for rendering. Generate with the excalidraw-skill workflow (see "Step 5 - Generate diagrams" below).
 }
 ```
 
-For `group`, pick a slug for each "section" of the class. Then update `GROUP_META` in `apps/web/components/admin/meetings/group-meta.ts` to give the new group its color + label, OR reuse an existing group if it fits semantically.
+For `group`, pick a slug for each "section" of the class. Then update `GROUP_META` in `apps/web/components/admin/meetings/group-meta.ts` to give the new group its color + label, OR reuse an existing group if it fits semantically. The current palette covers: `foundations` (slate), `url`/`chat`/`pivot` (URL × Chat lesson colors), `synthesis` (emerald), `local` (blue), `containers` (cyan), `cloud` (orange), `scale` (warn), `devops` (green), `infra` (reflect/purple).
 
-### Writing voice
+### Writing voice (apply the humanizer skill mindset)
 
 **Body content (pass1, pass2)** is read in sans-serif. Don't write like a paper. Write like a clear, concrete teacher.
 
+- **No em dashes.** Use commas, periods, or parentheses instead. Em dashes are the most obvious AI tell.
+- **No robotic imperatives** in subtitles or anchors. "Liste, em ordem..." sounds like a prompt. "Em que ordem?" sounds like a person asking.
+- **No "Não é X, é Y" negative parallelism.** Direct framing is better: "A pergunta certa é Y."
+- **No passive voice for choices.** "É guiada pelo perfil de carga" sounds AI. "O que manda é o perfil de carga" sounds human.
+- **No filler phrases** like "exatamente o que vem depois", "vale destacar que", "é importante notar".
+- **No AI vocabulary**: stands as, serves as, delve, pivotal, crucial, underscore, highlight, intricate, tapestry, fostering, showcasing.
+- **No emojis** anywhere in the lesson data. The project uses lucide-react icons (CLAUDE.md rule). Even compare-card "category" emojis violate this.
 - **Don't be prolix.** No "It is important to note that...", no "in conclusion", no padding. Lead with the point.
-- **Don't strip too much.** Keep articles. Keep examples. The humanizer pattern of cutting "the/a/an" makes text robotic — don't do it.
-- **Use concrete numbers.** "100M URLs/month", "20k QPS at peak", "p99 < 100ms" — not "high volume" or "low latency".
+- **Don't strip too much.** Keep articles. Keep examples. Cutting "the/a/an" makes text robotic, don't do it.
+- **Use concrete numbers.** "100M URLs/month", "20k QPS at peak", "p99 < 100ms" instead of "high volume" or "low latency".
 - **Use bold for terms** that name a concept the first time it appears in the deep dive (`**read-through cache**`, `**consistent hashing**`).
 - **Split deep dives** into 3-5 short paragraphs separated by `\n\n`. Each paragraph covers ONE idea. Sub-headers via bold-prefix work well (`**Volume e proporção**: ...`).
-- **Pt-BR for member-facing voice**; English for technical terms when canonical (the system design vocabulary IS in English).
+- **Pt-BR for member-facing voice.** English for technical terms when canonical (system design vocabulary IS in English).
+
+Before saving any lesson, scan the file for `—` (U+2014). If you find one, replace with comma, period, or parens. This applies to lesson data AND slide deck HTML AND your own commit messages.
+
+### Writing hooks (anchor + oneLine + subtitle)
+
+The anchor question is the single most important sentence in the beat. It's what the teacher reads out loud. The student looks at it and has to know **what direction to start thinking**.
+
+**The pattern that works**: a concrete ACTION the student takes + a specific TRIGGER or constraint + a DIRECTED question that names the kind of answer expected.
+
+- **Bad (abstract)**: "O que é uma porta?" The student doesn't know if you want a definition, an example, an analogy, or a use case.
+- **Good (action + trigger + direction)**: "Você aperta Enter em `npm run dev`. O que acontece até `localhost:3000` responder?" The student can mentally simulate the sequence.
+
+More examples of the shift:
+
+| Abstract (avoid) | Action + trigger + direction (use) |
+|---|---|
+| "O que é um container?" | "Você roda `docker run` no Mac. Seu colega no Linux. Mesmo comportamento. Como?" |
+| "Cada linha do Dockerfile vira uma camada cacheada." (declarative) | "Você muda uma linha de TypeScript e roda `docker build` de novo. O que precisa rodar?" |
+| "Por que SSM Parameter Store?" | "Seu container em produção precisa da senha do banco. Não pode commitar. Não pode env var. De onde ele lê?" |
+| "EC2 vs ECS?" | "Seu Dockerfile funciona local. Você quer subir na AWS. EC2 ou ECS?" |
+| "Qual banco usar?" | "O projeto da EJ começa amanhã. Qual banco você sobe primeiro, e por quê?" |
+
+The **subtitle** (oneLine for hooks, when present in the slide deck) names the direction the answer should take. "Liste em ordem", "Compare X e Y", "Justifique pelo perfil de carga". Keep it one short sentence.
+
+If you find yourself writing an anchor like "O que é X?" or "Por que X?", stop. Find the action a student would take that surfaces X, and frame the question around that action.
 
 ### The no-jumps rule (most important)
 
@@ -176,15 +213,20 @@ Concrete checks before saving:
 
 After drafting all beats, do one explicit pass: read each beat's content and ask "is there anything here that the room couldn't know yet?". This is the single most valuable QA step.
 
-### Authoring `askWho`
+### Authoring `askWho` (always top-3 ranked)
 
-Each beat's `askWho` must reference real members from the cohort knowledge map. Two patterns:
+Each beat's `askWho` must list **exactly 3 cohort members** ranked by relevance to that beat. The UI shows them as a numbered list (1, 2, 3) and the Overview pass shows them as `(Name1, Name2, Name3)`. The teacher uses position 1 first, falls back to 2 and 3 if needed.
 
-- **Specialist beat** — 1 name, justification cites unique coverage. Example: "Maria Clara — única com `pubsub` na bagagem. Esse é O beat dela."
-- **Distribute voice** — 2-3 names from a group that all studied the prereq. Example: "Lucas, Cauan, Julia — todos com `hashmap`. Roda voz."
-- **Open floor** — use `name: 'open'` when the question is intro-level or transition (no specialist needed). The justification explains why opening makes sense.
+Ranking rules:
 
-The justification should be specific to what that person studied, not generic. "Tem hashmap" is useful; "is smart" is not.
+1. **Specialist first.** If someone uniquely studied the topic (e.g., the only person with `containers`), they're position 1. Justification cites the unique coverage.
+2. **Then breadth of relevant coverage.** Positions 2-3 go to members with the most adjacent topics studied. If beat is about secrets, prefer people who studied `security` over people who studied only `databases`.
+3. **Fallback to general breadth.** If nobody studied the topic, fill positions 1-3 with the cohort members who have the most overall topic coverage. Their justification names what they DO have plus framing like "maior breadth do cohort" or "background técnico amplo".
+4. **Open floor only as last resort.** Use `name: 'open'` with a justification when the question is genuinely intro-level and no one's prior knowledge gives them an edge.
+
+The justification must be specific. Good: "Networking estudado, de longe quem mais cobriu o tema. Começa com ele." Bad: "É inteligente". Bad: "Estuda bastante".
+
+Don't pad the list. If the cohort matrix only gives 2 strong candidates, the third can be open floor with explicit rationale ("Pergunta aberta ao grupo, nessa área ninguém estudou ainda, ver quem se arrisca").
 
 ### Authoring scenarios
 
@@ -199,15 +241,72 @@ The `redirect` should always be question-based, not "explain X". Keep facilitati
 ### Step 5 — Build foundations + synthesis nodes
 
 **Foundations** (group = 'foundations', no `beat`):
-- Concepts everyone needs but that the room hasn't seen — `teachFromZero: true`
+- Concepts everyone needs but that the room hasn't seen, `teachFromZero: true`
 - Lives only in Study Mode (Live Mode skips nodes without a beat)
 - Pass 1 explains what + why; pass 2 explains how concretely; pass 3 lists common gotchas
 
 **Synthesis** (group = 'synthesis', no `beat`):
-- The closing reflection — what changed, what stayed
+- The closing reflection, what changed, what stayed
 - Comparative lessons benefit most; single-arc may not need it
 
-### Step 6 — Save + register
+### Step 6 — Generate diagrams (optional but expected)
+
+If your beats reference architecture (and most should), generate diagrams instead of leaving long captions.
+
+**Two-tier rendering on the lesson page**: the `LessonNode` has `diagram?: string` (Mermaid source) and `diagramUrl?: string` (path to a rendered PNG). If `diagramUrl` is set, it takes precedence. Mermaid is the version-controlled source that always travels with the lesson; PNG is the polished render.
+
+**Use the `excalidraw-skill`** for diagram generation. Quick summary of the workflow it documents:
+
+1. Start the canvas server in Docker: `docker run -d --name excalidraw-canvas -p 3002:3000 node:20-alpine sh -c "apk add --no-cache git && git clone https://github.com/yctimlin/mcp_excalidraw /app && cd /app && npm ci && npm run build && HOST=0.0.0.0 PORT=3000 npm run canvas"`
+2. Wait for it to boot (~60s), then `curl http://localhost:3002/health` should return healthy.
+3. Open the canvas with Playwright (`browser_navigate` to `http://localhost:3002`). The browser needs to be open for `POST /api/export/image` to work.
+4. For each beat with `diagram`:
+   - `DELETE /api/elements/clear`
+   - `POST /api/elements/batch` with elements (rectangles, arrows, text). Use the helper functions from the deploy-journey diagrams script as a template.
+   - `POST /api/export/image` with `{format: 'png', padding: 60}`, save base64 to `apps/web/public/diagrams/<slug>/<beat-id>.png`.
+5. Set `diagramUrl: '/diagrams/<slug>/<beat-id>.png'` on the beat.
+
+**AWS service icons** (for the architecture and AWS-services synthesis beats): the cloudflightio/architecture-icons repo on the `master` branch has PNG icons for every AWS service.
+- Base URL: `https://raw.githubusercontent.com/cloudflightio/architecture-icons/master/aws-icons/Architecture-Service/<Category>/<ServiceName>.png`
+- Categories you'll need: Compute, Containers, Networking-Content-Delivery, Database, Management-Governance, Security-Identity-Compliance
+- To embed an icon in a diagram, the Excalidraw server's `image` element type works, but the canvas browser needs the file data injected via `window.__excalidrawAPI.addFiles([...])`. Use Playwright `addScriptTag` to load a JS file that sets `window.__awsIcons`, then `browser_evaluate` to call `addFiles`. The detailed pattern is in the excalidraw-skill.
+
+**Use external reference images for canonical diagrams.** Some diagrams (Container vs VM architecture stack, OSI layers, generic CAP theorem) are better as classic industry images than as custom drawings. Save those under `apps/web/public/diagrams/<slug>/external/<name>.png` to keep them separate from generated diagrams, and reference them the same way via `diagramUrl`.
+
+**Diagram quality checklist before exporting**: no overlapping arrow labels (use shorter labels or remove on fan-outs), at least 300px between boxes on horizontal layouts, text in boxes fits the box width, kernel/base layers wider than the elements above them.
+
+### Step 7 — Build the slide deck (optional, for in-class presentation)
+
+Study Mode and Live Mode are **facilitator-facing**. They contain askWho, scenarios, gotchas, the stuff a teacher needs but a student should never see. If you want a deck the students see during class, build a separate HTML slide deck.
+
+Output: `apps/web/public/slides/<slug>.html`, then set `slidesUrl: '/slides/<slug>.html'` on the `Lesson` (top-level field, not on a node). The lesson page exposes a "Slides · apresentar" button and the Exportar menu picks it up automatically.
+
+**Use `apps/web/public/slides/deploy-journey.html` as the template.** It's self-contained: Tailwind CDN, Geist + Inter + JetBrains Mono fonts loaded inline, no React, no build step.
+
+Structure per beat (3 slides each on average): **hook** (the action-trigger-question pattern) → **support** (code | compare | list) → **diagram** (the PNG you generated in step 6). Plus section dividers between groups and a closing recap. A 13-beat lesson becomes ~30-40 slides.
+
+Available slide types in the template:
+- `cover` — title, audience meta, accent rail
+- `divider` — big colored numeral + section name + one-sentence intro
+- `hook` — large title with the question, optional subtitle, tags chips
+- `hookBig` — same as hook but bigger title (for synthesis beats)
+- `diagram` — title + PNG, image takes ~60% of viewport
+- `diagramFull` — image takes ~75% of viewport, minimal text (used for the synthesis architecture and AWS map slides)
+- `code` — syntax-highlighted code block (purple keywords, amber strings, gray comments) with right-side annotations
+- `list` — numbered items (e.g., "5 camadas de diferença") with kw + supporting text
+- `compare` — 2-up cards side by side (no emojis, use `sub` for category label)
+- `compare3` — 3-up cards with `tag`/`title`/`sub`/`points` (great for "X vs Y vs Z" decisions)
+- `closing` — recap of the section names and a wrap-up line
+
+**Animations**: each slide has CSS keyframe animations (`slideUp`, `fadeIn`, `scaleIn`) triggered when `.active` is added. The `.stagger > *` selector auto-delays children for sequential reveal. Don't over-animate; the defaults work.
+
+**Color accents per group**: blue for `local`, cyan for `containers`, orange for `cloud`, purple for `infra`, green for `devops`, emerald for `synthesis`. The `GROUP` constant in the slide deck JS maps each group name to an accent + soft-bg pair.
+
+**Print CSS for PDF export**: the template includes `@media print` rules that stack all slides one-per-page when the page is opened with `?print=1` (the page auto-triggers `window.print()` on load). The Exportar menu uses this URL form.
+
+**Slide deck voice rules apply**: same anti-em-dash, anti-robot rules as the lesson data. Anchor questions on hook slides follow the same action-trigger-direction pattern as anchors in the lesson file. Hook subtitles are NOT facilitator prompts ("Liste em ordem"); they're framing for the student ("Em que ordem?").
+
+### Step 8 — Save + register
 
 1. Create `apps/web/components/admin/meetings/lessons/<slug>.ts` — import `Lesson` from `'../lesson-types'` and export the typed const.
 2. Open `apps/web/components/admin/meetings/meetings-index.ts` and add:
