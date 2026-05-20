@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Do npm run dev ao Deploy · Slides</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect" />
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=JetBrains+Mono:wght@400;500;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+<style>
+  @font-face { font-family: 'Geist'; src: url('https://cdn.jsdelivr.net/npm/@fontsource/geist-sans@5.0.1/files/geist-sans-latin-400-normal.woff2') format('woff2'); font-weight: 400; }
+  @font-face { font-family: 'Geist'; src: url('https://cdn.jsdelivr.net/npm/@fontsource/geist-sans@5.0.1/files/geist-sans-latin-500-normal.woff2') format('woff2'); font-weight: 500; }
+  @font-face { font-family: 'Geist'; src: url('https://cdn.jsdelivr.net/npm/@fontsource/geist-sans@5.0.1/files/geist-sans-latin-600-normal.woff2') format('woff2'); font-weight: 600; }
+  @font-face { font-family: 'Geist'; src: url('https://cdn.jsdelivr.net/npm/@fontsource/geist-sans@5.0.1/files/geist-sans-latin-700-normal.woff2') format('woff2'); font-weight: 700; }
+  html, body { background: #0a0a0a; color: #e5e2e1; font-family: 'Inter', sans-serif; overflow: hidden; }
+  .display { font-family: 'Geist', sans-serif; }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+  .slide { display: none; height: 100vh; width: 100vw; }
+  .slide.active { display: flex; }
+  .glow { box-shadow: 0 0 20px currentColor; }
+  .accent-glow { box-shadow: 0 0 60px var(--accent), 0 0 120px var(--accent); opacity: 0.15; }
+</style>
+</head>
+<body class="overflow-hidden">
+
+<!-- Container for all slides -->
+<div id="deck" class="relative w-screen h-screen overflow-hidden"></div>
+
+<!-- Persistent UI: progress + nav hint -->
+<div class="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 mono text-[10px] uppercase tracking-[0.2em] text-neutral-500">
+  <span id="slide-num">01</span>
+  <span class="text-neutral-700">/</span>
+  <span id="slide-total">15</span>
+  <span class="text-neutral-700 mx-2">·</span>
+  <span class="opacity-50">← →</span>
+</div>
+
+<script>
+const GROUP = {
+  cover:       { name: 'CAPA',           accent: '#ffffff', accentSoft: 'rgba(255,255,255,0.1)' },
+  foundations: { name: 'FOUNDATIONS',    accent: '#94a3b8', accentSoft: 'rgba(148,163,184,0.15)' },
+  local:       { name: 'LOCAL DEV',      accent: '#60a5fa', accentSoft: 'rgba(96,165,250,0.15)' },
+  containers:  { name: 'CONTAINERS',     accent: '#22d3ee', accentSoft: 'rgba(34,211,238,0.15)' },
+  cloud:       { name: 'CLOUD / AWS',    accent: '#fb923c', accentSoft: 'rgba(251,146,60,0.15)' },
+  infra:       { name: 'INFRA DECISIONS',accent: '#c084fc', accentSoft: 'rgba(192,132,252,0.15)' },
+  devops:      { name: 'DEVOPS',         accent: '#4ade80', accentSoft: 'rgba(74,222,128,0.15)' },
+  synthesis:   { name: 'SYNTHESIS',      accent: '#34d399', accentSoft: 'rgba(52,211,153,0.15)' },
+};
+
+const slides = [
+  {
+    type: 'cover',
+    group: 'cover',
+    title: 'Do npm run dev<br/>ao Deploy',
+    subtitle: 'Containers, Cloud & DevOps',
+    meta: ['HOT STUFF 2026.2', '120 MIN', '13 BEATS'],
+  },
+  {
+    type: 'beat',
+    group: 'foundations',
+    beat: 0,
+    label: 'Foundation',
+    title: 'Processo, porta e servidor',
+    oneLine: 'Um processo é um programa em execução — ele pede uma porta ao OS e fica escutando conexões TCP. Entender isso é o fundamento de tudo.',
+    tags: ['processo', 'programa', 'porta', 'tcp', 'socket', 'pid', 'bind', 'listener'],
+    anchor: 'O que é uma porta? Por que o seu servidor escuta na 3000 e não na 80?',
+    askWho: ['Eduardo', 'Maria Clara', 'Messias'],
+    diagram: null,
+  },
+  {
+    type: 'beat',
+    group: 'local',
+    beat: 1,
+    label: 'npm run dev',
+    title: 'npm run dev',
+    oneLine: 'Rodar npm run dev na sua máquina é o ponto zero — e já carrega premissas invisíveis que quebram no próximo computador.',
+    tags: ['npm', 'node.js', 'processo', 'porta', 'localhost', 'env-var', 'runtime'],
+    anchor: 'O que acontece entre você apertar Enter em npm run dev e conseguir fazer uma requisição em localhost:3000?',
+    askWho: ['Eduardo', 'Livia', 'Messias'],
+    diagram: '../diagrams/deploy-journey/npm-run-dev.png',
+  },
+  {
+    type: 'beat',
+    group: 'local',
+    beat: 2,
+    label: '"Funciona no meu PC"',
+    title: '"Funciona no meu PC"',
+    oneLine: 'Diagnosticar por que um projeto funciona numa máquina e não em outra é o segundo exercício mais importante de qualquer dev de backend — o primeiro é ter prevenido o problema.',
+    tags: ['runtime', 'node_modules', '.env', 'native-modules', '.nvmrc', 'reproducibility'],
+    anchor: 'Seu colega clonou o mesmo repositório, rodou npm install, e o backend não sobe. Quais são as perguntas que você faz antes de qualquer outra coisa?',
+    askWho: ['Eduardo', 'Maria Clara', 'Messias'],
+    diagram: '../diagrams/deploy-journey/works-on-my-machine.png',
+  },
+  {
+    type: 'beat',
+    group: 'containers',
+    beat: 3,
+    label: 'O que é um container',
+    title: 'O que é um container',
+    oneLine: 'Um container empacota o código junto com o runtime, as dependências e as configs de sistema — o ambiente deixa de ser implícito e passa a ser versionado junto com o código.',
+    tags: ['container', 'imagem', 'dockerfile', 'namespace', 'cgroups', 'kernel', 'layer'],
+    anchor: 'Qual é a diferença entre rodar um processo direto no OS e rodar esse mesmo processo dentro de um container?',
+    askWho: ['Livia', 'Eduardo', 'Messias'],
+    diagram: '../diagrams/deploy-journey/docker-container.png',
+  },
+  {
+    type: 'beat',
+    group: 'containers',
+    beat: 4,
+    label: 'Escrevendo um Dockerfile',
+    title: 'Escrevendo um Dockerfile',
+    oneLine: 'Um Dockerfile é a receita declarativa para construir uma imagem — cada instrução vira uma camada imutável e cacheada no disco.',
+    tags: ['FROM', 'COPY', 'RUN', 'CMD', 'EXPOSE', 'layer-cache', 'multi-stage'],
+    anchor: 'Se você mudar só uma linha de código TypeScript e rodar docker build de novo, quais camadas do Dockerfile precisam ser reexecutadas?',
+    askWho: ['Livia', 'Eduardo', 'Maria Clara'],
+    diagram: '../diagrams/deploy-journey/dockerfile.png',
+  },
+  {
+    type: 'beat',
+    group: 'containers',
+    beat: 5,
+    label: 'Docker Compose',
+    title: 'Docker Compose',
+    oneLine: 'Docker Compose define múltiplos containers como um conjunto declarativo — um único arquivo orquestra API, banco e qualquer serviço de infraestrutura localmente.',
+    tags: ['compose', 'service', 'bridge-network', 'volume', 'depends_on', 'port-mapping'],
+    anchor: 'Se sua API e seu banco estão cada um em seu container, como a API sabe o endereço do banco? Ela usa localhost?',
+    askWho: ['Eduardo', 'Livia', 'Messias'],
+    diagram: '../diagrams/deploy-journey/docker-compose.png',
+  },
+  {
+    type: 'beat',
+    group: 'cloud',
+    beat: 6,
+    label: 'O problema dos secrets',
+    title: 'O problema dos secrets',
+    oneLine: 'Mandar credenciais pelo WhatsApp não é só inconveniente — é um risco de segurança real com consequências difíceis de reverter.',
+    tags: ['secret', '.env', 'git-history', 'credencial', 'rotação', 'least-privilege'],
+    anchor: 'Quais são os riscos práticos de mandar um .env com credenciais de produção pelo WhatsApp para um colega?',
+    askWho: ['Eduardo', 'Maria Clara', 'Livia'],
+    diagram: '../diagrams/deploy-journey/secrets-problem.png',
+  },
+  {
+    type: 'beat',
+    group: 'cloud',
+    beat: 7,
+    label: 'AWS SSM Parameter Store',
+    title: 'AWS SSM Parameter Store',
+    oneLine: 'O Parameter Store é um cofre de configurações da AWS — credenciais ficam centralizadas, criptografadas, com controle de acesso via IAM e sem precisar de WhatsApp.',
+    tags: ['ssm', 'parameter-store', 'iam-role', 'kms', 'secrets-manager', 'aws-sdk'],
+    anchor: 'Por que usar um serviço de secrets centralizado em vez de passar variáveis de ambiente diretamente no servidor?',
+    askWho: ['Eduardo', 'Messias', 'Livia'],
+    diagram: '../diagrams/deploy-journey/aws-ssm.png',
+  },
+  {
+    type: 'beat',
+    group: 'cloud',
+    beat: 8,
+    label: 'Deploy na nuvem — EC2 vs ECS',
+    title: 'Deploy na nuvem — EC2 vs ECS',
+    oneLine: 'A diferença entre EC2 e ECS Fargate é a diferença entre alugar um servidor e alugar um serviço.',
+    tags: ['ec2', 'ecs', 'fargate', 'ecr', 'task-definition', 'rolling-deploy'],
+    anchor: 'Você tem um Dockerfile funcionando localmente. Quais são as suas opções para rodar isso em produção?',
+    askWho: ['Eduardo', 'Livia', 'Messias'],
+    diagram: '../diagrams/deploy-journey/cloud-deploy.png',
+  },
+  {
+    type: 'beat',
+    group: 'infra',
+    beat: 9,
+    label: 'Compute — Vercel vs ECS vs EC2',
+    title: 'Vercel · ECS · EC2',
+    oneLine: 'Para cada tipo de projeto existe um compute ideal — Vercel para serverless/Next.js, ECS para backends com estado, EC2 quando você precisa de controle total.',
+    tags: ['vercel', 'ecs', 'ec2', 'fargate', 'serverless', 'paas', 'vps'],
+    anchor: 'Você terminou o backend da EJ. Precisa colocar no ar. Quais são suas opções e o que faz você escolher uma sobre a outra?',
+    askWho: ['Eduardo', 'Livia', 'Messias'],
+    diagram: '../diagrams/deploy-journey/compute-decisions.png',
+  },
+  {
+    type: 'beat',
+    group: 'infra',
+    beat: 10,
+    label: 'Banco e Cache',
+    title: 'Supabase · RDS · Redis',
+    oneLine: 'Para projetos de EJ: Supabase resolve banco + auth + storage em um lugar; Redis (Upstash) resolve cache e sessões sem pagar quando idle.',
+    tags: ['supabase', 'rds', 'postgresql', 'redis', 'upstash', 'elasticache', 'managed-db'],
+    anchor: 'Você precisa de banco para o projeto. Tem Supabase, RDS, e Redis na mesa. O que escolheria para um projeto de EJ?',
+    askWho: ['Eduardo', 'Messias', 'Rayssa'],
+    diagram: '../diagrams/deploy-journey/db-cache.png',
+  },
+  {
+    type: 'beat',
+    group: 'devops',
+    beat: 11,
+    label: 'CI/CD — do commit ao deploy',
+    title: 'CI/CD',
+    oneLine: 'CI/CD elimina o deploy manual — um commit no main dispara um pipeline que testa, builda a imagem, e atualiza o serviço automaticamente.',
+    tags: ['ci', 'cd', 'github-actions', 'pipeline', 'sha-tag', 'rolling-deploy'],
+    anchor: 'Você faz um commit. Quantas etapas manuais existem até esse código estar em produção hoje? Como você eliminaria cada uma?',
+    askWho: ['Eduardo', 'Messias', 'Livia'],
+    diagram: '../diagrams/deploy-journey/cicd.png',
+  },
+  {
+    type: 'beat',
+    group: 'synthesis',
+    beat: 12,
+    label: 'Arquitetura — o fluxo completo',
+    title: 'O fluxo completo',
+    oneLine: 'Uma request atravessa DNS, CDN, load balancer, compute, cache, banco primário, e replica — leitura e escrita são assimétricas por design.',
+    tags: ['dns', 'cdn', 'alb', 'read-path', 'write-path', 'cache-invalidation', 'replica-lag'],
+    anchor: 'Uma request GET chega no sistema. Desenha cada camada que ela atravessa — do DNS até o banco.',
+    askWho: ['Eduardo', 'Livia', 'Messias'],
+    diagram: '../diagrams/deploy-journey/full-architecture.png',
+  },
+  {
+    type: 'beat',
+    group: 'synthesis',
+    beat: 13,
+    label: 'AWS — services por camada',
+    title: 'AWS managed services',
+    oneLine: 'Cada caixa da arquitetura mapeia para um AWS managed service — a escolha é guiada pelo perfil de carga, não por familiaridade.',
+    tags: ['route53', 'cloudfront', 'alb', 'ecs-fargate', 'rds-aurora', 'elasticache', 'ssm', 'cloudwatch'],
+    anchor: 'Para cada caixa da arquitetura que desenhamos, qual AWS managed service você usaria? E qual é a lógica que guia cada escolha?',
+    askWho: ['Eduardo', 'Messias', 'Maria Clara'],
+    diagram: '../diagrams/deploy-journey/aws-services.png',
+  },
+];
+
+function renderCover(s) {
+  const g = GROUP[s.group];
+  return `
+    <section class="slide active relative items-center justify-center w-full h-full" data-group="${s.group}">
+      <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[700px] rounded-full blur-[180px]" style="background: radial-gradient(circle, ${g.accentSoft} 0%, transparent 70%); pointer-events:none;"></div>
+      <!-- Header -->
+      <header class="absolute top-0 left-0 right-0 px-16 py-6 flex justify-between items-center mono text-[11px] uppercase tracking-[0.2em] text-neutral-500 z-10">
+        <span class="text-neutral-300">DOCKER &amp; DEPLOY</span>
+        <span class="px-3 py-1 border border-neutral-700 rounded-sm text-neutral-200">CAPA</span>
+        <span class="text-neutral-500">SYSTEM DESIGN SERIES</span>
+      </header>
+      <!-- Content -->
+      <div class="relative z-10 max-w-[1200px] w-full grid grid-cols-12 gap-8 px-16">
+        <div class="col-span-2 flex justify-end pr-8 border-r border-neutral-800 relative">
+          <div class="absolute top-0 right-[-1.5px] w-[3px] h-40 rounded-full" style="background: ${g.accent}; box-shadow: 0 0 20px ${g.accent}80;"></div>
+        </div>
+        <div class="col-span-10 pl-8 flex flex-col gap-10 min-h-[500px] justify-center">
+          <div class="flex items-center gap-4 mono text-[12px] uppercase tracking-[0.25em] text-neutral-500">
+            ${s.meta.map((m, i) => `<span class="${i === 0 ? 'text-white' : ''} ${i === 2 ? 'border border-neutral-700 px-3 py-1 rounded-sm bg-neutral-950 text-white' : ''}">${m}</span>${i < s.meta.length - 1 ? '<span class="text-neutral-700">·</span>' : ''}`).join('')}
+          </div>
+          <h1 class="display text-white text-[88px] leading-[1.05] font-bold tracking-[-0.04em]">${s.title}</h1>
+          <h2 class="display text-neutral-400 text-[40px] leading-tight font-medium tracking-tight">${s.subtitle}</h2>
+          <div class="mt-12 w-[320px] flex gap-2">
+            <div class="h-[2px] flex-grow rounded-full" style="background: ${g.accent}; box-shadow: 0 0 8px ${g.accent}80;"></div>
+            <div class="h-[2px] flex-grow bg-neutral-800 rounded-full"></div>
+            <div class="h-[2px] flex-grow bg-neutral-800 rounded-full"></div>
+          </div>
+        </div>
+      </div>
+      <!-- Footer -->
+      <footer class="absolute bottom-0 left-0 right-0 px-16 py-4 flex justify-between items-center mono text-[10px] uppercase tracking-[0.25em] text-neutral-500 border-t border-neutral-900 z-10">
+        <span class="text-neutral-400">HOT STUFF 2026.2</span>
+        <span class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-[14px]">terminal</span>
+          DEPLOY_JOURNEY.SH
+        </span>
+      </footer>
+    </section>
+  `;
+}
+
+function renderBeat(s) {
+  const g = GROUP[s.group];
+  return `
+    <section class="slide relative items-stretch w-full h-full" data-group="${s.group}">
+      <div class="absolute top-[15%] right-[-200px] w-[600px] h-[600px] rounded-full blur-[180px]" style="background: radial-gradient(circle, ${g.accentSoft} 0%, transparent 70%); pointer-events:none;"></div>
+      <!-- Header -->
+      <header class="absolute top-0 left-0 right-0 px-16 py-6 flex justify-between items-center mono text-[11px] uppercase tracking-[0.2em] text-neutral-500 z-10">
+        <span class="text-neutral-300">DOCKER &amp; DEPLOY</span>
+        <span class="px-3 py-1 border rounded-sm" style="border-color: ${g.accent}; color: ${g.accent};">BEAT ${String(s.beat).padStart(2,'0')}</span>
+        <span style="color: ${g.accent};">${g.name}</span>
+      </header>
+      <!-- Content grid -->
+      <div class="relative z-10 w-full h-full grid grid-cols-12 gap-8 px-16 pt-24 pb-20">
+        <!-- Vertical rail -->
+        <div class="col-span-1 flex justify-end pr-4 border-r border-neutral-800 relative">
+          <div class="absolute top-0 right-[-1.5px] w-[3px] h-full rounded-full opacity-30" style="background: ${g.accent};"></div>
+          <div class="absolute top-0 right-[-1.5px] w-[3px] h-32 rounded-full" style="background: ${g.accent}; box-shadow: 0 0 20px ${g.accent}80;"></div>
+        </div>
+        <!-- Left column: title + tags + anchor -->
+        <div class="col-span-7 pl-4 flex flex-col gap-6 min-h-[600px]">
+          <!-- Section badge -->
+          <div class="flex items-center gap-3 mono text-[11px] uppercase tracking-[0.25em]">
+            <span class="px-2.5 py-1 rounded-sm font-medium" style="background: ${g.accent}; color: #0a0a0a;">${g.name}</span>
+            <span class="text-neutral-500">Beat ${String(s.beat).padStart(2,'0')}</span>
+          </div>
+          <!-- Title -->
+          <h1 class="display text-white text-[64px] leading-[1.05] font-bold tracking-[-0.03em]">${s.title}</h1>
+          <!-- One-liner -->
+          <p class="display text-neutral-300 text-[22px] leading-[1.4] font-normal max-w-[640px]">${s.oneLine}</p>
+          <!-- Tags -->
+          <div class="flex flex-wrap gap-2 mt-2">
+            ${s.tags.map(t => `<span class="mono text-[11px] uppercase tracking-[0.15em] px-2.5 py-1 rounded-sm border" style="border-color: ${g.accent}40; background: ${g.accentSoft}; color: ${g.accent};">${t}</span>`).join('')}
+          </div>
+          <!-- Anchor question (the big quote) -->
+          <div class="mt-auto pt-6">
+            <div class="mono text-[10px] uppercase tracking-[0.25em] text-neutral-500 mb-3">PERGUNTA-ÂNCORA</div>
+            <p class="display text-white text-[28px] leading-[1.3] font-medium max-w-[700px]" style="border-left: 3px solid ${g.accent}; padding-left: 24px;">${s.anchor}</p>
+          </div>
+        </div>
+        <!-- Right column: top-3 askWho + diagram -->
+        <div class="col-span-4 flex flex-col gap-6">
+          <!-- Top 3 askWho -->
+          <div class="rounded-lg border border-neutral-800 bg-neutral-950/60 p-5">
+            <div class="mono text-[10px] uppercase tracking-[0.25em] text-neutral-500 mb-4">TOP 3 PRA PERGUNTAR</div>
+            <ul class="flex flex-col gap-3">
+              ${s.askWho.map((name, i) => `
+                <li class="flex items-center gap-3">
+                  <span class="inline-flex h-7 w-7 items-center justify-center rounded-full mono text-[12px] font-bold" style="background: ${g.accentSoft}; color: ${g.accent};">${i+1}</span>
+                  <span class="display text-white text-[16px] font-medium">${name}</span>
+                </li>
+              `).join('')}
+            </ul>
+          </div>
+          <!-- Diagram thumbnail -->
+          ${s.diagram ? `
+            <div class="rounded-lg overflow-hidden border border-neutral-800 bg-neutral-950 flex-1 flex items-center justify-center p-3">
+              <img src="${s.diagram}" alt="${s.title}" class="max-w-full max-h-full object-contain" style="filter: brightness(0.92);" />
+            </div>
+          ` : `<div class="rounded-lg border border-dashed border-neutral-800 flex-1 flex items-center justify-center text-neutral-700 mono text-[10px]">SEM DIAGRAMA</div>`}
+        </div>
+      </div>
+      <!-- Footer -->
+      <footer class="absolute bottom-0 left-0 right-0 px-16 py-4 flex justify-between items-center mono text-[10px] uppercase tracking-[0.25em] text-neutral-500 border-t border-neutral-900 z-10">
+        <span class="text-neutral-400">HOT STUFF 2026.2</span>
+        <span style="color: ${g.accent};">${g.name}</span>
+      </footer>
+    </section>
+  `;
+}
+
+// Render all slides
+const deck = document.getElementById('deck');
+deck.innerHTML = slides.map(s => s.type === 'cover' ? renderCover(s) : renderBeat(s)).join('');
+
+let current = 0;
+const allSlides = deck.querySelectorAll('.slide');
+document.getElementById('slide-total').textContent = String(allSlides.length).padStart(2, '0');
+
+function show(idx) {
+  current = Math.max(0, Math.min(allSlides.length - 1, idx));
+  allSlides.forEach((s, i) => s.classList.toggle('active', i === current));
+  document.getElementById('slide-num').textContent = String(current + 1).padStart(2, '0');
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown' || e.key === 'j') {
+    e.preventDefault(); show(current + 1);
+  } else if (e.key === 'ArrowLeft' || e.key === 'PageUp' || e.key === 'k') {
+    e.preventDefault(); show(current - 1);
+  } else if (e.key === 'Home') {
+    show(0);
+  } else if (e.key === 'End') {
+    show(allSlides.length - 1);
+  }
+});
+
+document.addEventListener('click', (e) => {
+  if (e.target.closest('a, button')) return;
+  show(current + 1);
+});
+
+show(0);
+</script>
+</body>
+</html>
