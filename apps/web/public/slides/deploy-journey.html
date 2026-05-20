@@ -86,11 +86,11 @@ const slides = [
 
   // ─── LOCAL DEV ──────────────────────────────────────────────────
   { type: 'divider', group: 'local', num: '01', label: 'Local Dev',
-    text: 'O ponto zero. Você roda npm run dev e funciona — mas tudo isso depende de uma máquina específica.' },
+    text: 'O ponto zero. Você roda npm run dev, funciona. Mas isso só funciona na sua máquina, do seu jeito.' },
 
   { type: 'hook', group: 'local', beat: 1,
     title: 'Você aperta <span class="text-blue-400">Enter</span> em <code class="mono text-blue-400">npm run dev</code>.<br/>O que acontece até <span class="text-blue-400">localhost:3000</span> responder?',
-    subtitle: 'Liste, em ordem, cada coisa que sobe entre a sua tecla e a primeira request.',
+    subtitle: 'Várias coisas têm que acontecer antes do primeiro GET voltar. Em que ordem?',
     tags: ['npm', 'node.js', 'porta', 'processo', 'runtime'] },
   { type: 'diagram', group: 'local', beat: 1,
     caption: 'Um processo Node.js sobe na porta 3000. Browser fala TCP com ele.',
@@ -103,14 +103,14 @@ const slides = [
   { type: 'list', group: 'local', beat: 2,
     title: '5 camadas de diferença',
     items: [
-      { kw: 'Runtime',        text: 'Node 20 vs Node 18 — comportamentos diferentes' },
-      { kw: 'Deps nativas',   text: 'bcrypt, sharp compilados em C++ pra arquitetura específica' },
-      { kw: 'Variáveis',      text: '.env não existe no clone — process.env.DB_URL = undefined' },
+      { kw: 'Runtime',        text: 'Node 20 e Node 18 se comportam diferente em coisas básicas' },
+      { kw: 'Deps nativas',   text: 'bcrypt e sharp compilam C++ pra arquitetura da sua máquina' },
+      { kw: 'Variáveis',      text: '.env não existe no clone, process.env.DB_URL fica undefined' },
       { kw: 'Serviços',       text: 'banco, Redis, APIs locais precisam estar acessíveis' },
       { kw: 'Plataforma',     text: 'macOS case-insensitive vs Linux case-sensitive' },
     ] },
   { type: 'diagram', group: 'local', beat: 2,
-    caption: 'Resolver pela camada errada desperdiça horas. Diagnóstico em ordem.',
+    caption: 'Resolver pela camada errada desperdiça horas. Vai descartando uma a uma.',
     img: `${D}/works-on-my-machine.png` },
 
   // ─── CONTAINERS ─────────────────────────────────────────────────
@@ -119,7 +119,7 @@ const slides = [
 
   { type: 'hook', group: 'containers', beat: 3,
     title: 'Você roda <code class="mono text-cyan-400">docker run</code> no Mac.<br/>Seu colega roda no <span class="text-cyan-400">Linux</span>.<br/>Mesmo comportamento. Como?',
-    subtitle: 'Diferente de instalar dependências numa VM, o container compartilha algo crítico com o host.',
+    subtitle: 'Container não é VM leve. Ele compartilha uma parte do host, e isola outra. Quais?',
     tags: ['container', 'imagem', 'namespace', 'cgroups', 'kernel'] },
   { type: 'compare', group: 'containers', beat: 3,
     title: 'Container vs VM',
@@ -137,16 +137,16 @@ const slides = [
 
   { type: 'hook', group: 'containers', beat: 4,
     title: 'Você muda <span class="text-cyan-400">uma linha</span> de TypeScript.<br/>Roda <code class="mono text-cyan-400">docker build</code> de novo.<br/>O que precisa rodar?',
-    subtitle: 'O build leva minutos da primeira vez e segundos depois. Onde está esse atalho?',
+    subtitle: 'O primeiro build demora minutos. Os próximos voltam em segundos. Por quê?',
     tags: ['FROM', 'COPY', 'RUN', 'CMD', 'layer-cache', 'multi-stage'] },
   { type: 'code', group: 'containers', beat: 4,
     title: 'Dockerfile · ordem importa',
     code: [
-      { line: '<span class="kw">FROM</span> node:20-alpine',           note: 'imagem base — cacheada uma vez' },
+      { line: '<span class="kw">FROM</span> node:20-alpine',           note: 'imagem base, cacheia uma vez' },
       { line: '<span class="kw">WORKDIR</span> /app',                  note: '' },
       { line: '<span class="kw">COPY</span> package*.json ./',         note: 'só os manifests primeiro' },
-      { line: '<span class="kw">RUN</span> npm ci --omit=dev',         note: 'cache reaproveitado se package.json não mudou' },
-      { line: '<span class="kw">COPY</span> . .',                      note: 'código por último — camada que mais muda' },
+      { line: '<span class="kw">RUN</span> npm ci --omit=dev',         note: 'cache vale se package.json não mudou' },
+      { line: '<span class="kw">COPY</span> . .',                      note: 'código por último, é o que mais muda' },
       { line: '<span class="kw">RUN</span> npm run build',             note: '' },
       { line: '<span class="kw">CMD</span> [<span class="str">"node"</span>, <span class="str">"dist/main.js"</span>]', note: 'comando padrão ao iniciar' },
     ]},
@@ -179,19 +179,19 @@ const slides = [
 
   { type: 'hook', group: 'cloud', beat: 6,
     title: 'Você manda o <code class="mono text-orange-400">.env</code> de produção pelo WhatsApp.<br/>6 meses depois, o colega <span class="text-orange-400">sai da empresa</span>.<br/>E aí?',
-    subtitle: 'Liste, antes de avançar: o que você precisa fazer agora — e o que já é tarde demais?',
+    subtitle: 'O que dá pra consertar agora? E o que já não tem volta?',
     tags: ['secret', 'git-history', 'rotação', 'least-privilege'] },
   { type: 'list', group: 'cloud', beat: 6,
     title: 'Por que .env via WhatsApp é perigoso',
     items: [
-      { kw: 'Histórico',  text: 'Git history é imutável — uma vez que credencial foi commitada, fica lá pra sempre' },
-      { kw: 'Quem tem?',  text: 'Você não sabe quantas cópias existem nem em quais celulares — não dá pra rotacionar' },
-      { kw: 'Prod vs dev',text: 'Misturar credenciais de produção e local é uma das formas mais comuns de perda de dados' },
+      { kw: 'Histórico',  text: 'Uma credencial commitada fica no git pra sempre, mesmo que você delete o arquivo' },
+      { kw: 'Quem tem?',  text: 'Você não sabe em quantos celulares aquele .env existe. Rotacionar fica impossível' },
+      { kw: 'Prod vs dev',text: 'Misturar credenciais de prod e local é uma das formas mais comuns de perder dados' },
     ]},
 
   { type: 'hook', group: 'cloud', beat: 7,
     title: 'Seu container em produção precisa da <span class="text-orange-400">senha do banco</span>.<br/>Não pode commitar. Não pode env var.<br/>De onde ele lê?',
-    subtitle: 'A AWS te dá um cofre central — e um jeito de o container provar quem ele é sem carregar nenhuma chave.',
+    subtitle: 'A AWS tem um cofre central. E um jeito do container provar quem é sem carregar chave nenhuma.',
     tags: ['ssm', 'iam-role', 'kms', 'aws-sdk'] },
   { type: 'code', group: 'cloud', beat: 7,
     title: 'No app · SDK call',
@@ -208,12 +208,12 @@ const slides = [
       { line: '<span class="kw">const</span> <span class="var">dbUrl</span> = Parameter!.Value;' },
     ]},
   { type: 'diagram', group: 'cloud', beat: 7,
-    caption: 'O container assume uma IAM Role — sem access keys, sem WhatsApp.',
+    caption: 'O container assume uma IAM Role. Sem access keys, sem WhatsApp.',
     img: `${D}/aws-ssm.png` },
 
   { type: 'hook', group: 'cloud', beat: 8,
     title: 'Seu Dockerfile funciona local.<br/>Você quer <span class="text-orange-400">subir na AWS</span>.<br/>EC2 ou ECS?',
-    subtitle: 'Quem gerencia o OS? Quem reinicia o container se ele cair? A resposta muda as duas escolhas.',
+    subtitle: 'Quem patcheia o OS? Quem reinicia o container quando ele cai? Cada resposta vira uma escolha diferente.',
     tags: ['ec2', 'ecs', 'fargate', 'ecr', 'task-definition'] },
   { type: 'compare', group: 'cloud', beat: 8,
     title: 'EC2 · ECS Fargate',
@@ -231,11 +231,11 @@ const slides = [
 
   // ─── INFRA DECISIONS ────────────────────────────────────────────
   { type: 'divider', group: 'infra', num: '04', label: 'Infra Decisions',
-    text: 'Para cada projeto existe um compute ideal e um banco ideal. A escolha é guiada pelo perfil de carga — não por familiaridade.' },
+    text: 'Cada projeto pede um compute e um banco diferente. O que manda na escolha é o perfil de carga, não a ferramenta que você já viu antes.' },
 
   { type: 'hook', group: 'infra', beat: 9,
     title: 'Você terminou o backend da EJ <span class="text-purple-400">ontem à noite</span>.<br/>Tem que estar no ar até amanhã.<br/>Vercel, ECS ou EC2?',
-    subtitle: 'Não é "qual é o melhor" — é "qual encaixa nesse projeto, nesse prazo, nesse perfil de carga".',
+    subtitle: 'A pergunta não é qual é o melhor. É qual encaixa nesse projeto, nesse prazo, nesse perfil de carga.',
     tags: ['vercel', 'ecs', 'ec2', 'serverless', 'paas'] },
   { type: 'compare3', group: 'infra', beat: 9,
     title: 'Vercel · ECS · EC2',
@@ -252,8 +252,8 @@ const slides = [
     ]},
 
   { type: 'hook', group: 'infra', beat: 10,
-    title: 'O projeto da EJ começa <span class="text-purple-400">amanhã</span>.<br/>Qual banco você sobe primeiro<br/>— e por quê?',
-    subtitle: 'Migrar banco em produção é doloroso. A escolha de hoje vai te seguir por meses.',
+    title: 'O projeto da EJ começa <span class="text-purple-400">amanhã</span>.<br/>Qual banco você sobe primeiro<br/>e por quê?',
+    subtitle: 'Migrar banco em produção é doloroso. A escolha de hoje vai te acompanhar por meses.',
     tags: ['supabase', 'rds', 'postgresql', 'redis', 'upstash'] },
   { type: 'compare3', group: 'infra', beat: 10,
     title: 'Supabase · RDS · Redis',
@@ -274,11 +274,11 @@ const slides = [
 
   // ─── DEVOPS ─────────────────────────────────────────────────────
   { type: 'divider', group: 'devops', num: '05', label: 'DevOps',
-    text: 'O processo manual é frágil. Cada deploy precisa testar, buildar, e atualizar — sem etapa esquecida.' },
+    text: 'Deploy manual é frágil. Cada vez você precisa testar, buildar, atualizar, sem esquecer etapa nenhuma.' },
 
   { type: 'hook', group: 'devops', beat: 11,
     title: 'Você faz <code class="mono text-green-400">git push main</code>.<br/>Quantas coisas precisam acontecer<br/>até estar em <span class="text-green-400">produção</span>?',
-    subtitle: 'Liste cada etapa. Depois pergunte: quais delas você ainda faz manualmente hoje?',
+    subtitle: 'Pensa nas etapas que rodam desse commit até a request bater no servidor novo. Quantas você ainda faz na mão?',
     tags: ['ci', 'cd', 'github-actions', 'sha-tag', 'rolling-deploy'] },
   { type: 'code', group: 'devops', beat: 11,
     title: '.github/workflows/deploy.yml',
@@ -303,11 +303,11 @@ const slides = [
 
   // ─── SYNTHESIS ──────────────────────────────────────────────────
   { type: 'divider', group: 'synthesis', num: '06', label: 'Synthesis',
-    text: 'Tudo junto: o caminho de uma request, do DNS ao banco, com cada caixa virando um managed service da AWS.' },
+    text: 'Tudo junto agora. O caminho de uma request, do DNS até o banco. Cada caixa vira um managed service da AWS.' },
 
   { type: 'hookBig', group: 'synthesis', beat: 12,
     title: 'Uma <code class="mono">GET</code> entra no sistema.',
-    subtitle: 'Desenha cada camada que ela atravessa — do DNS até o banco.',
+    subtitle: 'Desenha cada camada que ela atravessa, do DNS até o banco.',
     tags: ['dns', 'cdn', 'alb', 'read-path', 'write-path', 'replica-lag'] },
   { type: 'diagramFull', group: 'synthesis', beat: 12,
     img: `${D}/full-architecture.png`,
@@ -315,7 +315,7 @@ const slides = [
 
   { type: 'hookBig', group: 'synthesis', beat: 13,
     title: 'Olha a arquitetura que você desenhou.<br/>Pra cada caixa,<br/><span class="text-emerald-400">qual AWS service</span> e por quê?',
-    subtitle: 'Não é decoreba — é justificar a escolha pelo perfil de carga daquela caixa específica.',
+    subtitle: 'Não tem que decorar nome de serviço. Tem que justificar a escolha pelo perfil de carga daquela caixa.',
     tags: ['route53', 'cloudfront', 'alb', 'fargate', 'aurora', 'elasticache', 'ssm', 'cloudwatch'] },
   { type: 'diagramFull', group: 'synthesis', beat: 13,
     img: `${D}/aws-services.png`,
@@ -599,7 +599,7 @@ function r_closing(s) {
       <div class="relative z-10 w-full max-w-[1400px] mx-auto px-16 flex flex-col gap-10 self-center justify-center">
         <div class="mono text-[14px] uppercase tracking-[0.4em] anim" style="color: ${g.accent};">A JORNADA</div>
         <h1 class="display text-[88px] leading-[1.0] font-bold text-white anim delay-1">npm run dev<br/><span class="text-neutral-500">→</span> Docker<br/><span class="text-neutral-500">→</span> Cloud<br/><span class="text-neutral-500">→</span> Decisions<br/><span class="text-neutral-500">→</span> Pipeline</h1>
-        <p class="display text-neutral-400 text-[30px] leading-tight font-normal anim delay-3 max-w-[1100px]">A próxima vez que rodar <code class="mono text-emerald-400">npm run dev</code>, você sabe exatamente o que vem depois.</p>
+        <p class="display text-neutral-400 text-[30px] leading-tight font-normal anim delay-3 max-w-[1100px]">Da próxima vez que você rodar <code class="mono text-emerald-400">npm run dev</code>, já sabe o que tá por trás.</p>
       </div>
       <footer class="absolute bottom-0 left-0 right-0 px-16 py-4 flex justify-between items-center mono text-[10px] uppercase tracking-[0.25em] text-neutral-600 z-30">
         <span>HOT STUFF 2026.2</span>
