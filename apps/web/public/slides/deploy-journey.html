@@ -213,11 +213,8 @@ const slides = [
       { line: '<span class="ind">    </span><span class="kw">volumes</span>: [<span class="str">"pgdata:/var/lib/postgresql/data"</span>]' },
     ]},
   { type: 'diagram', group: 'containers', beat: 5,
-    caption: 'Containers se acham pelo nome do serviço (db, não localhost). Browser só vê portas mapeadas.',
+    caption: 'Containers se acham pelo nome do serviço (db, não localhost). O Docker monta uma rede privada entre eles. O browser só vê o que você expõe com ports:.',
     img: `${D}/docker-compose.png` },
-  { type: 'diagramFull', group: 'containers', beat: 5,
-    img: `${D}/external/docker-bridge-network.png`,
-    title: 'Por baixo: cada container tem um veth ligado ao bridge virtual no host. É um switch L2 em software.' },
 
   // ─── CLOUD ──────────────────────────────────────────────────────
   { type: 'divider', group: 'cloud', num: '03', label: 'Cloud · AWS',
