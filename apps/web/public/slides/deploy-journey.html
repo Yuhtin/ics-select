@@ -54,6 +54,17 @@
   .code .com { color: #525252; font-style: italic; }
   .code .var { color: #60a5fa; }
   .code .ind { color: #525252; }
+
+  /* Print mode: all slides stack, one per page */
+  @media print {
+    @page { size: landscape; margin: 0; }
+    html, body { overflow: visible !important; height: auto !important; background: #0a0a0a !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .slide { display: flex !important; height: 100vh !important; width: 100vw !important; page-break-after: always; break-after: page; animation: none !important; }
+    .slide:last-child { page-break-after: avoid; }
+    .slide *, .slide *::before, .slide *::after { animation: none !important; transition: none !important; }
+    /* Hide live nav indicator */
+    body > div.fixed { display: none !important; }
+  }
 </style>
 </head>
 <body>
@@ -121,18 +132,11 @@ const slides = [
     title: 'Você roda <code class="mono text-cyan-400">docker run</code> no Mac.<br/>Seu colega roda no <span class="text-cyan-400">Linux</span>.<br/>Mesmo comportamento. Como?',
     subtitle: 'Container não é VM leve. Ele compartilha uma parte do host, e isola outra. Quais?',
     tags: ['container', 'imagem', 'namespace', 'cgroups', 'kernel'] },
-  { type: 'compare', group: 'containers', beat: 3,
-    title: 'Container vs VM',
-    columns: [
-      { title: 'Virtual Machine', emoji: '🖥️', points: [
-        '~2-4GB de overhead', 'Boot em minutos', 'Emula hardware completo', 'BIOS + kernel próprio',
-      ]},
-      { title: 'Container', emoji: '📦', points: [
-        '~120MB de overhead', 'Sobe em segundos', 'Compartilha kernel do host', 'Só isola processo + filesystem',
-      ]},
-    ]},
+  { type: 'diagramFull', group: 'containers', beat: 3,
+    img: `${D}/external/containers-vs-vms.png`,
+    title: 'VM isola tudo, do kernel pra cima. Container compartilha o kernel do host.' },
   { type: 'diagram', group: 'containers', beat: 3,
-    caption: 'Dockerfile → Image → N containers, todos compartilhando o kernel do host.',
+    caption: 'Dockerfile vira Image, Image vira N containers. Todos rodam no mesmo kernel.',
     img: `${D}/docker-container.png` },
 
   { type: 'hook', group: 'containers', beat: 4,
@@ -218,11 +222,11 @@ const slides = [
   { type: 'compare', group: 'cloud', beat: 8,
     title: 'EC2 · ECS Fargate',
     columns: [
-      { title: 'EC2', emoji: '☁️', points: [
-        'Você provisiona uma VM Linux', 'Instala Docker, faz docker run', 'Você gerencia: OS, patching, restart', 'GPU, hardware específico, controle total',
+      { title: 'EC2', sub: 'VM Linux', points: [
+        'Você provisiona uma VM Linux', 'Instala Docker, faz docker run', 'Você gerencia OS, patching, restart', 'GPU, hardware específico, controle total',
       ]},
-      { title: 'ECS Fargate', emoji: '⚡', points: [
-        'Define Task Definition + imagem ECR', 'AWS aloca compute automaticamente', 'AWS gerencia: OS, restart, scaling', 'Container = unidade de deploy',
+      { title: 'ECS Fargate', sub: 'compute gerenciado', points: [
+        'Define Task Definition + imagem ECR', 'AWS aloca compute automaticamente', 'AWS gerencia OS, restart, scaling', 'Container é a unidade de deploy',
       ]},
     ]},
   { type: 'diagram', group: 'cloud', beat: 8,
@@ -546,10 +550,10 @@ function r_compare(s) {
         <h2 class="display text-[44px] font-semibold text-white anim" style="border-left: 3px solid ${g.accent}; padding-left: 20px;">${s.title}</h2>
         <div class="grid grid-cols-2 gap-8 stagger">
           ${s.columns.map((col, i) => `
-            <div class="rounded-xl border border-neutral-800 bg-neutral-950/60 p-8 flex flex-col gap-5">
-              <div class="text-[48px]">${col.emoji}</div>
-              <h3 class="display text-[32px] font-bold" style="color: ${g.accent};">${col.title}</h3>
-              <ul class="flex flex-col gap-3 mt-2">
+            <div class="rounded-xl border border-neutral-800 bg-neutral-950/60 p-8 flex flex-col gap-3">
+              <h3 class="display text-[40px] font-bold leading-none" style="color: ${g.accent};">${col.title}</h3>
+              ${col.sub ? `<p class="mono text-[12px] uppercase tracking-[0.2em] text-neutral-500">${col.sub}</p>` : ''}
+              <ul class="flex flex-col gap-3 mt-3">
                 ${col.points.map(p => `<li class="display text-[18px] text-neutral-300 leading-snug">· ${p}</li>`).join('')}
               </ul>
             </div>
@@ -654,7 +658,17 @@ document.addEventListener('click', (e) => {
   show(current + 1);
 });
 
-show(0);
+// Print mode: triggered by ?print=1, shows all slides for the browser's print dialog
+const wantsPrint = new URLSearchParams(window.location.search).get('print') === '1';
+if (wantsPrint) {
+  allSlides.forEach(s => s.classList.add('active'));
+  // Wait for fonts + images, then print
+  window.addEventListener('load', () => {
+    setTimeout(() => window.print(), 1000);
+  });
+} else {
+  show(0);
+}
 </script>
 </body>
 </html>
