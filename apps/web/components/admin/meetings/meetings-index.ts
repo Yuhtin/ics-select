@@ -29,5 +29,6 @@ export function listMeetings(): MeetingSummary[] {
     beatCount: l.nodes.filter((n) => typeof n.beat === 'number').length,
     status: 'ready' as const,
     primaryGroup: primaryGroupOf(l),
+    slidesUrl: l.slidesUrl,
   }));
 }

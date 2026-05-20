@@ -8,6 +8,7 @@ export const deployJourney: Lesson = {
     'Uma jornada linear: o backend funciona localmente, um segundo dev entra, ele não sobe, e a gente resolve cada problema do jeito certo — Docker, secrets, cloud, decisões de infra, CI/CD.',
   durationMin: 120,
   audience: 'Hot Stuff 2026.2',
+  slidesUrl: '/slides/deploy-journey.html',
   nodes: [
     // ─── Foundation ───────────────────────────────────────────────────────────
     {

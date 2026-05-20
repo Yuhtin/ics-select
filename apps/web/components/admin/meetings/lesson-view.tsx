@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { clsx } from 'clsx';
-import { ArrowLeft, BookOpen, Printer, Radio } from 'lucide-react';
+import { ArrowLeft, BookOpen, Presentation, Printer, Radio } from 'lucide-react';
 import type { Lesson } from './lesson-types';
 import { Eyebrow } from '../../ui/eyebrow';
 import { StudyMode } from './study-mode';
@@ -42,6 +42,7 @@ export function LessonView({ lesson }: { lesson: Lesson }) {
 
           <div className="flex items-stretch gap-2">
             <ModeToggle mode={mode} onChange={setMode} />
+            {lesson.slidesUrl && <SlidesButton url={lesson.slidesUrl} />}
             {mode === 'study' && <PrintButton />}
           </div>
         </header>
@@ -57,6 +58,30 @@ export function LessonView({ lesson }: { lesson: Lesson }) {
 
       <PrintView lesson={lesson} />
     </>
+  );
+}
+
+function SlidesButton({ url }: { url: string }) {
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex items-center gap-2 rounded-card border border-border-token bg-surface px-4 py-2.5 text-left transition-colors hover:border-border-strong hover:bg-surface-hover"
+      title="Abrir slides em nova aba (modo apresentação)"
+    >
+      <span className="inline-grid h-7 w-7 place-items-center rounded-full bg-bg-subtle text-fg-soft">
+        <Presentation className="h-3.5 w-3.5" strokeWidth={1.8} />
+      </span>
+      <span className="block">
+        <span className="block font-sans text-sm font-semibold leading-none text-fg">
+          Slides
+        </span>
+        <span className="mt-1 block font-mono text-[10px] uppercase tracking-eyebrow text-fg-faint">
+          apresentar
+        </span>
+      </span>
+    </a>
   );
 }
 

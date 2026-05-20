@@ -63,6 +63,8 @@ export type Lesson = {
   durationMin: number;
   audience: string;
   nodes: LessonNode[];
+  /** Path to a static slide deck HTML (relative to /public). Set when /public/slides/{slug}.html exists. */
+  slidesUrl?: string;
 };
 
 export type MeetingSummary = {
@@ -75,4 +77,5 @@ export type MeetingSummary = {
   beatCount: number;
   status: 'ready' | 'draft';
   primaryGroup: NodeGroup;
+  slidesUrl?: string;
 };

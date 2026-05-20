@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { clsx } from 'clsx';
-import { ArrowRight, Clock, Layers, Users } from 'lucide-react';
+import { ArrowRight, Clock, Layers, Presentation, Users } from 'lucide-react';
 import type { MeetingSummary } from './lesson-types';
 import { Eyebrow } from '../../ui/eyebrow';
 import { GROUP_META } from './group-meta';
@@ -74,12 +74,33 @@ function MeetingCard({ meeting }: { meeting: MeetingSummary }) {
                 <Layers className="h-3 w-3" strokeWidth={1.8} />
                 {meeting.beatCount} beats
               </span>
+              {meeting.slidesUrl && (
+                <span className={clsx('inline-flex items-center gap-1.5', meta.accentClass)}>
+                  <Presentation className="h-3 w-3" strokeWidth={1.8} />
+                  Slides
+                </span>
+              )}
             </div>
           </div>
 
-          <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border-token bg-bg-subtle text-fg-soft transition-colors group-hover:border-fg group-hover:bg-fg group-hover:text-bg">
-            <ArrowRight className="h-4 w-4" strokeWidth={1.8} />
-          </span>
+          <div className="flex shrink-0 items-center gap-2">
+            {meeting.slidesUrl && (
+              <a
+                href={meeting.slidesUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="inline-flex h-10 items-center gap-2 rounded-card border border-border-token bg-bg-subtle px-3 font-mono text-[10px] uppercase tracking-eyebrow text-fg-soft transition-colors hover:border-fg hover:bg-fg hover:text-bg"
+                title="Abrir slides em nova aba"
+              >
+                <Presentation className="h-3.5 w-3.5" strokeWidth={1.8} />
+                Apresentar
+              </a>
+            )}
+            <span className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border-token bg-bg-subtle text-fg-soft transition-colors group-hover:border-fg group-hover:bg-fg group-hover:text-bg">
+              <ArrowRight className="h-4 w-4" strokeWidth={1.8} />
+            </span>
+          </div>
         </div>
       </Link>
     </li>
