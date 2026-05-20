@@ -178,6 +178,18 @@ function FocusCard({ node }: { node: LessonNode }) {
             <p className="mt-4 font-sans text-[15px] leading-relaxed text-fg-soft">
               <Glossarized text={node.oneLine} seen={seen} keyPrefix={`${node.id}-one`} />
             </p>
+            {node.diagram && (
+              <div className="mt-5 rounded-card border border-border-token bg-bg-subtle">
+                <div className="border-b border-border-token px-3 py-1.5">
+                  <span className="font-mono text-[10px] uppercase tracking-eyebrow text-fg-mute">
+                    Diagrama · Mermaid
+                  </span>
+                </div>
+                <pre className="overflow-x-auto p-3 font-mono text-[11px] leading-relaxed text-fg-soft">
+                  <code>{node.diagram}</code>
+                </pre>
+              </div>
+            )}
           </div>
 
           <div>

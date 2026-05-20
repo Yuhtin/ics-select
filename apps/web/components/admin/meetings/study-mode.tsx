@@ -84,20 +84,21 @@ function SidebarNav({
     return acc;
   }, {});
 
-  const order: (keyof typeof GROUP_META)[] = [
-    'foundations',
-    'url',
-    'pivot',
-    'chat',
-    'synthesis',
-  ];
+  const seen = new Set<string>();
+  const order: string[] = [];
+  for (const n of lesson.nodes) {
+    if (!seen.has(n.group)) {
+      seen.add(n.group);
+      order.push(n.group);
+    }
+  }
 
   return (
     <nav className="text-sm">
       {order.map((group, groupIdx) => {
         const nodes = grouped[group];
         if (!nodes || nodes.length === 0) return null;
-        const meta = GROUP_META[group];
+        const meta = GROUP_META[group as keyof typeof GROUP_META];
         return (
           <div
             key={group}
@@ -252,12 +253,28 @@ function NodeSection({
   );
 }
 
+function DiagramBlock({ diagram }: { diagram: string }) {
+  return (
+    <div className="rounded-card border border-border-token bg-bg-subtle">
+      <div className="border-b border-border-token px-4 py-2">
+        <span className="font-mono text-[10px] uppercase tracking-eyebrow text-fg-mute">
+          Diagrama · Mermaid
+        </span>
+      </div>
+      <pre className="overflow-x-auto p-4 font-mono text-xs leading-relaxed text-fg-soft">
+        <code>{diagram}</code>
+      </pre>
+    </div>
+  );
+}
+
 function OverviewPass({ node, seen }: { node: LessonNode; seen: Set<string> }) {
   return (
     <div className="max-w-[640px] space-y-5">
       <p className="font-sans text-[17px] leading-[1.75] text-fg-soft">
         <Glossarized text={node.pass1} seen={seen} keyPrefix={`${node.id}-p1`} />
       </p>
+      {node.diagram && <DiagramBlock diagram={node.diagram} />}
       <AskerBadgeRow node={node} />
     </div>
   );
@@ -266,21 +283,24 @@ function OverviewPass({ node, seen }: { node: LessonNode; seen: Set<string> }) {
 function DeepPass({ node, seen }: { node: LessonNode; seen: Set<string> }) {
   const paragraphs = node.pass2.split(/\n\n+/);
   return (
-    <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_280px]">
-      <div className="min-w-0 max-w-[640px] space-y-5">
-        {paragraphs.map((p, i) => (
-          <p
-            key={i}
-            className="font-sans text-[17px] leading-[1.75] text-fg-soft"
-          >
-            <Glossarized text={p} seen={seen} keyPrefix={`${node.id}-p2-${i}`} />
-          </p>
-        ))}
+    <div className="space-y-8">
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_280px]">
+        <div className="min-w-0 max-w-[640px] space-y-5">
+          {paragraphs.map((p, i) => (
+            <p
+              key={i}
+              className="font-sans text-[17px] leading-[1.75] text-fg-soft"
+            >
+              <Glossarized text={p} seen={seen} keyPrefix={`${node.id}-p2-${i}`} />
+            </p>
+          ))}
+        </div>
+        <aside className="space-y-5">
+          <AnchorCard node={node} seen={seen} />
+          <AskerCard node={node} seen={seen} />
+        </aside>
       </div>
-      <aside className="space-y-5">
-        <AnchorCard node={node} seen={seen} />
-        <AskerCard node={node} seen={seen} />
-      </aside>
+      {node.diagram && <DiagramBlock diagram={node.diagram} />}
     </div>
   );
 }
