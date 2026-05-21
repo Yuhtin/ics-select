@@ -9,22 +9,75 @@
 <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Fira+Sans:ital,wght@0,400;0,600;0,700;1,700&family=JetBrains+Mono:wght@400;500;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
 <style>
-  /* Inteli Junior brand palette
-     vinho       #7A0823  primária institucional
-     bordô       #5A061A  secundária
-     preto-vinho #2A020A  base escura (bg)
-     magenta     #FF1F6D  destaque principal
-     coral       #FF4B4B  destaque secundário
-     magenta-cl  #FF4F8A  acento claro
-     grafite     #242424  fundo neutro
-     cinza-esc   #111827  fundo footer
+  /* Inteli Júnior — ACTIVE/HUD face (matches inteli-jr.com)
+     bg-navy   #0B0E18  base escura
+     bg-deep   #060810  cards e wells
+     border    #1F2937  bordas neutras
+     red       #FF3D2E  vermelho IJ vivo (accent dominante)
+     red-soft  #FF6B5B  variante quente
+     red-glow  rgba(255,61,46,0.18)
+     text      #E5E7EB  primário
+     text-mute #6B7280  meta/eyebrow
   */
-  html, body { background: #2A020A; color: #f5e8eb; font-family: 'Poppins', 'Fira Sans', sans-serif; overflow: hidden; height: 100vh; margin: 0; }
+  html, body {
+    background: #0B0E18;
+    background-image: radial-gradient(circle, rgba(255,61,46,0.10) 1px, transparent 1px);
+    background-size: 28px 28px;
+    color: #E5E7EB;
+    font-family: 'JetBrains Mono', 'Poppins', monospace;
+    overflow: hidden; height: 100vh; margin: 0;
+  }
   .display { font-family: 'Poppins', sans-serif; letter-spacing: -0.025em; }
-  .accent-font { font-family: 'Fira Sans', sans-serif; font-style: italic; font-weight: 700; }
+  .accent-font { font-family: 'Poppins', sans-serif; font-weight: 700; }
   .mono { font-family: 'JetBrains Mono', monospace; }
-  .slide { display: none; height: 100vh; width: 100vw; position: relative; }
+  .slide {
+    display: none; height: 100vh; width: 100vw; position: relative;
+    background-color: #0B0E18;
+    background-image: radial-gradient(circle, rgba(255,61,46,0.10) 1px, transparent 1px);
+    background-size: 28px 28px;
+  }
   .slide.active { display: flex; }
+  /* Corner glow accents on slide edges */
+  .slide::before, .slide::after {
+    content: ''; position: absolute; pointer-events: none; z-index: 1;
+    width: 600px; height: 600px; border-radius: 50%; filter: blur(180px);
+  }
+  .slide::before {
+    top: -200px; right: -200px;
+    background: radial-gradient(circle, rgba(255,61,46,0.20) 0%, transparent 70%);
+  }
+  .slide::after {
+    bottom: -200px; left: -200px;
+    background: radial-gradient(circle, rgba(255,61,46,0.12) 0%, transparent 70%);
+  }
+
+  /* HUD frame — chamfered corners (cyberpunk panel) */
+  .hud-frame {
+    clip-path: polygon(
+      14px 0, calc(100% - 14px) 0, 100% 14px, 100% calc(100% - 14px),
+      calc(100% - 14px) 100%, 14px 100%, 0 calc(100% - 14px), 0 14px
+    );
+  }
+  .hud-frame-lg {
+    clip-path: polygon(
+      24px 0, calc(100% - 24px) 0, 100% 24px, 100% calc(100% - 24px),
+      calc(100% - 24px) 100%, 24px 100%, 0 calc(100% - 24px), 0 24px
+    );
+  }
+  /* Corner marker dots (red HUD bracket dots) */
+  .hud-corner::before, .hud-corner::after {
+    content: ''; position: absolute; width: 6px; height: 6px;
+    background: #FF3D2E; border-radius: 50%;
+    box-shadow: 0 0 10px #FF3D2E;
+  }
+  .hud-corner::before { top: -3px; right: -3px; }
+  .hud-corner::after  { bottom: -3px; left: -3px; }
+
+  /* Red rule line with gradient fade */
+  .red-rule {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #FF3D2E 20%, #FF3D2E 80%, transparent);
+  }
 
   @keyframes slideUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -51,14 +104,14 @@
   .slide.active .delay-4 { animation-delay: 0.6s; }
   .slide.active .glow-pulse { animation: glowPulse 4s ease-in-out infinite; }
 
-  .code { font-family: 'JetBrains Mono', monospace; font-size: 18px; line-height: 1.7; background: #1a0509; border: 1px solid #3d0612; border-radius: 12px; padding: 28px 32px; }
-  .code .kw  { color: #FF4F8A; font-weight: 600; }            /* keyword: magenta claro */
-  .code .str { color: #FF4B4B; }                              /* string:  coral */
-  .code .num { color: #FF1F6D; }                              /* number:  magenta */
-  .code .com { color: #7a5560; font-style: italic; }          /* comment: muted vinho */
-  .code .var { color: #f5e8eb; }                              /* var: off-white */
-  .code .dec { color: #FF1F6D; font-weight: 700; }            /* decorator: magenta forte */
-  .code .ind { color: #5a3540; }
+  .code { font-family: 'JetBrains Mono', monospace; font-size: 18px; line-height: 1.7; background: #060810; border: 1px solid #1F2937; border-radius: 4px; padding: 28px 32px; }
+  .code .kw  { color: #FF3D2E; font-weight: 600; }            /* keyword: red */
+  .code .str { color: #FF6B5B; }                              /* string:  red-soft */
+  .code .num { color: #FF8A66; }                              /* number:  amber-red */
+  .code .com { color: #4B5563; font-style: italic; }          /* comment: cool gray */
+  .code .var { color: #E5E7EB; }                              /* var: white */
+  .code .dec { color: #FF3D2E; font-weight: 700; }            /* decorator: red bold */
+  .code .ind { color: #374151; }
 
   @media print {
     @page { size: 1600px 900px; margin: 0; }
@@ -66,7 +119,7 @@
       overflow: visible !important;
       height: auto !important;
       width: auto !important;
-      background: #2A020A !important;
+      background: #0B0E18 !important;
       -webkit-print-color-adjust: exact;
       print-color-adjust: exact;
     }
@@ -106,18 +159,21 @@
 
 <div id="deck" class="relative w-screen h-screen overflow-hidden"></div>
 
-<div class="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 mono text-[10px] uppercase tracking-[0.2em] text-[#7a5560] pointer-events-none">
+<div class="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 mono text-[10px] uppercase tracking-[0.2em] text-[#4B5563] pointer-events-none">
   <span id="slide-num">01</span>
-  <span class="text-neutral-800">/</span>
+  <span class="text-[#1F2937]">/</span>
   <span id="slide-total">??</span>
 </div>
 
 <script>
+// All groups share the IJ red. Differentiation comes from section label + numbering, not hue.
+const RED = '#FF3D2E';
+const RED_SOFT = 'rgba(255,61,46,0.14)';
 const GROUP = {
-  cover:      { name: 'CAPA',          accent: '#ffffff', soft: 'rgba(255,255,255,0.08)' },
-  api:        { name: 'API · REST',    accent: '#FF1F6D', soft: 'rgba(255,31,109,0.14)'  },  // magenta
-  nestjs:     { name: 'NESTJS',        accent: '#FF4B4B', soft: 'rgba(255,75,75,0.14)'   },  // coral
-  synthesis:  { name: 'SYNTHESIS',     accent: '#FF4F8A', soft: 'rgba(255,79,138,0.14)'  },  // magenta claro
+  cover:      { name: 'CAPA',         accent: RED, soft: RED_SOFT },
+  api:        { name: 'API · REST',   accent: RED, soft: RED_SOFT },
+  nestjs:     { name: 'NESTJS',       accent: RED, soft: RED_SOFT },
+  synthesis:  { name: 'SYNTHESIS',    accent: RED, soft: RED_SOFT },
 };
 
 const slides = [
@@ -130,7 +186,7 @@ const slides = [
 
   // Beat 1: REST
   { type: 'hook', group: 'api', beat: 1,
-    title: 'Você vai criar a API de <span class="text-[#FF1F6D]">tarefas</span>.<br/>Como nomeia a rota pra criar, listar, deletar?',
+    title: 'Você vai criar a API de <span class="text-[#FF3D2E]">tarefas</span>.<br/>Como nomeia a rota pra criar, listar, deletar?',
     subtitle: 'A URL é o substantivo. O verbo HTTP é a ação. REST é só isso. E é o que o mundo todo já fala.',
     tags: ['rest', 'resource', 'http-verb', 'status-code', 'stateless'] },
   { type: 'compare', group: 'api', beat: 1,
@@ -157,7 +213,7 @@ const slides = [
 
   // Beat 2: Lendo doc
   { type: 'hook', group: 'api', beat: 2,
-    title: 'Você precisa da previsão do tempo de <span class="text-[#FF1F6D]">São Paulo</span>.<br/>Tem a doc do OpenWeather aberta.<br/>Por onde começa?',
+    title: 'Você precisa da previsão do tempo de <span class="text-[#FF3D2E]">São Paulo</span>.<br/>Tem a doc do OpenWeather aberta.<br/>Por onde começa?',
     subtitle: 'Pula o Get Started. Vai direto no Reference. 4 perguntas decidem tudo.',
     tags: ['openweather', 'endpoint', 'auth', 'query-param', 'response-schema'] },
   { type: 'list', group: 'api', beat: 2,
@@ -187,7 +243,7 @@ const slides = [
 
   // Beat 3: Consumindo API
   { type: 'hook', group: 'api', beat: 3,
-    title: 'Antes de abrir o <span class="text-[#FF1F6D]">VS Code</span>,<br/>qual ferramenta você abre primeiro<br/>pra testar a API?',
+    title: 'Antes de abrir o <span class="text-[#FF3D2E]">VS Code</span>,<br/>qual ferramenta você abre primeiro<br/>pra testar a API?',
     subtitle: 'Isolar API funciona vs meu código funciona. Sem isso, você gasta horas debugando o lado errado.',
     tags: ['curl', 'postman', 'fetch', 'devtools-network', 'cors'] },
   { type: 'compare3', group: 'api', beat: 3,
@@ -210,7 +266,7 @@ const slides = [
 
   // Beat 4: NestJS por que
   { type: 'hook', group: 'nestjs', beat: 4,
-    title: 'Express faz backend em <span class="text-[#FF4B4B]">10 linhas</span>.<br/>NestJS faz em 30.<br/>Por que escolher mais código?',
+    title: 'Express faz backend em <span class="text-[#FF3D2E]">10 linhas</span>.<br/>NestJS faz em 30.<br/>Por que escolher mais código?',
     subtitle: 'A resposta não é "Nest é melhor". É "qual cenário a estrutura paga o custo extra de setup".',
     tags: ['nestjs', 'framework', 'decorator', 'typescript', 'opinado'] },
   { type: 'compare', group: 'nestjs', beat: 4,
@@ -226,7 +282,7 @@ const slides = [
 
   // Beat 5: Anatomia
   { type: 'hook', group: 'nestjs', beat: 5,
-    title: 'Você cria a feature <span class="text-[#FF4B4B]">users</span>.<br/>Quais arquivos aparecem?<br/>E o que cada um faz?',
+    title: 'Você cria a feature <span class="text-[#FF3D2E]">users</span>.<br/>Quais arquivos aparecem?<br/>E o que cada um faz?',
     subtitle: '4 arquivos, 4 responsabilidades. Controller fala HTTP. Service tem lógica. Module cola. DTO valida.',
     tags: ['controller', 'service', 'module', 'dto', 'decorator', 'class-validator'] },
   { type: 'code', group: 'nestjs', beat: 5,
@@ -282,7 +338,7 @@ const slides = [
 
   // Beat 6: DI
   { type: 'hook', group: 'nestjs', beat: 6,
-    title: 'No Controller você escreveu<br/><code class="mono text-[#FF4B4B]">private users: UsersService</code>.<br/>Quem instancia o Service?',
+    title: 'No Controller você escreveu<br/><code class="mono text-[#FF3D2E]">private users: UsersService</code>.<br/>Quem instancia o Service?',
     subtitle: 'Você nunca chama new. Quem cria, quem reusa, e por que isso muda tudo no teste.',
     tags: ['dependency-injection', 'di-container', 'injectable', 'singleton', 'testability'] },
   { type: 'code', group: 'nestjs', beat: 6,
@@ -321,7 +377,7 @@ const slides = [
 
   // Beat 7: Pastas
   { type: 'hook', group: 'nestjs', beat: 7,
-    title: 'Seu projeto tem <span class="text-[#FF4B4B]">30 features</span>.<br/>Você organiza por TIPO<br/>ou por FEATURE?',
+    title: 'Seu projeto tem <span class="text-[#FF3D2E]">30 features</span>.<br/>Você organiza por TIPO<br/>ou por FEATURE?',
     subtitle: 'Layered (controllers/, services/) vs feature folders (users/, auth/). A escolha decide se onboarding é fácil ou caótico.',
     tags: ['feature-folders', 'layered', 'cohesion', 'shared'] },
   { type: 'code', group: 'nestjs', beat: 7,
@@ -376,7 +432,7 @@ const slides = [
 
   // Beat 9: AWS
   { type: 'hookBig', group: 'synthesis', beat: 9,
-    title: 'Olha o pipeline que você desenhou.<br/>Pra cada peça,<br/><span class="text-[#FF4F8A]">qual AWS service</span>?',
+    title: 'Olha o pipeline que você desenhou.<br/>Pra cada peça,<br/><span class="text-[#FF6B5B]">qual AWS service</span>?',
     subtitle: 'A escolha não é qual é mais novo. É qual perfil de carga aquela peça tem.',
     tags: ['route53', 'alb', 'ecs-fargate', 'lambda', 'rds', 'ecr', 'cloudwatch', 'ssm'] },
   { type: 'compare3', group: 'synthesis', beat: 9,
@@ -408,131 +464,157 @@ const slides = [
   { type: 'closing', group: 'synthesis' },
 ];
 
-function header(group, beat) {
-  const g = GROUP[group];
+// Reusable HUD chrome bits
+function brandHeader(label, extraRight = '') {
   return `
-    <header class="absolute top-0 left-0 right-0 px-16 py-6 flex justify-between items-center mono text-[11px] uppercase tracking-[0.2em] text-[#a8838c] z-30">
-      <span class="text-[#c4a7af] anim">BACKEND · FUNDAMENTOS</span>
-      ${beat !== undefined ? `<span class="px-3 py-1 border rounded-sm anim delay-1" style="border-color: ${g.accent}40; color: ${g.accent};">BEAT ${String(beat).padStart(2,'0')}</span>` : '<span></span>'}
-      <span class="anim delay-2" style="color: ${g.accent};">${g.name}</span>
+    <header class="absolute top-0 left-0 right-0 px-16 py-5 flex justify-between items-center z-30">
+      <div class="flex items-center gap-4 anim">
+        <img src="../brand/inteli-jr/symbol-white.png" alt="" class="h-7 opacity-90" />
+        <span class="mono text-[11px] uppercase tracking-[0.25em] text-[#9CA3AF]">[ ${label} ]</span>
+      </div>
+      ${extraRight}
     </header>
+    <div class="absolute top-[68px] left-16 right-16 red-rule anim delay-1 z-30"></div>
   `;
 }
 
-function footer(group) {
-  const g = GROUP[group];
+function header(group, beat) {
+  const beatChip = beat !== undefined
+    ? `<span class="mono text-[11px] uppercase tracking-[0.25em] px-3 py-1.5 anim delay-2" style="border: 1px solid #FF3D2E; color: #FF3D2E; clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);">BEAT ${String(beat).padStart(2,'0')} · ${GROUP[group].name}</span>`
+    : `<span class="mono text-[11px] uppercase tracking-[0.25em] anim delay-2" style="color: #FF3D2E;">${GROUP[group].name}</span>`;
+  return brandHeader('BACKEND · FUNDAMENTOS', beatChip);
+}
+
+function footer() {
   return `
-    <footer class="absolute bottom-0 left-0 right-0 px-16 py-4 flex justify-between items-center mono text-[10px] uppercase tracking-[0.25em] text-[#7a5560] z-30">
-      <span class="text-[#a8838c]">AULA ABERTA · 40+ CALOUROS</span>
-      <span style="color: ${g.accent}99;">${g.name}</span>
+    <div class="absolute bottom-[60px] left-16 right-16 red-rule z-30"></div>
+    <footer class="absolute bottom-0 left-0 right-0 px-16 py-4 flex justify-between items-center mono text-[10px] uppercase tracking-[0.3em] text-[#6B7280] z-30">
+      <span>[ AULA ABERTA · 40+ CALOUROS ]</span>
+      <span class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full" style="background: #FF3D2E; box-shadow: 0 0 8px #FF3D2E;"></span>INTELI · JÚNIOR</span>
     </footer>
   `;
 }
 
-function ambientGlow(group, pos='center') {
-  const g = GROUP[group];
-  if (group === 'cover') return `
-    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1100px] h-[800px] rounded-full blur-[200px] glow-pulse" style="background: radial-gradient(circle, ${g.soft} 0%, transparent 70%);"></div>`;
-  const positions = {
-    right: 'top-[10%] right-[-300px]',
-    left:  'top-[10%] left-[-300px]',
-    center: 'top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2',
-  };
-  return `<div class="absolute ${positions[pos]} w-[700px] h-[700px] rounded-full blur-[200px] glow-pulse" style="background: radial-gradient(circle, ${g.soft} 0%, transparent 70%);"></div>`;
-}
-
-function tagsRow(tags, group) {
-  const g = GROUP[group];
+function tagsRow(tags) {
   return `
     <div class="stagger flex flex-wrap gap-2">
-      ${tags.map(t => `<span class="mono text-[12px] uppercase tracking-[0.15em] px-3 py-1.5 rounded-sm border" style="border-color: ${g.accent}40; background: ${g.soft}; color: ${g.accent};">${t}</span>`).join('')}
+      ${tags.map(t => `<span class="mono text-[11px] uppercase tracking-[0.18em] px-3 py-1.5 border" style="border-color: #FF3D2E80; background: rgba(255,61,46,0.08); color: #FF6B5B; clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);">${t}</span>`).join('')}
     </div>
   `;
 }
 
-function r_cover(s) {
+// Corner-marker pseudo-frame: red dots at TL and BR
+function cornerMarkers() {
   return `
-    <section class="slide active w-full h-full overflow-hidden bg-[#2A020A]" data-group="${s.group}">
-      <!-- ambient brand glow -->
-      <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1300px] h-[950px] rounded-full blur-[220px] glow-pulse" style="background: radial-gradient(circle, rgba(122,8,35,0.55) 0%, transparent 70%);"></div>
-      <div class="absolute top-[-200px] right-[-200px] w-[700px] h-[700px] rounded-full blur-[180px]" style="background: radial-gradient(circle, rgba(255,31,109,0.20) 0%, transparent 70%);"></div>
+    <span class="absolute top-[-4px] left-[-4px] w-2 h-2 rounded-full" style="background: #FF3D2E; box-shadow: 0 0 8px #FF3D2E;"></span>
+    <span class="absolute bottom-[-4px] right-[-4px] w-2 h-2 rounded-full" style="background: #FF3D2E; box-shadow: 0 0 8px #FF3D2E;"></span>
+  `;
+}
 
+function r_cover() {
+  return `
+    <section class="slide active w-full h-full overflow-hidden" data-group="cover">
       <header class="absolute top-0 left-0 right-0 px-16 py-6 flex justify-between items-center z-30">
-        <img src="../brand/inteli-jr/logo-white.png" alt="Inteli Júnior" class="h-9 anim" />
-        <span class="mono text-[11px] uppercase tracking-[0.25em] px-3 py-1 border border-[#5A061A] rounded-sm text-[#e0c5cc] anim delay-1">AULA ABERTA · 40+ CALOUROS</span>
+        <img src="../brand/inteli-jr/logo-white.png" alt="Inteli Júnior" class="h-10 anim" />
+        <span class="mono text-[11px] uppercase tracking-[0.3em] text-[#9CA3AF] anim delay-1">[ AULA ABERTA · 40+ CALOUROS ]</span>
       </header>
+      <div class="absolute top-[80px] left-16 right-16 red-rule anim delay-1 z-30"></div>
 
-      <div class="relative z-10 w-full max-w-[1400px] mx-auto px-16 grid grid-cols-12 gap-8 self-center">
-        <div class="col-span-1 flex justify-end pr-6 border-r border-[#5A061A]/60 relative">
-          <div class="absolute top-0 right-[-1.5px] w-[3px] h-48 rounded-full anim delay-1" style="background: #FF1F6D; box-shadow: 0 0 24px #FF1F6D99;"></div>
+      <div class="relative z-10 w-full max-w-[1400px] mx-auto px-16 flex flex-col gap-10 self-center">
+        <div class="flex items-center gap-3 mono text-[12px] uppercase tracking-[0.3em] anim" style="color: #FF3D2E;">
+          <span>[ 01 . BACKEND ]</span>
+          <span class="text-[#1F2937]">//</span>
+          <span class="text-[#9CA3AF]">FUNDAMENTOS</span>
+          <span class="text-[#1F2937]">//</span>
+          <span class="text-[#9CA3AF]">90 MIN · 9 BEATS</span>
         </div>
-        <div class="col-span-11 pl-8 flex flex-col gap-10">
-          <div class="flex items-center gap-3 mono text-[12px] uppercase tracking-[0.25em] text-[#c4a7af] anim">
-            <span class="text-white">BACKEND · FUNDAMENTOS</span>
-            <span class="text-[#5A061A]">·</span>
-            <span>90 MIN</span>
-            <span class="text-[#5A061A]">·</span>
-            <span class="border border-[#5A061A] px-3 py-1 rounded-sm text-white">9 BEATS</span>
+
+        <h1 class="display text-white text-[120px] leading-[0.92] font-bold anim delay-1 tracking-tight">
+          BACKEND DE<br/><span style="color: #FF3D2E; text-shadow: 0 0 40px rgba(255,61,46,0.4);">VERDADE.</span>
+        </h1>
+
+        <div class="flex items-end gap-6 anim delay-2">
+          <h2 class="mono text-[#D1D5DB] text-[24px] leading-tight font-normal max-w-[700px]">
+            REST como padrão. <span style="color: #FF3D2E;">NestJS</span> como ferramenta. O que de fato você usa quando entra num projeto sério.
+          </h2>
+          <div class="flex-1 flex justify-end">
+            <div class="flex gap-1.5">
+              ${Array.from({length: 9}).map((_, i) => `<div class="w-3 h-3 rounded-sm" style="background: ${i < 3 ? '#FF3D2E' : 'rgba(255,61,46,0.18)'};"></div>`).join('')}
+            </div>
           </div>
-          <h1 class="display text-white text-[100px] leading-[0.95] font-bold anim delay-1">Backend <span style="color: #FF1F6D;">de verdade</span><br/><span style="color: #FF4B4B;">REST</span>, <span style="color: #FF4F8A;">NestJS</span></h1>
-          <h2 class="accent-font text-[#f5e8eb] text-[36px] leading-tight anim delay-2">Vem construir o que de fato você usa quando entra num projeto sério.</h2>
-          <div class="mt-8 w-[400px] flex gap-2 anim delay-3">
-            <div class="h-[3px] flex-grow rounded-full" style="background: #FF1F6D; box-shadow: 0 0 16px #FF1F6D80;"></div>
-            <div class="h-[3px] flex-grow rounded-full" style="background: #FF4B4B; box-shadow: 0 0 16px #FF4B4B80;"></div>
-            <div class="h-[3px] flex-grow rounded-full" style="background: #FF4F8A; box-shadow: 0 0 16px #FF4F8A80;"></div>
-          </div>
+        </div>
+
+        <div class="mt-8 grid grid-cols-3 gap-6 anim delay-3">
+          ${[
+            { num: '03', label: 'API · REST', sub: 'beats 1–3' },
+            { num: '04', label: 'NESTJS',     sub: 'beats 4–7' },
+            { num: '02', label: 'SYNTHESIS',  sub: 'beats 8–9' },
+          ].map(card => `
+            <div class="relative p-5 border border-[#1F2937] bg-[#060810]/60 hud-frame">
+              <div class="absolute top-2 right-2 w-1.5 h-1.5 rounded-full" style="background: #FF3D2E; box-shadow: 0 0 8px #FF3D2E;"></div>
+              <div class="flex items-baseline gap-3">
+                <span class="display text-[42px] font-bold leading-none" style="color: #FF3D2E;">${card.num}</span>
+                <span class="mono text-[10px] uppercase tracking-[0.2em] text-[#6B7280]">${card.sub}</span>
+              </div>
+              <div class="mono text-[12px] uppercase tracking-[0.25em] text-[#D1D5DB] mt-2">${card.label}</div>
+            </div>
+          `).join('')}
         </div>
       </div>
 
-      <footer class="absolute bottom-0 left-0 right-0 px-16 py-4 flex justify-between items-center mono text-[10px] uppercase tracking-[0.3em] text-[#7a5560] z-30">
-        <span>→ próxima slide</span>
+      <div class="absolute bottom-[60px] left-16 right-16 red-rule z-30"></div>
+      <footer class="absolute bottom-0 left-0 right-0 px-16 py-4 flex justify-between items-center mono text-[10px] uppercase tracking-[0.3em] text-[#6B7280] z-30">
         <span class="flex items-center gap-2">
-          <span class="material-symbols-outlined text-[14px]">terminal</span>
+          <span class="w-1.5 h-1.5 rounded-full" style="background: #FF3D2E; box-shadow: 0 0 8px #FF3D2E;"></span>
           BACKEND_FUNDAMENTOS.SH
         </span>
+        <span>[ INTELI · JÚNIOR ]</span>
       </footer>
     </section>
   `;
 }
 
 function r_divider(s) {
-  const g = GROUP[s.group];
   return `
-    <section class="slide w-full h-full overflow-hidden bg-[#2A020A]" data-group="${s.group}">
-      ${ambientGlow(s.group, 'center')}
-      <div class="relative z-10 w-full max-w-[1400px] mx-auto px-16 grid grid-cols-12 gap-8 self-center">
-        <div class="col-span-12 flex flex-col gap-12 anim">
-          <div class="mono text-[14px] uppercase tracking-[0.4em] anim" style="color: ${g.accent};">PARTE ${s.num}</div>
-          <h1 class="display text-[180px] leading-[0.9] font-bold anim delay-1" style="color: ${g.accent};">${s.label}</h1>
-          <p class="display text-[#c4a7af] text-[30px] leading-tight font-normal max-w-[1100px] anim delay-2">${s.text}</p>
+    <section class="slide w-full h-full overflow-hidden" data-group="${s.group}">
+      ${brandHeader(`PARTE ${s.num} · ${s.label}`, `<span class="mono text-[11px] uppercase tracking-[0.25em] anim delay-2" style="color: #FF3D2E;">// SECTION</span>`)}
+
+      <div class="relative z-10 w-full max-w-[1400px] mx-auto px-16 flex flex-col gap-10 self-center">
+        <div class="flex items-baseline gap-6 anim">
+          <span class="mono text-[22px] uppercase tracking-[0.3em]" style="color: #FF3D2E;">[ ${s.num} . PARTE ]</span>
+          <span class="w-32 h-[2px]" style="background: #FF3D2E; box-shadow: 0 0 12px #FF3D2E80;"></span>
+        </div>
+
+        <h1 class="display text-[170px] leading-[0.88] font-bold anim delay-1 tracking-tight">
+          <span class="text-white">${s.label.split(' ')[0]}</span>${s.label.split(' ').slice(1).length ? `<br/><span style="color: #FF3D2E; text-shadow: 0 0 50px rgba(255,61,46,0.4);">${s.label.split(' ').slice(1).join(' ')}</span>` : ''}
+        </h1>
+
+        <div class="flex gap-6 items-start anim delay-2 max-w-[1100px]">
+          <span class="mono text-[14px] uppercase tracking-[0.25em] mt-2 shrink-0" style="color: #FF3D2E;">↳</span>
+          <p class="mono text-[#D1D5DB] text-[24px] leading-snug font-normal">${s.text}</p>
         </div>
       </div>
-      <footer class="absolute bottom-0 left-0 right-0 px-16 py-4 flex justify-between items-center mono text-[10px] uppercase tracking-[0.25em] text-[#7a5560] z-30">
-        <span style="color: ${g.accent}99;">${g.name}</span>
-        <span>→</span>
-      </footer>
+
+      ${footer()}
     </section>
   `;
 }
 
 function r_hook(s, big=false) {
-  const g = GROUP[s.group];
-  const titleSize = big ? 'text-[88px]' : 'text-[72px]';
+  const titleSize = big ? 'text-[80px]' : 'text-[66px]';
   return `
-    <section class="slide w-full h-full overflow-hidden bg-[#2A020A]" data-group="${s.group}">
-      ${ambientGlow(s.group, 'right')}
+    <section class="slide w-full h-full overflow-hidden" data-group="${s.group}">
       ${header(s.group, s.beat)}
-      <div class="relative z-10 w-full max-w-[1400px] mx-auto px-16 grid grid-cols-12 gap-8 self-center pt-20 pb-20">
-        <div class="col-span-1 flex justify-end pr-6 border-r border-[#5A061A]/40 relative">
-          <div class="absolute top-0 right-[-1.5px] w-[3px] h-40 rounded-full anim delay-1" style="background: ${g.accent}; box-shadow: 0 0 24px ${g.accent}99;"></div>
+      <div class="relative z-10 w-full max-w-[1400px] mx-auto px-16 flex flex-col gap-8 self-center justify-center pt-24 pb-24">
+        <div class="flex items-center gap-4 anim">
+          <span class="mono text-[11px] uppercase tracking-[0.3em] text-[#6B7280]">// HOOK · BEAT ${String(s.beat).padStart(2,'0')}</span>
+          <div class="flex-1 h-px" style="background: linear-gradient(90deg, #FF3D2E40, transparent);"></div>
         </div>
-        <div class="col-span-11 pl-8 flex flex-col gap-10 justify-center">
-          <h1 class="display ${titleSize} leading-[1.05] font-bold text-white anim">${s.title}</h1>
-          ${s.subtitle ? `<p class="display text-[#c4a7af] text-[24px] leading-snug font-normal max-w-[1000px] anim delay-1">${s.subtitle}</p>` : ''}
-          ${s.tags ? `<div class="anim delay-2">${tagsRow(s.tags, s.group)}</div>` : ''}
-        </div>
+        <h1 class="display ${titleSize} leading-[1.08] font-bold text-white anim delay-1">${s.title}</h1>
+        ${s.subtitle ? `<p class="mono text-[#9CA3AF] text-[22px] leading-snug font-normal max-w-[1100px] anim delay-2">${s.subtitle}</p>` : ''}
+        ${s.tags ? `<div class="anim delay-3 pt-4">${tagsRow(s.tags)}</div>` : ''}
       </div>
-      ${footer(s.group)}
+      ${footer()}
     </section>
   `;
 }
@@ -540,131 +622,153 @@ function r_hook(s, big=false) {
 function r_hookBig(s) { return r_hook(s, true); }
 
 function r_code(s) {
-  const g = GROUP[s.group];
   return `
-    <section class="slide w-full h-full overflow-hidden bg-[#2A020A]" data-group="${s.group}">
-      ${ambientGlow(s.group, 'right')}
+    <section class="slide w-full h-full overflow-hidden" data-group="${s.group}">
       ${header(s.group, s.beat)}
-      <div class="relative z-10 w-full max-w-[1500px] mx-auto px-16 flex flex-col gap-8 self-center justify-center pt-20 pb-20">
-        <h2 class="display text-[34px] font-semibold text-white anim" style="border-left: 3px solid ${g.accent}; padding-left: 20px;">${s.title}</h2>
-        <div class="code anim-scale delay-1 max-w-[1200px]" style="box-shadow: 0 0 60px ${g.soft};">
-          ${s.code.map(c => `
-            <div class="flex items-baseline gap-6">
-              <div class="flex-1 min-w-0 whitespace-pre">${c.line || '&nbsp;'}</div>
-              ${c.note ? `<div class="mono text-[13px] text-[#7a5560] italic shrink-0">← ${c.note}</div>` : ''}
-            </div>
-          `).join('')}
+      <div class="relative z-10 w-full max-w-[1500px] mx-auto px-16 flex flex-col gap-8 self-center justify-center pt-24 pb-24">
+        <div class="flex items-center gap-4 anim">
+          <span class="mono text-[11px] uppercase tracking-[0.3em]" style="color: #FF3D2E;">// CODE</span>
+          <h2 class="display text-[32px] font-semibold text-white">${s.title}</h2>
+        </div>
+        <div class="relative anim-scale delay-1 max-w-[1200px]">
+          ${cornerMarkers()}
+          <div class="code" style="box-shadow: 0 0 60px rgba(255,61,46,0.12);">
+            ${s.code.map(c => `
+              <div class="flex items-baseline gap-6">
+                <div class="flex-1 min-w-0 whitespace-pre">${c.line || '&nbsp;'}</div>
+                ${c.note ? `<div class="mono text-[13px] text-[#4B5563] italic shrink-0">← ${c.note}</div>` : ''}
+              </div>
+            `).join('')}
+          </div>
         </div>
       </div>
-      ${footer(s.group)}
+      ${footer()}
     </section>
   `;
 }
 
 function r_list(s) {
-  const g = GROUP[s.group];
   return `
-    <section class="slide w-full h-full overflow-hidden bg-[#2A020A]" data-group="${s.group}">
-      ${ambientGlow(s.group, 'right')}
+    <section class="slide w-full h-full overflow-hidden" data-group="${s.group}">
       ${header(s.group, s.beat)}
-      <div class="relative z-10 w-full max-w-[1400px] mx-auto px-16 flex flex-col gap-10 self-center justify-center pt-20 pb-20">
-        <h2 class="display text-[42px] font-semibold text-white anim" style="border-left: 3px solid ${g.accent}; padding-left: 20px;">${s.title}</h2>
-        <ul class="stagger flex flex-col gap-4 max-w-[1200px]">
+      <div class="relative z-10 w-full max-w-[1400px] mx-auto px-16 flex flex-col gap-10 self-center justify-center pt-24 pb-24">
+        <div class="flex items-center gap-4 anim">
+          <span class="mono text-[11px] uppercase tracking-[0.3em]" style="color: #FF3D2E;">// LIST</span>
+          <h2 class="display text-[40px] font-semibold text-white">${s.title}</h2>
+        </div>
+        <ul class="stagger flex flex-col gap-3 max-w-[1200px]">
           ${s.items.map((it, i) => `
-            <li class="flex items-baseline gap-6">
-              <span class="mono text-[26px] font-bold w-12 shrink-0 text-right" style="color: ${g.accent};">${String(i+1).padStart(2,'0')}</span>
+            <li class="flex items-baseline gap-6 px-5 py-3 hud-frame relative" style="background: rgba(6,8,16,0.5); border: 1px solid #1F2937;">
+              <span class="absolute top-2 left-2 w-1 h-1 rounded-full" style="background: #FF3D2E;"></span>
+              <span class="mono text-[24px] font-bold w-14 shrink-0 text-right" style="color: #FF3D2E;">${String(i+1).padStart(2,'0')}</span>
               <div class="flex-1">
-                <span class="display text-[26px] font-semibold text-white">${it.kw}</span>
-                <span class="display text-[20px] font-normal text-[#c4a7af] ml-3">${it.text}</span>
+                <span class="display text-[24px] font-semibold text-white">${it.kw}</span>
+                <span class="mono text-[16px] font-normal text-[#9CA3AF] ml-3">${it.text}</span>
               </div>
             </li>
           `).join('')}
         </ul>
       </div>
-      ${footer(s.group)}
+      ${footer()}
     </section>
   `;
 }
 
 function r_compare(s) {
-  const g = GROUP[s.group];
   return `
-    <section class="slide w-full h-full overflow-hidden bg-[#2A020A]" data-group="${s.group}">
-      ${ambientGlow(s.group, 'center')}
+    <section class="slide w-full h-full overflow-hidden" data-group="${s.group}">
       ${header(s.group, s.beat)}
-      <div class="relative z-10 w-full max-w-[1400px] mx-auto px-16 flex flex-col gap-10 self-center justify-center pt-20 pb-20">
-        <h2 class="display text-[42px] font-semibold text-white anim" style="border-left: 3px solid ${g.accent}; padding-left: 20px;">${s.title}</h2>
+      <div class="relative z-10 w-full max-w-[1400px] mx-auto px-16 flex flex-col gap-10 self-center justify-center pt-24 pb-24">
+        <div class="flex items-center gap-4 anim">
+          <span class="mono text-[11px] uppercase tracking-[0.3em]" style="color: #FF3D2E;">// COMPARE</span>
+          <h2 class="display text-[40px] font-semibold text-white">${s.title}</h2>
+        </div>
         <div class="grid grid-cols-2 gap-8 stagger">
           ${s.columns.map(col => `
-            <div class="rounded-xl border border-[#5A061A] bg-[#1a0509]/60 p-8 flex flex-col gap-3">
-              <h3 class="display text-[36px] font-bold leading-none" style="color: ${g.accent};">${col.title}</h3>
-              ${col.sub ? `<p class="mono text-[12px] uppercase tracking-[0.2em] text-[#a8838c]">${col.sub}</p>` : ''}
-              <ul class="flex flex-col gap-3 mt-3">
-                ${col.points.map(p => `<li class="display text-[18px] text-[#e0c5cc] leading-snug">· ${p}</li>`).join('')}
+            <div class="relative p-7 hud-frame-lg" style="background: rgba(6,8,16,0.6); border: 1px solid #1F2937;">
+              ${cornerMarkers()}
+              <h3 class="display text-[34px] font-bold leading-none" style="color: #FF3D2E;">${col.title}</h3>
+              ${col.sub ? `<p class="mono text-[11px] uppercase tracking-[0.2em] text-[#6B7280] mt-2">${col.sub}</p>` : ''}
+              <div class="my-4 red-rule" style="opacity: 0.4;"></div>
+              <ul class="flex flex-col gap-3">
+                ${col.points.map(p => `<li class="mono text-[16px] text-[#D1D5DB] leading-snug flex gap-3"><span style="color: #FF3D2E;">›</span>${p}</li>`).join('')}
               </ul>
             </div>
           `).join('')}
         </div>
       </div>
-      ${footer(s.group)}
+      ${footer()}
     </section>
   `;
 }
 
 function r_compare3(s) {
-  const g = GROUP[s.group];
   return `
-    <section class="slide w-full h-full overflow-hidden bg-[#2A020A]" data-group="${s.group}">
-      ${ambientGlow(s.group, 'center')}
+    <section class="slide w-full h-full overflow-hidden" data-group="${s.group}">
       ${header(s.group, s.beat)}
-      <div class="relative z-10 w-full max-w-[1500px] mx-auto px-12 flex flex-col gap-10 self-center justify-center pt-20 pb-20">
-        <h2 class="display text-[42px] font-semibold text-white anim" style="border-left: 3px solid ${g.accent}; padding-left: 20px;">${s.title}</h2>
-        <div class="grid grid-cols-3 gap-6 stagger">
+      <div class="relative z-10 w-full max-w-[1500px] mx-auto px-12 flex flex-col gap-10 self-center justify-center pt-24 pb-24">
+        <div class="flex items-center gap-4 anim">
+          <span class="mono text-[11px] uppercase tracking-[0.3em]" style="color: #FF3D2E;">// COMPARE · 3</span>
+          <h2 class="display text-[40px] font-semibold text-white">${s.title}</h2>
+        </div>
+        <div class="grid grid-cols-3 gap-5 stagger">
           ${s.columns.map(col => `
-            <div class="rounded-xl border border-[#5A061A] bg-[#1a0509]/60 p-7 flex flex-col gap-4">
-              <div class="mono text-[10px] uppercase tracking-[0.2em] text-[#a8838c]">${col.tag}</div>
-              <h3 class="display text-[28px] font-bold leading-tight" style="color: ${g.accent};">${col.title}</h3>
-              <p class="mono text-[12px] uppercase tracking-[0.15em] text-[#a8838c] -mt-2">${col.sub}</p>
-              <ul class="flex flex-col gap-2.5 mt-3">
-                ${col.points.map(p => `<li class="display text-[16px] text-[#e0c5cc] leading-snug">· ${p}</li>`).join('')}
+            <div class="relative p-6 hud-frame-lg" style="background: rgba(6,8,16,0.6); border: 1px solid #1F2937;">
+              ${cornerMarkers()}
+              <div class="mono text-[10px] uppercase tracking-[0.2em] text-[#6B7280]">[ ${col.tag} ]</div>
+              <h3 class="display text-[28px] font-bold leading-tight mt-2" style="color: #FF3D2E;">${col.title}</h3>
+              <p class="mono text-[11px] uppercase tracking-[0.15em] text-[#6B7280] mt-1">${col.sub}</p>
+              <div class="my-3 red-rule" style="opacity: 0.4;"></div>
+              <ul class="flex flex-col gap-2">
+                ${col.points.map(p => `<li class="mono text-[14px] text-[#D1D5DB] leading-snug flex gap-2"><span style="color: #FF3D2E;">›</span>${p}</li>`).join('')}
               </ul>
             </div>
           `).join('')}
         </div>
       </div>
-      ${footer(s.group)}
+      ${footer()}
     </section>
   `;
 }
 
-function r_closing(s) {
-  const g = GROUP[s.group];
+function r_closing() {
   return `
-    <section class="slide w-full h-full overflow-hidden bg-[#2A020A]" data-group="${s.group}">
-      <!-- ambient brand glow -->
-      <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1300px] h-[950px] rounded-full blur-[220px] glow-pulse" style="background: radial-gradient(circle, rgba(122,8,35,0.55) 0%, transparent 70%);"></div>
-      <div class="absolute bottom-[-200px] left-[-200px] w-[700px] h-[700px] rounded-full blur-[180px]" style="background: radial-gradient(circle, rgba(255,75,75,0.18) 0%, transparent 70%);"></div>
-
+    <section class="slide w-full h-full overflow-hidden" data-group="synthesis">
       <header class="absolute top-0 left-0 right-0 px-16 py-6 flex justify-between items-center z-30">
-        <img src="../brand/inteli-jr/logo-white.png" alt="Inteli Júnior" class="h-9 anim" />
-        <span class="mono text-[11px] uppercase tracking-[0.25em] anim delay-1" style="color: ${g.accent};">END</span>
+        <img src="../brand/inteli-jr/logo-white.png" alt="Inteli Júnior" class="h-10 anim" />
+        <span class="mono text-[11px] uppercase tracking-[0.3em] anim delay-1" style="color: #FF3D2E;">[ END · OBRIGADO ]</span>
       </header>
+      <div class="absolute top-[80px] left-16 right-16 red-rule anim delay-1 z-30"></div>
 
-      <div class="relative z-10 w-full max-w-[1400px] mx-auto px-16 flex flex-col gap-10 self-center justify-center">
-        <div class="mono text-[14px] uppercase tracking-[0.4em] anim" style="color: ${g.accent};">A AULA EM 5 LINHAS</div>
-        <h1 class="display text-[68px] leading-[1.1] font-bold text-white anim delay-1">
-          <span style="color: #FF1F6D;">REST</span><br/>
-          <span class="text-[#a8838c]">→</span> Ler doc de API alheia<br/>
-          <span class="text-[#a8838c]">→</span> <span style="color: #FF4B4B;">NestJS</span> opinado<br/>
-          <span class="text-[#a8838c]">→</span> Feature folders + DI<br/>
-          <span class="text-[#a8838c]">→</span> ECS Fargate + RDS
+      <div class="relative z-10 w-full max-w-[1400px] mx-auto px-16 flex flex-col gap-10 self-center">
+        <div class="flex items-center gap-3 mono text-[14px] uppercase tracking-[0.3em] anim" style="color: #FF3D2E;">
+          <span>[ A AULA EM 5 LINHAS ]</span>
+          <span class="w-32 h-px" style="background: #FF3D2E;"></span>
+        </div>
+
+        <h1 class="display text-[64px] leading-[1.15] font-bold text-white anim delay-1">
+          <span style="color: #FF3D2E;">REST</span> · ler doc · consumir API<br/>
+          <span style="color: #FF3D2E;">NestJS</span> opinado, DI, feature folders<br/>
+          <span class="text-[#6B7280]">━━</span> pipeline completo até <span style="color: #FF3D2E;">AWS</span>
         </h1>
-        <p class="accent-font text-[#f5e8eb] text-[30px] leading-tight anim delay-3 max-w-[1100px]">Segunda-feira: <code class="mono text-[#FF4F8A] not-italic font-normal">npx @nestjs/cli new minha-api</code>. Vem crescer com a gente.</p>
+
+        <div class="relative p-6 anim delay-3 hud-frame-lg" style="background: rgba(6,8,16,0.7); border: 1px solid #FF3D2E;">
+          ${cornerMarkers()}
+          <div class="mono text-[11px] uppercase tracking-[0.25em] text-[#6B7280]">[ SEGUNDA-FEIRA · COMECE AQUI ]</div>
+          <p class="display text-[#E5E7EB] text-[28px] leading-tight font-medium mt-3">
+            <code class="mono text-[#FF6B5B] font-normal">$ npx @nestjs/cli new minha-api</code>
+          </p>
+          <p class="mono text-[#9CA3AF] text-[16px] mt-2">Vem crescer com a gente.</p>
+        </div>
       </div>
 
-      <footer class="absolute bottom-0 left-0 right-0 px-16 py-4 flex justify-between items-center mono text-[10px] uppercase tracking-[0.3em] text-[#7a5560] z-30">
-        <span>AULA ABERTA · 40+ CALOUROS</span>
-        <span style="color: ${g.accent}99;">BACKEND FUNDAMENTOS</span>
+      <div class="absolute bottom-[60px] left-16 right-16 red-rule z-30"></div>
+      <footer class="absolute bottom-0 left-0 right-0 px-16 py-4 flex justify-between items-center mono text-[10px] uppercase tracking-[0.3em] text-[#6B7280] z-30">
+        <span>[ BACKEND_FUNDAMENTOS · END ]</span>
+        <span class="flex items-center gap-2">
+          <span class="w-1.5 h-1.5 rounded-full" style="background: #FF3D2E; box-shadow: 0 0 8px #FF3D2E;"></span>
+          INTELI · JÚNIOR
+        </span>
       </footer>
     </section>
   `;
