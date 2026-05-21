@@ -434,7 +434,6 @@ export const backendFundamentos: Lesson = {
           note: 'Container ECS em subnet privada não consegue puxar imagem do ECR sem rota pra fora. NAT Gateway custa $0.045/h (~$33/mês). Alternativa: VPC Endpoint pra ECR (mais barato em escala).',
         },
       ],
-      diagramUrl: '/diagrams/backend-fundamentos/aws-ecs-layers.png',
       anchor:
         'Olha o diagrama do pipeline NestJS que você desenhou. Pra cada peça (servidor, banco, secrets), qual AWS managed service faz esse trabalho em produção?',
       followup:
