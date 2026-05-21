@@ -211,6 +211,7 @@ function FocusCard({ node }: { node: LessonNode }) {
             ) : null}
           </div>
 
+          {node.askWho && node.askWho.length > 0 && (
           <div>
             <Eyebrow className="mb-3">Top 3 pra perguntar</Eyebrow>
             <div className="flex flex-col gap-2.5">
@@ -238,6 +239,7 @@ function FocusCard({ node }: { node: LessonNode }) {
               ))}
             </div>
           </div>
+          )}
 
           <PegadinhasList node={node} seen={seen} />
         </div>

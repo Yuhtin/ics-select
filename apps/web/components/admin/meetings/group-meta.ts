@@ -98,4 +98,20 @@ export const GROUP_META: Record<NodeGroup, GroupVisual> = {
     stripeClass: 'bg-reflect',
     tintClass: 'bg-reflect-soft/40',
   },
+  api: {
+    label: 'API · REST',
+    eyebrow: 'API · REST',
+    accentClass: 'text-success',
+    ringClass: 'bg-success',
+    stripeClass: 'bg-success',
+    tintClass: 'bg-success-soft/40',
+  },
+  nestjs: {
+    label: 'NestJS',
+    eyebrow: 'NestJS',
+    accentClass: 'text-primary',
+    ringClass: 'bg-primary',
+    stripeClass: 'bg-primary',
+    tintClass: 'bg-primary-soft/40',
+  },
 };

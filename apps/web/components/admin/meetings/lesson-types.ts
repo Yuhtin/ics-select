@@ -9,7 +9,9 @@ export type NodeGroup =
   | 'cloud'
   | 'scale'
   | 'devops'
-  | 'infra';
+  | 'infra'
+  | 'api'
+  | 'nestjs';
 
 export type Asker = {
   name: string;
@@ -43,7 +45,7 @@ export type LessonNode = {
   pass2: string;
   pass3: Pegadinha[];
   anchor: string;
-  askWho: Asker[];
+  askWho?: Asker[];
   followup: string;
   gotcha: string;
   scenarios?: ResponseScenarios;

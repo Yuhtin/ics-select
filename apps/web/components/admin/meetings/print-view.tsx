@@ -142,7 +142,7 @@ function PrintOverview({
       <p className="font-sans text-[14px] leading-[1.65] text-fg">
         <Glossarized text={node.pass1} seen={seen} keyPrefix={`ov-${node.id}-p1`} />
       </p>
-      {node.askWho.length > 0 && (
+      {node.askWho && node.askWho.length > 0 && (
         <div className="rounded-input border border-border-token bg-bg-subtle/50 p-3">
           <p className="font-mono text-[9px] uppercase tracking-eyebrow text-fg-mute font-semibold">
             Pra quem perguntar
@@ -192,6 +192,7 @@ function PrintDeep({ node, seen }: { node: LessonNode; seen: Set<string> }) {
             "<Glossarized text={node.anchor} seen={seen} keyPrefix={`dp-${node.id}-anc`} />"
           </p>
         </div>
+        {node.askWho && node.askWho.length > 0 && (
         <div className="rounded-input border border-border-token bg-bg-subtle/40 p-3">
           <p className="font-mono text-[9px] uppercase tracking-eyebrow text-fg-mute font-semibold">
             Pra quem perguntar
@@ -212,6 +213,7 @@ function PrintDeep({ node, seen }: { node: LessonNode; seen: Set<string> }) {
             ))}
           </ul>
         </div>
+        )}
       </div>
     </div>
   );

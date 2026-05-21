@@ -385,7 +385,8 @@ function AnchorCard({ node, seen }: { node: LessonNode; seen: Set<string> }) {
 }
 
 function AskerCard({ node, seen }: { node: LessonNode; seen: Set<string> }) {
-  const top3 = node.askWho.slice(0, 3);
+  const top3 = (node.askWho ?? []).slice(0, 3);
+  if (top3.length === 0) return null;
   return (
     <div className="rounded-card border border-border-token bg-surface p-5">
       <Eyebrow className="mb-3">Top 3 pra perguntar</Eyebrow>
@@ -443,7 +444,7 @@ function FollowupCard({ node, seen }: { node: LessonNode; seen: Set<string> }) {
 }
 
 function AskerBadgeRow({ node }: { node: LessonNode }) {
-  const top3 = node.askWho.slice(0, 3);
+  const top3 = (node.askWho ?? []).slice(0, 3);
   if (top3.length === 0) return null;
   const names = top3
     .map((a) => (a.name === 'open' ? 'grupo' : a.name.split(' ')[0]))

@@ -2,11 +2,13 @@ import type { Lesson, MeetingSummary, NodeGroup } from './lesson-types';
 import { urlShortener } from './lessons/url-shortener';
 import { chatMessaging } from './lessons/chat-messaging';
 import { deployJourney } from './lessons/deploy-journey';
+import { backendFundamentos } from './lessons/backend-fundamentos';
 
 const LESSONS: Record<string, Lesson> = {
   [urlShortener.slug]: urlShortener,
   [chatMessaging.slug]: chatMessaging,
   [deployJourney.slug]: deployJourney,
+  [backendFundamentos.slug]: backendFundamentos,
 };
 
 export function getLesson(slug: string): Lesson | undefined {
