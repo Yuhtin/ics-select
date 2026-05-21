@@ -21,7 +21,7 @@
   */
   html, body {
     background: #0B0E18;
-    background-image: radial-gradient(circle, rgba(255,61,46,0.10) 1px, transparent 1px);
+    background-image: radial-gradient(circle, rgba(255,61,46,0.18) 1px, transparent 1px);
     background-size: 28px 28px;
     color: #E5E7EB;
     font-family: 'JetBrains Mono', 'Poppins', monospace;
@@ -33,7 +33,7 @@
   .slide {
     display: none; height: 100vh; width: 100vw; position: relative;
     background-color: #0B0E18;
-    background-image: radial-gradient(circle, rgba(255,61,46,0.10) 1px, transparent 1px);
+    background-image: radial-gradient(circle, rgba(255,61,46,0.18) 1px, transparent 1px);
     background-size: 28px 28px;
   }
   .slide.active { display: flex; }
@@ -196,7 +196,7 @@ const slides = [
         'POST /createTask', 'POST /listTasks', 'POST /getTask/:id', 'POST /deleteTask/:id', 'Tudo via POST · nada padronizado',
       ]},
       { title: 'REST (convenção)', sub: 'verbo HTTP', points: [
-        'POST /tasks · cria', 'GET /tasks · lista', 'GET /tasks/:id · uma', 'DELETE /tasks/:id · apaga', 'Verbo HTTP diz a ação',
+        'POST /tasks · cria', 'GET /tasks · lista todas', 'GET /tasks/:id · pega uma', 'PATCH /tasks/:id · atualiza', 'DELETE /tasks/:id · apaga',
       ]},
     ]},
   { type: 'list', group: 'api', beat: 1,
@@ -489,7 +489,7 @@ function footer() {
   return `
     <div class="absolute bottom-[60px] left-16 right-16 red-rule z-30"></div>
     <footer class="absolute bottom-0 left-0 right-0 px-16 py-4 flex justify-between items-center mono text-[10px] uppercase tracking-[0.3em] text-[#6B7280] z-30">
-      <span>[ AULA ABERTA · 40+ CALOUROS ]</span>
+      <span>[ BACKEND_FUNDAMENTOS.SH ]</span>
       <span class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full" style="background: #FF3D2E; box-shadow: 0 0 8px #FF3D2E;"></span>INTELI · JÚNIOR</span>
     </footer>
   `;
@@ -515,8 +515,8 @@ function r_cover() {
   return `
     <section class="slide active w-full h-full overflow-hidden" data-group="cover">
       <header class="absolute top-0 left-0 right-0 px-16 py-6 flex justify-between items-center z-30">
-        <img src="../brand/inteli-jr/logo-white.png" alt="Inteli Júnior" class="h-10 anim" />
-        <span class="mono text-[11px] uppercase tracking-[0.3em] text-[#9CA3AF] anim delay-1">[ AULA ABERTA · 40+ CALOUROS ]</span>
+        <img src="../brand/inteli-jr/logo-white.png" alt="Inteli Júnior" class="h-20 anim" />
+        <span class="mono text-[11px] uppercase tracking-[0.3em] text-[#9CA3AF] anim delay-1">[ AULA · 90 MIN ]</span>
       </header>
       <div class="absolute top-[80px] left-16 right-16 red-rule anim delay-1 z-30"></div>
 
@@ -735,14 +735,14 @@ function r_closing() {
   return `
     <section class="slide w-full h-full overflow-hidden" data-group="synthesis">
       <header class="absolute top-0 left-0 right-0 px-16 py-6 flex justify-between items-center z-30">
-        <img src="../brand/inteli-jr/logo-white.png" alt="Inteli Júnior" class="h-10 anim" />
+        <img src="../brand/inteli-jr/logo-white.png" alt="Inteli Júnior" class="h-20 anim" />
         <span class="mono text-[11px] uppercase tracking-[0.3em] anim delay-1" style="color: #FF3D2E;">[ END · OBRIGADO ]</span>
       </header>
       <div class="absolute top-[80px] left-16 right-16 red-rule anim delay-1 z-30"></div>
 
       <div class="relative z-10 w-full max-w-[1400px] mx-auto px-16 flex flex-col gap-10 self-center">
         <div class="flex items-center gap-3 mono text-[14px] uppercase tracking-[0.3em] anim" style="color: #FF3D2E;">
-          <span>[ A AULA EM 5 LINHAS ]</span>
+          <span>[ A AULA EM 3 LINHAS ]</span>
           <span class="w-32 h-px" style="background: #FF3D2E;"></span>
         </div>
 
