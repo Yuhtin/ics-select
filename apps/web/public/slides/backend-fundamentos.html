@@ -603,6 +603,46 @@ const slides = [
       { line: '}' },
       { line: '<span class="com">// + ValidationPipe global em main.ts</span>' },
     ]},
+  { type: 'htmlDiagram', group: 'nestjs', beat: 6,
+    title: 'Fluxo · POST /users dentro do UsersModule',
+    subtitle: 'O Module agrupa os 4 arquivos. DTO valida antes do Controller, que delega pro Service, que persiste via Repository.',
+    diagramHtml: `
+      <div class="diag-flow-row">
+        <div class="diag-node diag-node-edge">
+          <div class="diag-node-label">CLIENT</div>
+          <div class="diag-node-body">POST /users</div>
+        </div>
+        <div class="diag-arrow-h"></div>
+        <div class="diag-node">
+          <div class="diag-node-label">DTO + PIPE</div>
+          <div class="diag-node-body mono">CreateUserDto<br/>@IsEmail · @MinLength</div>
+        </div>
+        <div class="diag-arrow-h"></div>
+        <div class="diag-node">
+          <div class="diag-node-label">CONTROLLER</div>
+          <div class="diag-node-body mono">@Post()<br/>@Body(dto)</div>
+        </div>
+        <div class="diag-arrow-h"></div>
+        <div class="diag-node">
+          <div class="diag-node-label">SERVICE</div>
+          <div class="diag-node-body mono">@Injectable()<br/>regra de negócio</div>
+        </div>
+        <div class="diag-arrow-h"></div>
+        <div class="diag-node">
+          <div class="diag-node-label">REPOSITORY</div>
+          <div class="diag-node-body mono">Prisma · gera SQL</div>
+        </div>
+        <div class="diag-arrow-h"></div>
+        <div class="diag-node diag-node-active">
+          <div class="diag-node-label">DATABASE</div>
+          <div class="diag-node-body mono">Postgres</div>
+        </div>
+      </div>
+      <div class="diag-caption">
+        <span class="diag-caption-mark">!</span>
+        Esqueceu de declarar o Service no <code class="mono text-[#FF6B5B]">providers: []</code> do Module? Nest can't resolve dependencies — bug clássico de calouro.
+      </div>
+    ` },
 
   // Beat 7: DI
   { type: 'hook', group: 'nestjs', beat: 7,
@@ -642,6 +682,49 @@ const slides = [
       { kw: 'Reúso',         text: '3 controllers compartilham a mesma instância de MailService. Mesma config, mesma conexão.' },
       { kw: 'Singleton',     text: 'Uma instância por aplicação. Cuidado com estado mutável em this, vira bug entre requests.' },
     ] },
+  { type: 'htmlDiagram', group: 'nestjs', beat: 7,
+    title: 'DI Container · quem registra, quem pede, quem injeta',
+    subtitle: 'Module declara em providers[]. Container guarda a instância singleton. Controller pede via tipo no construtor. Container injeta.',
+    diagramHtml: `
+      <div class="diag-mvc-row">
+        <div class="diag-mvc-card">
+          <div class="diag-mvc-num">01</div>
+          <div class="diag-mvc-title">MODULE</div>
+          <div class="diag-mvc-sub">declara</div>
+          <div class="diag-mvc-rule"></div>
+          <div class="diag-mvc-body">@Module({<br/>&nbsp;&nbsp;providers: [<br/>&nbsp;&nbsp;&nbsp;&nbsp;UsersService,<br/>&nbsp;&nbsp;]<br/>})</div>
+          <div class="diag-mvc-file mono">users.module.ts</div>
+        </div>
+        <div class="diag-mvc-bridge">
+          <div class="diag-mvc-bridge-line"></div>
+          <div class="diag-mvc-bridge-label">registra</div>
+        </div>
+        <div class="diag-mvc-card">
+          <div class="diag-mvc-num">02</div>
+          <div class="diag-mvc-title">CONTAINER</div>
+          <div class="diag-mvc-sub">cofre singleton</div>
+          <div class="diag-mvc-rule"></div>
+          <div class="diag-mvc-body">Mantém UMA instância<br/>de cada provider.<br/>Reusa toda vez<br/>que alguém pede.</div>
+          <div class="diag-mvc-file mono">NestJS DI runtime</div>
+        </div>
+        <div class="diag-mvc-bridge">
+          <div class="diag-mvc-bridge-line"></div>
+          <div class="diag-mvc-bridge-label">injeta</div>
+        </div>
+        <div class="diag-mvc-card">
+          <div class="diag-mvc-num">03</div>
+          <div class="diag-mvc-title">CONTROLLER</div>
+          <div class="diag-mvc-sub">pede no construtor</div>
+          <div class="diag-mvc-rule"></div>
+          <div class="diag-mvc-body">constructor(<br/>&nbsp;&nbsp;private users:<br/>&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#FF3D2E">UsersService</span><br/>) {}</div>
+          <div class="diag-mvc-file mono">users.controller.ts</div>
+        </div>
+      </div>
+      <div class="diag-caption">
+        <span class="diag-caption-mark">!</span>
+        Singleton significa estado compartilhado. Guarda <code class="mono text-[#FF6B5B]">this.cache</code> num Service? Próximo request enxerga o cache anterior.
+      </div>
+    ` },
 
   // Beat 8: Pastas
   { type: 'hook', group: 'nestjs', beat: 8,
@@ -697,6 +780,56 @@ const slides = [
       { kw: 'Repository',        text: 'Prisma gera SQL. Postgres responde.' },
       { kw: 'ExceptionFilter',   text: 'Captura qualquer throw. Mapeia pra status + body padrão.' },
     ] },
+  { type: 'htmlDiagram', group: 'synthesis', beat: 9,
+    title: 'Pipeline NestJS · sequência completa do request',
+    subtitle: 'Cada etapa decide se passa adiante ou aborta. Qualquer throw cai no ExceptionFilter e vira HTTP status + body.',
+    diagramHtml: `
+      <div class="diag-flow-row">
+        <div class="diag-node diag-node-edge">
+          <div class="diag-node-label">CLIENT</div>
+          <div class="diag-node-body">REQUEST</div>
+        </div>
+        <div class="diag-arrow-h"></div>
+        <div class="diag-node">
+          <div class="diag-node-label">01 · MIDDLEWARE</div>
+          <div class="diag-node-body mono">CORS · logger · parse</div>
+        </div>
+        <div class="diag-arrow-h"></div>
+        <div class="diag-node">
+          <div class="diag-node-label">02 · GUARD</div>
+          <div class="diag-node-body mono">JWT · role<br/>401 / 403</div>
+        </div>
+        <div class="diag-arrow-h"></div>
+        <div class="diag-node">
+          <div class="diag-node-label">03 · PIPE + DTO</div>
+          <div class="diag-node-body mono">class-validator<br/>400 se inválido</div>
+        </div>
+        <div class="diag-arrow-h"></div>
+        <div class="diag-node diag-node-active">
+          <div class="diag-node-label">04 · CONTROLLER</div>
+          <div class="diag-node-body mono">extrai @Body<br/>chama Service</div>
+        </div>
+        <div class="diag-arrow-h"></div>
+        <div class="diag-node">
+          <div class="diag-node-label">05 · SERVICE</div>
+          <div class="diag-node-body mono">regra de negócio</div>
+        </div>
+        <div class="diag-arrow-h"></div>
+        <div class="diag-node">
+          <div class="diag-node-label">06 · REPOSITORY</div>
+          <div class="diag-node-body mono">Prisma · SQL</div>
+        </div>
+        <div class="diag-arrow-h"></div>
+        <div class="diag-node diag-node-edge">
+          <div class="diag-node-label">DB</div>
+          <div class="diag-node-body mono">Postgres</div>
+        </div>
+      </div>
+      <div class="diag-caption">
+        <span class="diag-caption-mark">!</span>
+        Em qualquer etapa, <code class="mono text-[#FF6B5B]">throw new HttpException(...)</code> pula tudo e cai no ExceptionFilter, que devolve status + body padronizado pro cliente.
+      </div>
+    ` },
 
   // Beat 10: AWS
   { type: 'hookBig', group: 'synthesis', beat: 10,

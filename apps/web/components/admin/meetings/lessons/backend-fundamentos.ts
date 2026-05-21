@@ -289,6 +289,7 @@ export const backendFundamentos: Lesson = {
           note: 'Provider esquecido em `providers: []` causa esse erro críptico no startup. Sempre adiciona Service ao array do Module.',
         },
       ],
+      diagramUrl: '/diagrams/backend-fundamentos/beat-6-anatomy.png',
       anchor:
         'Você vai criar a feature "users" no NestJS. Quais arquivos você espera ver na pasta `src/users/`? E qual é a responsabilidade de cada um?',
       followup:
@@ -325,6 +326,7 @@ export const backendFundamentos: Lesson = {
           note: 'Se você guarda `this.currentUser` no Service, o próximo request vê o user anterior. Sempre passa o context como argumento, nunca guarda em `this`.',
         },
       ],
+      diagramUrl: '/diagrams/backend-fundamentos/beat-7-di.png',
       anchor:
         'No Controller você escreveu `constructor(private users: UsersService) {}`. Você não chamou `new UsersService()` em lugar nenhum. Como o NestJS sabe o que passar nesse parâmetro?',
       followup:
@@ -396,6 +398,7 @@ export const backendFundamentos: Lesson = {
           note: 'Se você usa `intercept(ctx, next)` e esquece de `await next.handle().toPromise()`, o Interceptor "pós" roda antes da response. Bug clássico de transform/log.',
         },
       ],
+      diagramUrl: '/diagrams/backend-fundamentos/beat-9-pipeline.png',
       anchor:
         'Um POST /users chega no seu NestJS. Desenha cada etapa que ele atravessa, do momento que entra no servidor até a resposta voltar.',
       followup:
