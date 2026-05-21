@@ -206,17 +206,59 @@ export const backendFundamentos: Lesson = {
       anchor:
         'Você leu a doc do OpenWeather. Tem a API key. Antes de abrir o VS Code, qual ferramenta você abre primeiro pra testar que a key funciona?',
       followup:
-        'Você consumiu API alheia. Agora você vai ESCREVER uma. Que ferramenta usa pra montar o backend? Por que NestJS e não Express puro?',
+        'Você consumiu API alheia. Agora você vai ESCREVER uma. No módulo de vocês, vocês usam Express. Como organizar isso pra não virar bagunça?',
       gotcha:
         'O curl funcionou perfeitamente. Você copia a mesma URL pro fetch no React e ele dá erro CORS. O que mudou?',
     },
 
-    // ─── Beat 4: NestJS, por que ───────────────────────────────────────────────
+    // ─── Beat 4: ExpressJS + MVC ──────────────────────────────────────────────
+    {
+      id: 'express-mvc',
+      label: 'Express + MVC: o que vocês usam hoje',
+      group: 'nestjs',
+      beat: 4,
+      teachFromZero: true,
+      tags: ['express', 'mvc', 'middleware', 'route-handler', 'controller', 'model', 'view', 'app.use'],
+      oneLine:
+        'Express é a lib minimalista de Node mais usada no mundo. Você compõe rotas e middlewares na mão. MVC é o padrão que separa essas peças por responsabilidade.',
+      pass1:
+        'No módulo de vocês, vocês usam Express. Express é uma lib mínima: dá as rotas (`app.get`, `app.post`) e um sistema de middleware. O resto é sua decisão. Sem opinião, sem estrutura imposta. Por isso é importante saber MVC: o padrão que diz "separa por responsabilidade", Controller (HTTP), Model (dados/lógica), View (resposta). Juntos, Express + MVC é o backend que 80% dos projetos de aula são feitos hoje.',
+      pass2:
+        '**Express: 2 conceitos chave**\n\n**Rotas**: você registra um verbo HTTP + path + handler.\n```js\napp.get("/users/:id", (req, res) => res.json({ id: req.params.id }));\napp.post("/users", (req, res) => { /* cria user */ });\n```\n\n**Middlewares**: funções que rodam ANTES do handler. CORS, body parser, auth. Você empilha com `app.use()`. A ordem importa.\n```js\napp.use(cors());\napp.use(express.json());      // parse body\napp.use(authMiddleware);       // verifica token\napp.get("/users", listUsers);  // só chega aqui se passou pelos 3\n```\n\n**MVC: 3 camadas, 1 responsabilidade cada**\n\n- **Controller**, fala HTTP. Extrai params, chama Model, retorna response.\n- **Model**, fala dados. Sabe SQL, sabe regra de negócio, NÃO sabe HTTP.\n- **View**, fala resposta. Em APIs, é o JSON que volta. Em fullstack tradicional, era o HTML renderizado no servidor.\n\n**Por que isso importa**: Express sem MVC vira um arquivo `server.js` de 1000 linhas com rotas misturadas com queries de banco. MVC força você a separar. Quando vocês forem pra NestJS, vão ver que ele já vem com essa separação imposta, sem decisão.\n\n**Estrutura mínima MVC em Express**:\n```\nsrc/\n├── controllers/\n│   └── users.controller.js\n├── models/\n│   └── users.model.js\n├── routes/\n│   └── users.routes.js\n└── server.js\n```',
+      pass3: [
+        {
+          gotcha: 'Middleware sem `next()` trava a request',
+          note: 'Toda middleware precisa chamar `next()` pra passar pro próximo. Se você esquece, a request fica pendurada eternamente. Bug clássico em código de calouro.',
+        },
+        {
+          gotcha: '`res.send()` chamado duas vezes lança erro',
+          note: '"Cannot set headers after they are sent" significa que você chamou `res.send/json/end` mais de uma vez na mesma request. Geralmente esqueceu um `return` antes do segundo send.',
+        },
+        {
+          gotcha: 'MVC clássico tem "View", em APIs ela vira JSON',
+          note: 'O V de MVC nasceu pra apps onde o servidor renderiza HTML. Em APIs REST modernas, "View" virou só "como você serializa o response", geralmente JSON. Não procure um arquivo .view.js no seu projeto.',
+        },
+      ],
+      diagram: `flowchart LR
+  R["📨 Request"] --> M1["app.use(cors)"]
+  M1 --> M2["app.use(json)"]
+  M2 --> M3["app.use(auth)"]
+  M3 --> H["app.get(handler)"]
+  H --> Res["📤 Response"]`,
+      anchor:
+        'No seu módulo, vocês escreveram um `server.js` com Express. Se eu pedir pra você organizar essa rota num modelo MVC, em quantos arquivos ela vira?',
+      followup:
+        'Express + MVC funciona. Por que então as empresas migram pra NestJS? O que ele economiza?',
+      gotcha:
+        'Se MVC já existe, qual é o problema de continuar com Express + MVC pra sempre? O que NestJS adiciona que Express + MVC não tem?',
+    },
+
+    // ─── Beat 5: NestJS, por que ───────────────────────────────────────────────
     {
       id: 'nestjs-por-que',
       label: 'NestJS: por que',
       group: 'nestjs',
-      beat: 4,
+      beat: 5,
       teachFromZero: true,
       tags: ['nestjs', 'framework', 'decorator', 'typescript', 'opinado', 'modular', 'express'],
       oneLine:
@@ -250,12 +292,12 @@ export const backendFundamentos: Lesson = {
         'Se NestJS é tão organizado, por que algumas empresas grandes ainda usam Express? Tem caso onde NestJS é a escolha errada?',
     },
 
-    // ─── Beat 5: Anatomia de uma feature ──────────────────────────────────────
+    // ─── Beat 6: Anatomia de uma feature ──────────────────────────────────────
     {
       id: 'anatomia-feature',
       label: 'Anatomia: Controller, Service, Module, DTO',
       group: 'nestjs',
-      beat: 5,
+      beat: 6,
       teachFromZero: true,
       tags: ['controller', 'service', 'module', 'dto', 'decorator', 'class-validator', 'separation'],
       oneLine:
@@ -292,12 +334,12 @@ export const backendFundamentos: Lesson = {
         'Por que separar Controller de Service? Não dava pra fazer tudo no Controller e economizar arquivo?',
     },
 
-    // ─── Beat 6: Dependency Injection ──────────────────────────────────────────
+    // ─── Beat 7: Dependency Injection ──────────────────────────────────────────
     {
       id: 'dependency-injection',
       label: 'Dependency Injection',
       group: 'nestjs',
-      beat: 6,
+      beat: 7,
       teachFromZero: true,
       tags: ['dependency-injection', 'di-container', 'injectable', 'provider', 'singleton', 'testability'],
       oneLine:
@@ -334,12 +376,12 @@ export const backendFundamentos: Lesson = {
         'Se Service é singleton e você guarda `this.cache` nele, o que acontece quando 2 requests chegam ao mesmo tempo?',
     },
 
-    // ─── Beat 7: Organização de pastas ─────────────────────────────────────────
+    // ─── Beat 8: Organização de pastas ─────────────────────────────────────────
     {
       id: 'feature-folders',
       label: 'Organização de pastas: feature folders',
       group: 'nestjs',
-      beat: 7,
+      beat: 8,
       teachFromZero: true,
       tags: ['feature-folders', 'layered', 'cohesion', 'shared-folder', 'monorepo', 'src-organization'],
       oneLine:
@@ -385,12 +427,12 @@ export const backendFundamentos: Lesson = {
         'Quando feature folders pode dar errado? Tem um cenário onde layered seria a escolha melhor?',
     },
 
-    // ─── Beat 8: Arquitetura, o fluxo completo (obrigatório) ──────────────────
+    // ─── Beat 9: Arquitetura, o fluxo completo (obrigatório) ──────────────────
     {
       id: 'full-architecture',
       label: 'Arquitetura: o fluxo completo',
       group: 'synthesis',
-      beat: 8,
+      beat: 9,
       tags: ['middleware', 'guard', 'pipe', 'interceptor', 'exception-filter', 'controller', 'service', 'repository'],
       oneLine:
         'Um request HTTP atravessa um pipeline declarativo no NestJS: Middleware → Guard → Interceptor → Pipe → Controller → Service → Repository → DB. Resposta sobe pelo Interceptor. Erro vira ExceptionFilter.',
@@ -435,12 +477,12 @@ export const backendFundamentos: Lesson = {
         'Em qual etapa do pipeline você bota o código que verifica se o usuário é admin? Guard, Interceptor, Pipe, Controller ou Service?',
     },
 
-    // ─── Beat 9: AWS managed services (obrigatório) ───────────────────────────
+    // ─── Beat 10: AWS managed services (obrigatório) ───────────────────────────
     {
       id: 'aws-services',
       label: 'AWS: onde NestJS roda',
       group: 'synthesis',
-      beat: 9,
+      beat: 10,
       tags: ['route53', 'alb', 'ec2', 'ecs-fargate', 'lambda', 'rds', 'ecr', 'cloudwatch', 'ssm'],
       oneLine:
         'Cada caixa do diagrama mapeia pra um managed service da AWS. A escolha não é qual é mais novo, é qual perfil de carga aquela peça atende.',
@@ -490,7 +532,7 @@ export const backendFundamentos: Lesson = {
       pass1:
         'Você começou achando que backend era um monstro misterioso. Saiu com 4 mapas: como funciona HTTP, como ler doc de API alheia, como estruturar a sua, e onde subir. Cada camada tem nome, cada decisão tem trade-off conhecido. A próxima etapa é construir.',
       pass2:
-        '**O que você consolidou hoje**:\n- HTTP é texto previsível: verbo + path + headers + body, status code de volta.\n- JSON virou o formato universal, `JSON.stringify`/`JSON.parse` são as 2 funções mais chamadas da sua carreira.\n- REST nomeia recursos (nouns), verbo HTTP é a ação. Convenção em vez de invenção.\n- Ler doc é uma habilidade: vai direto no Reference, identifica endpoint/auth/params/response.\n- 3 ferramentas pra consumir: curl rápido, Postman pra explorar, fetch no código.\n- NestJS troca liberdade por estrutura, vale em projeto longo e time grande.\n- 4 arquivos por feature: Controller (HTTP), Service (lógica), Module (cola), DTO (validação).\n- DI = você declara, framework instancia (singleton).\n- Feature folders > layered. Deletar pasta = deletar feature.\n- Pipeline NestJS: Middleware → Guard → Pipe → Controller → Service → Repository → DB.\n- AWS: ECS Fargate pro NestJS, RDS Postgres pro banco, Route 53 + ALB pra rede.\n\n**Próximos passos na segunda-feira**:\n1. `npx @nestjs/cli new minha-api`, gera projeto rodando em 2 minutos.\n2. `nest g resource users`, gera CRUD completo com Controller/Service/Module/DTO.\n3. Leia a doc de uma API que te interessa (Spotify, GitHub, Stripe). Mande um curl. Veja o JSON.\n4. Adiciona Prisma ao seu projeto. Conecta num Postgres local via Docker.\n5. Sobe num PaaS (Render, Railway) antes de tentar AWS. Cada passo é uma aula.\n\n**O que NÃO cobrimos hoje** (intencionalmente, fica pra próximas aulas):\n- Autenticação com JWT e refresh tokens.\n- Testes automatizados (unit + e2e).\n- Migrations de banco com Prisma.\n- WebSocket pra real-time.\n- CI/CD com GitHub Actions.\n- Observabilidade séria (logs estruturados, traces, métricas).',
+        '**O que você consolidou hoje**:\n- HTTP é texto previsível: verbo + path + headers + body, status code de volta.\n- JSON virou o formato universal, `JSON.stringify`/`JSON.parse` são as 2 funções mais chamadas da sua carreira.\n- REST nomeia recursos (nouns), verbo HTTP é a ação. Convenção em vez de invenção.\n- Ler doc é uma habilidade: vai direto no Reference, identifica endpoint/auth/params/response.\n- 3 ferramentas pra consumir: curl rápido, Postman pra explorar, fetch no código.\n- Express + MVC é o que você usa hoje: rotas + middleware + Controller/Model/View separados.\n- NestJS troca liberdade por estrutura, vale em projeto longo e time grande.\n- 4 arquivos por feature: Controller (HTTP), Service (lógica), Module (cola), DTO (validação).\n- DI = você declara, framework instancia (singleton).\n- Feature folders > layered. Deletar pasta = deletar feature.\n- Pipeline NestJS: Middleware → Guard → Pipe → Controller → Service → Repository → DB.\n- AWS: ECS Fargate pro NestJS, RDS Postgres pro banco, Route 53 + ALB pra rede.\n\n**Próximos passos na segunda-feira**:\n1. `npx @nestjs/cli new minha-api`, gera projeto rodando em 2 minutos.\n2. `nest g resource users`, gera CRUD completo com Controller/Service/Module/DTO.\n3. Leia a doc de uma API que te interessa (Spotify, GitHub, Stripe). Mande um curl. Veja o JSON.\n4. Adiciona Prisma ao seu projeto. Conecta num Postgres local via Docker.\n5. Sobe num PaaS (Render, Railway) antes de tentar AWS. Cada passo é uma aula.\n\n**O que NÃO cobrimos hoje** (intencionalmente, fica pra próximas aulas):\n- Autenticação com JWT e refresh tokens.\n- Testes automatizados (unit + e2e).\n- Migrations de banco com Prisma.\n- WebSocket pra real-time.\n- CI/CD com GitHub Actions.\n- Observabilidade séria (logs estruturados, traces, métricas).',
       pass3: [
         {
           gotcha: 'Querer entender tudo antes de codar trava',

@@ -79,6 +79,133 @@
     background: linear-gradient(90deg, transparent, #FF3D2E 20%, #FF3D2E 80%, transparent);
   }
 
+  /* ─── HTML DIAGRAM PRIMITIVES ───────────────────────────────────────
+     CSS-only diagram boxes + arrows. No svg, no canvas, no libs.
+     Used by htmlDiagram slide type. Keep nodes responsive via flexbox
+     so they auto-fit slide width (max ~1300px). */
+
+  /* Horizontal flow row: nodes + arrows in a line */
+  .diag-flow-row {
+    display: flex; align-items: stretch; justify-content: center;
+    gap: 0; flex-wrap: nowrap; width: 100%;
+  }
+  /* Single node (chamfered HUD box) */
+  .diag-node {
+    flex: 1 1 0; min-width: 0; padding: 14px 16px;
+    background: rgba(6,8,16,0.7); border: 1px solid #1F2937;
+    display: flex; flex-direction: column; gap: 6px; justify-content: center;
+    clip-path: polygon(
+      10px 0, calc(100% - 10px) 0, 100% 10px, 100% calc(100% - 10px),
+      calc(100% - 10px) 100%, 10px 100%, 0 calc(100% - 10px), 0 10px
+    );
+  }
+  .diag-node-edge { background: rgba(255,255,255,0.04); border-color: #374151; }
+  .diag-node-active {
+    background: rgba(255,61,46,0.10); border-color: #FF3D2E;
+    box-shadow: 0 0 24px rgba(255,61,46,0.25);
+  }
+  .diag-node-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase;
+    color: #FF3D2E;
+  }
+  .diag-node-body {
+    font-size: 13px; color: #E5E7EB; line-height: 1.35;
+    overflow-wrap: anywhere;
+  }
+  /* Horizontal arrow with red triangle tip */
+  .diag-arrow-h {
+    flex: 0 0 28px; align-self: center; position: relative;
+    height: 2px; background: #FF3D2E; margin: 0 4px;
+  }
+  .diag-arrow-h::after {
+    content: ''; position: absolute; right: -2px; top: -5px;
+    width: 0; height: 0;
+    border-left: 8px solid #FF3D2E;
+    border-top: 6px solid transparent; border-bottom: 6px solid transparent;
+  }
+
+  /* Caption below a diagram (the gotcha line) */
+  .diag-caption {
+    margin-top: 32px; padding: 12px 18px; max-width: 1100px; align-self: center;
+    border-left: 3px solid #FF3D2E; background: rgba(255,61,46,0.06);
+    font-family: 'JetBrains Mono', monospace; font-size: 14px;
+    color: #D1D5DB; line-height: 1.6;
+    display: flex; gap: 12px; align-items: flex-start;
+  }
+  .diag-caption-mark {
+    flex-shrink: 0; width: 22px; height: 22px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 14px;
+    color: #FF3D2E; border: 1.5px solid #FF3D2E; border-radius: 50%;
+  }
+
+  /* MVC 3-card row with bridge connectors */
+  .diag-mvc-row {
+    display: flex; align-items: stretch; justify-content: center;
+    gap: 0; width: 100%;
+  }
+  .diag-mvc-card {
+    flex: 1 1 0; padding: 24px 22px;
+    background: rgba(6,8,16,0.6); border: 1px solid #1F2937;
+    display: flex; flex-direction: column; gap: 8px;
+    clip-path: polygon(
+      16px 0, calc(100% - 16px) 0, 100% 16px, 100% calc(100% - 16px),
+      calc(100% - 16px) 100%, 16px 100%, 0 calc(100% - 16px), 0 16px
+    );
+    position: relative;
+  }
+  .diag-mvc-card::before, .diag-mvc-card::after {
+    content: ''; position: absolute; width: 5px; height: 5px;
+    background: #FF3D2E; border-radius: 50%; box-shadow: 0 0 6px #FF3D2E;
+  }
+  .diag-mvc-card::before { top: 6px; right: 6px; }
+  .diag-mvc-card::after { bottom: 6px; left: 6px; }
+  .diag-mvc-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; letter-spacing: 0.25em; color: #6B7280;
+  }
+  .diag-mvc-title {
+    font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 28px;
+    color: #FF3D2E; line-height: 1; letter-spacing: -0.02em;
+  }
+  .diag-mvc-sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase;
+    color: #6B7280;
+  }
+  .diag-mvc-rule {
+    margin: 8px 0 4px; height: 1px;
+    background: linear-gradient(90deg, #FF3D2E, transparent);
+  }
+  .diag-mvc-body {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px; color: #D1D5DB; line-height: 1.6; flex: 1;
+  }
+  .diag-mvc-file {
+    margin-top: 12px; padding-top: 10px;
+    border-top: 1px dashed #374151;
+    font-size: 12px; color: #FF6B5B; letter-spacing: 0;
+  }
+  /* Bridge between MVC cards: short line + label */
+  .diag-mvc-bridge {
+    flex: 0 0 70px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 6px;
+  }
+  .diag-mvc-bridge-line {
+    width: 50px; height: 2px; background: #FF3D2E; position: relative;
+  }
+  .diag-mvc-bridge-line::after {
+    content: ''; position: absolute; right: -2px; top: -5px; width: 0; height: 0;
+    border-left: 8px solid #FF3D2E;
+    border-top: 6px solid transparent; border-bottom: 6px solid transparent;
+  }
+  .diag-mvc-bridge-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase;
+    color: #9CA3AF;
+  }
+
   @keyframes slideUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
   @keyframes scaleIn { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
@@ -172,7 +299,7 @@ const RED_SOFT = 'rgba(255,61,46,0.14)';
 const GROUP = {
   cover:      { name: 'CAPA',         accent: RED, soft: RED_SOFT },
   api:        { name: 'API · REST',   accent: RED, soft: RED_SOFT },
-  nestjs:     { name: 'NESTJS',       accent: RED, soft: RED_SOFT },
+  nestjs:     { name: 'FRAMEWORK · MVC', accent: RED, soft: RED_SOFT },
   synthesis:  { name: 'SYNTHESIS',    accent: RED, soft: RED_SOFT },
 };
 
@@ -260,16 +387,107 @@ const slides = [
       ]},
     ]},
 
-  // ─── NESTJS ─────────────────────────────────────────────────────
-  { type: 'divider', group: 'nestjs', num: '02', label: 'NestJS',
-    text: 'O framework Node.js opinado e tipado. Mais código no começo, muito menos decisão repetida em projeto que dura.' },
+  // ─── FRAMEWORK · MVC ────────────────────────────────────────────
+  { type: 'divider', group: 'nestjs', num: '02', label: 'Framework · MVC',
+    text: 'Express é o que vocês escrevem hoje. NestJS é a evolução opinada que vocês vão ver em produção. Os dois compartilham o padrão MVC por baixo.' },
 
-  // Beat 4: NestJS por que
+  // ─── Beat 4: ExpressJS + MVC ────────────────────────────────────
   { type: 'hook', group: 'nestjs', beat: 4,
+    title: 'No módulo de vocês, vocês usam <span style="color: #FF3D2E;">Express</span>.<br/>Como organizar pra não virar um <code class="mono text-[#FF6B5B]">server.js</code> de 1000 linhas?',
+    subtitle: 'Express é a lib mínima. MVC é o padrão que diz onde cada coisa vai. Juntos, é o backend que vocês já estão escrevendo.',
+    tags: ['express', 'mvc', 'middleware', 'controller', 'model', 'view'] },
+
+  { type: 'htmlDiagram', group: 'nestjs', beat: 4,
+    title: 'Express · request passa por middlewares ANTES do handler',
+    subtitle: 'app.use(...) empilha funções. A ordem importa. Cada middleware decide se chama next() pra continuar.',
+    diagramHtml: `
+      <div class="diag-flow-row">
+        <div class="diag-node diag-node-edge">
+          <div class="diag-node-label">CLIENT</div>
+          <div class="diag-node-body">REQUEST</div>
+        </div>
+        <div class="diag-arrow-h"></div>
+        <div class="diag-node">
+          <div class="diag-node-label">MIDDLEWARE</div>
+          <div class="diag-node-body mono">app.use(cors())</div>
+        </div>
+        <div class="diag-arrow-h"></div>
+        <div class="diag-node">
+          <div class="diag-node-label">MIDDLEWARE</div>
+          <div class="diag-node-body mono">app.use(express.json())</div>
+        </div>
+        <div class="diag-arrow-h"></div>
+        <div class="diag-node">
+          <div class="diag-node-label">MIDDLEWARE</div>
+          <div class="diag-node-body mono">app.use(authMiddleware)</div>
+        </div>
+        <div class="diag-arrow-h"></div>
+        <div class="diag-node diag-node-active">
+          <div class="diag-node-label">HANDLER</div>
+          <div class="diag-node-body mono">app.get('/users', listUsers)</div>
+        </div>
+        <div class="diag-arrow-h"></div>
+        <div class="diag-node diag-node-edge">
+          <div class="diag-node-label">CLIENT</div>
+          <div class="diag-node-body">RESPONSE</div>
+        </div>
+      </div>
+      <div class="diag-caption">
+        <span class="diag-caption-mark">!</span>
+        Esqueceu de chamar <code class="mono text-[#FF6B5B]">next()</code> num middleware? A request fica pendurada eternamente.
+      </div>
+    ` },
+
+  { type: 'htmlDiagram', group: 'nestjs', beat: 4,
+    title: 'MVC · 3 camadas, 1 responsabilidade cada',
+    subtitle: 'Sem MVC, server.js vira monstro de 1000 linhas. Com MVC, cada arquivo tem 1 motivo pra existir.',
+    diagramHtml: `
+      <div class="diag-mvc-row">
+        <div class="diag-mvc-card">
+          <div class="diag-mvc-num">01</div>
+          <div class="diag-mvc-title">CONTROLLER</div>
+          <div class="diag-mvc-sub">camada HTTP</div>
+          <div class="diag-mvc-rule"></div>
+          <div class="diag-mvc-body">Recebe request<br/>Extrai req.params / req.body<br/>Chama o Model<br/>Retorna response</div>
+          <div class="diag-mvc-file mono">users.controller.js</div>
+        </div>
+        <div class="diag-mvc-bridge">
+          <div class="diag-mvc-bridge-line"></div>
+          <div class="diag-mvc-bridge-label">chama</div>
+        </div>
+        <div class="diag-mvc-card">
+          <div class="diag-mvc-num">02</div>
+          <div class="diag-mvc-title">MODEL</div>
+          <div class="diag-mvc-sub">camada de dados</div>
+          <div class="diag-mvc-rule"></div>
+          <div class="diag-mvc-body">Regra de negócio<br/>Acesso ao banco (SQL)<br/>Validação<br/>NÃO sabe que HTTP existe</div>
+          <div class="diag-mvc-file mono">users.model.js</div>
+        </div>
+        <div class="diag-mvc-bridge">
+          <div class="diag-mvc-bridge-line"></div>
+          <div class="diag-mvc-bridge-label">serializa</div>
+        </div>
+        <div class="diag-mvc-card">
+          <div class="diag-mvc-num">03</div>
+          <div class="diag-mvc-title">VIEW</div>
+          <div class="diag-mvc-sub">camada de resposta</div>
+          <div class="diag-mvc-rule"></div>
+          <div class="diag-mvc-body">Em APIs: <span style="color:#FF3D2E">JSON</span><br/>Em fullstack: HTML<br/>Formato pro cliente<br/>Sem lógica de negócio</div>
+          <div class="diag-mvc-file mono">res.json(data)</div>
+        </div>
+      </div>
+      <div class="diag-caption">
+        <span class="diag-caption-mark">!</span>
+        Em APIs REST, a "View" virou só <code class="mono text-[#FF6B5B]">res.json()</code>. Não procure um arquivo .view.js no seu projeto.
+      </div>
+    ` },
+
+  // Beat 5: NestJS por que
+  { type: 'hook', group: 'nestjs', beat: 5,
     title: 'Express faz backend em <span class="text-[#FF3D2E]">10 linhas</span>.<br/>NestJS faz em 30.<br/>Por que escolher mais código?',
     subtitle: 'A resposta não é "Nest é melhor". É "qual cenário a estrutura paga o custo extra de setup".',
     tags: ['nestjs', 'framework', 'decorator', 'typescript', 'opinado'] },
-  { type: 'compare', group: 'nestjs', beat: 4,
+  { type: 'compare', group: 'nestjs', beat: 5,
     title: 'Express · NestJS',
     columns: [
       { title: 'Express', sub: 'lib mínima', points: [
@@ -280,12 +498,12 @@ const slides = [
       ]},
     ]},
 
-  // Beat 5: Anatomia
-  { type: 'hook', group: 'nestjs', beat: 5,
+  // Beat 6: Anatomia
+  { type: 'hook', group: 'nestjs', beat: 6,
     title: 'Você cria a feature <span class="text-[#FF3D2E]">users</span>.<br/>Quais arquivos aparecem?<br/>E o que cada um faz?',
     subtitle: '4 arquivos, 4 responsabilidades. Controller fala HTTP. Service tem lógica. Module cola. DTO valida.',
     tags: ['controller', 'service', 'module', 'dto', 'decorator', 'class-validator'] },
-  { type: 'code', group: 'nestjs', beat: 5,
+  { type: 'code', group: 'nestjs', beat: 6,
     title: 'users.controller.ts · porta de entrada',
     code: [
       { line: '<span class="dec">@Controller</span>(<span class="str">"users"</span>)' },
@@ -301,7 +519,7 @@ const slides = [
       { line: '<span class="ind">  </span>}' },
       { line: '}' },
     ]},
-  { type: 'code', group: 'nestjs', beat: 5,
+  { type: 'code', group: 'nestjs', beat: 6,
     title: 'users.service.ts · lógica de negócio',
     code: [
       { line: '<span class="dec">@Injectable</span>()' },
@@ -318,7 +536,7 @@ const slides = [
       { line: '<span class="ind">  </span>}' },
       { line: '}' },
     ]},
-  { type: 'code', group: 'nestjs', beat: 5,
+  { type: 'code', group: 'nestjs', beat: 6,
     title: 'create-user.dto.ts · validação do body',
     code: [
       { line: '<span class="kw">export class</span> <span class="var">CreateUserDto</span> {' },
@@ -336,12 +554,12 @@ const slides = [
       { line: '<span class="com">// + ValidationPipe global em main.ts</span>' },
     ]},
 
-  // Beat 6: DI
-  { type: 'hook', group: 'nestjs', beat: 6,
+  // Beat 7: DI
+  { type: 'hook', group: 'nestjs', beat: 7,
     title: 'No Controller você escreveu<br/><code class="mono text-[#FF3D2E]">private users: UsersService</code>.<br/>Quem instancia o Service?',
     subtitle: 'Você nunca chama new. Quem cria, quem reusa, e por que isso muda tudo no teste.',
     tags: ['dependency-injection', 'di-container', 'injectable', 'singleton', 'testability'] },
-  { type: 'code', group: 'nestjs', beat: 6,
+  { type: 'code', group: 'nestjs', beat: 7,
     title: 'Sem DI · você faria isso em cada lugar',
     code: [
       { line: '<span class="com">// imagina escrever isso em 30 arquivos</span>' },
@@ -352,7 +570,7 @@ const slides = [
       { line: '' },
       { line: '<span class="com">// mudou o construtor? caça 30 arquivos.</span>' },
     ]},
-  { type: 'code', group: 'nestjs', beat: 6,
+  { type: 'code', group: 'nestjs', beat: 7,
     title: 'Com DI · framework resolve',
     code: [
       { line: '<span class="com">// 1. registra no Module</span>' },
@@ -367,7 +585,7 @@ const slides = [
       { line: '<span class="com">// 3. NestJS lê o tipo, busca no container,</span>' },
       { line: '<span class="com">//    instancia uma vez (singleton), injeta.</span>' },
     ]},
-  { type: 'list', group: 'nestjs', beat: 6,
+  { type: 'list', group: 'nestjs', beat: 7,
     title: 'Por que DI muda tudo',
     items: [
       { kw: 'Testabilidade', text: 'Passa um mock no construtor. Sem DI, você precisa mockar imports globais (chato).' },
@@ -375,12 +593,12 @@ const slides = [
       { kw: 'Singleton',     text: 'Uma instância por aplicação. Cuidado com estado mutável em this, vira bug entre requests.' },
     ] },
 
-  // Beat 7: Pastas
-  { type: 'hook', group: 'nestjs', beat: 7,
+  // Beat 8: Pastas
+  { type: 'hook', group: 'nestjs', beat: 8,
     title: 'Seu projeto tem <span class="text-[#FF3D2E]">30 features</span>.<br/>Você organiza por TIPO<br/>ou por FEATURE?',
     subtitle: 'Layered (controllers/, services/) vs feature folders (users/, auth/). A escolha decide se onboarding é fácil ou caótico.',
     tags: ['feature-folders', 'layered', 'cohesion', 'shared'] },
-  { type: 'code', group: 'nestjs', beat: 7,
+  { type: 'code', group: 'nestjs', beat: 8,
     title: 'Feature folders · cada feature self-contained',
     code: [
       { line: 'src/' },
@@ -397,7 +615,7 @@ const slides = [
       { line: '<span class="ind">├── </span><span class="var">shared/</span>  <span class="com">// cross-feature (3+ usam)</span>' },
       { line: '<span class="ind">└── </span>app.module.ts' },
     ]},
-  { type: 'compare', group: 'nestjs', beat: 7,
+  { type: 'compare', group: 'nestjs', beat: 8,
     title: 'Layered · Feature folders',
     columns: [
       { title: 'Layered', sub: 'por tipo de arquivo', points: [
@@ -412,12 +630,12 @@ const slides = [
   { type: 'divider', group: 'synthesis', num: '03', label: 'Synthesis',
     text: 'Tudo junto: pipeline do NestJS do request até a resposta, e onde cada peça vive na AWS de produção.' },
 
-  // Beat 8: Arquitetura
-  { type: 'hookBig', group: 'synthesis', beat: 8,
+  // Beat 9: Arquitetura
+  { type: 'hookBig', group: 'synthesis', beat: 9,
     title: 'Um <code class="mono">POST /users</code> chega no servidor.',
     subtitle: 'Desenha cada etapa que ele atravessa, do momento que entra até a resposta voltar.',
     tags: ['middleware', 'guard', 'pipe', 'controller', 'service', 'repository', 'exception-filter'] },
-  { type: 'list', group: 'synthesis', beat: 8,
+  { type: 'list', group: 'synthesis', beat: 9,
     title: 'Pipeline NestJS · em 8 etapas',
     items: [
       { kw: 'Middleware',        text: 'CORS, body parser, logger (camada herdada do Express)' },
@@ -430,12 +648,12 @@ const slides = [
       { kw: 'ExceptionFilter',   text: 'Captura qualquer throw. Mapeia pra status + body padrão.' },
     ] },
 
-  // Beat 9: AWS
-  { type: 'hookBig', group: 'synthesis', beat: 9,
+  // Beat 10: AWS
+  { type: 'hookBig', group: 'synthesis', beat: 10,
     title: 'Olha o pipeline que você desenhou.<br/>Pra cada peça,<br/><span class="text-[#FF6B5B]">qual AWS service</span>?',
     subtitle: 'A escolha não é qual é mais novo. É qual perfil de carga aquela peça tem.',
     tags: ['route53', 'alb', 'ecs-fargate', 'lambda', 'rds', 'ecr', 'cloudwatch', 'ssm'] },
-  { type: 'compare3', group: 'synthesis', beat: 9,
+  { type: 'compare3', group: 'synthesis', beat: 10,
     title: 'Compute pra NestJS · 3 opções',
     columns: [
       { title: 'EC2 + PM2', sub: 'VM Linux', tag: 'máximo controle', points: [
@@ -448,7 +666,7 @@ const slides = [
         'NestJS via adapter funciona MAS', 'Cold start mata p99 · pool quebra', 'OK pra webhook ou job', 'Antipadrão pra HTTP persistente',
       ]},
     ]},
-  { type: 'list', group: 'synthesis', beat: 9,
+  { type: 'list', group: 'synthesis', beat: 10,
     title: 'AWS · service por camada',
     items: [
       { kw: 'Route 53',     text: 'DNS · api.suaej.com → IP. Health check, geo routing.' },
@@ -526,7 +744,7 @@ function r_cover() {
           <span class="text-[#1F2937]">//</span>
           <span class="text-[#9CA3AF]">FUNDAMENTOS</span>
           <span class="text-[#1F2937]">//</span>
-          <span class="text-[#9CA3AF]">90 MIN · 9 BEATS</span>
+          <span class="text-[#9CA3AF]">90 MIN · 10 BEATS</span>
         </div>
 
         <h1 class="display text-white text-[120px] leading-[0.92] font-bold anim delay-1 tracking-tight">
@@ -539,16 +757,16 @@ function r_cover() {
           </h2>
           <div class="flex-1 flex justify-end">
             <div class="flex gap-1.5">
-              ${Array.from({length: 9}).map((_, i) => `<div class="w-3 h-3 rounded-sm" style="background: ${i < 3 ? '#FF3D2E' : 'rgba(255,61,46,0.18)'};"></div>`).join('')}
+              ${Array.from({length: 10}).map((_, i) => `<div class="w-3 h-3 rounded-sm" style="background: ${i < 3 ? '#FF3D2E' : 'rgba(255,61,46,0.18)'};"></div>`).join('')}
             </div>
           </div>
         </div>
 
         <div class="mt-8 grid grid-cols-3 gap-6 anim delay-3">
           ${[
-            { num: '03', label: 'API · REST', sub: 'beats 1–3' },
-            { num: '04', label: 'NESTJS',     sub: 'beats 4–7' },
-            { num: '02', label: 'SYNTHESIS',  sub: 'beats 8–9' },
+            { num: '03', label: 'API · REST',          sub: 'beats 1–3' },
+            { num: '05', label: 'FRAMEWORK · MVC',     sub: 'beats 4–8' },
+            { num: '02', label: 'SYNTHESIS',           sub: 'beats 9–10' },
           ].map(card => `
             <div class="relative p-5 border border-[#1F2937] bg-[#060810]/60 hud-frame">
               <div class="absolute top-2 right-2 w-1.5 h-1.5 rounded-full" style="background: #FF3D2E; box-shadow: 0 0 8px #FF3D2E;"></div>
@@ -731,6 +949,25 @@ function r_compare3(s) {
   `;
 }
 
+function r_htmlDiagram(s) {
+  return `
+    <section class="slide w-full h-full overflow-hidden" data-group="${s.group}">
+      ${header(s.group, s.beat)}
+      <div class="relative z-10 w-full max-w-[1500px] mx-auto px-16 flex flex-col gap-8 self-center justify-center pt-24 pb-24">
+        <div class="flex items-center gap-4 anim">
+          <span class="mono text-[11px] uppercase tracking-[0.3em]" style="color: #FF3D2E;">// DIAGRAM</span>
+          <h2 class="display text-[34px] font-semibold text-white">${s.title}</h2>
+        </div>
+        ${s.subtitle ? `<p class="mono text-[#9CA3AF] text-[18px] leading-snug anim delay-1 max-w-[1200px]">${s.subtitle}</p>` : ''}
+        <div class="anim-scale delay-2 w-full">
+          ${s.diagramHtml}
+        </div>
+      </div>
+      ${footer()}
+    </section>
+  `;
+}
+
 function r_closing() {
   return `
     <section class="slide w-full h-full overflow-hidden" data-group="synthesis">
@@ -783,6 +1020,7 @@ const RENDERERS = {
   list: r_list,
   compare: r_compare,
   compare3: r_compare3,
+  htmlDiagram: r_htmlDiagram,
   closing: r_closing,
 };
 
