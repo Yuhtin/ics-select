@@ -187,6 +187,36 @@
     border-top: 1px dashed #374151;
     font-size: 12px; color: #FF6B5B; letter-spacing: 0;
   }
+  /* ─── SCREENSHOT FRAME ───────────────────────────────────────────── */
+  .shot-frame {
+    position: relative; padding: 14px; background: #fff;
+    max-height: 62vh; display: flex; align-items: center; justify-content: center;
+    clip-path: polygon(
+      18px 0, calc(100% - 18px) 0, 100% 18px, 100% calc(100% - 18px),
+      calc(100% - 18px) 100%, 18px 100%, 0 calc(100% - 18px), 0 18px
+    );
+  }
+  .shot-frame img {
+    max-width: 100%; max-height: 58vh; display: block; object-fit: contain;
+  }
+  /* Corner dots OUTSIDE the clipped frame using a wrapper */
+  .shot-wrap { position: relative; align-self: center; }
+  .shot-wrap::before, .shot-wrap::after {
+    content: ''; position: absolute; width: 8px; height: 8px;
+    background: #FF3D2E; border-radius: 50%; box-shadow: 0 0 12px #FF3D2E;
+    z-index: 2;
+  }
+  .shot-wrap::before { top: -4px; right: -4px; }
+  .shot-wrap::after  { bottom: -4px; left: -4px; }
+  /* Source attribution chip below image */
+  .shot-source {
+    margin-top: 18px; align-self: center;
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    letter-spacing: 0.2em; text-transform: uppercase; color: #6B7280;
+    padding: 6px 14px; border: 1px solid #1F2937; background: rgba(6,8,16,0.6);
+  }
+  .shot-source strong { color: #FF3D2E; font-weight: 600; }
+
   /* Bridge between MVC cards: short line + label */
   .diag-mvc-bridge {
     flex: 0 0 70px; display: flex; flex-direction: column;
@@ -367,6 +397,11 @@ const slides = [
       { line: '<span class="ind">  </span><span class="str">"name"</span>: <span class="str">"Sao Paulo"</span>' },
       { line: '}' },
     ]},
+  { type: 'screenshot', group: 'api', beat: 2,
+    title: 'OpenWeather · Current Weather · página real',
+    subtitle: 'Os 4 campos do doc estão todos aqui: required params, optional params, response shape (linkado), e exemplos de chamada no rodapé.',
+    imageUrl: '../diagrams/backend-fundamentos/openweather-doc.png',
+    source: 'openweathermap.org/current' },
 
   // Beat 3: Consumindo API
   { type: 'hook', group: 'api', beat: 3,
@@ -386,6 +421,11 @@ const slides = [
         'await fetch(url, options)', 'É o que vai pro app final', 'Sofre CORS no browser', 'Não dá throw em 404/500',
       ]},
     ]},
+  { type: 'screenshot', group: 'api', beat: 3,
+    title: 'Postman · request real batendo no servidor',
+    subtitle: 'Verbo + URL no topo, params no meio, response 200 OK com JSON no rodapé. Mesma estrutura que o curl, mas visual.',
+    imageUrl: '../diagrams/backend-fundamentos/postman-ui.png',
+    source: 'learning.postman.com/docs/getting-started' },
 
   // ─── FRAMEWORK · MVC ────────────────────────────────────────────
   { type: 'divider', group: 'nestjs', num: '02', label: 'Framework · MVC',
@@ -481,6 +521,11 @@ const slides = [
         Em APIs REST, a "View" virou só <code class="mono text-[#FF6B5B]">res.json()</code>. Não procure um arquivo .view.js no seu projeto.
       </div>
     ` },
+  { type: 'screenshot', group: 'nestjs', beat: 4,
+    title: 'Express · a homepage que vocês já abriram',
+    subtitle: 'Esse Hello World de 4 linhas é literalmente o que vocês estão escrevendo no módulo. require() + app + route + listen.',
+    imageUrl: '../diagrams/backend-fundamentos/express-home.png',
+    source: 'expressjs.com' },
 
   // Beat 5: NestJS por que
   { type: 'hook', group: 'nestjs', beat: 5,
@@ -497,6 +542,11 @@ const slides = [
         'Estrutura Module/Controller/Service padrão', 'DI nativo + decorators', 'class-validator pronto pra DTO', 'Scaffold com nest g resource', 'Ganha em produto longo + time de 3+ devs',
       ]},
     ]},
+  { type: 'screenshot', group: 'nestjs', beat: 5,
+    title: 'NestJS · docs intro · "uses Express by default"',
+    subtitle: 'Por baixo do capô, NestJS usa Express (ou Fastify). Não é alternativa, é abstração em cima. O scaffold é uma linha: nest new project-name.',
+    imageUrl: '../diagrams/backend-fundamentos/nestjs-docs.png',
+    source: 'docs.nestjs.com' },
 
   // Beat 6: Anatomia
   { type: 'hook', group: 'nestjs', beat: 6,
@@ -677,6 +727,11 @@ const slides = [
       { kw: 'CloudWatch',   text: 'Logs · stdout do container vai automático' },
       { kw: 'SSM',          text: 'Secrets · DB password, JWT. Container lê via SDK + IAM Role' },
     ] },
+  { type: 'screenshot', group: 'synthesis', beat: 10,
+    title: 'AWS ECS · 3 camadas oficiais (Provisioning · Controller · Capacity)',
+    subtitle: 'Diagrama oficial da AWS. Você fala via CLI/Console/SDK (Provisioning), o ECS scheduler decide (Controller), e roda em EC2 ou Fargate (Capacity).',
+    imageUrl: '../diagrams/backend-fundamentos/aws-ecs-layers.png',
+    source: 'docs.aws.amazon.com/AmazonECS' },
 
   // ─── CLOSING ────────────────────────────────────────────────────
   { type: 'closing', group: 'synthesis' },
@@ -949,6 +1004,30 @@ function r_compare3(s) {
   `;
 }
 
+function r_screenshot(s) {
+  return `
+    <section class="slide w-full h-full overflow-hidden" data-group="${s.group}">
+      ${header(s.group, s.beat)}
+      <div class="relative z-10 w-full max-w-[1500px] mx-auto px-16 flex flex-col gap-6 self-center justify-center pt-24 pb-24">
+        <div class="flex items-center gap-4 anim">
+          <span class="mono text-[11px] uppercase tracking-[0.3em]" style="color: #FF3D2E;">// REFERÊNCIA</span>
+          <h2 class="display text-[32px] font-semibold text-white">${s.title}</h2>
+        </div>
+        ${s.subtitle ? `<p class="mono text-[#9CA3AF] text-[17px] leading-snug anim delay-1 max-w-[1200px]">${s.subtitle}</p>` : ''}
+        <div class="anim-scale delay-2 flex flex-col items-center">
+          <div class="shot-wrap">
+            <div class="shot-frame" style="box-shadow: 0 0 80px rgba(255,61,46,0.18);">
+              <img src="${s.imageUrl}" alt="${s.title}" />
+            </div>
+          </div>
+          ${s.source ? `<div class="shot-source"><strong>SOURCE</strong> &nbsp;·&nbsp; ${s.source}</div>` : ''}
+        </div>
+      </div>
+      ${footer()}
+    </section>
+  `;
+}
+
 function r_htmlDiagram(s) {
   return `
     <section class="slide w-full h-full overflow-hidden" data-group="${s.group}">
@@ -1021,6 +1100,7 @@ const RENDERERS = {
   compare: r_compare,
   compare3: r_compare3,
   htmlDiagram: r_htmlDiagram,
+  screenshot: r_screenshot,
   closing: r_closing,
 };
 
