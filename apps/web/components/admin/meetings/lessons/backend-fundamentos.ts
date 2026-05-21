@@ -108,14 +108,6 @@ export const backendFundamentos: Lesson = {
           note: 'Algumas APIs retornam `200 OK` com `{ error: "Not found" }` no body. Quebra tudo: cliente acha que deu certo, monitoring não conta como erro. Sempre use status code certo.',
         },
       ],
-      diagram: `flowchart LR
-  C["Cliente"]
-  C -->|GET /users/42| S["Servidor"]
-  S -->|200 OK + JSON| C
-  C -->|POST /users + body| S
-  S -->|201 Created| C
-  C -->|DELETE /users/42| S
-  S -->|204 No Content| C`,
       anchor:
         'Você vai criar a API de um sistema de tarefas. Como você nomeia a rota pra: criar tarefa, listar todas, ver uma, atualizar, deletar?',
       followup:
@@ -152,13 +144,6 @@ export const backendFundamentos: Lesson = {
           note: 'Cadastrou agora e recebeu 401? Não é sua chave errada, é a API ativando. Acontece em muita API free.',
         },
       ],
-      diagram: `flowchart TD
-  Need["Preciso de\\ndados de tempo"] --> Doc["openweathermap.org/api"]
-  Doc --> Ref["API Reference\\n(pula o marketing)"]
-  Ref --> Q1["1. Qual endpoint?\\nGET /data/2.5/weather"]
-  Ref --> Q2["2. Como autenticar?\\nappid=KEY (query param)"]
-  Ref --> Q3["3. Quais params?\\nq=cidade, units=metric"]
-  Ref --> Q4["4. Response shape?\\n{ main, weather, name }"]`,
       anchor:
         'Você precisa da previsão do tempo de São Paulo agora. Tem a doc do OpenWeather aberta. Quais são as primeiras 4 informações que você procura?',
       followup:
@@ -195,14 +180,6 @@ export const backendFundamentos: Lesson = {
           note: '`await fetch()` só dá throw em erro de rede. 404 ou 500 chegam normalmente, você precisa checar `response.ok` manualmente. Calouros perdem horas debugando isso.',
         },
       ],
-      diagram: `flowchart LR
-  Doc["Doc lida"] --> Test{"Como testar?"}
-  Test --> Curl["curl no terminal\\n(rápido, scriptável)"]
-  Test --> Postman["Postman\\n(salva, share, organiza)"]
-  Curl & Postman --> OK{"Funcionou?"}
-  OK -->|sim| Code["fetch() no app\\n(produção)"]
-  OK -->|não| Doc
-  Code --> DevTools["DevTools Network\\n(debug)"]`,
       anchor:
         'Você leu a doc do OpenWeather. Tem a API key. Antes de abrir o VS Code, qual ferramenta você abre primeiro pra testar que a key funciona?',
       followup:
@@ -239,12 +216,7 @@ export const backendFundamentos: Lesson = {
           note: 'O V de MVC nasceu pra apps onde o servidor renderiza HTML. Em APIs REST modernas, "View" virou só "como você serializa o response", geralmente JSON. Não procure um arquivo .view.js no seu projeto.',
         },
       ],
-      diagram: `flowchart LR
-  R["Request"] --> M1["app.use(cors)"]
-  M1 --> M2["app.use(json)"]
-  M2 --> M3["app.use(auth)"]
-  M3 --> H["app.get(handler)"]
-  H --> Res["Response"]`,
+      diagramUrl: '/diagrams/backend-fundamentos/beat-4-middleware.png',
       anchor:
         'No seu módulo, vocês escreveram um `server.js` com Express. Se eu pedir pra você organizar essa rota num modelo MVC, em quantos arquivos ela vira?',
       followup:
@@ -281,9 +253,6 @@ export const backendFundamentos: Lesson = {
           note: 'NestJS não roda direto do .ts em produção (precisa compilar pra .js). Adiciona um passo de build no deploy. Express puro consegue rodar via ts-node, NestJS não recomenda.',
         },
       ],
-      diagram: `flowchart LR
-  Express["Express\\n(lib mínima)"] -->|"você decide:\\nestrutura, DI,\\nvalidação, etc"| Result1["funciona\\ncada dev faz diferente"]
-  Nest["NestJS\\n(framework opinado)"] -->|"framework decide:\\nestrutura, DI,\\nvalidação, decorators"| Result2["guard rails\\ntime grande converge"]`,
       anchor:
         'Você pode escrever um backend Node em 10 linhas com Express. Por que alguém escolheria NestJS, que parece bem mais código pra mesma coisa?',
       followup:
@@ -320,12 +289,6 @@ export const backendFundamentos: Lesson = {
           note: 'Provider esquecido em `providers: []` causa esse erro críptico no startup. Sempre adiciona Service ao array do Module.',
         },
       ],
-      diagram: `flowchart TB
-  R["Request HTTP\\nPOST /users"] --> Mod["UsersModule"]
-  Mod --> Ctrl["UsersController\\n@Post(), @Body(dto)"]
-  Ctrl -->|chama| Svc["UsersService\\n@Injectable()"]
-  Svc --> DB[("Postgres")]
-  DTO["CreateUserDto\\n@IsEmail, @MinLength"] -.->|valida body antes| Ctrl`,
       anchor:
         'Você vai criar a feature "users" no NestJS. Quais arquivos você espera ver na pasta `src/users/`? E qual é a responsabilidade de cada um?',
       followup:
@@ -362,12 +325,6 @@ export const backendFundamentos: Lesson = {
           note: 'Se você guarda `this.currentUser` no Service, o próximo request vê o user anterior. Sempre passa o context como argumento, nunca guarda em `this`.',
         },
       ],
-      diagram: `flowchart LR
-  Mod["Module\\nproviders: [UsersService]"]
-  Mod -->|registra| Container["DI Container\\n(mantém singletons)"]
-  Ctrl["Controller\\nconstructor(private u: UsersService)"]
-  Ctrl -.->|"pede UsersService"| Container
-  Container -.->|"entrega a instância"| Ctrl`,
       anchor:
         'No Controller você escreveu `constructor(private users: UsersService) {}`. Você não chamou `new UsersService()` em lugar nenhum. Como o NestJS sabe o que passar nesse parâmetro?',
       followup:
@@ -404,21 +361,6 @@ export const backendFundamentos: Lesson = {
           note: 'Se metade dos services chama `*.service.ts` e a outra metade `*Service.ts`, você não consegue achar tudo. Padroniza no início e mantém.',
         },
       ],
-      diagram: `flowchart TB
-  subgraph layered["Layered (MVC tradicional)"]
-    LC["controllers/"]
-    LS["services/"]
-    LD["dtos/"]
-    LM["modules/"]
-  end
-  subgraph feature["Feature folders (recomendado)"]
-    F1["users/"]
-    F2["auth/"]
-    F3["orders/"]
-    SH["shared/"]
-  end
-  layered -.->|"projeto cresceu"| Caos["Cross-imports,\\nPR enormes,\\nrenomes em 4 lugares"]
-  feature -.->|"projeto cresceu"| OK["Deleta pasta = deleta feature\\nPR coeso\\nOnboarding lê src/"]`,
       anchor:
         'Seu projeto tem 30 features. Você organiza por TIPO (controllers/, services/, dtos/) ou por FEATURE (users/, auth/, orders/)? Por quê?',
       followup:
@@ -454,21 +396,6 @@ export const backendFundamentos: Lesson = {
           note: 'Se você usa `intercept(ctx, next)` e esquece de `await next.handle().toPromise()`, o Interceptor "pós" roda antes da response. Bug clássico de transform/log.',
         },
       ],
-      diagram: `flowchart TB
-  R["Request\\nPOST /users"] --> MW["Middleware\\n(CORS, logger)"]
-  MW --> G["Guard\\n(JWT, role)"]
-  G --> I1["Interceptor pre\\n(timing, transform)"]
-  I1 --> P["Pipe + DTO\\n(class-validator)"]
-  P --> Ctrl["Controller\\n@Post(), @Body()"]
-  Ctrl --> Svc["Service\\n(regra de negócio)"]
-  Svc --> Repo["Repository\\n(Prisma)"]
-  Repo --> DB[("Postgres")]
-  DB --> Repo --> Svc --> Ctrl --> I2["Interceptor post\\n(transform output)"]
-  I2 --> Res["Response\\n201 Created"]
-  G -.->|"falha"| EF["ExceptionFilter\\n(401/403/500)"]
-  P -.->|"inválido"| EF
-  Svc -.->|"throw"| EF
-  EF --> Res`,
       anchor:
         'Um POST /users chega no seu NestJS. Desenha cada etapa que ele atravessa, do momento que entra no servidor até a resposta voltar.',
       followup:
@@ -504,15 +431,7 @@ export const backendFundamentos: Lesson = {
           note: 'Container ECS em subnet privada não consegue puxar imagem do ECR sem rota pra fora. NAT Gateway custa $0.045/h (~$33/mês). Alternativa: VPC Endpoint pra ECR (mais barato em escala).',
         },
       ],
-      diagram: `flowchart TB
-  Browser["Browser"] --> R53["Route 53\\nDNS"]
-  R53 --> ALB["ALB\\nLayer 7"]
-  ALB --> ECS["ECS Fargate\\n(seu NestJS)"]
-  ECS --> RDS["RDS Postgres\\nMulti-AZ"]
-  RDS -.->|read scale| RR["RDS Read Replica"]
-  ECS --> SSM["SSM\\nSecrets"]
-  ECS --> ECR["ECR\\nDocker image"]
-  ECS --> CW["CloudWatch\\nLogs"]`,
+      diagramUrl: '/diagrams/backend-fundamentos/aws-ecs-layers.png',
       anchor:
         'Olha o diagrama do pipeline NestJS que você desenhou. Pra cada peça (servidor, banco, secrets), qual AWS managed service faz esse trabalho em produção?',
       followup:
