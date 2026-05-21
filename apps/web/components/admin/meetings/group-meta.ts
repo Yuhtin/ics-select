@@ -107,8 +107,8 @@ export const GROUP_META: Record<NodeGroup, GroupVisual> = {
     tintClass: 'bg-success-soft/40',
   },
   nestjs: {
-    label: 'NestJS',
-    eyebrow: 'NestJS',
+    label: 'Framework · MVC',
+    eyebrow: 'Framework · MVC',
     accentClass: 'text-primary',
     ringClass: 'bg-primary',
     stripeClass: 'bg-primary',

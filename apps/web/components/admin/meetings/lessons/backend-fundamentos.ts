@@ -2,12 +2,12 @@ import type { Lesson } from '../lesson-types';
 
 export const backendFundamentos: Lesson = {
   slug: 'backend-fundamentos',
-  title: 'Backend de Verdade, REST, NestJS e o que você de fato usa',
+  title: 'Backend de Verdade, REST, Express + MVC e NestJS',
   subtitle: 'Backend · Fundamentos',
   blurb:
-    'Como um backend funciona na prática: REST como padrão, NestJS como ferramenta, organização de projeto que escala. Aula aberta pra 40+ calouros, foco em ler doc de API, estruturar features, e entender pra onde o request vai depois de chegar no servidor.',
+    'Como um backend funciona na prática: REST como padrão, Express + MVC como o que vocês já usam no módulo, NestJS como a evolução opinada que vocês vão ver em produção. Foco em ler doc de API, estruturar features, e entender pra onde o request vai depois de chegar no servidor.',
   durationMin: 90,
-  audience: 'Empresa Jr · Calouros (aula aberta · 40+)',
+  audience: 'Empresa Jr · Calouros',
   slidesUrl: '/slides/backend-fundamentos.html',
   nodes: [
     // ─── Foundation A: HTTP em 2 minutos ──────────────────────────────────────
@@ -109,8 +109,8 @@ export const backendFundamentos: Lesson = {
         },
       ],
       diagram: `flowchart LR
-  C["💻 Cliente"]
-  C -->|GET /users/42| S["🟢 Servidor"]
+  C["Cliente"]
+  C -->|GET /users/42| S["Servidor"]
   S -->|200 OK + JSON| C
   C -->|POST /users + body| S
   S -->|201 Created| C
@@ -153,8 +153,8 @@ export const backendFundamentos: Lesson = {
         },
       ],
       diagram: `flowchart TD
-  Need["📋 Preciso de\\ndados de tempo"] --> Doc["📖 openweathermap.org/api"]
-  Doc --> Ref["🔍 API Reference\\n(pula o marketing)"]
+  Need["Preciso de\\ndados de tempo"] --> Doc["openweathermap.org/api"]
+  Doc --> Ref["API Reference\\n(pula o marketing)"]
   Ref --> Q1["1. Qual endpoint?\\nGET /data/2.5/weather"]
   Ref --> Q2["2. Como autenticar?\\nappid=KEY (query param)"]
   Ref --> Q3["3. Quais params?\\nq=cidade, units=metric"]
@@ -196,13 +196,13 @@ export const backendFundamentos: Lesson = {
         },
       ],
       diagram: `flowchart LR
-  Doc["📖 Doc lida"] --> Test{"Como testar?"}
-  Test --> Curl["💻 curl no terminal\\n(rápido, scriptável)"]
-  Test --> Postman["🟠 Postman\\n(salva, share, organiza)"]
+  Doc["Doc lida"] --> Test{"Como testar?"}
+  Test --> Curl["curl no terminal\\n(rápido, scriptável)"]
+  Test --> Postman["Postman\\n(salva, share, organiza)"]
   Curl & Postman --> OK{"Funcionou?"}
-  OK -->|sim| Code["📝 fetch() no app\\n(produção)"]
+  OK -->|sim| Code["fetch() no app\\n(produção)"]
   OK -->|não| Doc
-  Code --> DevTools["🔍 DevTools Network\\n(debug)"]`,
+  Code --> DevTools["DevTools Network\\n(debug)"]`,
       anchor:
         'Você leu a doc do OpenWeather. Tem a API key. Antes de abrir o VS Code, qual ferramenta você abre primeiro pra testar que a key funciona?',
       followup:
@@ -240,11 +240,11 @@ export const backendFundamentos: Lesson = {
         },
       ],
       diagram: `flowchart LR
-  R["📨 Request"] --> M1["app.use(cors)"]
+  R["Request"] --> M1["app.use(cors)"]
   M1 --> M2["app.use(json)"]
   M2 --> M3["app.use(auth)"]
   M3 --> H["app.get(handler)"]
-  H --> Res["📤 Response"]`,
+  H --> Res["Response"]`,
       anchor:
         'No seu módulo, vocês escreveram um `server.js` com Express. Se eu pedir pra você organizar essa rota num modelo MVC, em quantos arquivos ela vira?',
       followup:
@@ -282,8 +282,8 @@ export const backendFundamentos: Lesson = {
         },
       ],
       diagram: `flowchart LR
-  Express["📦 Express\\n(lib mínima)"] -->|"você decide:\\nestrutura, DI,\\nvalidação, etc"| Result1["✅ funciona\\n❌ cada dev faz diferente"]
-  Nest["🟥 NestJS\\n(framework opinado)"] -->|"framework decide:\\nestrutura, DI,\\nvalidação, decorators"| Result2["✅ guard rails\\n✅ time grande converge"]`,
+  Express["Express\\n(lib mínima)"] -->|"você decide:\\nestrutura, DI,\\nvalidação, etc"| Result1["funciona\\ncada dev faz diferente"]
+  Nest["NestJS\\n(framework opinado)"] -->|"framework decide:\\nestrutura, DI,\\nvalidação, decorators"| Result2["guard rails\\ntime grande converge"]`,
       anchor:
         'Você pode escrever um backend Node em 10 linhas com Express. Por que alguém escolheria NestJS, que parece bem mais código pra mesma coisa?',
       followup:
@@ -321,11 +321,11 @@ export const backendFundamentos: Lesson = {
         },
       ],
       diagram: `flowchart TB
-  R["📨 Request HTTP\\nPOST /users"] --> Mod["📦 UsersModule"]
-  Mod --> Ctrl["🎯 UsersController\\n@Post(), @Body(dto)"]
-  Ctrl -->|chama| Svc["⚙️ UsersService\\n@Injectable()"]
-  Svc --> DB[("🐘 Postgres")]
-  DTO["📋 CreateUserDto\\n@IsEmail, @MinLength"] -.->|valida body antes| Ctrl`,
+  R["Request HTTP\\nPOST /users"] --> Mod["UsersModule"]
+  Mod --> Ctrl["UsersController\\n@Post(), @Body(dto)"]
+  Ctrl -->|chama| Svc["UsersService\\n@Injectable()"]
+  Svc --> DB[("Postgres")]
+  DTO["CreateUserDto\\n@IsEmail, @MinLength"] -.->|valida body antes| Ctrl`,
       anchor:
         'Você vai criar a feature "users" no NestJS. Quais arquivos você espera ver na pasta `src/users/`? E qual é a responsabilidade de cada um?',
       followup:
@@ -363,9 +363,9 @@ export const backendFundamentos: Lesson = {
         },
       ],
       diagram: `flowchart LR
-  Mod["📦 Module\\nproviders: [UsersService]"]
-  Mod -->|registra| Container["🗂️ DI Container\\n(mantém singletons)"]
-  Ctrl["🎯 Controller\\nconstructor(private u: UsersService)"]
+  Mod["Module\\nproviders: [UsersService]"]
+  Mod -->|registra| Container["DI Container\\n(mantém singletons)"]
+  Ctrl["Controller\\nconstructor(private u: UsersService)"]
   Ctrl -.->|"pede UsersService"| Container
   Container -.->|"entrega a instância"| Ctrl`,
       anchor:
@@ -417,8 +417,8 @@ export const backendFundamentos: Lesson = {
     F3["orders/"]
     SH["shared/"]
   end
-  layered -.->|"projeto cresceu"| Caos["❌ Cross-imports,\\nPR enormes,\\nrenomes em 4 lugares"]
-  feature -.->|"projeto cresceu"| OK["✅ Deleta pasta = deleta feature\\nPR coeso\\nOnboarding lê src/"]`,
+  layered -.->|"projeto cresceu"| Caos["Cross-imports,\\nPR enormes,\\nrenomes em 4 lugares"]
+  feature -.->|"projeto cresceu"| OK["Deleta pasta = deleta feature\\nPR coeso\\nOnboarding lê src/"]`,
       anchor:
         'Seu projeto tem 30 features. Você organiza por TIPO (controllers/, services/, dtos/) ou por FEATURE (users/, auth/, orders/)? Por quê?',
       followup:
@@ -455,17 +455,17 @@ export const backendFundamentos: Lesson = {
         },
       ],
       diagram: `flowchart TB
-  R["📨 Request\\nPOST /users"] --> MW["Middleware\\n(CORS, logger)"]
-  MW --> G["🛡️ Guard\\n(JWT, role)"]
-  G --> I1["🔄 Interceptor pre\\n(timing, transform)"]
-  I1 --> P["✅ Pipe + DTO\\n(class-validator)"]
-  P --> Ctrl["🎯 Controller\\n@Post(), @Body()"]
-  Ctrl --> Svc["⚙️ Service\\n(regra de negócio)"]
-  Svc --> Repo["💾 Repository\\n(Prisma)"]
-  Repo --> DB[("🐘 Postgres")]
-  DB --> Repo --> Svc --> Ctrl --> I2["🔄 Interceptor post\\n(transform output)"]
-  I2 --> Res["📤 Response\\n201 Created"]
-  G -.->|"falha"| EF["❗ ExceptionFilter\\n(401/403/500)"]
+  R["Request\\nPOST /users"] --> MW["Middleware\\n(CORS, logger)"]
+  MW --> G["Guard\\n(JWT, role)"]
+  G --> I1["Interceptor pre\\n(timing, transform)"]
+  I1 --> P["Pipe + DTO\\n(class-validator)"]
+  P --> Ctrl["Controller\\n@Post(), @Body()"]
+  Ctrl --> Svc["Service\\n(regra de negócio)"]
+  Svc --> Repo["Repository\\n(Prisma)"]
+  Repo --> DB[("Postgres")]
+  DB --> Repo --> Svc --> Ctrl --> I2["Interceptor post\\n(transform output)"]
+  I2 --> Res["Response\\n201 Created"]
+  G -.->|"falha"| EF["ExceptionFilter\\n(401/403/500)"]
   P -.->|"inválido"| EF
   Svc -.->|"throw"| EF
   EF --> Res`,
@@ -505,7 +505,7 @@ export const backendFundamentos: Lesson = {
         },
       ],
       diagram: `flowchart TB
-  Browser["🌐 Browser"] --> R53["Route 53\\nDNS"]
+  Browser["Browser"] --> R53["Route 53\\nDNS"]
   R53 --> ALB["ALB\\nLayer 7"]
   ALB --> ECS["ECS Fargate\\n(seu NestJS)"]
   ECS --> RDS["RDS Postgres\\nMulti-AZ"]
