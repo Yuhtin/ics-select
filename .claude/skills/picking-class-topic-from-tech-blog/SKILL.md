@@ -273,6 +273,8 @@ If your beats reference architecture (and most should), generate diagrams instea
 
 **Use external reference images for canonical diagrams.** Some diagrams (Container vs VM architecture stack, OSI layers, generic CAP theorem) are better as classic industry images than as custom drawings. Save those under `apps/web/public/diagrams/<slug>/external/<name>.png` to keep them separate from generated diagrams, and reference them the same way via `diagramUrl`.
 
+**Always render the slide and look at it before committing an external image.** The `diagramFull` template renders inside `bg-neutral-950` with `filter: brightness(0.95)` — any image that already has a dark background (screenshots from dev.to dark mode, diagrams with black canvases) goes invisible. `file` and `sips` saying "valid PNG, 800×264" doesn't mean it's readable; if you can't visualize the PNG directly, render the slide page and screenshot it. If it's illegible, either find a brighter source or redraw in Excalidraw — don't ship and hope.
+
 **Diagram quality checklist before exporting**: no overlapping arrow labels (use shorter labels or remove on fan-outs), at least 300px between boxes on horizontal layouts, text in boxes fits the box width, kernel/base layers wider than the elements above them.
 
 ### Step 7 — Build the slide deck (optional, for in-class presentation)
@@ -353,6 +355,8 @@ Then ask the user the structure questions from Step 2 before proceeding to autho
 - **Skipping the no-jumps audit.** Easy to slip "uses Redis SETNX" into beat 3 when storage is beat 4. Read every beat in order before saving.
 - **Writing pass2 as one giant paragraph.** Sans-serif body needs 3-5 short paragraphs separated by `\n\n` with bold headers — otherwise it's a wall.
 - **Trusting Medium HTML.** Archive pages and `/all` are JS-rendered. RSS + WebSearch is the only reliable path.
+- **Adding a slide because you have a related image.** "I found a Docker bridge diagram, let me add a `diagramFull` after the docker-compose slide" — the concept is already covered by the previous slide; the extra one only adds depth the audience doesn't need. Every slide must answer "what does the student understand after this that they didn't before?" If the answer is "nothing, but they see a cool picture", cut it.
+- **Sneaking in unintroduced jargon.** `veth`, `L2 switch`, `cgroup`, `kubelet`, `etcd quorum` — if a term wasn't defined earlier in the same lesson and isn't strictly required to grasp the beat, it's noise. The audience has no anchor for it; the term reads as decoration that signals "you don't get it" instead of teaching. Audit every caption for nouns the cohort hasn't seen yet, and either define them inline (one sentence) or remove them.
 
 ## Quick reference
 
