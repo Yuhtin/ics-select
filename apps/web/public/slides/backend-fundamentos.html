@@ -546,46 +546,46 @@ const slides = [
     ` },
 
   { type: 'htmlDiagram', group: 'nestjs', beat: 4,
-    title: 'MVC · 3 camadas, 1 responsabilidade cada',
-    subtitle: 'Sem MVC, server.js vira monstro de 1000 linhas. Com MVC, cada arquivo tem 1 motivo pra existir.',
+    title: 'MVC · fluxo View → Controller → Model',
+    subtitle: 'A View envia pro Controller, que acessa o Model. Sem MVC, server.js vira monstro de 1000 linhas. Com MVC, cada arquivo tem 1 motivo pra existir.',
     diagramHtml: `
       <div class="diag-mvc-row">
         <div class="diag-mvc-card">
           <div class="diag-mvc-num">01</div>
-          <div class="diag-mvc-title">CONTROLLER</div>
-          <div class="diag-mvc-sub">camada HTTP</div>
+          <div class="diag-mvc-title">VIEW</div>
+          <div class="diag-mvc-sub">interface do usuário</div>
           <div class="diag-mvc-rule"></div>
-          <div class="diag-mvc-body">Recebe request<br/>Extrai req.params / req.body<br/>Chama o Model<br/>Retorna response</div>
+          <div class="diag-mvc-body">Em fullstack: HTML/JSX<br/>Em API: o frontend (React, mobile)<br/>Usuário clica, preenche form<br/>Dispara a ação</div>
+          <div class="diag-mvc-file mono">page.tsx · res.json()</div>
+        </div>
+        <div class="diag-mvc-bridge">
+          <div class="diag-mvc-bridge-line"></div>
+          <div class="diag-mvc-bridge-label">envia evento / request</div>
+        </div>
+        <div class="diag-mvc-card">
+          <div class="diag-mvc-num">02</div>
+          <div class="diag-mvc-title">CONTROLLER</div>
+          <div class="diag-mvc-sub">camada de entrada</div>
+          <div class="diag-mvc-rule"></div>
+          <div class="diag-mvc-body">Recebe input da View<br/>Extrai req.params / req.body<br/>Decide o que fazer<br/>Chama o Model</div>
           <div class="diag-mvc-file mono">users.controller.js</div>
         </div>
         <div class="diag-mvc-bridge">
           <div class="diag-mvc-bridge-line"></div>
-          <div class="diag-mvc-bridge-label">chama</div>
+          <div class="diag-mvc-bridge-label">acessa</div>
         </div>
         <div class="diag-mvc-card">
-          <div class="diag-mvc-num">02</div>
+          <div class="diag-mvc-num">03</div>
           <div class="diag-mvc-title">MODEL</div>
-          <div class="diag-mvc-sub">camada de dados</div>
+          <div class="diag-mvc-sub">dados + lógica</div>
           <div class="diag-mvc-rule"></div>
           <div class="diag-mvc-body">Regra de negócio<br/>Acesso ao banco (SQL)<br/>Validação<br/>NÃO sabe que HTTP existe</div>
           <div class="diag-mvc-file mono">users.model.js</div>
         </div>
-        <div class="diag-mvc-bridge">
-          <div class="diag-mvc-bridge-line"></div>
-          <div class="diag-mvc-bridge-label">serializa</div>
-        </div>
-        <div class="diag-mvc-card">
-          <div class="diag-mvc-num">03</div>
-          <div class="diag-mvc-title">VIEW</div>
-          <div class="diag-mvc-sub">camada de resposta</div>
-          <div class="diag-mvc-rule"></div>
-          <div class="diag-mvc-body">Em APIs: <span style="color:#FF3D2E">JSON</span><br/>Em fullstack: HTML<br/>Formato pro cliente<br/>Sem lógica de negócio</div>
-          <div class="diag-mvc-file mono">res.json(data)</div>
-        </div>
       </div>
       <div class="diag-caption">
         <span class="diag-caption-mark">!</span>
-        Em APIs REST, a "View" virou só <code class="mono text-[#FF6B5B]">res.json()</code>. Não procure um arquivo .view.js no seu projeto.
+        O acronym é <span style="color:#FF3D2E">MVC</span> mas o fluxo é <span style="color:#FF6B5B">V → C → M</span>. Em APIs REST sem renderização server-side, a "View" é o próprio frontend (React, mobile) que dispara a request.
       </div>
     ` },
   { type: 'screenshot', group: 'nestjs', beat: 4,
