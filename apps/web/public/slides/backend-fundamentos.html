@@ -217,6 +217,33 @@
   }
   .shot-source strong { color: #FF3D2E; font-weight: 600; }
 
+  /* ─── PROFILE BUBBLE (Sobre Mim / speaker intro) ─────────────────── */
+  .profile-bubble {
+    width: 380px; height: 380px; position: relative; flex-shrink: 0;
+    border-radius: 50%; overflow: hidden;
+    border: 3px solid #FF3D2E;
+    box-shadow:
+      0 0 80px rgba(255,61,46,0.45),
+      inset 0 0 30px rgba(0,0,0,0.4);
+  }
+  .profile-bubble img {
+    width: 100%; height: 100%; object-fit: cover;
+    object-position: center top;
+  }
+  /* Outer dashed ring (HUD halo) around the bubble */
+  .profile-halo {
+    position: absolute; inset: -16px; border-radius: 50%;
+    border: 1px dashed rgba(255,61,46,0.4);
+    pointer-events: none;
+  }
+  /* Red corner-marker dots around the bubble */
+  .profile-marks::before, .profile-marks::after {
+    content: ''; position: absolute; width: 8px; height: 8px;
+    background: #FF3D2E; border-radius: 50%; box-shadow: 0 0 12px #FF3D2E;
+  }
+  .profile-marks::before { top: 18px; right: -8px; }
+  .profile-marks::after  { bottom: 18px; left: -8px; }
+
   /* Bridge between MVC cards: short line + label */
   .diag-mvc-bridge {
     flex: 0 0 70px; display: flex; flex-direction: column;
@@ -337,6 +364,15 @@ const slides = [
   // ─── COVER ──────────────────────────────────────────────────────
   { type: 'cover', group: 'cover' },
 
+  // ─── SOBRE MIM ──────────────────────────────────────────────────
+  { type: 'about', group: 'cover',
+    name: 'David Duarte',
+    role: '2º ano',
+    school: 'Ciência da Computação · Inteli',
+    photo: '../brand/inteli-jr/people/david-duarte.jpg',
+    expertise: ['BACKEND', 'DEVOPS', 'ARQUITETURA EM NUVEM'],
+    past: ['Ex-Morgan Stanley', 'Engenheiro de Minecraft'] },
+
   // ─── API · REST ─────────────────────────────────────────────────
   { type: 'divider', group: 'api', num: '01', label: 'API · REST',
     text: 'Antes de escrever backend, você precisa saber o idioma. HTTP, JSON e REST são a base que toda API moderna usa.' },
@@ -344,8 +380,13 @@ const slides = [
   // Beat 1: REST
   { type: 'hook', group: 'api', beat: 1,
     title: 'Você vai criar a API de <span class="text-[#FF3D2E]">tarefas</span>.<br/>Como nomeia a rota pra criar, listar, deletar?',
-    subtitle: 'A URL é o substantivo. O verbo HTTP é a ação. REST é só isso. E é o que o mundo todo já fala.',
+    subtitle: 'A URL é o substantivo. O verbo HTTP é a ação. Vamos entender como REST conecta isso de forma simples.',
     tags: ['rest', 'resource', 'http-verb', 'status-code', 'stateless'] },
+  { type: 'screenshot', group: 'api', beat: 1,
+    title: 'REST em uma imagem · Client fala HTTP+URL, Server devolve JSON',
+    subtitle: 'É esse loop que você vai escrever. Verbo HTTP (GET/POST/DELETE/PUT) + URL (/surveys/:id) saem do cliente; JSON volta do servidor.',
+    imageUrl: '../diagrams/backend-fundamentos/rest-overview.png',
+    source: 'diagrama clássico de REST API' },
   { type: 'compare', group: 'api', beat: 1,
     title: 'RPC vs REST · mesmo CRUD',
     columns: [
@@ -1158,6 +1199,58 @@ function r_compare3(s) {
   `;
 }
 
+function r_about(s) {
+  return `
+    <section class="slide w-full h-full overflow-hidden" data-group="cover">
+      <header class="absolute top-0 left-0 right-0 px-16 py-5 flex justify-between items-center z-30">
+        <div class="flex items-center gap-4 anim">
+          <img src="../brand/inteli-jr/symbol-white.png" alt="" class="h-7 opacity-90" />
+          <span class="mono text-[11px] uppercase tracking-[0.25em] text-[#9CA3AF]">[ BACKEND · FUNDAMENTOS ]</span>
+        </div>
+        <span class="mono text-[11px] uppercase tracking-[0.3em] anim delay-1" style="color: #FF3D2E;">// SOBRE MIM</span>
+      </header>
+      <div class="absolute top-[68px] left-16 right-16 red-rule anim delay-1 z-30"></div>
+
+      <div class="relative z-10 w-full max-w-[1400px] mx-auto px-16 grid grid-cols-[auto_1fr] gap-16 self-center items-center pt-24 pb-24">
+        <div class="relative anim-scale">
+          <div class="profile-halo"></div>
+          <div class="profile-bubble profile-marks">
+            <img src="${s.photo}" alt="${s.name}" />
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-6">
+          <div class="flex items-baseline gap-4 anim">
+            <span class="mono text-[12px] uppercase tracking-[0.3em]" style="color: #FF3D2E;">[ QUEM FALA ]</span>
+            <div class="flex-1 h-px" style="background: linear-gradient(90deg, #FF3D2E40, transparent);"></div>
+          </div>
+
+          <h1 class="display text-[88px] leading-[0.95] font-bold text-white anim delay-1 tracking-tight">${s.name}</h1>
+
+          <p class="mono text-[20px] text-[#D1D5DB] anim delay-2">
+            <span style="color: #FF3D2E;">${s.role}</span>
+            <span class="text-[#1F2937]">·</span>
+            ${s.school}
+          </p>
+
+          <div class="flex flex-wrap gap-2 anim delay-3 pt-2">
+            ${(s.expertise || []).map(t => `<span class="mono text-[12px] uppercase tracking-[0.18em] px-3 py-2 border" style="border-color: #FF3D2E80; background: rgba(255,61,46,0.10); color: #FF6B5B; clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);">${t}</span>`).join('')}
+          </div>
+
+          <div class="mt-4 anim delay-4">
+            <div class="mono text-[11px] uppercase tracking-[0.3em] text-[#6B7280] mb-3">[ EX ]</div>
+            <ul class="flex flex-col gap-2">
+              ${(s.past || []).map(p => `<li class="display text-[24px] text-[#E5E7EB] flex items-center gap-3"><span class="mono text-[18px]" style="color: #FF3D2E;">›</span>${p}</li>`).join('')}
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      ${footer()}
+    </section>
+  `;
+}
+
 function r_screenshot(s) {
   return `
     <section class="slide w-full h-full overflow-hidden" data-group="${s.group}">
@@ -1256,6 +1349,7 @@ const RENDERERS = {
   compare3: r_compare3,
   htmlDiagram: r_htmlDiagram,
   screenshot: r_screenshot,
+  about: r_about,
   closing: r_closing,
 };
 
