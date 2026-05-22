@@ -181,7 +181,7 @@ export const backendFundamentos: Lesson = {
         },
       ],
       anchor:
-        'Você leu a doc do OpenWeather. Tem a API key. Antes de abrir o VS Code, qual ferramenta você abre primeiro pra testar que a key funciona?',
+        'Você leu a doc do OpenWeather. Tem a API key na mão. Antes de escrever uma linha de código, qual ferramenta você abre primeiro pra testar que a key funciona?',
       followup:
         'Você consumiu API alheia. Agora você vai ESCREVER uma. No módulo de vocês, vocês usam Express. Como organizar isso pra não virar bagunça?',
       gotcha:

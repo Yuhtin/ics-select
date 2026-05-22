@@ -446,7 +446,7 @@ const slides = [
 
   // Beat 3: Consumindo API
   { type: 'hook', group: 'api', beat: 3,
-    title: 'Antes de abrir o <span class="text-[#FF3D2E]">VS Code</span>,<br/>qual ferramenta você abre primeiro<br/>pra testar a API?',
+    title: 'Você tem a <span class="text-[#FF3D2E]">API key</span>.<br/>Antes de escrever uma linha de código,<br/>qual ferramenta você abre pra testar?',
     subtitle: 'Isolar API funciona vs meu código funciona. Sem isso, você gasta horas debugando o lado errado.',
     tags: ['curl', 'postman', 'fetch', 'devtools-network', 'cors'] },
   { type: 'compare3', group: 'api', beat: 3,
@@ -462,15 +462,41 @@ const slides = [
         'await fetch(url, options)', 'É o que vai pro app final', 'Sofre CORS no browser', 'Não dá throw em 404/500',
       ]},
     ]},
+  { type: 'code', group: 'api', beat: 3,
+    title: 'curl · OpenWeather em uma linha no terminal',
+    code: [
+      { line: '<span class="com">$ </span>curl <span class="str">"https://api.openweathermap.org/data/2.5/weather?q=Sao+Paulo&amp;appid=<span class="var">KEY</span>&amp;units=metric"</span>' },
+      { line: '' },
+      { line: '<span class="com"># response &mdash; status 200 OK</span>' },
+      { line: '{' },
+      { line: '<span class="ind">  </span><span class="str">"main"</span>: { <span class="str">"temp"</span>: <span class="num">23.5</span>, <span class="str">"humidity"</span>: <span class="num">68</span> },' },
+      { line: '<span class="ind">  </span><span class="str">"weather"</span>: [{ <span class="str">"description"</span>: <span class="str">"céu limpo"</span> }],' },
+      { line: '<span class="ind">  </span><span class="str">"name"</span>: <span class="str">"Sao Paulo"</span>,' },
+      { line: '<span class="ind">  </span><span class="str">"cod"</span>: <span class="num">200</span>' },
+      { line: '}' },
+    ]},
   { type: 'screenshot', group: 'api', beat: 3,
-    title: 'Postman · request real batendo no servidor',
-    subtitle: 'Verbo + URL no topo, params no meio, response 200 OK com JSON no rodapé. Mesma estrutura que o curl, mas visual.',
+    title: 'Postman · mesma request, agora visual',
+    subtitle: 'Verbo + URL no topo, query params na tabela, response 200 OK com JSON no rodapé. Você salva a collection, share com o time.',
     imageUrl: '../diagrams/backend-fundamentos/postman-ui.png',
     source: 'learning.postman.com/docs/getting-started' },
+  { type: 'code', group: 'api', beat: 3,
+    title: 'fetch · a mesma chamada dentro do código',
+    code: [
+      { line: '<span class="kw">const</span> <span class="var">apiKey</span> = process.env.<span class="var">OPENWEATHER_KEY</span>;' },
+      { line: '<span class="kw">const</span> <span class="var">url</span> =' },
+      { line: '<span class="ind">  </span><span class="str">`https://api.openweathermap.org/data/2.5/weather?q=Sao+Paulo&amp;appid=${apiKey}&amp;units=metric`</span>;' },
+      { line: '' },
+      { line: '<span class="kw">const</span> <span class="var">res</span> = <span class="kw">await</span> fetch(url);' },
+      { line: '<span class="kw">if</span> (!res.ok) <span class="kw">throw new</span> <span class="var">Error</span>(<span class="str">`HTTP ${res.status}`</span>);' },
+      { line: '' },
+      { line: '<span class="kw">const</span> <span class="var">data</span> = <span class="kw">await</span> res.json();' },
+      { line: 'console.log(data.main.temp);  <span class="com">// 23.5</span>' },
+    ]},
 
   // ─── FRAMEWORK · MVC ────────────────────────────────────────────
   { type: 'divider', group: 'nestjs', num: '02', label: 'Framework · MVC',
-    text: 'Express é o que vocês escrevem hoje. NestJS é a evolução opinada que vocês vão ver em produção. Os dois compartilham o padrão MVC por baixo.' },
+    text: 'Express é o que vocês escrevem hoje. NestJS é o que vocês vão ver em produção. Os dois compartilham o padrão MVC por baixo.' },
 
   // ─── Beat 4: ExpressJS + MVC ────────────────────────────────────
   { type: 'hook', group: 'nestjs', beat: 4,
