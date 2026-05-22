@@ -640,7 +640,7 @@ const slides = [
       </div>
       <div class="diag-caption">
         <span class="diag-caption-mark">!</span>
-        Esqueceu de declarar o Service no <code class="mono text-[#FF6B5B]">providers: []</code> do Module? Nest can't resolve dependencies — bug clássico de calouro.
+        Esqueceu de declarar o Service no <code class="mono text-[#FF6B5B]">providers: []</code> do Module? Nest can't resolve dependencies, bug clássico de calouro.
       </div>
     ` },
 
@@ -759,16 +759,42 @@ const slides = [
       ]},
     ]},
 
+  // ─── Beat 9: Banco · SQL × NoSQL + Supabase ─────────────────────
+  { type: 'hook', group: 'nestjs', beat: 9,
+    title: 'Seu projeto da EJ precisa guardar <span style="color: #FF3D2E;">usuários, tarefas, comentários</span>.<br/>Você sobe Postgres na mão, usa Mongo, ou abre <span style="color: #FF6B5B;">Supabase</span>?',
+    subtitle: 'A escolha de banco é uma das poucas que dói migrar depois. Saber o default (Postgres) e o atalho (Supabase) economiza meses.',
+    tags: ['sql', 'nosql', 'postgres', 'mongodb', 'supabase', 'jsonb', 'rls'] },
+
+  { type: 'compare3', group: 'nestjs', beat: 9,
+    title: 'SQL × NoSQL · quando cada um',
+    columns: [
+      { title: 'Postgres', sub: 'SQL relacional', tag: 'default · 90% dos casos', points: [
+        'Tabelas com schema, FK, JOINs', 'ACID forte · transações seguras', 'JSONB pra flexibilidade quando precisa', 'Maduro · integra com tudo', 'Prisma · TypeORM · pg',
+      ]},
+      { title: 'Supabase', sub: 'Postgres + extras', tag: 'recomendado pra EJ', points: [
+        'Postgres gerenciado em 2 min', 'Auth · Storage · Realtime grátis', 'Studio (UI tipo Excel)', 'Free tier: 500MB + 50k MAU', 'Row Level Security via política SQL',
+      ]},
+      { title: 'MongoDB', sub: 'NoSQL document', tag: 'só pra caso específico', points: [
+        'Documento sem schema fixo', 'Sem JOINs · escala horizontal', 'Bom pra eventos / logs', 'Em projeto de EJ raramente justifica', '"Schema flexível" → Postgres JSONB resolve',
+      ]},
+    ]},
+
+  { type: 'screenshot', group: 'nestjs', beat: 9,
+    title: 'Supabase Studio · você cria tabela igual planilha',
+    subtitle: 'Schema visual, browse de dados, SQL editor, policies RLS, tudo no navegador. Não precisa instalar Postgres, não precisa terminal pra criar tabela.',
+    imageUrl: '../diagrams/backend-fundamentos/supabase-studio.png',
+    source: 'supabase.com/docs' },
+
   // ─── SYNTHESIS ──────────────────────────────────────────────────
   { type: 'divider', group: 'synthesis', num: '03', label: 'Synthesis',
     text: 'Tudo junto: pipeline do NestJS do request até a resposta, e onde cada peça vive na AWS de produção.' },
 
-  // Beat 9: Arquitetura
-  { type: 'hookBig', group: 'synthesis', beat: 9,
+  // Beat 10: Arquitetura
+  { type: 'hookBig', group: 'synthesis', beat: 10,
     title: 'Um <code class="mono">POST /users</code> chega no servidor.',
     subtitle: 'Desenha cada etapa que ele atravessa, do momento que entra até a resposta voltar.',
     tags: ['middleware', 'guard', 'pipe', 'controller', 'service', 'repository', 'exception-filter'] },
-  { type: 'list', group: 'synthesis', beat: 9,
+  { type: 'list', group: 'synthesis', beat: 10,
     title: 'Pipeline NestJS · em 8 etapas',
     items: [
       { kw: 'Middleware',        text: 'CORS, body parser, logger (camada herdada do Express)' },
@@ -780,7 +806,7 @@ const slides = [
       { kw: 'Repository',        text: 'Prisma gera SQL. Postgres responde.' },
       { kw: 'ExceptionFilter',   text: 'Captura qualquer throw. Mapeia pra status + body padrão.' },
     ] },
-  { type: 'htmlDiagram', group: 'synthesis', beat: 9,
+  { type: 'htmlDiagram', group: 'synthesis', beat: 10,
     title: 'Pipeline NestJS · sequência completa do request',
     subtitle: 'Cada etapa decide se passa adiante ou aborta. Qualquer throw cai no ExceptionFilter e vira HTTP status + body.',
     diagramHtml: `
@@ -831,12 +857,12 @@ const slides = [
       </div>
     ` },
 
-  // Beat 10: AWS
-  { type: 'hookBig', group: 'synthesis', beat: 10,
+  // Beat 11: AWS
+  { type: 'hookBig', group: 'synthesis', beat: 11,
     title: 'Olha o pipeline que você desenhou.<br/>Pra cada peça,<br/><span class="text-[#FF6B5B]">qual AWS service</span>?',
     subtitle: 'A escolha não é qual é mais novo. É qual perfil de carga aquela peça tem.',
     tags: ['route53', 'alb', 'ecs-fargate', 'lambda', 'rds', 'ecr', 'cloudwatch', 'ssm'] },
-  { type: 'compare3', group: 'synthesis', beat: 10,
+  { type: 'compare3', group: 'synthesis', beat: 11,
     title: 'Compute pra NestJS · 3 opções',
     columns: [
       { title: 'EC2 + PM2', sub: 'VM Linux', tag: 'máximo controle', points: [
@@ -849,7 +875,7 @@ const slides = [
         'NestJS via adapter funciona MAS', 'Cold start mata p99 · pool quebra', 'OK pra webhook ou job', 'Antipadrão pra HTTP persistente',
       ]},
     ]},
-  { type: 'list', group: 'synthesis', beat: 10,
+  { type: 'list', group: 'synthesis', beat: 11,
     title: 'AWS · service por camada',
     items: [
       { kw: 'Route 53',     text: 'DNS · api.suaej.com → IP. Health check, geo routing.' },
@@ -927,7 +953,7 @@ function r_cover() {
           <span class="text-[#1F2937]">//</span>
           <span class="text-[#9CA3AF]">FUNDAMENTOS</span>
           <span class="text-[#1F2937]">//</span>
-          <span class="text-[#9CA3AF]">90 MIN · 10 BEATS</span>
+          <span class="text-[#9CA3AF]">90 MIN · 11 BEATS</span>
         </div>
 
         <h1 class="display text-white text-[120px] leading-[0.92] font-bold anim delay-1 tracking-tight">
@@ -940,7 +966,7 @@ function r_cover() {
           </h2>
           <div class="flex-1 flex justify-end">
             <div class="flex gap-1.5">
-              ${Array.from({length: 10}).map((_, i) => `<div class="w-3 h-3 rounded-sm" style="background: ${i < 3 ? '#FF3D2E' : 'rgba(255,61,46,0.18)'};"></div>`).join('')}
+              ${Array.from({length: 11}).map((_, i) => `<div class="w-3 h-3 rounded-sm" style="background: ${i < 3 ? '#FF3D2E' : 'rgba(255,61,46,0.18)'};"></div>`).join('')}
             </div>
           </div>
         </div>
@@ -948,8 +974,8 @@ function r_cover() {
         <div class="mt-8 grid grid-cols-3 gap-6 anim delay-3">
           ${[
             { num: '03', label: 'API · REST',          sub: 'beats 1–3' },
-            { num: '05', label: 'FRAMEWORK · MVC',     sub: 'beats 4–8' },
-            { num: '02', label: 'SYNTHESIS',           sub: 'beats 9–10' },
+            { num: '06', label: 'FRAMEWORK · MVC',     sub: 'beats 4–9' },
+            { num: '02', label: 'SYNTHESIS',           sub: 'beats 10–11' },
           ].map(card => `
             <div class="relative p-5 border border-[#1F2937] bg-[#060810]/60 hud-frame">
               <div class="absolute top-2 right-2 w-1.5 h-1.5 rounded-full" style="background: #FF3D2E; box-shadow: 0 0 8px #FF3D2E;"></div>
@@ -1186,13 +1212,14 @@ function r_closing() {
 
       <div class="relative z-10 w-full max-w-[1400px] mx-auto px-16 flex flex-col gap-10 self-center">
         <div class="flex items-center gap-3 mono text-[14px] uppercase tracking-[0.3em] anim" style="color: #FF3D2E;">
-          <span>[ A AULA EM 3 LINHAS ]</span>
+          <span>[ A AULA EM 4 LINHAS ]</span>
           <span class="w-32 h-px" style="background: #FF3D2E;"></span>
         </div>
 
         <h1 class="display text-[64px] leading-[1.15] font-bold text-white anim delay-1">
           <span style="color: #FF3D2E;">REST</span> · ler doc · consumir API<br/>
-          <span style="color: #FF3D2E;">NestJS</span> opinado, DI, feature folders<br/>
+          <span style="color: #FF3D2E;">Express + MVC</span> hoje, <span style="color: #FF3D2E;">NestJS</span> amanhã<br/>
+          <span style="color: #FF6B5B;">Supabase</span> pra começar · <span style="color: #FF3D2E;">RDS</span> quando crescer<br/>
           <span class="text-[#6B7280]">━━</span> pipeline completo até <span style="color: #FF3D2E;">AWS</span>
         </h1>
 

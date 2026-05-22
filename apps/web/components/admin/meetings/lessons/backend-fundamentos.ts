@@ -366,17 +366,58 @@ export const backendFundamentos: Lesson = {
       anchor:
         'Seu projeto tem 30 features. Você organiza por TIPO (controllers/, services/, dtos/) ou por FEATURE (users/, auth/, orders/)? Por quê?',
       followup:
-        'Você tem feature folders. Cada feature tem o pipeline NestJS (Controller, Service, Module, DTO). Agora um request POST chega no servidor. Por onde ele passa antes de chegar no Controller?',
+        'Você tem feature folders. Cada feature precisa de banco. SQL ou NoSQL? Postgres ou Mongo? Sobe na mão ou usa Supabase?',
       gotcha:
         'Quando feature folders pode dar errado? Tem um cenário onde layered seria a escolha melhor?',
     },
 
-    // ─── Beat 9: Arquitetura, o fluxo completo (obrigatório) ──────────────────
+    // ─── Beat 9: Banco · SQL × NoSQL · Postgres · Supabase ────────────────────
+    {
+      id: 'banco-sql-nosql',
+      label: 'Banco · SQL × NoSQL + Supabase',
+      group: 'nestjs',
+      beat: 9,
+      teachFromZero: true,
+      tags: ['sql', 'nosql', 'postgres', 'mongodb', 'supabase', 'jsonb', 'orm', 'rls'],
+      oneLine:
+        'Postgres virou default em 90% dos backends novos. Supabase é o atalho que entrega Postgres + Auth + Storage + Realtime gerenciado, com free tier suficiente pra projetos de EJ.',
+      pass1:
+        'Toda feature precisa guardar dados. A escolha entre SQL e NoSQL parece grande mas em 90% dos casos a resposta é simples: SQL, especificamente Postgres. Pra começar rápido sem subir infra, Supabase entrega Postgres gerenciado + Auth + Storage + Realtime numa interface web. Você cria a tabela clicando, e em 5 minutos seu backend tá conectado.',
+      pass2:
+        '**SQL (Postgres, MySQL)**: dados em tabelas com schema fixo. Relacionamentos via foreign keys. Queries expressivas com JOINs. ACID (transações que não corrompem). Default pra qualquer coisa com entidades que se relacionam (User → Posts → Comments).\n\n**NoSQL (MongoDB, DynamoDB, Firestore)**: documentos sem schema fixo. Escala horizontal trivial. Queries simples (sem JOINs). Bom pra dados de evento, logs, ou quando o schema MUDA muito durante o desenvolvimento.\n\n**Por que Postgres ganhou o default**:\n- Maduro (1996, ainda evoluindo agressivamente)\n- Suporta `JSONB` (coluna JSON indexável → flexibilidade NoSQL-like quando precisa)\n- ACID forte\n- Tudo integra (Prisma, TypeORM, NestJS, todo PaaS suporta)\n- "Postgres + JSONB" cobre 95% dos casos onde alguém ia escolher Mongo\n\n**Supabase em 30 segundos**:\n- Postgres gerenciado (você não sobe servidor)\n- Auth pronto (email, OAuth, magic link)\n- Storage de arquivos (substitui S3 pra começar)\n- Realtime via WebSocket (Postgres triggers viram eventos no client)\n- Edge Functions (deploy de função sem servidor)\n- Free tier: 500MB DB, 2 projetos, 50k usuários autenticados/mês\n- **Row Level Security (RLS)**: você define quem pode ler/escrever cada linha via política SQL\n\n**Quando usar o quê**:\n- MVP / projeto EJ → **Supabase** (Postgres + Auth + Storage zerados em 5 min)\n- Projeto na AWS, time grande → **RDS Postgres** (controle total, mas você gerencia auth/storage separados)\n- Tráfego massivo de eventos, sem JOINs → **DynamoDB** ou **MongoDB**\n- "Vou usar Mongo porque schema vai mudar muito" → **provavelmente errado**. Use Postgres + JSONB.\n\n**Conectando ao app**: connection string `postgres://user:pass@host:port/db`. Em Express via `pg` ou `prisma`. Em NestJS via `@nestjs/typeorm`, `@nestjs/mongoose`, ou Prisma (mais popular hoje).',
+      pass3: [
+        {
+          gotcha: 'Esquecer RLS no Supabase = qualquer um lê tudo',
+          note: 'Row Level Security vem DESABILITADA por default nas tabelas que você cria. Esqueceu de habilitar? O anon key consegue ler/escrever qualquer linha. Bug de segurança clássico de quem tá começando.',
+        },
+        {
+          gotcha: 'Connection pool quebra em Vercel/Lambda',
+          note: 'Cada invocação de serverless abre uma nova conexão. Postgres tem max_connections (~100 por default). Sem PgBouncer ou Supabase Pooler, em 100 requests simultâneos o banco trava.',
+        },
+        {
+          gotcha: 'Free tier Supabase pausa após 7 dias inativo',
+          note: 'Projeto sem request por uma semana é pausado. Primeiro acesso depois leva 20-30s pra "acordar". Configura um cron de health check a cada 6 dias se for projeto que demora pra ser usado.',
+        },
+        {
+          gotcha: '"Vou usar Mongo porque é mais flexível" geralmente é desculpa',
+          note: 'Postgres tem `JSONB` desde 2014. Você guarda objeto JSON arbitrário numa coluna, query com `->>`, indexa. 95% dos casos onde alguém escolhe Mongo, Postgres+JSONB resolve com 10x menos dor de migration.',
+        },
+      ],
+      diagramUrl: '/diagrams/backend-fundamentos/supabase-studio.png',
+      anchor:
+        'Seu projeto da EJ precisa guardar usuários, tarefas e comentários. Você sobe Postgres na mão num servidor, usa MongoDB Atlas, ou abre o Supabase?',
+      followup:
+        'Banco escolhido. Agora vamos ver o fluxo completo: request entra no NestJS, atravessa o pipeline, fala com esse banco. Por onde ele passa?',
+      gotcha:
+        'Se Supabase é tão fácil, por que empresas grandes ainda usam RDS direto? O que mudou quando o projeto cresceu?',
+    },
+
+    // ─── Beat 10: Arquitetura, o fluxo completo (obrigatório) ──────────────────
     {
       id: 'full-architecture',
       label: 'Arquitetura: o fluxo completo',
       group: 'synthesis',
-      beat: 9,
+      beat: 10,
       tags: ['middleware', 'guard', 'pipe', 'interceptor', 'exception-filter', 'controller', 'service', 'repository'],
       oneLine:
         'Um request HTTP atravessa um pipeline declarativo no NestJS: Middleware → Guard → Interceptor → Pipe → Controller → Service → Repository → DB. Resposta sobe pelo Interceptor. Erro vira ExceptionFilter.',
@@ -407,12 +448,12 @@ export const backendFundamentos: Lesson = {
         'Em qual etapa do pipeline você bota o código que verifica se o usuário é admin? Guard, Interceptor, Pipe, Controller ou Service?',
     },
 
-    // ─── Beat 10: AWS managed services (obrigatório) ───────────────────────────
+    // ─── Beat 11: AWS managed services (obrigatório) ───────────────────────────
     {
       id: 'aws-services',
       label: 'AWS: onde NestJS roda',
       group: 'synthesis',
-      beat: 10,
+      beat: 11,
       tags: ['route53', 'alb', 'ec2', 'ecs-fargate', 'lambda', 'rds', 'ecr', 'cloudwatch', 'ssm'],
       oneLine:
         'Cada caixa do diagrama mapeia pra um managed service da AWS. A escolha não é qual é mais novo, é qual perfil de carga aquela peça atende.',
@@ -453,7 +494,7 @@ export const backendFundamentos: Lesson = {
       pass1:
         'Você começou achando que backend era um monstro misterioso. Saiu com 4 mapas: como funciona HTTP, como ler doc de API alheia, como estruturar a sua, e onde subir. Cada camada tem nome, cada decisão tem trade-off conhecido. A próxima etapa é construir.',
       pass2:
-        '**O que você consolidou hoje**:\n- HTTP é texto previsível: verbo + path + headers + body, status code de volta.\n- JSON virou o formato universal, `JSON.stringify`/`JSON.parse` são as 2 funções mais chamadas da sua carreira.\n- REST nomeia recursos (nouns), verbo HTTP é a ação. Convenção em vez de invenção.\n- Ler doc é uma habilidade: vai direto no Reference, identifica endpoint/auth/params/response.\n- 3 ferramentas pra consumir: curl rápido, Postman pra explorar, fetch no código.\n- Express + MVC é o que você usa hoje: rotas + middleware + Controller/Model/View separados.\n- NestJS troca liberdade por estrutura, vale em projeto longo e time grande.\n- 4 arquivos por feature: Controller (HTTP), Service (lógica), Module (cola), DTO (validação).\n- DI = você declara, framework instancia (singleton).\n- Feature folders > layered. Deletar pasta = deletar feature.\n- Pipeline NestJS: Middleware → Guard → Pipe → Controller → Service → Repository → DB.\n- AWS: ECS Fargate pro NestJS, RDS Postgres pro banco, Route 53 + ALB pra rede.\n\n**Próximos passos na segunda-feira**:\n1. `npx @nestjs/cli new minha-api`, gera projeto rodando em 2 minutos.\n2. `nest g resource users`, gera CRUD completo com Controller/Service/Module/DTO.\n3. Leia a doc de uma API que te interessa (Spotify, GitHub, Stripe). Mande um curl. Veja o JSON.\n4. Adiciona Prisma ao seu projeto. Conecta num Postgres local via Docker.\n5. Sobe num PaaS (Render, Railway) antes de tentar AWS. Cada passo é uma aula.\n\n**O que NÃO cobrimos hoje** (intencionalmente, fica pra próximas aulas):\n- Autenticação com JWT e refresh tokens.\n- Testes automatizados (unit + e2e).\n- Migrations de banco com Prisma.\n- WebSocket pra real-time.\n- CI/CD com GitHub Actions.\n- Observabilidade séria (logs estruturados, traces, métricas).',
+        '**O que você consolidou hoje**:\n- HTTP é texto previsível: verbo + path + headers + body, status code de volta.\n- JSON virou o formato universal, `JSON.stringify`/`JSON.parse` são as 2 funções mais chamadas da sua carreira.\n- REST nomeia recursos (nouns), verbo HTTP é a ação. Convenção em vez de invenção.\n- Ler doc é uma habilidade: vai direto no Reference, identifica endpoint/auth/params/response.\n- 3 ferramentas pra consumir: curl rápido, Postman pra explorar, fetch no código.\n- Express + MVC é o que você usa hoje: rotas + middleware + Controller/Model/View separados.\n- NestJS troca liberdade por estrutura, vale em projeto longo e time grande.\n- 4 arquivos por feature: Controller (HTTP), Service (lógica), Module (cola), DTO (validação).\n- DI = você declara, framework instancia (singleton).\n- Feature folders > layered. Deletar pasta = deletar feature.\n- Banco: Postgres é o default (JSONB cobre o "preciso de flexível"). Supabase é o atalho com Auth + Storage + Realtime grátis.\n- Pipeline NestJS: Middleware → Guard → Pipe → Controller → Service → Repository → DB.\n- AWS: ECS Fargate pro NestJS, RDS Postgres pro banco, Route 53 + ALB pra rede.\n\n**Próximos passos na segunda-feira**:\n1. `npx @nestjs/cli new minha-api`, gera projeto rodando em 2 minutos.\n2. `nest g resource users`, gera CRUD completo com Controller/Service/Module/DTO.\n3. Leia a doc de uma API que te interessa (Spotify, GitHub, Stripe). Mande um curl. Veja o JSON.\n4. Adiciona Prisma ao seu projeto. Conecta num Postgres local via Docker.\n5. Sobe num PaaS (Render, Railway) antes de tentar AWS. Cada passo é uma aula.\n\n**O que NÃO cobrimos hoje** (intencionalmente, fica pra próximas aulas):\n- Autenticação com JWT e refresh tokens.\n- Testes automatizados (unit + e2e).\n- Migrations de banco com Prisma.\n- WebSocket pra real-time.\n- CI/CD com GitHub Actions.\n- Observabilidade séria (logs estruturados, traces, métricas).',
       pass3: [
         {
           gotcha: 'Querer entender tudo antes de codar trava',
