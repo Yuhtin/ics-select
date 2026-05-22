@@ -45,6 +45,22 @@ export type TopicCoverage = {
   itemsDone: number;
 };
 
+/**
+ * Aggregate of self-reported study time for the current week's plan.
+ * Only items with a positive outcome contribute. `actual` / `estimated`
+ * are summed over the subset of those items where the member reported
+ * a number (`actualMinutes != null`) — so the ratio stays honest and
+ * isn't diluted by items the member skipped reporting on. SKIPPED
+ * items aren't time-tracked (the input is hidden for them), so they
+ * fall into `itemsTotal` but not into `itemsWithTime`.
+ */
+export type StudyTimeSummary = {
+  actualMinutes: number;
+  estimatedMinutes: number;
+  itemsWithTime: number;
+  itemsTotal: number;
+};
+
 export type HomeResponse = {
   hero: HeroState | null;
   today: HomeItem[];
@@ -57,6 +73,7 @@ export type HomeResponse = {
   streak: { current: number; last7: boolean[] };
   carryOverReflection: CarryOverReflection | null;
   topicCoverage: TopicCoverage[];
+  studyTime: StudyTimeSummary | null;
 };
 
 const NOW_WINDOW_MINUTES = 15;
@@ -89,6 +106,23 @@ function formatDayLabel(d: Date): string {
     day: 'numeric',
     timeZone: BRT_TZ,
   }).format(d);
+}
+
+function computeStudyTimeSummary(rawItems: any[]): StudyTimeSummary {
+  let actualMinutes = 0;
+  let estimatedMinutes = 0;
+  let itemsWithTime = 0;
+  let itemsTotal = 0;
+  for (const row of rawItems) {
+    if (!isPositiveOutcome(row.outcome)) continue;
+    itemsTotal += 1;
+    if (typeof row.actualMinutes === 'number') {
+      itemsWithTime += 1;
+      actualMinutes += row.actualMinutes;
+      estimatedMinutes += row.libraryItem?.estimatedMinutes ?? 0;
+    }
+  }
+  return { actualMinutes, estimatedMinutes, itemsWithTime, itemsTotal };
 }
 
 function toHomeItem(row: any): HomeItem {
@@ -142,6 +176,7 @@ export class HomeService {
         streak,
         carryOverReflection: null,
         topicCoverage: [],
+        studyTime: null,
       };
     }
 
@@ -214,7 +249,19 @@ export class HomeService {
       this.computeTopicCoverage(userId, plan.cycleId),
     ]);
 
-    return { hero, today, late, days, unscheduled, streak, carryOverReflection, topicCoverage };
+    const studyTime = computeStudyTimeSummary(rawItems);
+
+    return {
+      hero,
+      today,
+      late,
+      days,
+      unscheduled,
+      streak,
+      carryOverReflection,
+      topicCoverage,
+      studyTime,
+    };
   }
 
   private async pickCarryOverReflection(

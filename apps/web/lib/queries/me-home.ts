@@ -37,6 +37,13 @@ export type TopicCoverage = {
   itemsDone: number;
 };
 
+export type StudyTimeSummary = {
+  actualMinutes: number;
+  estimatedMinutes: number;
+  itemsWithTime: number;
+  itemsTotal: number;
+};
+
 export type HomeResponse = {
   hero:
     | { state: 'now'; item: HomeItem }
@@ -59,6 +66,9 @@ export type HomeResponse = {
   streak: { current: number; last7: boolean[] };
   carryOverReflection: CarryOverReflection | null;
   topicCoverage: TopicCoverage[];
+  /** Optional because API + web ship through different pipelines. Treat
+   *  as null when absent (older backend). */
+  studyTime?: StudyTimeSummary | null;
 };
 
 export function useMeHome() {

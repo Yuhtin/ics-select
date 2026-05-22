@@ -230,6 +230,8 @@ export class DraftPlanService {
 
     // 5) Topic coverage: planned + done counts per topic label, across the
     //    entire active cycle so the gap-analysis is honest (not just last 4).
+    //    Also captures actualMinutes vs estimatedMinutes per topic so the LLM
+    //    can calibrate workload — see study time block below.
     const coverageSource: any[] = membership?.cycleId
       ? await this.prisma.weeklyPlan.findMany({
           where: { userId: input.memberId, cycleId: membership.cycleId },
@@ -237,8 +239,10 @@ export class DraftPlanService {
             items: {
               select: {
                 outcome: true,
+                actualMinutes: true,
                 libraryItem: {
                   select: {
+                    estimatedMinutes: true,
                     topics: {
                       select: { topic: { select: { label: true } } },
                     },
@@ -250,6 +254,13 @@ export class DraftPlanService {
         })
       : recentPlans;
     const topicCoverage = new Map<string, { planned: number; done: number }>();
+    const topicTime = new Map<
+      string,
+      { actual: number; estimated: number; items: number }
+    >();
+    let totalActual = 0;
+    let totalEstimated = 0;
+    let totalTimedItems = 0;
     for (const plan of coverageSource) {
       for (const item of plan.items ?? []) {
         // An item touches every topic in its M2M set (primary + secondary
@@ -267,6 +278,32 @@ export class DraftPlanService {
           cur.planned += 1;
           if (done) cur.done += 1;
           topicCoverage.set(label, cur);
+        }
+        // Study time aggregation. Skip rows without a reported number — the
+        // member chose "Não sei" or hadn't completed the item. Estimated
+        // mirrors actual so the ratio compares the same subset.
+        const actual = item.actualMinutes;
+        const estimated = item.libraryItem?.estimatedMinutes;
+        if (
+          done &&
+          typeof actual === 'number' &&
+          typeof estimated === 'number' &&
+          estimated > 0
+        ) {
+          totalActual += actual;
+          totalEstimated += estimated;
+          totalTimedItems += 1;
+          for (const label of labels) {
+            const cur = topicTime.get(label) ?? {
+              actual: 0,
+              estimated: 0,
+              items: 0,
+            };
+            cur.actual += actual;
+            cur.estimated += estimated;
+            cur.items += 1;
+            topicTime.set(label, cur);
+          }
         }
       }
     }
@@ -401,6 +438,53 @@ export class DraftPlanService {
 
     const briefBlock = `BRIEF DO ADMIN:\n${input.briefText && input.briefText.trim().length > 0 ? input.briefText.trim() : '(nenhum)'}`;
 
+    // Study time signal: only meaningful with ≥3 timed items. Per-topic
+    // ratios need at least 2 timed items per topic before they're surfaced
+    // (single data points are noisy). Topics are split into "more cuidado"
+    // (ratio ≥ 1.2 — member is slower) and "domínio" (ratio ≤ 0.8 — member
+    // is faster) so the LLM can right-size the next week's load.
+    const studyTimeBlock = (() => {
+      if (totalTimedItems < 3 || totalEstimated === 0) {
+        return null;
+      }
+      const overallRatio = totalActual / totalEstimated;
+      const avgActual = Math.round(totalActual / totalTimedItems);
+      const avgEstimated = Math.round(totalEstimated / totalTimedItems);
+      const entries = [...topicTime.entries()]
+        .filter(([, v]) => v.items >= 2 && v.estimated > 0)
+        .map(([label, v]) => ({ label, ratio: v.actual / v.estimated, items: v.items }));
+      const slower = entries
+        .filter((e) => e.ratio >= 1.2)
+        .sort((a, b) => b.ratio - a.ratio)
+        .slice(0, 3);
+      const faster = entries
+        .filter((e) => e.ratio <= 0.8)
+        .sort((a, b) => a.ratio - b.ratio)
+        .slice(0, 3);
+      const lines = [
+        `STUDY TIME (autorelato em ${totalTimedItems} itens):`,
+        `- Médio: ${avgActual} min real vs ${avgEstimated} min estimado — ratio ${overallRatio.toFixed(2)}`,
+      ];
+      if (slower.length > 0) {
+        lines.push(
+          `- Tópicos mais lentos (ratio ≥ 1.2): ${slower
+            .map((e) => `${e.label} ${e.ratio.toFixed(2)}`)
+            .join(', ')}`,
+        );
+      }
+      if (faster.length > 0) {
+        lines.push(
+          `- Tópicos mais rápidos (ratio ≤ 0.8): ${faster
+            .map((e) => `${e.label} ${e.ratio.toFixed(2)}`)
+            .join(', ')}`,
+        );
+      }
+      lines.push(
+        '- Use isso pra calibrar a carga: se ratio geral > 1, reduza estimatedMinutes total da semana; se < 1, pode pedir mais.',
+      );
+      return lines.join('\n');
+    })();
+
     const system = `Você é o copiloto do Diretor Educacional do ICS Select. Monte um plano semanal de 4-7 itens
 para o membro, considerando:
 - o track do membro
@@ -454,6 +538,7 @@ Outras regras:
       outcomesBlock,
       retroBlock,
       ladderBlock,
+      studyTimeBlock,
       currentPlanBlock,
       carryOverBlock,
       carryOverResolvedBlock,

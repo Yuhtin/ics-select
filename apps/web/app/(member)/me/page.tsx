@@ -9,6 +9,7 @@ import { CarryOverReflectionCard } from '../../../components/member/carry-over-r
 import { TopicCoverageHeatmap } from '../../../components/member/topic-coverage-heatmap';
 import { TopRankingCard } from '../../../components/member/top-ranking-card';
 import { StreakCard } from '../../../components/ui/streak-card';
+import { StudyTimeCard } from '../../../components/member/study-time-card';
 import { formatMinutes } from '../../../lib/format/time';
 
 export default function MeHomePage() {
@@ -109,6 +110,9 @@ export default function MeHomePage() {
           <TopRankingCard ranking={cohort.ranking} />
         )}
         <StreakCard current={data.streak.current} last7={data.streak.last7} />
+        {data.studyTime && data.studyTime.itemsWithTime > 0 && (
+          <StudyTimeCard studyTime={data.studyTime} />
+        )}
         {data.topicCoverage.length > 0 && (
           <section className="rounded-tile border border-border-token bg-surface p-6">
             <p className="font-mono text-[10px] font-semibold uppercase tracking-eyebrow text-fg-mute">

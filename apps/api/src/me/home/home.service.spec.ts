@@ -251,4 +251,51 @@ describe('HomeService', () => {
       expect.objectContaining({ itemsPlanned: 1, itemsDone: 0, order: 1 }),
     );
   });
+
+  it('aggregates studyTime from positive outcomes with actualMinutes', async () => {
+    prisma.weeklyPlan.findFirst.mockResolvedValue(PLAN);
+    prisma.__setTodayItems([
+      // Reported time — both counted into actual/estimated.
+      {
+        id: 'i1', weeklyPlanId: 'plan-1', order: 1, outcome: 'DONE_EASY',
+        actualMinutes: 50, reflection: null, completedAt: null,
+        carriedFromItemId: null, scheduledAt: null, scheduledMinutes: null,
+        libraryItem: { title: 'A', format: 'VIDEO', estimatedMinutes: 30, url: null, topics: [] },
+      },
+      {
+        id: 'i2', weeklyPlanId: 'plan-1', order: 2, outcome: 'DONE_HARD',
+        actualMinutes: 90, reflection: null, completedAt: null,
+        carriedFromItemId: null, scheduledAt: null, scheduledMinutes: null,
+        libraryItem: { title: 'B', format: 'PROBLEM', estimatedMinutes: 60, url: null, topics: [] },
+      },
+      // "Não sei" — counts in itemsTotal but not in itemsWithTime.
+      {
+        id: 'i3', weeklyPlanId: 'plan-1', order: 3, outcome: 'DOUBTS',
+        actualMinutes: null, reflection: null, completedAt: null,
+        carriedFromItemId: null, scheduledAt: null, scheduledMinutes: null,
+        libraryItem: { title: 'C', format: 'ARTICLE', estimatedMinutes: 20, url: null, topics: [] },
+      },
+      // STUCK — non-positive outcome, excluded entirely.
+      {
+        id: 'i4', weeklyPlanId: 'plan-1', order: 4, outcome: 'STUCK',
+        actualMinutes: 30, reflection: null, completedAt: null,
+        carriedFromItemId: null, scheduledAt: null, scheduledMinutes: null,
+        libraryItem: { title: 'D', format: 'VIDEO', estimatedMinutes: 25, url: null, topics: [] },
+      },
+    ]);
+
+    const result = await service.getHome('user-1', new Date('2026-04-17T19:00:00Z'));
+    expect(result.studyTime).toEqual({
+      actualMinutes: 140,
+      estimatedMinutes: 90,
+      itemsWithTime: 2,
+      itemsTotal: 3,
+    });
+  });
+
+  it('returns null studyTime when there is no active plan', async () => {
+    prisma.weeklyPlan.findFirst.mockResolvedValue(null);
+    const result = await service.getHome('user-1', new Date('2026-04-17T19:00:00Z'));
+    expect(result.studyTime).toBeNull();
+  });
 });
