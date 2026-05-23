@@ -15,14 +15,14 @@ import { OutcomeDot } from '../ui/outcome-dot';
 import { formatTimeLocal, formatDateLocal } from '../../lib/format/time';
 import { platformLabel, detectPlatform, type PlatformKey } from '../../lib/format/platform';
 
-const TIME_CHIPS = [
-  { label: '15 min', value: 15 },
-  { label: '30 min', value: 30 },
-  { label: '1h',     value: 60 },
-  { label: '1h30',   value: 90 },
-  { label: '2h+',    value: 120 },
-  { label: 'Não sei', value: null },
-] as const;
+// Outcomes that require the member to report time spent. SKIPPED, STUCK
+// and PENDING are excluded — the member either didn't study the item or
+// already knew it, so there's no time to report.
+const TIME_REQUIRED_OUTCOMES: ReadonlySet<ItemOutcome> = new Set([
+  'DONE_EASY',
+  'DONE_HARD',
+  'DOUBTS',
+]);
 
 const PLATFORM_STRIPE: Record<PlatformKey, string> = {
   leetcode: 'bg-platform-leetcode',
@@ -42,7 +42,7 @@ export function ItemFocus({ item }: ItemFocusProps) {
   const [outcome, setOutcome] = useState<ItemOutcome | null>(isDone ? item.outcome : null);
   const [reflection, setReflection] = useState(item.reflection ?? '');
   const [editing, setEditing] = useState(!isDone);
-  const [actualMinutes, setActualMinutes] = useState<number | null | undefined>(undefined);
+  const [actualMinutesInput, setActualMinutesInput] = useState('');
 
   const mutation = useSetItemOutcome();
 
@@ -72,8 +72,20 @@ export function ItemFocus({ item }: ItemFocusProps) {
 
   const eyebrowClass = isRunningLate ? '!text-outcome-stuck' : '';
 
+  const requiresTime = outcome !== null && TIME_REQUIRED_OUTCOMES.has(outcome);
+  const parsedMinutes = (() => {
+    const trimmed = actualMinutesInput.trim();
+    if (trimmed === '') return null;
+    const n = Number(trimmed);
+    if (!Number.isFinite(n) || !Number.isInteger(n)) return null;
+    if (n < 1 || n > 1440) return null;
+    return n;
+  })();
+  const canSave =
+    outcome !== null && (!requiresTime || parsedMinutes !== null);
+
   function handleSave() {
-    if (!outcome) return;
+    if (!outcome || !canSave) return;
     // Optimistic update flips the cache immediately, so we can close the form
     // synchronously instead of awaiting the slow backend round-trip.
     mutation.mutate({
@@ -81,9 +93,9 @@ export function ItemFocus({ item }: ItemFocusProps) {
       itemId: item.id,
       outcome,
       reflection: reflection.trim() === '' ? undefined : reflection,
-      actualMinutes: actualMinutes === undefined ? null : actualMinutes,
+      actualMinutes: requiresTime ? parsedMinutes : null,
     });
-    setActualMinutes(undefined);
+    setActualMinutesInput('');
     setEditing(false);
   }
 
@@ -184,31 +196,34 @@ export function ItemFocus({ item }: ItemFocusProps) {
                 className="w-full min-h-[96px] rounded-input border border-rule bg-surface p-3 font-sans text-sm text-ink placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-ink"
               />
             )}
-            {outcome && outcome !== 'PENDING' && outcome !== 'SKIPPED' && (
+            {requiresTime && (
               <div className="space-y-2">
-                <p className="font-mono text-[11px] uppercase tracking-[0.1em] text-ink-mute">Tempo gasto (opcional)</p>
-                <div className="flex flex-wrap gap-2">
-                  {TIME_CHIPS.map((chip) => (
-                    <button
-                      key={chip.label}
-                      type="button"
-                      onClick={() => setActualMinutes(chip.value)}
-                      className={clsx(
-                        'font-mono text-[11px] uppercase tracking-[0.1em] px-3 py-1.5 rounded-pill border transition-colors',
-                        actualMinutes === chip.value
-                          ? 'bg-ink text-paper border-ink'
-                          : 'bg-paper-warm text-ink-soft border-rule hover:bg-rule',
-                      )}
-                    >
-                      {chip.label}
-                    </button>
-                  ))}
-                </div>
+                <label className="block">
+                  <p className="font-mono text-[11px] uppercase tracking-[0.1em] text-ink-mute">
+                    Tempo gasto (min)
+                  </p>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    min={1}
+                    max={1440}
+                    step={1}
+                    value={actualMinutesInput}
+                    onChange={(e) => setActualMinutesInput(e.target.value)}
+                    placeholder="Ex: 45"
+                    className="mt-1 w-32 rounded-input border border-rule bg-surface px-3 py-2 font-mono text-sm tabular-nums text-ink placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-ink"
+                  />
+                </label>
+                {actualMinutesInput.trim() !== '' && parsedMinutes === null && (
+                  <p className="font-mono text-[11px] text-outcome-stuck">
+                    Use um número inteiro entre 1 e 1440.
+                  </p>
+                )}
               </div>
             )}
             <Button
               onClick={handleSave}
-              disabled={!outcome || mutation.isPending}
+              disabled={!canSave || mutation.isPending}
             >
               {mutation.isPending ? 'Saving…' : 'Save outcome'}
             </Button>
