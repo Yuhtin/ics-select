@@ -63,6 +63,18 @@ function buildService(prisma: any) {
 }
 
 describe('SchedulingPreviewService', () => {
+  // The fixed PLAN.weekStart (2026-05-18) means tests written when that week
+  // was still upcoming would silently rot once the real clock moved past it.
+  // Pin `Date.now()` to the Sunday before so every slot in SLOTS is treated
+  // as future and the scheduler's "skip past intervals" guard doesn't fire.
+  beforeAll(() => {
+    jest.useFakeTimers({ doNotFake: ['setTimeout', 'setInterval', 'setImmediate', 'queueMicrotask'] });
+    jest.setSystemTime(new Date('2026-05-17T12:00:00-03:00'));
+  });
+  afterAll(() => {
+    jest.useRealTimers();
+  });
+
   beforeEach(() => {
     calendarMock.getFreeBusy.mockClear();
   });
