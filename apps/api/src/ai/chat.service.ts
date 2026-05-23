@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { OpenAiChatProvider } from '../common/openai/openai-chat.provider.js';
 import { WeeklyPlansService } from '../weekly-plans/weekly-plans.service.js';
+import { WRITING_GUIDELINES_PT } from './writing-guidelines.js';
 
 type ChatMessage = { role: 'user' | 'assistant'; content: string };
 
@@ -32,6 +33,8 @@ export class ChatService {
   async *stream(memberId: string, messages: ChatMessage[]) {
     const context = await this.buildContext(memberId);
     const system = `Você é um assistente pedagógico do ICS Select. Abaixo vai o contexto do membro sobre o qual o admin está perguntando. Responda em pt-BR, direto ao ponto.
+
+${WRITING_GUIDELINES_PT}
 
 CONTEXTO DO MEMBRO:
 ${context}`;

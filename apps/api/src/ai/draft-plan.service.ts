@@ -5,6 +5,7 @@ import { PrismaService } from '../common/prisma/prisma.service.js';
 import { resolveActiveMembership } from '../common/cycle/active-cycle.js';
 import { UsageLoggerService } from './usage-logger.service.js';
 import { searchLibraryTool, makeLibraryToolExecutor } from './library-tool.js';
+import { WRITING_GUIDELINES_PT } from './writing-guidelines.js';
 import { isPositiveOutcome } from '@ics-select/shared';
 
 type DraftInput = {
@@ -511,6 +512,9 @@ Regras:
 - Carry-overs DEVEM aparecer em "items" se o admin os marcou.
 - "alternates" tem até 3 itens extras.
 - "rationale" liga o item ao contexto (ex: gap do ciclo, padrão da reflexão, nível).
+
+ESCRITA do narrative e dos rationales (texto que o membro vê quando o plano é publicado):
+${WRITING_GUIDELINES_PT}
 
 LADDER DISCIPLINE (default):
 - O bloco LADDER STATUS pré-computa o foco da semana. Sugira itens APENAS do tópico marcado FOCO ATUAL e dos tópicos sólidos (estes pra revisão leve).
