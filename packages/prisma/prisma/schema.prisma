@@ -80,6 +80,12 @@ enum ThemePreference {
   DARK
 }
 
+enum MockType {
+  BEHAVIORAL
+  CODING
+  SYSTEM_DESIGN
+}
+
 enum UserEventType {
   SESSION_START
   PLAN_VIEW
@@ -116,6 +122,7 @@ model User {
   retroRemindersSent RetroReminderSent[]
   invitesCreated     InvitedEmail[]      @relation("inviteCreatedBy")
   events             UserEvent[]
+  mocks              MockInterview[]
 }
 
 // Allowlist for first-login. Admin pre-registers an email with a role; the
@@ -173,6 +180,7 @@ model Cycle {
   weeklyPlans WeeklyPlan[]
   retros      WeeklyRetro[]
   invites     InvitedEmail[]
+  mocks       MockInterview[]
 }
 
 model CycleMembership {
@@ -497,4 +505,31 @@ model WhatsappTemplate {
   variables   String[] @default([])
   updatedAt   DateTime @updatedAt
   updatedBy   String?
+}
+
+// Self-reported mock interview record. The admin (or an external mentor) sits
+// with the member for a simulated interview and logs the outcome here. Score
+// is the 1-5 hire-bar scale (1=No Hire, 3=Borderline, 5=Strong Hire). `topics`
+// is a free-text array of slugs — looser vocabulary than LibraryItemTopic
+// because mocks cover behavioral / soft-skills / system-design themes that
+// don't fit the library taxonomy. Feeds the cockpit Mocks card and is
+// injected into the AI diagnose prompt.
+model MockInterview {
+  id          String   @id @default(cuid())
+  userId      String
+  cycleId     String
+  type        MockType
+  score       Int
+  feedback    String?
+  conductedBy String?
+  conductedAt DateTime @default(now())
+  topics      String[] @default([])
+  createdAt   DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cycle Cycle @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+
+  @@index([userId, cycleId])
+  @@index([userId, conductedAt])
+  @@index([type])
 }

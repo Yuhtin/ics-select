@@ -20,6 +20,7 @@ import { SessionPatternCard } from '../../../../../components/admin/member-cockp
 import { ClassAttendanceCard } from '../../../../../components/admin/member-cockpit/class-attendance-card';
 import { LatestActivityCard } from '../../../../../components/admin/member-cockpit/latest-activity-card';
 import { RawDataAccordion } from '../../../../../components/admin/member-cockpit/raw-data-accordion';
+import { MocksCard } from '../../../../../components/admin/member-cockpit/mocks-card';
 import { PlanWeekModal } from '../../../../../components/admin/member-detail/plan-week-modal';
 import { Eyebrow } from '../../../../../components/ui/eyebrow';
 
@@ -127,6 +128,7 @@ export default function AdminMemberPage({ params }: { params: Promise<{ id: stri
       <div className="grid grid-cols-12 gap-5">
         <TopicEngagementTable topics={data.topicEngagement} />
         <div className="col-span-4 space-y-5">
+          <MocksCard memberId={memberId} cycleId={selectedCycleId ?? cycle?.id ?? null} />
           <SessionPatternCard behavior={data.behavior} />
           <ClassAttendanceCard classAttendance={data.classAttendance} firstSession={data.firstSession} cycle={data.cycle} />
           <LatestActivityCard events={data.recentActivity} />
@@ -136,6 +138,7 @@ export default function AdminMemberPage({ params }: { params: Promise<{ id: stri
       {rawData && (
         <RawDataAccordion
           memberId={memberId}
+          cycleId={selectedCycleId ?? cycle?.id ?? null}
           timeline={rawData.timeline}
           retros={rawData.retros}
           attendance={rawData.attendance}

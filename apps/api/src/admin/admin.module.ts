@@ -10,6 +10,7 @@ import { PlansOverviewModule } from './plans-overview/plans-overview.module.js';
 import { InvitesModule } from './invites/invites.module.js';
 import { CockpitModule } from './cockpit/cockpit.module.js';
 import { CycleReceiptModule } from './cycle-receipt/cycle-receipt.module.js';
+import { MocksModule } from './mocks/mocks.module.js';
 
 @Module({
   imports: [
@@ -24,7 +25,8 @@ import { CycleReceiptModule } from './cycle-receipt/cycle-receipt.module.js';
     InvitesModule,
     CockpitModule,
     CycleReceiptModule,
+    MocksModule,
   ],
-  exports: [InvitesModule],
+  exports: [InvitesModule, MocksModule],
 })
 export class AdminModule {}
