@@ -78,4 +78,9 @@ export class ChallengesController {
     }
     return this.challenges.cohortForItem(user.sub, libraryItemId);
   }
+
+  @Get(':id')
+  get(@Param('id') id: string, @CurrentUser() user: JwtStrategyPayload) {
+    return this.challenges.getAttempt(user.sub, id);
+  }
 }

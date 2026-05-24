@@ -14,6 +14,7 @@ import { OutcomePicker } from '../ui/outcome-picker';
 import { OutcomeDot } from '../ui/outcome-dot';
 import { formatTimeLocal, formatDateLocal } from '../../lib/format/time';
 import { platformLabel, detectPlatform, type PlatformKey } from '../../lib/format/platform';
+import { ChallengeEntry } from './challenge-entry';
 
 // Outcomes that require the member to report time spent. SKIPPED, STUCK
 // and PENDING are excluded — the member either didn't study the item or
@@ -163,6 +164,10 @@ export function ItemFocus({ item }: ItemFocusProps) {
             {item.libraryItem.description}
           </p>
         </section>
+      )}
+
+      {item.libraryItem.format === 'PROBLEM' && (
+        <ChallengeEntry libraryItemId={item.libraryItem.id} />
       )}
 
       {item.carriedFrom && (

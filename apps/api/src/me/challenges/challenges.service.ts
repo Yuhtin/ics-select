@@ -216,6 +216,33 @@ export class ChallengesService {
     return { ok: true };
   }
 
+  /**
+   * Single attempt + the library item it targets. Used by the editor page
+   * on mount/refresh to hydrate the timer from the server-authoritative
+   * `startedAt` and recover saved code if the member is back from another
+   * device.
+   */
+  async getAttempt(userId: string, attemptId: string) {
+    const row = await this.prisma.challengeAttempt.findUnique({
+      where: { id: attemptId },
+      include: {
+        libraryItem: {
+          select: {
+            id: true,
+            title: true,
+            url: true,
+            description: true,
+            testCases: true,
+            testCasesLanguages: true,
+          },
+        },
+      },
+    });
+    if (!row) throw new NotFoundException('attempt not found');
+    if (row.userId !== userId) throw new ForbiddenException('not your attempt');
+    return row;
+  }
+
   /** Member's own history against a specific library item. */
   listForMemberOnItem(userId: string, libraryItemId: string) {
     return this.prisma.challengeAttempt.findMany({
