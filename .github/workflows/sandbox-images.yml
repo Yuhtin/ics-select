@@ -49,7 +49,7 @@ jobs:
             image: ics-sandbox-cpp
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Set image metadata
         id: meta
