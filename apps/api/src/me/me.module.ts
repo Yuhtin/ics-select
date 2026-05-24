@@ -6,9 +6,10 @@ import { ItemModule } from './item/item.module.js';
 import { CohortModule } from './cohort/cohort.module.js';
 import { RetroModule } from './retro/retro.module.js';
 import { MeCalendarModule } from './calendar/calendar.module.js';
+import { MeChallengesModule } from './challenges/challenges.module.js';
 
 @Module({
-  imports: [HomeModule, ItemModule, CohortModule, RetroModule, MeCalendarModule],
+  imports: [HomeModule, ItemModule, CohortModule, RetroModule, MeCalendarModule, MeChallengesModule],
   controllers: [MeController],
   providers: [MeService],
 })
