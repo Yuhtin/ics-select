@@ -1,0 +1,65 @@
+---
+title: Introduction
+description: ICS Select is a private platform that helps Inteli students prepare for top-tier tech interviews. This is the story of why it exists and how it works.
+---
+
+# ICS Select
+
+ICS Select is a private platform built for the **Inteli Consulting Society**, the student-run group at Instituto Inteli that prepares its members for technical interviews at the top of the industry.
+
+Each cycle, the society selects a small cohort (at most twelve students per semester) and walks them through a personalized study plan, weekly mock interviews, and live classes. ICS Select is the software that makes that program runnable by a single educational director without sacrificing depth.
+
+![Member home — the daily entry point each student opens during a cycle](/screenshots/member-home.png)
+
+## The problem
+
+Running a high-bar interview-prep program for twelve students at once is harder than it looks.
+
+A traditional approach picks one curriculum and runs everyone through it. That works for a bootcamp, not for ICS. The cohort is intentionally diverse:
+
+- One member is grinding ICPC and only cares about competitive programming.
+- Another wants Stripe and needs systems design plus product sense.
+- A third is targeting consulting tech roles and needs case practice alongside the algorithmic work.
+- A fourth has six months of experience at a startup and needs to fill backend gaps before applying to FAANG.
+
+A single shared curriculum either over-serves the strongest students or under-serves the weakest. And a single educational director cannot realistically build twelve bespoke plans per week by hand, track six different outcome states per item across all of them, and still have time to deliver classes and run mocks.
+
+So the program either stays small and artisanal (which is what ICS was before this platform), or it tries to scale and dilutes its bar.
+
+## The idea
+
+What if the director's leverage went up by an order of magnitude, instead of the program getting smaller?
+
+The director's real job is **judgment**: picking the right next thing for each member, deciding when to push and when to slow down, reading the room across a cohort. That judgment does not scale linearly. But the **work around** the judgment, building a plan from a library, scheduling sessions on a calendar, tracking who finished what, summarizing where a member is stuck, can be absorbed by software.
+
+ICS Select is built on that bet. The director still authors the plan, but the platform:
+
+1. Curates and tags a searchable **library** of materials (videos, articles, books, Leetcode problems), organized by topic and a deliberate EASY → MEDIUM → HARD ladder.
+2. Drafts a starting weekly plan with **AI** that respects the member's history, current ladder position, and the cycle's remaining weeks.
+3. Schedules study sessions on the member's **Google Calendar** against their declared weekly availability.
+4. Tracks every item with **six discrete outcomes** (nailed it, got it but hard, had doubts, stuck, skipped because I already knew it, not yet), instead of the usual binary done/not-done.
+5. Surfaces a **cockpit** per member and a **cohort ranking** so the director can spot disengagement before it turns into a drop-off.
+6. Powers a **streaming AI chat** that lets the director ask "why is this student stuck on graphs?" with the member's full history loaded as context.
+
+## The solution
+
+A monorepo with a NestJS API, a Next.js admin shell, a member-facing magazine-editorial UI, and an OpenAI-backed AI layer. Postgres with pgvector behind it, Docker plus EasyPanel on a VPS for the API, Vercel for the web, GitHub Actions for the deploy pipeline.
+
+The stack is in [Architecture](/architecture). The visual identity (dual-serif Magazine Editorial, terracotta and indigo accents earned by meaning) is in [Design system](/design-system). The AI layer is in [AI features](/ai). What the product feels like is in [Product tour](/product-tour).
+
+## Who this is for
+
+This site is for two audiences:
+
+- **Future contributors and reviewers** who walked into the repo and want to understand what they are looking at before reading code.
+- **The author six months from now**, who will have forgotten why a decision was made and needs to find the answer fast.
+
+It is not a public marketing site. The product itself lives at `https://ics.daviduarte.com.br` and is gated behind Google OAuth with an allowed-domains check.
+
+## What's next
+
+If you are reading this for the first time, the recommended path is:
+
+1. [Product tour](/product-tour) to see what the member and admin actually see.
+2. [Architecture](/architecture) to understand the stack and how the pieces fit.
+3. [Contributing](/contributing) when you are ready to run it locally.

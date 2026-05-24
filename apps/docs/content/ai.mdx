@@ -1,0 +1,77 @@
+---
+title: AI features
+description: How the four AI use cases (draft plan, brief plan, diagnose, chat) are wired against OpenAI gpt-5.4-mini.
+---
+
+# AI features
+
+The AI layer exists for one reason: the educational director's bottleneck is judgment, not typing. If the platform can hand the director a strong first draft and a coherent summary of where each member is, the director gets to spend the saved minutes on the judgment calls that actually matter.
+
+All AI in ICS Select goes through a single chat provider (`apps/api/src/common/openai/openai-chat.provider.ts`) talking to OpenAI `gpt-5.4-mini`. There is no Anthropic dependency, and every call records tokens and USD cost to the `AiGeneration` table via `UsageLoggerService`. The four use cases share that provider and that audit trail.
+
+## Draft plan
+
+```
+POST /ai/draft-plan
+```
+
+The admin clicks "Generate draft" in the plan editor. The service builds a context object with the member's profile, the cycle's remaining weeks, the member's last few completed items (with outcomes), the carry-over candidates from the previous week, and the topic coverage so far. That context goes into a structured prompt that returns a JSON plan respecting the EASY → MEDIUM → HARD ladder and the member's declared weekly minutes.
+
+The output is a **draft**, not a published plan. The admin edits, removes, reorders, then publishes. The AI's job is to flatten the blank-page problem, not to replace the director.
+
+The ladder discipline matters here. `DraftPlanService` reads `computeLadder()` from the same place that drives the home progress UI: `isPositiveOutcome` is the single check. If you ever invent a new check for "is this item done?" inline in a service, the AI will start recommending things the member already finished.
+
+## Brief plan
+
+```
+POST /ai/brief-plan
+```
+
+Sometimes the admin already knows what they want and just wants to type it. Brief mode takes a free-text instruction in pt-BR ("essa semana foco em árvores, três medium do Leetcode e o vídeo do William Fiset que tá faltando") and converts it into structured items, attempting to match them against the library where possible.
+
+Anything the AI cannot find in the library is created as a custom item. The admin reviews, accepts, or edits.
+
+## Diagnose
+
+```
+GET /members/:id/diagnose
+```
+
+The cockpit's "AI summary" block. It returns a short narrative of the member's strengths, weaknesses, and one concrete suggestion. Cached in memory for 24 hours per member, because the underlying signals do not move fast enough to justify recomputing on every cockpit load.
+
+The diagnose prompt is fed the member's `MockInterview` history, plan completion stats, retro reflections, and topic coverage map. It is not fed raw outcomes per item, because outcomes alone are noisy and the narrative gets generic. Roll-ups produce sharper text.
+
+## Chat
+
+```
+POST /members/:memberId/chat
+```
+
+A streaming SSE endpoint for ad-hoc "why is this member stuck" questions. The admin opens the context chat from the cockpit and the conversation starts pre-loaded with the same diagnose context, plus the full plan history and any admin notes.
+
+The frontend (`apps/web/components/ai/context-chat.tsx`) reads the SSE stream manually:
+
+```ts
+const res = await fetch(url, { method: 'POST', body, credentials: 'include' })
+const reader = res.body!.getReader()
+const decoder = new TextDecoder()
+while (true) {
+  const { value, done } = await reader.read()
+  if (done) break
+  // parse SSE chunks, append to message
+}
+```
+
+Not TanStack Query. SSE is a streaming protocol; React Query's mutation lifecycle does not model it well. Manual fetch keeps the chunk-handling logic where it belongs.
+
+## Writing guidelines
+
+There is one cross-cutting concern that applies to every AI call: the writing voice. All four use cases share a `WRITING_GUIDELINES` block injected into the system prompt. It lives at one location so every prompt drifts together when the guidelines are updated.
+
+The guidelines explicitly ban em dashes, the "X isn't just Y, it's Z" pattern, performative empathy, and the AI-tell vocabulary list (`leverage`, `unlock`, `seamlessly`, `delve into`, etc.). They tell the model to write in the same voice the director would use: first-person where it makes sense, concrete, no filler.
+
+## Audit and cost
+
+`/admin/ai-usage` is the cost dashboard. Every row is one call, with the use case, the user, the prompt and completion tokens, the model, and the USD cost computed from the per-model rate sheet. The numbers stay accurate because `UsageLoggerService` is the only path to `AiGeneration` and the provider always calls it, even on errors.
+
+The total monthly cost has stayed under \$10 for a typical 12-member cohort because the diagnose cache and the per-call prompt-size discipline keep the volume manageable. The chat is the biggest single line item, which is expected: it is the unbounded one.

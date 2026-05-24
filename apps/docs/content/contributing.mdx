@@ -1,0 +1,134 @@
+---
+title: Contributing
+description: Local setup, conventions, environment variables, and the database safety rules you must follow.
+---
+
+# Contributing
+
+This page is for someone about to run the project locally for the first time, plus the conventions and gotchas that the codebase enforces.
+
+## Prerequisites
+
+- Node 20 (`.nvmrc` is committed)
+- pnpm 9 via Corepack: `corepack enable && corepack prepare pnpm@9.12.0 --activate`
+- Docker 24+ with Compose v2
+
+## Local setup
+
+```bash
+# Clone, install
+pnpm install
+
+# Bring up Postgres (with pgvector)
+cp .env.example .env
+docker compose up -d postgres
+
+# Apply migrations to the local DB
+pnpm --filter @ics-select/prisma exec prisma migrate deploy
+
+# Configure the API
+cp apps/api/.env.example apps/api/.env
+# (fill in OAuth, OpenAI, etc — see below)
+
+# Configure the web
+cp apps/web/.env.example apps/web/.env.local
+
+# Run everything
+pnpm dev
+```
+
+When `pnpm dev` is healthy:
+
+- API: `http://localhost:3001/health` returns 200.
+- Web: `http://localhost:3000` shows the login screen.
+
+## Per-package commands
+
+```bash
+pnpm --filter @ics-select/api test            # Jest unit
+pnpm --filter @ics-select/api test:e2e        # Jest e2e (test/*.e2e-spec.ts)
+pnpm --filter @ics-select/api dev             # nest start --watch
+pnpm --filter @ics-select/web dev             # next dev on :3000
+pnpm --filter @ics-select/web test            # Playwright (mocks the API)
+pnpm --filter @ics-select/web test:update     # Regenerate snapshot baselines
+pnpm --filter @ics-select/shared build        # Required before running compiled API
+pnpm --filter @ics-select/docs dev            # This docs site, on :3002
+```
+
+Run a single test:
+
+```bash
+pnpm --filter @ics-select/api test -- --testPathPattern library.service
+pnpm --filter @ics-select/web test tests/admin-cockpit.spec.ts
+```
+
+## Database safety
+
+This is the most important section on the page. Read it before running any Prisma command.
+
+The project has **two env files** for the API, and they point at very different databases:
+
+- `apps/api/.env` is local dev. Docker Compose Postgres on `localhost:5432`. Safe for `prisma migrate dev`, ad-hoc seed scripts, anything.
+- `apps/api/.env.production` is the production database on the VPS. Treat it as load-bearing: **never** source it, pass it as `DATABASE_URL`, or run any Prisma command against it from your laptop without an explicit per-command go-ahead.
+
+The reason this matters: the production database is **not baselined** with the `_prisma_migrations` table. Running `prisma migrate dev` against it hits P3005 and offers to **reset the database**. Confirming that prompt drops every table. This has happened once. Do not repeat.
+
+### Hard rules
+
+1. Before running anything that touches a database, confirm which env file is being sourced. If `DATABASE_URL` resolves to anything other than `localhost`, **stop and ask** even for read-only queries.
+2. Never confirm an interactive Prisma `migrate dev` reset prompt without explicit confirmation for that specific prompt. Any P3005 against prod is a hard stop.
+3. Production data writes (seed scripts, recovery imports, schema fixes) are previewed before execution. Each one gets a separate go-ahead.
+4. Migrations against the populated production database **must be additive and non-destructive**. No `DROP TABLE`, `DROP COLUMN`, type changes that lose data, or default-value changes that overwrite existing rows. If a feature genuinely needs to remove a column, do it in two PRs: stop writing first, drop later.
+5. Production migrations ship via container redeploy. Create the migration file, commit, push to `main`. The container's entrypoint runs `prisma migrate deploy` on startup. **Never** run `prisma migrate deploy` against the prod URL from your laptop. The container is the single source of truth for migration order.
+
+When `prisma migrate diff` produces destructive SQL (frequent for `Unsupported("tsvector")` columns and raw-SQL-managed columns), rewrite the migration **by hand** to keep only the additive parts. Confirm with the maintainer before committing if any destructive line appears in the diff.
+
+## Environment variables
+
+The full list with descriptions lives in `apps/api/.env.example`. The required ones at a glance:
+
+| Name | Purpose |
+|---|---|
+| `DATABASE_URL` | Postgres URL with `?schema=public` |
+| `CORS_ALLOWED_ORIGINS` | CSV of allowed origins |
+| `JWT_SECRET` | ≥ 32 characters |
+| `ENCRYPTION_KEY` | 32 bytes in base64 (encrypts Google tokens) |
+| `GOOGLE_OAUTH_CLIENT_ID` / `_SECRET` / `_CALLBACK_URL` | Google OAuth |
+| `ALLOWED_EMAIL_DOMAINS` | CSV of allowed login domains |
+| `FRONTEND_BASE_URL` | Public web URL (for post-login redirect) |
+| `OPENAI_API_KEY` | All AI features |
+
+Optional WhatsApp integration: `EVOLUTION_API_BASE_URL`, `EVOLUTION_API_KEY`, `EVOLUTION_INSTANCE`, `ADMIN_WHATSAPP_NUMBER`.
+
+## Conventions worth knowing
+
+A few things that the codebase enforces and a new contributor will trip on:
+
+- **UI chrome is in English** (`Today`, `Up next`, `Cohort`, `Streak`), user-generated content stays in pt-BR (reflections, retros, admin notes). The product itself ships pt-BR copy in the user-content surfaces.
+- **No emojis** in code or copy. Use `lucide-react` icons at stroke 1.5. The `⚠` glyph counts as emoji.
+- **Tailwind outcome colors are prefixed `outcome-`**. `text-outcome-stuck` works; `text-stuck` does not exist and renders silently with inherited color.
+- **Service methods that complete an action must return something JSON-serializable** (e.g. `{ ok: true, count }`). NestJS responds 200 with an empty body for `Promise<void>`, and the frontend's `apiFetch` calls `res.json()` and throws `SyntaxError: Unexpected end of JSON input`. Annotate with `@HttpCode(204)` if you really want an empty response.
+- **`isPositiveOutcome` is the single source of truth for "is this item done?"**. Never reimplement the check inline as `outcome === 'DONE_EASY' || outcome === 'DONE_HARD'`. Pull `POSITIVE_OUTCOMES` from `@ics-select/shared` and spread it.
+- **The active cycle is resolved via `resolveActiveCycle(prisma)`**, not via `findFirst({ status: 'ACTIVE', orderBy: { startsAt: 'desc' } })`. The latter is wrong during the gap between two cycles and will regress.
+- **Commit messages follow `type(scope): subject`**, see `git log`. Merges to `main` use `--no-ff`. Release tags follow `vX.Y.Z`.
+- **Never `git add -A` or `git add .`** when committing. The repo regularly carries unrelated WIP across paths. Stage by explicit path, then `git status` to confirm before committing.
+
+## Testing strategy
+
+- **API unit tests**: Jest, dependencies injected manually or via `Test.createTestingModule`. Run fast, no Postgres needed.
+- **API e2e tests**: Jest with the real `AppModule`, but Prisma's `$connect` is mocked. The point is to catch wiring bugs in modules, not to test the database.
+- **Web tests**: Playwright. The tests mock `apiFetch` via `page.route()`, so they do not need a live API. Snapshots are stored under `apps/web/tests/<spec>.spec.ts-snapshots/`.
+- **Shared package**: Vitest. Pure logic, fast, no I/O.
+
+## Common pitfalls
+
+- **HeroUI components render without styles.** The Tailwind `content` array must reach into the pnpm flat store. If you change the Tailwind config or the pnpm version, verify HeroUI modals visually, not just by running tests. Playwright does not check visual styles by default and the unit tests pass anyway.
+- **The `<html>` element must have `className="light"` and `data-theme="light"`** for the HeroUI theme to apply to portal-rendered components like Modal. Without it, portal components silently lose their theme.
+- **Zod errors thrown inline in controllers fall through to 500.** The global `HttpExceptionFilter` does not yet map `ZodError`. If you touch validation, add the branch.
+- **CommonJS at runtime.** `apps/api` resolves `@ics-select/shared` from compiled CommonJS in `packages/shared/dist`. Running the compiled API without first running `pnpm --filter @ics-select/shared build` throws `ERR_MODULE_NOT_FOUND`. Jest bypasses this via `moduleNameMapper`, so unit tests do not need a pre-build.
+
+## What this repo is not
+
+- **Not a public product.** Domains are gated by email; the only sign-in path is Google with a domain check.
+- **Not a generic interview-prep platform.** The library, the ladder, and the scheduler are all tuned for the ICS cohort. Reusing the code for another program would require a curation pass.
+- **Not feature-complete.** The spec at `docs/superpowers/specs/2026-04-11-ics-select-design.md` lists phases still to come. The product is in production and improving every cycle.
