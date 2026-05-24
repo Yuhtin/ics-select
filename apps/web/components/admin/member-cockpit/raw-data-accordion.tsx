@@ -7,10 +7,11 @@ import { DiagnoseTab } from '../member-detail/diagnose-tab';
 import { NotesTab } from '../member-detail/notes-tab';
 import { AttendanceTab } from '../member-detail/attendance-tab';
 import { MocksTab } from '../member-detail/mocks-tab';
+import { ChallengesTab } from '../member-detail/challenges-tab';
 import { TopicCoverageMatrix } from '../member-detail/topic-coverage-matrix';
 import { clsx } from 'clsx';
 
-type Tab = 'timeline' | 'retros' | 'topic-coverage' | 'diagnose' | 'mocks' | 'notes' | 'attendance';
+type Tab = 'timeline' | 'retros' | 'topic-coverage' | 'diagnose' | 'mocks' | 'challenges' | 'notes' | 'attendance';
 
 type Props = {
   memberId: string;
@@ -27,6 +28,7 @@ const TAB_LABELS: Record<Tab, string> = {
   'topic-coverage': 'Topic coverage',
   diagnose: 'Diagnose',
   mocks: 'Mocks',
+  challenges: 'Challenges',
   notes: 'Notes',
   attendance: 'Attendance',
 };
@@ -47,7 +49,7 @@ export function RawDataAccordion(props: Props) {
           Raw data &amp; member retrospective
         </span>
         <span className="ml-auto font-mono text-[10px] text-ink-faint">
-          timeline · retros · topic coverage · diagnose · mocks · notes · attendance
+          timeline · retros · topic coverage · diagnose · mocks · challenges · notes · attendance
         </span>
       </summary>
       <div className="border-t border-rule px-6 py-6 space-y-4">
@@ -84,6 +86,7 @@ export function RawDataAccordion(props: Props) {
           )}
           {tab === 'diagnose' && <DiagnoseTab memberId={props.memberId} />}
           {tab === 'mocks' && <MocksTab memberId={props.memberId} cycleId={props.cycleId} />}
+          {tab === 'challenges' && <ChallengesTab memberId={props.memberId} cycleId={props.cycleId} />}
           {tab === 'notes' && <NotesTab memberId={props.memberId} />}
           {tab === 'attendance' && <AttendanceTab attendance={props.attendance} />}
         </div>
