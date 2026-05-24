@@ -1,0 +1,26 @@
+# Sandbox image for Python 3.12. Built nightly by the sandbox-images
+# workflow, pulled weekly by the VPS cron. The API runs containers off this
+# image with `--network=none --cap-drop=ALL --read-only` and friends — see
+# docs/sandbox-setup.md for the full flag set and userns-remap config.
+#
+# Keep this image minimal: NO pip packages, NO compilers beyond what the
+# stdlib needs, NO shell utilities besides the absolute basics. Every extra
+# binary is a potential escape vector.
+FROM python:3.12-slim
+
+# Non-root user that runs the member's code. UID/GID 10001 is well outside
+# the 0-999 system range, so userns-remap on the host maps it to an
+# unprivileged subuid even if the container somehow escapes user namespace.
+RUN groupadd --system --gid 10001 runner \
+ && useradd --system --uid 10001 --gid runner --no-create-home --shell /sbin/nologin runner
+
+# /code is the only place the orchestrator mounts the member's source.
+# It's mounted read-only from the host (the API writes main.py before
+# `docker run`); /tmp is the only writable surface (tmpfs at runtime).
+RUN mkdir -p /code && chown runner:runner /code
+
+USER runner
+WORKDIR /code
+
+# No CMD — the orchestrator invokes `python3 /code/main.py` explicitly so
+# the entrypoint can vary per test case (different stdin redirection).
