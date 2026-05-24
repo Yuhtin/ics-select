@@ -30,6 +30,7 @@ import { MeModule } from './me/me.module.js';
 import { ReportsModule } from './reports/reports.module.js';
 import { WaitlistModule } from './waitlist/waitlist.module.js';
 import { PublicCohortModule } from './public-cohort/public-cohort.module.js';
+import { SandboxModule } from './sandbox/sandbox.module.js';
 import { loadEnv } from './config/env.js';
 
 @Module({
@@ -74,6 +75,7 @@ import { loadEnv } from './config/env.js';
     PublicCohortModule,
     HealthModule,
     ActivityModule,
+    SandboxModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },

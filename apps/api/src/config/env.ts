@@ -49,6 +49,12 @@ const EnvSchema = z.object({
   EVOLUTION_API_KEY: z.string().optional(),
   EVOLUTION_INSTANCE: z.string().optional(),
   ADMIN_WHATSAPP_NUMBER: z.string().optional(),
+  // Sandbox / Challenge Mode. All optional with sane defaults so existing
+  // deployments don't break before the feature ramps. See docs/sandbox-setup.md.
+  SANDBOX_PYTHON_IMAGE: z.string().optional(),
+  SANDBOX_CPP_IMAGE: z.string().optional(),
+  SANDBOX_MAX_CONCURRENT: z.coerce.number().int().min(1).max(32).optional(),
+  SANDBOX_QUEUE_TIMEOUT_MS: z.coerce.number().int().min(1_000).max(120_000).optional(),
 });
 
 export type Env = z.infer<typeof EnvSchema>;

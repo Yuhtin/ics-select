@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import type { Track } from '@ics-select/shared';
 import { PrismaService } from '../common/prisma/prisma.service.js';
 
@@ -119,6 +119,35 @@ export class LibraryService {
     const out = await this.getById(id);
     if (!out) throw new Error('library item disappeared after update');
     return out;
+  }
+
+  /**
+   * Replace the Challenge Mode test cases on a library item. Called by the
+   * admin test-case editor. The payload was already validated by Zod at the
+   * controller boundary, so we just persist it. `testCases` is stored as
+   * raw JSON in Postgres; the test runner re-reads it without revalidating
+   * (the row is trusted).
+   */
+  async setTestCases(
+    id: string,
+    payload: {
+      testCases: Array<{ name: string; stdin: string; expectedStdout: string; hidden?: boolean }>;
+      testCasesLanguages: Array<'PYTHON' | 'CPP'>;
+    },
+  ) {
+    const existing = await this.prisma.libraryItem.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundException('library item not found');
+    if (existing.format !== 'PROBLEM') {
+      throw new BadRequestException('test cases can only be set on PROBLEM items');
+    }
+    await this.prisma.libraryItem.update({
+      where: { id },
+      data: {
+        testCases: payload.testCases as any,
+        testCasesLanguages: payload.testCasesLanguages,
+      },
+    });
+    return { ok: true, count: payload.testCases.length };
   }
 
   async list() {
