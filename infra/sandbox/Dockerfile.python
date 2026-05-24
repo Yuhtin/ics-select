@@ -6,7 +6,7 @@
 # Keep this image minimal: NO pip packages, NO compilers beyond what the
 # stdlib needs, NO shell utilities besides the absolute basics. Every extra
 # binary is a potential escape vector.
-FROM python:3.12-slim
+FROM python:3.14-slim
 
 # Non-root user that runs the member's code. UID/GID 10001 is well outside
 # the 0-999 system range, so userns-remap on the host maps it to an
