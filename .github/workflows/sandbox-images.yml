@@ -73,7 +73,7 @@ jobs:
           echo "dated=ghcr.io/${OWNER_LC}/${{ matrix.image }}:stable-${DATE_TAG}" >> "$GITHUB_OUTPUT"
 
       - name: Set up Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       # Build locally first (load: true). Trivy scans the local image,
       # and only if it passes do we log in to ghcr and push. This avoids
