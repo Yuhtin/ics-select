@@ -1,166 +1,245 @@
 # Sandbox setup (VPS, one-time)
 
-This document covers the **one-time host configuration** the VPS needs
-before Challenge Mode can run member code in containers. Everything here
-is operations work, not application code. The application side
-(`apps/api/src/sandbox/`) ships in a later PR.
+This document covers the **host-side install** required to enable
+Challenge Mode in production. The application side (API + frontend)
+already ships in the main repo; this file is purely ops.
 
-The CI/CD side (image build + Trivy scan + push) is fully automated by
-`.github/workflows/sandbox-images.yml` plus Dependabot. The VPS only
-needs (1) a Docker daemon configured with `userns-remap` enabled, and
-(2) a weekly cron that pulls the latest stable images.
+## Architecture summary
 
-## 1. Enable `userns-remap` on the Docker daemon
+The API container does NOT spawn `docker run` directly. Mounting the
+docker socket into the API would mean root on the host, and the host
+runs multiple unrelated projects (EasyPanel, brinv, cs2, …). So we
+isolate the privilege:
 
-`userns-remap` maps the in-container root (UID 0) to an unprivileged
-subuid on the host. Even if a process inside the sandbox escalates to
-root (e.g. via a future Docker escape CVE), on the host it's just a
-high-UID nobody — no access to `/etc`, no kill on other containers, no
-read of /var/lib/docker.
+```
+┌─ EasyPanel (Swarm, untouched by this setup) ─┐
+│  ics-backend (API container)                 │
+│      │ POST /run  (X-Sandbox-Token)          │
+└──────┼───────────────────────────────────────┘
+       ▼
+┌─ Host (NOT managed by EasyPanel) ────────────┐
+│  ics-sandbox-host  (systemd → docker run)    │
+│      │ docker run --network=none …           │
+│      ▼                                       │
+│  ghcr.io/yuhtin/ics-sandbox-{python,cpp}     │
+│      one ephemeral container per execution   │
+└──────────────────────────────────────────────┘
+```
 
-This is the **single most important defense** in the stack. Without it,
-all the other flags (`--cap-drop=ALL`, `--read-only`, etc) buy you less.
+Three pieces to install on the VPS:
 
-**Steps:**
+1. The **sandbox-host-service** container itself (managed by `systemd`,
+   not by EasyPanel).
+2. The **weekly refresh cron** that pulls fresh sandbox images.
+3. One **environment variable** added to the ICS API service inside
+   EasyPanel — `SANDBOX_AUTH_TOKEN` matching what the host service
+   knows.
 
-1. Pick a remap user. Add it on the host:
+No changes to `/etc/docker/daemon.json`. No daemon restart. The other
+EasyPanel containers (Postgres, Mongo, Traefik, brinv, cs2, …) are
+not touched.
 
-   ```bash
-   sudo useradd --system --no-create-home --shell /sbin/nologin dockremap
-   sudo grep dockremap /etc/subuid /etc/subgid
-   # Should print something like:
-   #   /etc/subuid:dockremap:524288:65536
-   #   /etc/subgid:dockremap:524288:65536
-   # If not, run:
-   #   echo 'dockremap:524288:65536' | sudo tee -a /etc/subuid
-   #   echo 'dockremap:524288:65536' | sudo tee -a /etc/subgid
-   ```
+---
 
-2. Edit `/etc/docker/daemon.json` (create if absent):
+## 1. Generate the shared auth token
 
-   ```json
-   {
-     "userns-remap": "dockremap",
-     "live-restore": true,
-     "default-ulimits": {
-       "nofile": { "Name": "nofile", "Hard": 1024, "Soft": 1024 }
-     }
-   }
-   ```
+```bash
+openssl rand -hex 32
+```
 
-   `live-restore: true` lets running containers survive the daemon
-   restart that comes next.
+Save the output. It goes in two places:
 
-3. Restart the daemon:
+- **EasyPanel ICS API service env**: `SANDBOX_AUTH_TOKEN=<that hex>`
+- **Host environment file** (next step): `SANDBOX_AUTH_TOKEN=<that hex>`
 
-   ```bash
-   sudo systemctl restart docker
-   ```
+The token never leaves the host: the API container talks to the
+service over `127.0.0.1:8787` (loopback), so no TLS is needed.
 
-4. **Verify**. This is the critical confirmation step:
+## 2. Install the host environment file
 
-   ```bash
-   docker run --rm alpine id
-   # Expected: uid=0(root) gid=0(root) ...
-   docker run --rm alpine sh -c 'cat /proc/self/uid_map'
-   # Expected: 0 524288 65536   ← in-container UID 0 → host UID 524288
-   ```
+`scp` or paste this into `/etc/ics-sandbox-host.env` (mode 0600, owned
+by root):
 
-   If `uid_map` shows `0 0 ...`, the remap did NOT take effect — do not
-   proceed.
+```bash
+sudo install -o root -g root -m 0600 /dev/stdin /etc/ics-sandbox-host.env <<'EOF'
+SANDBOX_AUTH_TOKEN=<paste the openssl output>
+SANDBOX_MAX_CONCURRENT=4
+SANDBOX_QUEUE_TIMEOUT_MS=30000
+SANDBOX_PYTHON_IMAGE=ghcr.io/yuhtin/ics-sandbox-python:stable
+SANDBOX_CPP_IMAGE=ghcr.io/yuhtin/ics-sandbox-cpp:stable
+EOF
+```
 
-**Important side effect:** every container started after the remap lives
-under `/var/lib/docker/524288.524288/` instead of `/var/lib/docker/`.
-Volumes that existed before the remap won't be visible to remapped
-containers. Since the API + EasyPanel containers use named volumes and
-were started after we'd enable the remap, this is fine, but verify
-EasyPanel comes back healthy before declaring victory.
+Why 0600: the file holds a credential. `systemctl cat` won't expose it
+because the unit references it via `EnvironmentFile=`.
 
-## 2. Install the weekly pull cron
+## 3. Install the systemd unit
+
+```bash
+sudo cp infra/sandbox-host-service/systemd/ics-sandbox-host.service \
+        /etc/systemd/system/ics-sandbox-host.service
+sudo systemctl daemon-reload
+```
+
+Verify with `systemctl cat ics-sandbox-host` that the file landed.
+
+## 4. Pre-pull the three images
+
+`docker pull` ahead of the first start so the systemd unit doesn't pay
+the cold-pull cost (the API call would time out otherwise):
+
+```bash
+sudo docker pull ghcr.io/yuhtin/ics-sandbox-host:stable
+sudo docker pull ghcr.io/yuhtin/ics-sandbox-python:stable
+sudo docker pull ghcr.io/yuhtin/ics-sandbox-cpp:stable
+```
+
+If `docker pull` errors with "denied", the images are still private —
+either make them public on the GitHub Packages settings page or
+configure docker for ghcr auth on the host.
+
+## 5. Prepare the shared tmp dir
+
+```bash
+sudo mkdir -p /tmp/ics-sandbox
+sudo chmod 1777 /tmp/ics-sandbox   # sticky like /tmp
+```
+
+This directory holds the per-execution source files. The host service
+container mounts it from the host AND each sandbox container mounts a
+subdirectory of it read-only.
+
+## 6. Start the service
+
+```bash
+sudo systemctl enable --now ics-sandbox-host
+sudo systemctl status ics-sandbox-host
+```
+
+Expected: `Active: active (running)`. If it fails, check the logs:
+
+```bash
+sudo journalctl -u ics-sandbox-host -n 50 --no-pager
+```
+
+## 7. Smoke test
+
+From the host, hit `/healthz`:
+
+```bash
+curl -fsS http://127.0.0.1:8787/healthz
+# {"ok":true,"active":0,"waiting":0,"maxConcurrent":4}
+```
+
+Then exercise `/run` with the token:
+
+```bash
+TOKEN=$(grep SANDBOX_AUTH_TOKEN /etc/ics-sandbox-host.env | cut -d= -f2)
+curl -fsS -X POST http://127.0.0.1:8787/run \
+  -H "content-type: application/json" \
+  -H "x-sandbox-token: $TOKEN" \
+  -d '{"language":"PYTHON","code":"print(input())","stdin":"hello\n","timeoutMs":5000}'
+# {"status":"OK","exitCode":0,"stdout":"hello\n","stderr":"","durationMs":...}
+```
+
+If `stderr` is empty and `status: OK`, the entire pipe works:
+service → host docker → sandbox container → reply.
+
+## 8. Wire EasyPanel
+
+In the ICS API service settings on EasyPanel, add the env var:
+
+```
+SANDBOX_AUTH_TOKEN=<same hex from step 1>
+SANDBOX_HOST_URL=http://host.docker.internal:8787
+```
+
+Save and redeploy the ICS API service. The deploy is a normal rolling
+update — no downtime for the other services.
+
+## 9. Install the refresh cron
+
+`refresh.sh` keeps the sandbox images current week to week (sandbox
+images, not the host service itself — the host service auto-updates
+via systemd when you `docker pull` and restart the unit; the GHA
+already publishes new tags weekly):
 
 ```bash
 sudo mkdir -p /opt/ics-sandbox
 sudo cp infra/sandbox/refresh.sh /opt/ics-sandbox/refresh.sh
 sudo chmod +x /opt/ics-sandbox/refresh.sh
 
-# Add to root crontab (refresh.sh needs docker socket access).
 sudo crontab -e
-# Append:
-#   0 7 * * 0 /opt/ics-sandbox/refresh.sh >> /var/log/ics-sandbox-refresh.log 2>&1
+#  0 7 * * 0 /opt/ics-sandbox/refresh.sh >> /var/log/ics-sandbox-refresh.log 2>&1
 ```
 
-First run, kick it off manually to seed the images so the first member
-challenge attempt doesn't pay the cold-pull cost:
+To also refresh the host service container weekly, add a second line:
 
-```bash
-sudo /opt/ics-sandbox/refresh.sh
+```
+30 7 * * 0 /usr/bin/docker pull ghcr.io/yuhtin/ics-sandbox-host:stable \
+            && /usr/bin/systemctl restart ics-sandbox-host \
+            >> /var/log/ics-sandbox-host-refresh.log 2>&1
 ```
 
-`docker images | grep ics-sandbox` should now list both images.
+## 10. Monitoring (post-deploy)
 
-## 3. Smoke test
-
-Once the images are present, confirm the hardening flags compile cleanly:
-
-```bash
-# Python smoke
-echo 'print("hello", input())' | docker run --rm -i \
-  --network=none --memory=256m --memory-swap=256m --cpus=0.5 \
-  --pids-limit=64 --read-only --tmpfs=/tmp:rw,noexec,size=20m \
-  --cap-drop=ALL --security-opt=no-new-privileges \
-  --user=runner \
-  -v /dev/null:/code/main.py:ro \
-  ghcr.io/yuhtin/ics-sandbox-python:stable \
-  sh -c 'echo "world" | python3 -c "print(input())"'
-# Expected: world
-```
-
-```bash
-# C++ smoke (compile + run + stdin echo)
-docker run --rm -i \
-  --network=none --memory=256m --memory-swap=256m --cpus=0.5 \
-  --pids-limit=64 --read-only --tmpfs=/tmp:rw,noexec,size=20m \
-  --cap-drop=ALL --security-opt=no-new-privileges \
-  --user=runner \
-  ghcr.io/yuhtin/ics-sandbox-cpp:stable \
-  sh -c 'cat > /tmp/main.cpp <<EOF
-#include <iostream>
-int main() { std::string s; std::cin >> s; std::cout << s << std::endl; return 0; }
-EOF
-g++ -O2 -std=c++17 /tmp/main.cpp -o /tmp/main && echo "world" | /tmp/main'
-# Expected: world
-```
-
-## 4. Monitoring (post-deploy)
-
-Before the feature ramps to all members, watch these on the VPS for the
-first week:
+Watch these for the first week of use:
 
 | Metric | Where | What to look for |
 |---|---|---|
-| Container count | `docker ps --no-trunc \| wc -l` | Spikes above ~6 mean the API semaphore is failing or being bypassed |
-| RAM headroom | `free -m` | `available` should stay > 1GB during peak |
-| Load avg | `uptime` | 5m load > number of cores → CPU starvation, lower semaphore cap |
-| Disk on /var/lib/docker | `df -h` | If growing fast, images aren't being pruned by `refresh.sh` |
-| Refresh cron log | `/var/log/ics-sandbox-refresh.log` | Errors → ghcr auth issue or network |
+| Active executions | `curl 127.0.0.1:8787/healthz \| jq` | `active` should rarely sit at `maxConcurrent` |
+| Service logs | `journalctl -u ics-sandbox-host -f` | sandbox/auth errors |
+| Per-execution audit | Postgres `SandboxExecutionLog` | status distribution, durationMs P95 |
+| Host load | `uptime` | 5m load over core count → drop `SANDBOX_MAX_CONCURRENT` |
+| Disk on /var/lib/docker | `df -h` | grows fast → `docker image prune -f` |
+| `/tmp/ics-sandbox` | `du -sh /tmp/ics-sandbox` | should stay near zero — leaked dirs mean a bug |
 
-If load average spikes, lower `SANDBOX_MAX_CONCURRENT` (env var read by
-the API) from 4 to 2 and observe again. No code change required.
+## Rollback
 
-## 5. Rollback
-
-If a refresh pulls a broken image and member challenges start failing:
+To stop accepting new challenges (without redeploying the API):
 
 ```bash
-# Find the previous dated tag (refresh.sh logs them) and pin it:
-docker pull ghcr.io/yuhtin/ics-sandbox-python:stable-20260517
-
-# Retag locally so the API (which uses :stable) picks it up:
-docker tag ghcr.io/yuhtin/ics-sandbox-python:stable-20260517 \
-           ghcr.io/yuhtin/ics-sandbox-python:stable
-
-# Disable the cron temporarily to stop the next pull from clobbering it:
-sudo crontab -l | grep -v refresh.sh | sudo crontab -
-
-# After fixing upstream, restore the cron line.
+sudo systemctl stop ics-sandbox-host
 ```
+
+The API returns SANDBOX_ERROR for all sandbox calls; the rest of the
+product keeps working. Restart with `systemctl start ics-sandbox-host`.
+
+To pin a specific previous image tag during an incident:
+
+```bash
+sudo docker pull ghcr.io/yuhtin/ics-sandbox-host:stable-20260520
+sudo docker tag ghcr.io/yuhtin/ics-sandbox-host:stable-20260520 \
+                ghcr.io/yuhtin/ics-sandbox-host:stable
+sudo systemctl restart ics-sandbox-host
+# Disable the cron line that re-pulls :stable until upstream is fixed.
+```
+
+## Threat model notes
+
+The hardening flags on every sandbox container (set by the host
+service in `commandFor()` at `infra/sandbox-host-service/src/server.mjs`):
+
+```
+--network=none           no DNS, no egress, no metadata service
+--memory=256m            no OOM-the-host
+--cpus=0.5               no CPU monopolization
+--pids-limit=64          fork bombs cap out
+--read-only              rootfs is immutable
+--tmpfs=/tmp:rw,noexec   /tmp writable but never executable
+--cap-drop=ALL           no Linux capabilities
+--security-opt=no-new-privileges   no setuid escalation
+--user=runner            UID 10001 inside, not root
+--ulimit=fsize=10MB      can't fill the disk
+```
+
+What we don't have (and the trade-off):
+
+- **No `userns-remap` on the daemon.** Enabling it would break volume
+  access for all the unrelated projects sharing this VPS. We accept the
+  remaining risk because the cohort is trusted (~12 vetted members) and
+  the per-container hardening above blocks the realistic attacks. When
+  the platform moves to a dedicated VPS, revisit.
+- **The host service container runs as root.** It needs the docker
+  socket. The blast radius is the host service itself — not the API
+  container (which has the secrets), not the EasyPanel services.

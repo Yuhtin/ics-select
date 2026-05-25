@@ -1,5 +1,4 @@
 import { TestRunnerService } from './test-runner.service';
-import { SandboxQueueService } from './queue.service';
 import type { SandboxRunResult } from './runner.types';
 
 function makeSandbox(scripted: SandboxRunResult[]) {
@@ -14,17 +13,10 @@ function makeSandbox(scripted: SandboxRunResult[]) {
 }
 
 describe('TestRunnerService', () => {
-  let queue: SandboxQueueService;
-
-  beforeEach(() => {
-    delete process.env.SANDBOX_MAX_CONCURRENT;
-    delete process.env.SANDBOX_QUEUE_TIMEOUT_MS;
-    queue = new SandboxQueueService();
-  });
 
   it('returns zero counts on empty test cases', async () => {
     const sandbox = makeSandbox([]);
-    const svc = new TestRunnerService(sandbox as any, queue);
+    const svc = new TestRunnerService(sandbox as any);
     const out = await svc.run({ language: 'PYTHON', code: 'x', testCases: [] });
     expect(out).toEqual({ passed: 0, total: 0, cases: [] });
     expect(sandbox.run).not.toHaveBeenCalled();
@@ -34,7 +26,7 @@ describe('TestRunnerService', () => {
     const sandbox = makeSandbox([
       { status: 'OK', exitCode: 0, stdout: 'hello\n', stderr: '', durationMs: 12 },
     ]);
-    const svc = new TestRunnerService(sandbox as any, queue);
+    const svc = new TestRunnerService(sandbox as any);
     const out = await svc.run({
       language: 'PYTHON',
       code: 'print("hello")',
@@ -49,7 +41,7 @@ describe('TestRunnerService', () => {
     const sandbox = makeSandbox([
       { status: 'OK', exitCode: 0, stdout: 'world', stderr: '', durationMs: 5 },
     ]);
-    const svc = new TestRunnerService(sandbox as any, queue);
+    const svc = new TestRunnerService(sandbox as any);
     const out = await svc.run({
       language: 'PYTHON',
       code: 'print("world")',
@@ -66,7 +58,7 @@ describe('TestRunnerService', () => {
       { status: 'COMPILE_ERROR', exitCode: 124, stdout: '', stderr: 'syntax error', durationMs: 80 },
       { status: 'RUNTIME_ERROR', exitCode: 1, stdout: 'partial', stderr: 'segv', durationMs: 22 },
     ]);
-    const svc = new TestRunnerService(sandbox as any, queue);
+    const svc = new TestRunnerService(sandbox as any);
     const out = await svc.run({
       language: 'CPP',
       code: 'broken',
@@ -88,7 +80,7 @@ describe('TestRunnerService', () => {
     const sandbox = makeSandbox([
       { status: 'OK', exitCode: 0, stdout: '42', stderr: '', durationMs: 1 },
     ]);
-    const svc = new TestRunnerService(sandbox as any, queue);
+    const svc = new TestRunnerService(sandbox as any);
     const out = await svc.run({
       language: 'PYTHON',
       code: 'print(42)',
@@ -101,7 +93,7 @@ describe('TestRunnerService', () => {
     const sandbox = makeSandbox([
       { status: 'OK', exitCode: 0, stdout: 'a\r\nb\r\n', stderr: '', durationMs: 3 },
     ]);
-    const svc = new TestRunnerService(sandbox as any, queue);
+    const svc = new TestRunnerService(sandbox as any);
     const out = await svc.run({
       language: 'PYTHON',
       code: '',

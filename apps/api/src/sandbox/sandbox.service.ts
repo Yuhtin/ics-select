@@ -1,75 +1,47 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { spawn } from 'node:child_process';
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
 import { PrismaService } from '../common/prisma/prisma.service.js';
-import { SOURCE_FILE_NAME } from './templates.js';
 import type {
   SandboxRunInput,
   SandboxRunResult,
   SandboxStatus,
 } from './runner.types.js';
-import { SandboxQueueService } from './queue.service.js';
-import type { ChallengeLanguage } from '@ics-select/prisma';
 
-const STDOUT_CAP_BYTES = 64 * 1024;
-const STDERR_CAP_BYTES = 16 * 1024;
 const DEFAULT_TIMEOUT_MS = 5_000;
-// Container has /tmp tmpfs at 20MB. We allocate the host source dir for the
-// read-only mount; the binary the C++ build emits lives in /tmp/main inside.
-const HOST_TMP_PREFIX = 'ics-sandbox-';
-
-type RunCommand = {
-  /** Argv after `docker run <flags> <image>`. */
-  argv: string[];
-};
+const HTTP_TIMEOUT_MS = 15_000;
 
 /**
- * Orchestrates a single sandbox execution: writes the source to a host tmp
- * dir, mounts it read-only into a hardened container, pipes stdin in,
- * captures stdout/stderr (capped), and applies a wall-clock timeout.
+ * Thin HTTP client for the sandbox-host-service. We don't spawn docker
+ * locally because the API container doesn't have the daemon socket and
+ * giving it one would mean root on the host. The host service holds the
+ * privilege; we hold a shared-secret token.
  *
- * Does NOT enforce concurrency — wrap calls in SandboxQueueService.withSlot
- * for that. Decoupled so individual unit tests can exercise the runner
- * without going through the queue.
+ * Failure modes the caller sees as SandboxStatus:
+ *   OK / TIMEOUT / COMPILE_ERROR / RUNTIME_ERROR — passed through from the host
+ *   SANDBOX_ERROR — host unreachable, 5xx, auth, validation, etc
  *
- * Persists one SandboxExecutionLog row per invocation for audit + capacity
- * analysis. The log is fire-and-forget; failing to write it doesn't block
- * returning the result.
+ * Every call still produces a SandboxExecutionLog row for audit. The host
+ * service has its own per-process logs but Postgres is the source of truth
+ * for cross-service queries (capacity planning, abuse detection).
  */
 @Injectable()
 export class SandboxService {
   private readonly logger = new Logger(SandboxService.name);
-  private readonly pythonImage: string;
-  private readonly cppImage: string;
+  private readonly hostUrl: string;
+  private readonly authToken: string;
 
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly queue: SandboxQueueService,
-  ) {
-    this.pythonImage = process.env.SANDBOX_PYTHON_IMAGE ?? 'ghcr.io/yuhtin/ics-sandbox-python:stable';
-    this.cppImage = process.env.SANDBOX_CPP_IMAGE ?? 'ghcr.io/yuhtin/ics-sandbox-cpp:stable';
-  }
-
-  /** Convenience wrapper that goes through the queue. */
-  runQueued(
-    input: SandboxRunInput,
-    audit?: { userId?: string; attemptId?: string },
-  ): Promise<SandboxRunResult> {
-    return this.queue.withSlot(() => this.run(input, audit));
+  constructor(private readonly prisma: PrismaService) {
+    this.hostUrl = (process.env.SANDBOX_HOST_URL ?? 'http://host.docker.internal:8787').replace(/\/+$/, '');
+    this.authToken = process.env.SANDBOX_AUTH_TOKEN ?? '';
+    if (!this.authToken) {
+      this.logger.warn(
+        'SANDBOX_AUTH_TOKEN is empty — sandbox calls will fail until it is set.',
+      );
+    }
   }
 
   /**
-   * Execute once. Caller is responsible for queue acquisition.
-   *
-   * Steps:
-   *   1. Materialize source under /tmp/ics-sandbox-XXXX/{main.py|main.cpp}.
-   *   2. docker run with hardening flags, stdin piped, stdout/stderr captured.
-   *   3. Kill on wall-clock timeout via container stop (faster than docker kill).
-   *   4. Map exit code to SandboxStatus.
-   *   5. Log to SandboxExecutionLog (fire-and-forget).
-   *   6. Clean up host tmp dir.
+   * Execute member code once. Mirrors the previous local-spawn contract so
+   * callers (TestRunnerService, ChallengesService) don't have to change.
    */
   async run(
     input: SandboxRunInput,
@@ -77,151 +49,68 @@ export class SandboxService {
   ): Promise<SandboxRunResult> {
     const startedAt = Date.now();
     const timeoutMs = input.timeoutMs > 0 ? input.timeoutMs : DEFAULT_TIMEOUT_MS;
-    const hostDir = await mkdtemp(join(tmpdir(), HOST_TMP_PREFIX));
-    const fileName = SOURCE_FILE_NAME[input.language];
+    const result = await this.callHost({ ...input, timeoutMs }, startedAt);
 
-    let result: SandboxRunResult;
-    try {
-      await writeFile(join(hostDir, fileName), input.code, { mode: 0o644 });
-      const cmd = this.commandFor(input.language, hostDir);
-      result = await this.execDocker(cmd, input.stdin, timeoutMs);
-    } catch (err) {
-      this.logger.warn(`sandbox.run failed pre-exec: ${String(err)}`);
-      result = {
-        status: 'SANDBOX_ERROR',
-        exitCode: null,
-        stdout: '',
-        stderr: err instanceof Error ? err.message : String(err),
-        durationMs: Date.now() - startedAt,
-      };
-    } finally {
-      // Best-effort cleanup. Leaving a stray tmp dir is annoying but not
-      // fatal — the OS will eventually clean /tmp.
-      rm(hostDir, { recursive: true, force: true }).catch(() => undefined);
-    }
-
-    // Audit log is fire-and-forget. Don't await; don't block the caller.
-    this.logExecution(input, result, audit).catch((err) => {
+    // Audit log is fire-and-forget. Failing to write it never blocks.
+    this.logExecution({ ...input, timeoutMs }, result, audit).catch((err) => {
       this.logger.warn(`sandbox execution log failed: ${String(err)}`);
     });
-
     return result;
   }
 
-  /** Build the `docker run` argv for a given language + host source dir. */
-  private commandFor(language: ChallengeLanguage, hostDir: string): RunCommand {
-    const baseFlags = [
-      'run',
-      '--rm',
-      '-i',
-      '--network=none',
-      '--memory=256m',
-      '--memory-swap=256m',
-      '--cpus=0.5',
-      '--pids-limit=64',
-      '--read-only',
-      '--tmpfs=/tmp:rw,noexec,size=20m',
-      '--cap-drop=ALL',
-      '--security-opt=no-new-privileges',
-      '--user=runner',
-      '--ulimit=nofile=64:64',
-      '--ulimit=fsize=10485760',
-      '-v',
-      `${hostDir}:/code:ro`,
-    ];
-
-    if (language === 'PYTHON') {
-      return {
-        argv: [...baseFlags, this.pythonImage, 'python3', '/code/main.py'],
-      };
-    }
-    // C++: copy to /tmp first because /code is read-only (clang can't write
-    // the binary alongside the source). The `&& exec` chain runs the binary
-    // in-place so exit code propagates.
-    return {
-      argv: [
-        ...baseFlags,
-        this.cppImage,
-        'sh',
-        '-c',
-        'cp /code/main.cpp /tmp/main.cpp && g++ -O2 -std=c++17 /tmp/main.cpp -o /tmp/main 2>/tmp/build.err && exec /tmp/main; status=$?; [ -s /tmp/build.err ] && { cat /tmp/build.err >&2; exit 124; } || exit $status',
-      ],
-    };
+  /**
+   * Compatibility shim. The pre-refactor SandboxService had a queued variant
+   * because the queue lived on the API side. The host service now owns the
+   * concurrency cap so this is just an alias for `run` — kept so existing
+   * callers (ChallengesService) don't need a code change.
+   */
+  runQueued(
+    input: SandboxRunInput,
+    audit?: { userId?: string; attemptId?: string },
+  ): Promise<SandboxRunResult> {
+    return this.run(input, audit);
   }
 
-  /**
-   * Spawn docker, pipe stdin in, collect output capped at STDOUT/STDERR cap.
-   * Hard-kill the container if wall-clock exceeds timeoutMs.
-   */
-  private execDocker(cmd: RunCommand, stdin: string, timeoutMs: number): Promise<SandboxRunResult> {
-    return new Promise((resolve) => {
-      const startedAt = Date.now();
-      const child = spawn('docker', cmd.argv, { stdio: ['pipe', 'pipe', 'pipe'] });
-      let stdout = '';
-      let stderr = '';
-      let stdoutBytes = 0;
-      let stderrBytes = 0;
-      let timedOut = false;
-
-      const killTimer = setTimeout(() => {
-        timedOut = true;
-        // SIGKILL the docker CLI; the container goes with it because the
-        // `-i` flag attaches stdio. docker's cleanup handler removes the
-        // container thanks to `--rm`.
-        child.kill('SIGKILL');
-      }, timeoutMs);
-
-      child.stdout.on('data', (chunk: Buffer) => {
-        if (stdoutBytes >= STDOUT_CAP_BYTES) return;
-        const take = chunk.subarray(0, STDOUT_CAP_BYTES - stdoutBytes);
-        stdout += take.toString('utf8');
-        stdoutBytes += take.length;
-      });
-      child.stderr.on('data', (chunk: Buffer) => {
-        if (stderrBytes >= STDERR_CAP_BYTES) return;
-        const take = chunk.subarray(0, STDERR_CAP_BYTES - stderrBytes);
-        stderr += take.toString('utf8');
-        stderrBytes += take.length;
-      });
-      child.on('error', (err) => {
-        clearTimeout(killTimer);
-        resolve({
-          status: 'SANDBOX_ERROR',
-          exitCode: null,
-          stdout,
-          stderr: stderr + '\n' + String(err),
-          durationMs: Date.now() - startedAt,
-        });
-      });
-      child.on('close', (code, signal) => {
-        clearTimeout(killTimer);
-        const durationMs = Date.now() - startedAt;
-        if (timedOut) {
-          resolve({ status: 'TIMEOUT', exitCode: null, stdout, stderr, durationMs });
-          return;
-        }
-        // Exit 124 is the sentinel the C++ shell-wrapper uses for "compile
-        // failed". Anything non-zero else is runtime error.
-        if (code === 124) {
-          resolve({ status: 'COMPILE_ERROR', exitCode: 124, stdout, stderr, durationMs });
-          return;
-        }
-        if (code !== 0 || signal) {
-          resolve({
-            status: 'RUNTIME_ERROR',
-            exitCode: code,
-            stdout,
-            stderr,
-            durationMs,
-          });
-          return;
-        }
-        resolve({ status: 'OK', exitCode: 0, stdout, stderr, durationMs });
+  private async callHost(
+    input: SandboxRunInput,
+    startedAt: number,
+  ): Promise<SandboxRunResult> {
+    const controller = new AbortController();
+    const abort = setTimeout(() => controller.abort(), HTTP_TIMEOUT_MS);
+    try {
+      const response = await fetch(`${this.hostUrl}/run`, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          'x-sandbox-token': this.authToken,
+        },
+        body: JSON.stringify(input),
+        signal: controller.signal,
       });
 
-      // Pipe stdin in one go. Member stdin is capped at 8KB upstream.
-      child.stdin.end(stdin);
-    });
+      if (response.status === 503) {
+        const body = (await response.json().catch(() => ({}))) as { error?: string };
+        return sandboxError(
+          body.error ?? 'sandbox queue full',
+          startedAt,
+        );
+      }
+      if (response.status === 401) {
+        return sandboxError('sandbox auth rejected (bad SANDBOX_AUTH_TOKEN)', startedAt);
+      }
+      if (!response.ok) {
+        const body = (await response.text().catch(() => '')).slice(0, 500);
+        return sandboxError(`sandbox host returned ${response.status}: ${body}`, startedAt);
+      }
+
+      const data = (await response.json()) as SandboxRunResult;
+      return data;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      return sandboxError(`sandbox host unreachable: ${message}`, startedAt);
+    } finally {
+      clearTimeout(abort);
+    }
   }
 
   private async logExecution(
@@ -244,6 +133,16 @@ export class SandboxService {
       },
     });
   }
+}
+
+function sandboxError(message: string, startedAt: number): SandboxRunResult {
+  return {
+    status: 'SANDBOX_ERROR',
+    exitCode: null,
+    stdout: '',
+    stderr: message,
+    durationMs: Date.now() - startedAt,
+  };
 }
 
 const sandboxStatusValues: SandboxStatus[] = ['OK', 'TIMEOUT', 'COMPILE_ERROR', 'RUNTIME_ERROR', 'SANDBOX_ERROR'];

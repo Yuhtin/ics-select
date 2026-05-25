@@ -49,8 +49,15 @@ const EnvSchema = z.object({
   EVOLUTION_API_KEY: z.string().optional(),
   EVOLUTION_INSTANCE: z.string().optional(),
   ADMIN_WHATSAPP_NUMBER: z.string().optional(),
-  // Sandbox / Challenge Mode. All optional with sane defaults so existing
-  // deployments don't break before the feature ramps. See docs/sandbox-setup.md.
+  // Sandbox / Challenge Mode. The API calls the sandbox-host-service via
+  // HTTP; the host service holds the docker socket. See docs/sandbox-setup.md.
+  // All optional with sane defaults so deploys without the feature still boot.
+  SANDBOX_HOST_URL: z.string().url().optional(),
+  SANDBOX_AUTH_TOKEN: z.string().min(16).optional(),
+  // SANDBOX_PYTHON_IMAGE / SANDBOX_CPP_IMAGE / SANDBOX_MAX_CONCURRENT /
+  // SANDBOX_QUEUE_TIMEOUT_MS are read by the host service now, not the API.
+  // Keep them recognized here only so a single .env file can configure both
+  // sides without spurious "unknown variable" warnings.
   SANDBOX_PYTHON_IMAGE: z.string().optional(),
   SANDBOX_CPP_IMAGE: z.string().optional(),
   SANDBOX_MAX_CONCURRENT: z.coerce.number().int().min(1).max(32).optional(),

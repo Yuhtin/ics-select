@@ -1,0 +1,44 @@
+[Unit]
+Description=ICS Select sandbox host service (member code runner)
+Documentation=https://github.com/yuhtin/ics-select/blob/main/docs/sandbox-setup.md
+After=docker.service
+Requires=docker.service
+PartOf=docker.service
+
+[Service]
+Type=simple
+Restart=on-failure
+RestartSec=10s
+TimeoutStopSec=40s
+
+# Auth token + tunables live here so they don't show up in `systemctl cat`.
+# File mode must be 0600 (only root can read).
+EnvironmentFile=/etc/ics-sandbox-host.env
+
+# Clean up any leftover container from a crash. The `|| true` form is built
+# into the leading `-` on this line — systemd ignores non-zero exit codes.
+ExecStartPre=-/usr/bin/docker rm -f ics-sandbox-host
+
+# `--init` gives us a proper PID 1 inside the container so signals to
+# `docker stop` are forwarded to node. `--restart=no` because systemd
+# manages restarts — we don't want docker fighting it.
+ExecStart=/usr/bin/docker run --rm \
+  --name ics-sandbox-host \
+  --init \
+  --restart=no \
+  -p 127.0.0.1:8787:8787 \
+  -e PORT=8787 \
+  -e HOST=0.0.0.0 \
+  -e SANDBOX_AUTH_TOKEN \
+  -e SANDBOX_MAX_CONCURRENT \
+  -e SANDBOX_QUEUE_TIMEOUT_MS \
+  -e SANDBOX_PYTHON_IMAGE \
+  -e SANDBOX_CPP_IMAGE \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v /tmp/ics-sandbox:/tmp/ics-sandbox \
+  ghcr.io/yuhtin/ics-sandbox-host:stable
+
+ExecStop=/usr/bin/docker stop --time=30 ics-sandbox-host
+
+[Install]
+WantedBy=multi-user.target

@@ -19,6 +19,7 @@ on:
     branches: [main]
     paths:
       - 'infra/sandbox/**'
+      - 'infra/sandbox-host-service/**'
       - '.github/workflows/sandbox-images.yml'
   schedule:
     # Sundays 06:00 UTC = 03:00 BRT. Runs a few hours before the VPS
@@ -42,11 +43,21 @@ jobs:
       matrix:
         include:
           - language: python
+            context: .
             dockerfile: infra/sandbox/Dockerfile.python
             image: ics-sandbox-python
           - language: cpp
+            context: .
             dockerfile: infra/sandbox/Dockerfile.cpp
             image: ics-sandbox-cpp
+          # The host service isn't a sandbox image — it's the privileged
+          # broker that calls `docker run` against the host daemon on behalf
+          # of the API container. Same build + scan + push pipeline so it
+          # gets the same Trivy gate.
+          - language: host
+            context: infra/sandbox-host-service
+            dockerfile: infra/sandbox-host-service/Dockerfile
+            image: ics-sandbox-host
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -70,7 +81,7 @@ jobs:
       - name: Build (local)
         uses: docker/build-push-action@v7
         with:
-          context: .
+          context: ${{ matrix.context }}
           file: ${{ matrix.dockerfile }}
           load: true
           tags: ${{ matrix.image }}:scan
@@ -105,7 +116,7 @@ jobs:
       - name: Push
         uses: docker/build-push-action@v7
         with:
-          context: .
+          context: ${{ matrix.context }}
           file: ${{ matrix.dockerfile }}
           push: true
           tags: |

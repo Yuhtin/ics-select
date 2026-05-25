@@ -24,6 +24,18 @@ updates:
       - 'sandbox'
       - 'dependencies'
 
+  - package-ecosystem: 'docker'
+    directory: '/infra/sandbox-host-service'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: 'chore(sandbox-host)'
+    labels:
+      - 'sandbox'
+      - 'dependencies'
+
   - package-ecosystem: 'github-actions'
     directory: '/'
     schedule:
