@@ -4,7 +4,7 @@
 #
 # Built by .github/workflows/sandbox-host-image.yml. Pulled by the host
 # via systemd (see infra/sandbox-host-service/systemd/ics-sandbox-host.service).
-FROM node:24-slim
+FROM node:26-slim
 
 # node:24-slim ships on an older Debian snapshot. Pull whatever security
 # patches Debian published since the upstream image was cut so the Trivy
