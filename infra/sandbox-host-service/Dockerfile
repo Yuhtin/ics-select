@@ -6,9 +6,13 @@
 # via systemd (see infra/sandbox-host-service/systemd/ics-sandbox-host.service).
 FROM node:24-slim
 
-# docker CLI (no engine — we talk to the host daemon via the mounted
+# node:24-slim ships on an older Debian snapshot. Pull whatever security
+# patches Debian published since the upstream image was cut so the Trivy
+# gate in CI doesn't keep failing on unpatched libgnutls30 / etc. Then
+# add docker CLI (no engine — we talk to the host daemon via the mounted
 # socket). Keep apt cache out of the image.
 RUN apt-get update \
+ && apt-get upgrade -y \
  && apt-get install -y --no-install-recommends \
       ca-certificates \
       curl \
