@@ -17,6 +17,10 @@ DROP TABLE IF EXISTS "ChallengeAttempt";
 
 DROP TABLE IF EXISTS "Problem";
 
+-- SandboxExecutionLog also holds a "ChallengeLanguage" column from the
+-- broker model — drop it before the enum to satisfy pg_depend.
+DROP TABLE IF EXISTS "SandboxExecutionLog";
+
 ALTER TABLE "LibraryItem" DROP COLUMN IF EXISTS "testCases";
 ALTER TABLE "LibraryItem" DROP COLUMN IF EXISTS "testCasesLanguages";
 
