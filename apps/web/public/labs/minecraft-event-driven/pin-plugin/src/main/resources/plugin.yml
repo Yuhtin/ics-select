@@ -1,0 +1,10 @@
+name: PinPlugin
+version: 1.0.0
+main: com.ics.lab.PinPlugin
+api-version: '1.21'
+description: Anti-scanbot · PIN de login (6769). Trava jogador no void até digitar o PIN. (ICS Lab)
+author: ICS Select
+commands:
+  pin:
+    description: Desbloqueia o player se o PIN for correto
+    usage: /pin <code>

@@ -24,6 +24,8 @@
     <module>scoreboard-plugin</module>
     <module>analytics-plugin</module>
     <module>bad-plugin</module>
+    <module>packetspy-plugin</module>
+    <module>pin-plugin</module>
   </modules>
 
   <repositories>

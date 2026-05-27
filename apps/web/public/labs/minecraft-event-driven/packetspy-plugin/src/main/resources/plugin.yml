@@ -1,0 +1,13 @@
+name: PacketSpyPlugin
+version: 1.0.0
+main: com.ics.lab.PacketSpyPlugin
+api-version: '1.21'
+description: Observatório de packets (proxy via Bukkit events). (ICS Lab)
+author: ICS Select
+commands:
+  readpacket:
+    description: Mostra contagem dos últimos 60s + último valor de um tipo de packet
+    usage: /readpacket <TYPE>
+  resumepackets:
+    description: Resumo de todos os tipos de packet observados nos últimos 60s
+    usage: /resumepackets

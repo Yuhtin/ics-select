@@ -96,6 +96,52 @@
     border-style: solid; border-width: 4px;
   }
 
+  /* Packet morph slides — byte-by-byte decode */
+  .byte-row {
+    display: flex; gap: 4px; justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .byte-cell {
+    width: 80px; height: 80px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 30px; font-weight: 700;
+    background: #0f0f10;
+    border: 2px solid #2a2a2e;
+    border-radius: 8px;
+    transition: border-color 0.5s ease, background 0.5s ease, box-shadow 0.5s ease;
+    color: #e5e5e5;
+  }
+  .byte-cell.b-length   { border-color: #c084fc; background: rgba(192,132,252,0.12); box-shadow: 0 0 20px rgba(192,132,252,0.25); color: #d8b4fe; }
+  .byte-cell.b-id       { border-color: #fb923c; background: rgba(251,146,60,0.12); box-shadow: 0 0 20px rgba(251,146,60,0.25); color: #fdba74; }
+  .byte-cell.b-payload  { border-color: #4ade80; background: rgba(74,222,128,0.10); box-shadow: 0 0 16px rgba(74,222,128,0.20); color: #86efac; }
+
+  .byte-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; letter-spacing: 0.25em; text-transform: uppercase;
+    text-align: center;
+  }
+  .byte-bracket {
+    height: 14px; position: relative;
+  }
+  .byte-bracket::before {
+    content: '';
+    position: absolute; left: 8px; right: 8px;
+    top: 50%; height: 2px;
+    background: currentColor;
+  }
+  .byte-bracket::after {
+    content: '';
+    position: absolute; left: 50%; top: 50%;
+    width: 2px; height: 8px;
+    background: currentColor; transform: translateX(-50%);
+  }
+  .byte-decode {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 16px; line-height: 1.5;
+    border-left: 3px solid;
+    padding-left: 16px;
+  }
+
   /* Print mode */
   @media print {
     @page { size: 1600px 900px; margin: 0; }
@@ -161,8 +207,36 @@ const slides = [
       { kw: 'Stream',         text: 'TCP entrega bytes em ordem. Não entrega "mensagens" — quem agrupa é a app' },
       { kw: 'Protocolo',      text: 'o contrato sobre o significado dos bytes (header de tamanho, ID, payload)' },
       { kw: 'Serialização',   text: 'como você transforma `{ name: "Davi" }` em bytes (JSON, Protobuf, binário próprio)' },
-      { kw: 'State',          text: 'mesmo byte ID pode querer dizer coisas diferentes em estados diferentes da conexão' },
+      { kw: 'Estado da conexão', text: 'a conexão tem fases (handshake → login → play). O MESMO byte `0x00` quer dizer coisa diferente em cada fase. Servidor mantém em qual fase cada player está' },
     ]},
+
+  { type: 'htmlDiagram', group: 'foundations',
+    title: 'Por que "estado" importa: o mesmo byte em fases diferentes',
+    diagram: `
+      <div class="flex flex-col gap-3 max-w-[1200px] w-full">
+        <div class="grid grid-cols-3 gap-3">
+          <div class="box" style="border-color: #a3a3a3;">
+            <div class="box-eyebrow" style="color: #a3a3a3;">FASE 1 · HANDSHAKE</div>
+            <div class="box-body font-semibold text-[16px]">byte ID <span class="mono text-purple-400">0x00</span></div>
+            <div class="mono text-[11px] text-neutral-500 mt-2">significa: "Iniciar handshake"<br/>payload: versão do protocolo + endereço + porta</div>
+          </div>
+          <div class="box" style="border-color: #a3a3a3;">
+            <div class="box-eyebrow" style="color: #a3a3a3;">FASE 2 · LOGIN</div>
+            <div class="box-body font-semibold text-[16px]">byte ID <span class="mono text-purple-400">0x00</span></div>
+            <div class="mono text-[11px] text-neutral-500 mt-2">significa: "Login Start"<br/>payload: nome do player + UUID</div>
+          </div>
+          <div class="box" style="border-color: #a3a3a3;">
+            <div class="box-eyebrow" style="color: #a3a3a3;">FASE 3 · PLAY</div>
+            <div class="box-body font-semibold text-[16px]">byte ID <span class="mono text-purple-400">0x00</span></div>
+            <div class="mono text-[11px] text-neutral-500 mt-2">significa: "Confirm Teleportation"<br/>payload: ID do teleport pendente</div>
+          </div>
+        </div>
+        <div class="mono text-[13px] text-neutral-400 text-center mt-4">
+          <span class="text-purple-400">Sem rastrear o estado, o byte é ambíguo.</span> O servidor mantém um <code class="mono text-white">Map&lt;Socket, ConnectionState&gt;</code><br/>
+          e decodifica cada packet usando o estado ATUAL daquela conexão específica.
+        </div>
+      </div>
+    `},
   { type: 'compare', group: 'foundations',
     title: 'Formato · vs · Protocolo',
     columns: [
@@ -295,18 +369,40 @@ const slides = [
       { line: '}' },
     ]},
 
-  // LIVE DEMO 1: Wireshark
+  // ─── 5 SLIDES MORPH: decode de Keep Alive byte por byte ───────────
+  { type: 'packetMorph', group: 'packets', beat: 1, stage: 1,
+    title: 'Um packet real, byte por byte',
+    subtitle: 'Capturado de um Keep Alive clientbound. 10 bytes saindo do servidor pra cada player a cada segundo. O que eles significam?' },
+
+  { type: 'packetMorph', group: 'packets', beat: 1, stage: 2,
+    title: 'Byte 0 · o tamanho do que vem a seguir',
+    subtitle: 'Primeiro VarInt do stream. Sempre. Diz quantos bytes formam ESSE packet — sem isso, o leitor não sabe onde termina.' },
+
+  { type: 'packetMorph', group: 'packets', beat: 1, stage: 3,
+    title: 'Byte 1 · que tipo de packet é esse',
+    subtitle: 'O ID combinado com o ESTADO da conexão (lembra do slide foundations?) determina o significado. Estado=Play + ID=0x27 → Keep Alive.' },
+
+  { type: 'packetMorph', group: 'packets', beat: 1, stage: 4,
+    title: 'Bytes 2-9 · o payload, formato definido pelo ID',
+    subtitle: 'Cada tipo de packet tem um formato próprio pro payload. Keep Alive é só um long (8 bytes) — número aleatório que o cliente vai devolver pra provar que tá vivo.' },
+
+  { type: 'packetMorph', group: 'packets', beat: 1, stage: 5,
+    title: 'Os 10 bytes, decodificados.',
+    subtitle: 'É assim que QUALQUER packet do Minecraft funciona. Mesmo loop: length → id → payload. Diferença entre Keep Alive (10 bytes) e Chunk Data (~1KB) é só o tamanho.' },
+
+  // LIVE DEMO 1: PacketSpy plugin (substitui Wireshark)
   { type: 'liveDemo', group: 'live', beat: 1,
-    app: 'WIRESHARK + MINECRAFT',
-    title: 'Hora de ver no Wireshark.',
-    subtitle: 'Os bytes existem de verdade. Bora abrir o filtro e ver eles passando.',
+    app: 'CONSOLE · /resumepackets',
+    title: 'Hora de ver os packets de verdade.',
+    subtitle: 'A gente escreveu um plugin que conta cada tipo de packet recebido nos últimos 60s. Bora ver no servidor de vocês.',
     steps: [
-      'Wireshark aberto. Filtro: tcp.port == 25565',
-      'Abre o client Minecraft, digita localhost, aperta Connect',
-      'Aponta os 4 primeiros packets: Handshake → Login Start → Login Success → Play',
-      'Mostra um packet de Player Position chegando 20×/segundo',
+      'Voluntário entra no servidor (212.38.89.33)',
+      'Pede pra ele andar uns segundos, quebrar um bloco, falar no chat',
+      'No console (ou /resumepackets no chat): mostra o ranking ao vivo',
+      'Aponta PLAYER_POSITION dominando (centenas/min) — esse é o packet mais frequente',
+      '/readpacket CHAT_MESSAGE — mostra contagem + última mensagem',
     ],
-    backTo: 'Próximo slide: ainda em Packets · cadência',
+    backTo: 'Próximo slide: cadência (volume real de packets em gameplay)',
   },
 
   { type: 'list', group: 'packets', beat: 1,
@@ -466,6 +562,149 @@ const slides = [
       { kw: 'HIGHEST', text: 'último a poder modificar' },
       { kw: 'MONITOR', text: 'observa o estado final · NUNCA modifica · estatísticas e logging' },
     ]},
+
+  // ─── Como o dispatcher funciona por trás (slide CS-rigoroso)
+  { type: 'htmlDiagram', group: 'events', beat: 3,
+    title: 'Como o dispatcher itera · stable sort O(k log k) por priority',
+    diagram: `
+      <div class="flex flex-col gap-4 max-w-[1400px] w-full">
+        <!-- Pseudocódigo -->
+        <div class="grid grid-cols-2 gap-6 items-start">
+          <div class="flex flex-col gap-3">
+            <div class="mono text-[11px] uppercase tracking-[0.25em] text-neutral-500">algoritmo · pseudocode</div>
+            <div class="code text-[14px] leading-[1.7]" style="padding: 20px 24px; max-width: 100%;">
+              <div><span class="kw">function</span> <span class="var">dispatch</span>(<span class="var">event</span>):</div>
+              <div><span class="ind">  </span><span class="kw">let</span> <span class="var">listeners</span> = registry[event.type]  <span class="com">// O(1) lookup</span></div>
+              <div><span class="ind">  </span><span class="kw">sort</span>(listeners, <span class="kw">by</span>: l → l.priority)  <span class="com">// stable, O(k log k)</span></div>
+              <div></div>
+              <div><span class="ind">  </span><span class="kw">for</span> l <span class="kw">in</span> listeners:</div>
+              <div><span class="ind">    </span><span class="kw">if</span> event.cancelled <span class="kw">and</span> <span class="kw">not</span> l.ignoreCancelled:</div>
+              <div><span class="ind">      </span><span class="kw">continue</span></div>
+              <div><span class="ind">    </span><span class="kw">try</span>: l.invoke(event)</div>
+              <div><span class="ind">    </span><span class="kw">catch</span> e: log(e); <span class="com">// isola falha do listener</span></div>
+            </div>
+          </div>
+          <!-- Buckets sorted -->
+          <div class="flex flex-col gap-3">
+            <div class="mono text-[11px] uppercase tracking-[0.25em] text-neutral-500">6 buckets · iteração na ordem do enum</div>
+            <div class="grid grid-cols-6 gap-1">
+              ${[
+                {n: 'LOWEST',  v: 0, ex: 'anti-cheat'},
+                {n: 'LOW',     v: 1, ex: 'permissions'},
+                {n: 'NORMAL',  v: 2, ex: 'welcome'},
+                {n: 'HIGH',    v: 3, ex: 'economy'},
+                {n: 'HIGHEST', v: 4, ex: 'override'},
+                {n: 'MONITOR', v: 5, ex: 'analytics'}
+              ].map(b => `
+                <div class="box" style="border-color: #4ade80; padding: 8px;">
+                  <div class="mono text-[9px]" style="color: #4ade80;">[${b.v}]</div>
+                  <div class="text-[12px] font-bold text-white">${b.n}</div>
+                  <div class="mono text-[9px] text-neutral-500">${b.ex}</div>
+                </div>
+              `).join('')}
+            </div>
+            <div class="mono text-[12px] text-neutral-400 mt-2">
+              Dentro do MESMO bucket: ordem de registro (FIFO) · <span class="text-yellow-400">não-garantida pela spec</span><br/>
+              ∴ não dependa de ordem entre listeners de mesma prioridade.
+            </div>
+          </div>
+        </div>
+      </div>
+    `},
+
+  // ─── Plugin load = topological sort (Kahn) — quando isso aparece em CS de verdade
+  { type: 'htmlDiagram', group: 'events', beat: 3,
+    title: 'Plugin LOAD order · topological sort do DAG de depend:',
+    diagram: `
+      <div class="flex flex-col gap-4 max-w-[1400px] w-full">
+        <p class="display text-[18px] text-neutral-300 leading-snug max-w-[1100px]">
+          <span class="text-yellow-400">Spoiler de CS:</span> dispatch de evento é stable sort, mas o LOAD ORDER dos plugins é
+          <span class="text-emerald-400">topological sort do grafo de <code class="mono">depend:</code></span> via algoritmo de Kahn.
+        </p>
+
+        <div class="grid grid-cols-12 gap-6 items-start">
+          <!-- DAG visual -->
+          <div class="col-span-7 flex flex-col gap-3">
+            <div class="mono text-[11px] uppercase tracking-[0.25em] text-neutral-500">DAG · setas = "depend: [...]"</div>
+            <div class="relative" style="height: 320px;">
+              <!-- Plugins / nodes -->
+              <div class="box absolute" style="top: 10px; left: 20px; width: 180px; border-color: #4ade80;">
+                <div class="box-eyebrow" style="color: #4ade80;">CORE</div>
+                <div class="box-body font-semibold text-[14px]">EcoCore</div>
+                <div class="mono text-[10px] text-neutral-500">depend: []</div>
+              </div>
+              <div class="box absolute" style="top: 10px; left: 280px; width: 180px; border-color: #4ade80;">
+                <div class="box-eyebrow" style="color: #4ade80;">CORE</div>
+                <div class="box-body font-semibold text-[14px]">PermissionsCore</div>
+                <div class="mono text-[10px] text-neutral-500">depend: []</div>
+              </div>
+              <div class="box absolute" style="top: 130px; left: 20px; width: 180px; border-color: #fb923c;">
+                <div class="box-eyebrow" style="color: #fb923c;">MID</div>
+                <div class="box-body font-semibold text-[14px]">ShopPlugin</div>
+                <div class="mono text-[10px] text-neutral-500">depend: [EcoCore]</div>
+              </div>
+              <div class="box absolute" style="top: 130px; left: 280px; width: 200px; border-color: #fb923c;">
+                <div class="box-eyebrow" style="color: #fb923c;">MID</div>
+                <div class="box-body font-semibold text-[14px]">AntiCheat</div>
+                <div class="mono text-[10px] text-neutral-500">depend: [PermissionsCore]</div>
+              </div>
+              <div class="box absolute" style="top: 250px; left: 150px; width: 220px; border-color: #c084fc;">
+                <div class="box-eyebrow" style="color: #c084fc;">TOP</div>
+                <div class="box-body font-semibold text-[14px]">WelcomePlugin</div>
+                <div class="mono text-[10px] text-neutral-500">depend: [ShopPlugin, AntiCheat]</div>
+              </div>
+              <!-- Edges (simulated with absolute positioned divs) -->
+              <svg class="absolute inset-0" style="width: 100%; height: 100%; pointer-events: none;" viewBox="0 0 700 320" preserveAspectRatio="none">
+                <defs>
+                  <marker id="arrow-up" viewBox="0 0 10 10" refX="5" refY="0" markerWidth="6" markerHeight="6" orient="auto">
+                    <path d="M0,10 L5,0 L10,10 z" fill="#525252"/>
+                  </marker>
+                </defs>
+                <line x1="110" y1="130" x2="110" y2="60" stroke="#525252" stroke-width="2" marker-end="url(#arrow-up)"/>
+                <line x1="370" y1="130" x2="370" y2="60" stroke="#525252" stroke-width="2" marker-end="url(#arrow-up)"/>
+                <line x1="220" y1="250" x2="120" y2="190" stroke="#525252" stroke-width="2" marker-end="url(#arrow-up)"/>
+                <line x1="290" y1="250" x2="380" y2="190" stroke="#525252" stroke-width="2" marker-end="url(#arrow-up)"/>
+              </svg>
+            </div>
+          </div>
+
+          <!-- Kahn's algorithm -->
+          <div class="col-span-5 flex flex-col gap-3">
+            <div class="mono text-[11px] uppercase tracking-[0.25em] text-neutral-500">Kahn · pseudocode</div>
+            <div class="code text-[13px] leading-[1.65]" style="padding: 16px 20px;">
+              <div><span class="kw">function</span> <span class="var">loadOrder</span>(<span class="var">plugins</span>):</div>
+              <div><span class="ind">  </span><span class="var">G</span> = build_dag(plugins)</div>
+              <div><span class="ind">  </span><span class="var">queue</span> = [p <span class="kw">for</span> p <span class="kw">in</span> G <span class="kw">if</span> in_degree(p)==0]</div>
+              <div><span class="ind">  </span><span class="var">order</span> = []</div>
+              <div></div>
+              <div><span class="ind">  </span><span class="kw">while</span> queue:</div>
+              <div><span class="ind">    </span>n = queue.pop()</div>
+              <div><span class="ind">    </span>order.append(n)</div>
+              <div><span class="ind">    </span><span class="kw">for</span> m <span class="kw">in</span> neighbors(n):</div>
+              <div><span class="ind">      </span>remove edge n→m</div>
+              <div><span class="ind">      </span><span class="kw">if</span> in_degree(m)==0:</div>
+              <div><span class="ind">        </span>queue.push(m)</div>
+              <div></div>
+              <div><span class="ind">  </span><span class="kw">if</span> |order| &lt; |plugins|:</div>
+              <div><span class="ind">    </span><span class="kw">raise</span> CyclicDependency</div>
+              <div><span class="ind">  </span><span class="kw">return</span> order  <span class="com">// O(V+E)</span></div>
+            </div>
+            <div class="mono text-[12px] text-neutral-400 mt-2 leading-relaxed">
+              Resultado pra esse DAG:<br/>
+              <span class="text-emerald-400">EcoCore</span> → <span class="text-emerald-400">PermissionsCore</span> →
+              <span class="text-orange-400">ShopPlugin</span> → <span class="text-orange-400">AntiCheat</span> →
+              <span class="text-purple-400">WelcomePlugin</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="mono text-[12px] text-neutral-500 mt-2 max-w-[1100px] leading-relaxed">
+          <span class="text-white">Por que CS importa aqui:</span> ciclo em <code class="mono">depend:</code> faz Kahn detectar e abortar.
+          É a mesma estrutura que aparece em build systems (make, bazel), em resolvers de package
+          (npm, cargo), e em scheduling de DAG workflows (Airflow). Aprendeu uma vez, vê em todo lugar.
+        </div>
+      </div>
+    `},
 
   { type: 'hook', group: 'events', beat: 3,
     title: 'Cancellable.<br/><code class="mono text-green-400">event.setCancelled(true)</code><br/>= a alavanca mais poderosa do Bukkit.',
@@ -1126,6 +1365,102 @@ function r_compare3(s) {
   `;
 }
 
+function r_packetMorph(s) {
+  const g = GROUP[s.group];
+  // Bytes que sempre aparecem (10 bytes do Keep Alive). Stage controla os layers acima.
+  // Layout: [length] [id] [.... 8 bytes payload ....]
+  const bytes = ['09', '27', '00', '00', '00', '00', '7F', 'FF', '00', '01'];
+  // Region: 0=length, 1=id, 2..9=payload
+  const regionOf = (i) => (i === 0 ? 'length' : i === 1 ? 'id' : 'payload');
+  // O highlight ativa quando a stage atinge esse layer
+  const showLengthLayer  = s.stage >= 2;
+  const showIdLayer      = s.stage >= 3;
+  const showPayloadLayer = s.stage >= 4;
+  const showMeaning      = s.stage >= 5;
+
+  // Decode lines (revealed progressivamente)
+  const decodes = [];
+  if (showLengthLayer)  decodes.push({ color: '#c084fc', label: 'LENGTH', text: '<span style="color:#d8b4fe">0x09</span> = 9 bytes seguem (ID + payload)' });
+  if (showIdLayer)      decodes.push({ color: '#fb923c', label: 'PACKET ID', text: '<span style="color:#fdba74">0x27</span> = 39 · lookup na tabela Play/clientbound → <span class="text-white font-bold">KEEP_ALIVE</span>' });
+  if (showPayloadLayer) decodes.push({ color: '#4ade80', label: 'PAYLOAD · long (8 bytes)', text: '<span style="color:#86efac">0x0000_0000_7FFF_0001</span> = 2.147.549.185 (keepAliveId · número aleatório)' });
+
+  // Brackets above bytes
+  const lengthBracket = `<div style="grid-column: 1 / span 1;">
+    ${showLengthLayer ? `<div class="byte-label anim-fade" style="color:#c084fc; margin-bottom: 4px;">length</div><div class="byte-bracket anim-fade" style="color:#c084fc;"></div>` : `<div style="height: 32px;"></div>`}
+  </div>`;
+  const idBracket = `<div style="grid-column: 2 / span 1;">
+    ${showIdLayer ? `<div class="byte-label anim-fade" style="color:#fb923c; margin-bottom: 4px;">packet id</div><div class="byte-bracket anim-fade" style="color:#fb923c;"></div>` : `<div style="height: 32px;"></div>`}
+  </div>`;
+  const payloadBracket = `<div style="grid-column: 3 / span 8;">
+    ${showPayloadLayer ? `<div class="byte-label anim-fade" style="color:#4ade80; margin-bottom: 4px;">payload · long (8 bytes)</div><div class="byte-bracket anim-fade" style="color:#4ade80;"></div>` : `<div style="height: 32px;"></div>`}
+  </div>`;
+
+  return `
+    <section class="slide w-full h-full overflow-hidden bg-black" data-group="${s.group}">
+      ${ambientGlow(s.group, 'right')}
+      ${header(s.group, s.beat)}
+      <div class="relative z-10 w-full max-w-[1400px] mx-auto px-12 flex flex-col gap-8 self-center justify-center pt-20 pb-20">
+        <div class="flex items-baseline justify-between anim">
+          <h2 class="display text-[36px] font-semibold text-white" style="border-left: 3px solid ${g.accent}; padding-left: 20px;">${s.title}</h2>
+          <span class="mono text-[11px] uppercase tracking-[0.3em]" style="color: ${g.accent};">Stage ${s.stage} / 5</span>
+        </div>
+
+        ${s.subtitle ? `<p class="display text-neutral-300 text-[20px] leading-snug max-w-[1100px] anim delay-1">${s.subtitle}</p>` : ''}
+
+        <div class="anim-scale delay-1 flex flex-col items-center gap-2 mt-4">
+          <!-- Brackets acima dos bytes -->
+          <div style="display: grid; grid-template-columns: repeat(10, 80px); gap: 4px;">
+            ${lengthBracket}
+            ${idBracket}
+            ${payloadBracket}
+          </div>
+          <!-- Linha de bytes (sempre visível) -->
+          <div class="byte-row">
+            ${bytes.map((b, i) => {
+              const cls = showLengthLayer && i === 0 ? 'b-length'
+                        : showIdLayer && i === 1 ? 'b-id'
+                        : showPayloadLayer && i >= 2 ? 'b-payload'
+                        : '';
+              return `<div class="byte-cell ${cls}">${b}</div>`;
+            }).join('')}
+          </div>
+          <!-- Index hex below -->
+          <div style="display: grid; grid-template-columns: repeat(10, 80px); gap: 4px; margin-top: 4px;">
+            ${bytes.map((b, i) => `<div class="mono text-[10px] text-neutral-600 text-center">byte ${i}</div>`).join('')}
+          </div>
+        </div>
+
+        ${decodes.length > 0 ? `
+          <div class="stagger flex flex-col gap-3 mt-4 max-w-[1100px]">
+            ${decodes.map(d => `
+              <div class="byte-decode" style="border-color: ${d.color};">
+                <div class="mono text-[10px] uppercase tracking-[0.25em]" style="color: ${d.color};">${d.label}</div>
+                <div class="text-neutral-200">${d.text}</div>
+              </div>
+            `).join('')}
+          </div>
+        ` : ''}
+
+        ${showMeaning ? `
+          <div class="anim-fade delay-2 mt-8 pt-6 border-t border-neutral-800">
+            <div class="mono text-[12px] uppercase tracking-[0.3em] text-neutral-500 mb-3">significado</div>
+            <h3 class="display text-[44px] font-bold text-white leading-tight">
+              <span style="color: ${g.accent};">Keep Alive</span> · "você ainda tá aí?"
+            </h3>
+            <p class="display text-[20px] text-neutral-400 leading-snug mt-3 max-w-[1100px]">
+              Servidor manda esse packet a cada <span class="text-white">1 segundo (20 ticks)</span>.
+              Cliente devolve o mesmo <code class="mono text-neutral-200">keepAliveId</code>.
+              Sem resposta em 30s → <span class="text-red-400">disconnect</span>.
+              Esses 10 bytes são <span class="text-white">um dos packets mais frequentes no fio</span> durante gameplay.
+            </p>
+          </div>
+        ` : ''}
+      </div>
+      ${footer(s.group)}
+    </section>
+  `;
+}
+
 function r_htmlDiagram(s) {
   const g = GROUP[s.group];
   return `
@@ -1221,6 +1556,7 @@ const RENDERERS = {
   compare: r_compare,
   compare3: r_compare3,
   htmlDiagram: r_htmlDiagram,
+  packetMorph: r_packetMorph,
   liveDemo: r_liveDemo,
   closing: r_closing,
 };
