@@ -8,6 +8,10 @@ commands:
   spawn:
     description: Teleporta pro spawn do mundo
     usage: /spawn
+  setspawn:
+    description: Define o spawn (admin · preserva yaw/pitch)
+    usage: /setspawn
+    permission: ics.admin
   sethome:
     description: Define seu home
     usage: /sethome

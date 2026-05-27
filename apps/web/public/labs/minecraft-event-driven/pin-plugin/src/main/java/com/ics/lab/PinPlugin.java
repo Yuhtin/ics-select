@@ -205,19 +205,37 @@ public class PinPlugin extends JavaPlugin implements Listener {
 
         // Bots de stress test ("Bot###") vão pra uma região contida (bot pen)
         // pra concentrar os packets visualmente e não bagunçar a lobby.
-        // Players reais vão pro spawn do mundo.
+        // Players reais vão pro spawn custom do IcsEssentials (com yaw/pitch
+        // preservados), com fallback pro worldSpawn se o plugin não tiver
+        // setado.
         Location dest;
         if (p.getName().matches("Bot\\d+")) {
             double x = 37 + Math.random() * 30;
             double z = 38 + Math.random() * 28;
             dest = new Location(p.getWorld(), x, 8, z);
         } else {
-            dest = p.getWorld().getSpawnLocation();
+            dest = resolveSpawn(p);
         }
         p.teleport(dest);
 
         // Clear title (sem mensagem de "unlocked" — neutralidade total)
         p.clearTitle();
         getLogger().info("[Unlock] " + p.getName() + " (" + id + ") destrancou");
+    }
+
+    /**
+     * Tenta usar o spawn do IcsEssentials (com yaw/pitch). Fallback: worldSpawn.
+     * Sem hard dependency entre plugins — só usa se IcsEssentials estiver carregado.
+     */
+    private Location resolveSpawn(Player p) {
+        org.bukkit.plugin.Plugin ess = Bukkit.getPluginManager().getPlugin("IcsEssentials");
+        if (ess != null && ess.isEnabled()) {
+            try {
+                java.lang.reflect.Method m = ess.getClass().getMethod("getCustomSpawn", org.bukkit.World.class);
+                Object result = m.invoke(ess, p.getWorld());
+                if (result instanceof Location loc) return loc;
+            } catch (ReflectiveOperationException ignored) {}
+        }
+        return p.getWorld().getSpawnLocation();
     }
 }

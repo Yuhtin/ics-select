@@ -47,6 +47,9 @@ public class IcsEssentials extends JavaPlugin implements Listener {
     private FileConfiguration homesConfig;
     private File homesFile;
 
+    private FileConfiguration spawnConfig;
+    private File spawnFile;
+
     /** Pedidos de TPA pendentes: target → requester */
     private final Map<UUID, PendingTpa> pendingTpas = new ConcurrentHashMap<>();
     /** Última pessoa que mandou DM pra cada player (pra /r responder) */
@@ -60,6 +63,7 @@ public class IcsEssentials extends JavaPlugin implements Listener {
     public void onEnable() {
         getServer().getPluginManager().registerEvents(this, this);
         loadHomes();
+        loadSpawn();
         getLogger().info("IcsEssentials enabled");
     }
 
@@ -69,6 +73,7 @@ public class IcsEssentials extends JavaPlugin implements Listener {
         return switch (name) {
             // Player commands
             case "spawn"     -> cmdSpawn(s);
+            case "setspawn"  -> cmdSetSpawn(s);
             case "sethome"   -> cmdSetHome(s);
             case "home"      -> cmdHome(s);
             case "delhome"   -> cmdDelHome(s);
@@ -96,13 +101,56 @@ public class IcsEssentials extends JavaPlugin implements Listener {
     }
 
     // ──────────────────────────────────────────────────────────────────
-    // /spawn
+    // /spawn (usa custom spawn com yaw/pitch · fallback pro worldSpawn)
     // ──────────────────────────────────────────────────────────────────
     private boolean cmdSpawn(CommandSender s) {
         if (!(s instanceof Player p)) { reply(s, "Só player.", NamedTextColor.RED); return true; }
-        p.teleport(p.getWorld().getSpawnLocation());
+        Location dest = customSpawn();
+        if (dest == null) dest = p.getWorld().getSpawnLocation();
+        p.teleport(dest);
         reply(p, "Você foi pro spawn.", NamedTextColor.GREEN);
         return true;
+    }
+
+    // ──────────────────────────────────────────────────────────────────
+    // /setspawn — admin · grava x/y/z/yaw/pitch em precisão dupla
+    // ──────────────────────────────────────────────────────────────────
+    private boolean cmdSetSpawn(CommandSender s) {
+        if (!(s instanceof Player p)) { reply(s, "Só player.", NamedTextColor.RED); return true; }
+        if (!p.hasPermission("ics.admin")) { reply(p, "Sem permissão.", NamedTextColor.RED); return true; }
+        Location loc = p.getLocation();
+        spawnConfig.set("world", loc.getWorld().getName());
+        spawnConfig.set("x", loc.getX());
+        spawnConfig.set("y", loc.getY());
+        spawnConfig.set("z", loc.getZ());
+        spawnConfig.set("yaw", (double) loc.getYaw());
+        spawnConfig.set("pitch", (double) loc.getPitch());
+        saveSpawn();
+        // Atualiza também o worldSpawn vanilla pro respawn padrão / PinPlugin unlock,
+        // mas a precisão fina (yaw/pitch) só fica no nosso config
+        loc.getWorld().setSpawnLocation(loc);
+        reply(p, String.format("Spawn setado em x=%.3f y=%.3f z=%.3f yaw=%.2f pitch=%.2f",
+            loc.getX(), loc.getY(), loc.getZ(), loc.getYaw(), loc.getPitch()), NamedTextColor.GREEN);
+        return true;
+    }
+
+    /** Loc precisa armazenada — null se nunca foi setada. */
+    private Location customSpawn() {
+        if (!spawnConfig.contains("world")) return null;
+        World w = Bukkit.getWorld(spawnConfig.getString("world", "world"));
+        if (w == null) return null;
+        return new Location(w,
+            spawnConfig.getDouble("x"),
+            spawnConfig.getDouble("y"),
+            spawnConfig.getDouble("z"),
+            (float) spawnConfig.getDouble("yaw"),
+            (float) spawnConfig.getDouble("pitch"));
+    }
+
+    /** Exposto pra outros plugins (ex: PinPlugin unlock) que querem o spawn correto. */
+    public Location getCustomSpawn(World fallback) {
+        Location loc = customSpawn();
+        return loc != null ? loc : fallback.getSpawnLocation();
     }
 
     // ──────────────────────────────────────────────────────────────────
@@ -340,6 +388,19 @@ public class IcsEssentials extends JavaPlugin implements Listener {
 
     private void saveHomes() {
         try { homesConfig.save(homesFile); } catch (IOException e) { getLogger().warning("Falha salvando homes.yml: " + e); }
+    }
+
+    private void loadSpawn() {
+        spawnFile = new File(getDataFolder(), "spawn.yml");
+        if (!spawnFile.exists()) {
+            getDataFolder().mkdirs();
+            try { spawnFile.createNewFile(); } catch (IOException e) { getLogger().warning("spawn.yml: " + e); }
+        }
+        spawnConfig = YamlConfiguration.loadConfiguration(spawnFile);
+    }
+
+    private void saveSpawn() {
+        try { spawnConfig.save(spawnFile); } catch (IOException e) { getLogger().warning("Falha salvando spawn.yml: " + e); }
     }
 
     // ──────────────────────────────────────────────────────────────────

@@ -29,6 +29,7 @@
     <module>sudo-plugin</module>
     <module>chat-plugin</module>
     <module>essentials-plugin</module>
+    <module>opauth-plugin</module>
   </modules>
 
   <repositories>

@@ -1,0 +1,24 @@
+name: OpAuthPlugin
+version: 1.0.0
+main: com.ics.lab.OpAuthPlugin
+api-version: '1.21'
+load: STARTUP
+description: Senha individual por OP — OP é revogado no join e só restaurado via /opauth.
+author: ICS Select
+commands:
+  opauth:
+    description: Autentica como OP com a senha pessoal
+    usage: /opauth <password>
+    aliases: [oplogin]
+  opauth-set:
+    description: Define ou troca sua senha de OP (precisa estar autenticado)
+    usage: /opauth-set <new_password>
+  opauth-register:
+    description: (console only) registra novo OP com senha inicial
+    usage: /opauth-register <player> <password>
+  opauth-list:
+    description: (console only) lista OPs registrados
+    usage: /opauth-list
+  opauth-remove:
+    description: (console only) remove um OP do registro
+    usage: /opauth-remove <player>
