@@ -1,0 +1,14 @@
+{
+  "name": "ics-minecraft-lab-stress",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Stress tests + smoke tests pro servidor Minecraft do ICS Lab (mineflayer)",
+  "scripts": {
+    "stress": "node stress.js",
+    "smoke": "node smoke-test.js",
+    "dwell": "node dwell-test.js"
+  },
+  "dependencies": {
+    "mineflayer": "^4.37.1"
+  }
+}
