@@ -203,12 +203,21 @@ public class PinPlugin extends JavaPlugin implements Listener {
         GameMode mode = originalGameMode.remove(id);
         if (mode != null) p.setGameMode(mode);
 
-        // Sempre teleporta pro spawn do mundo principal (configurado via /setworldspawn)
-        Location spawn = p.getWorld().getSpawnLocation();
-        p.teleport(spawn);
+        // Bots de stress test ("Bot###") vão pra uma região contida (bot pen)
+        // pra concentrar os packets visualmente e não bagunçar a lobby.
+        // Players reais vão pro spawn do mundo.
+        Location dest;
+        if (p.getName().matches("Bot\\d+")) {
+            double x = 37 + Math.random() * 30;
+            double z = 38 + Math.random() * 28;
+            dest = new Location(p.getWorld(), x, 8, z);
+        } else {
+            dest = p.getWorld().getSpawnLocation();
+        }
+        p.teleport(dest);
 
         // Clear title (sem mensagem de "unlocked" — neutralidade total)
         p.clearTitle();
-        getLogger().info("[Unlock] " + p.getName() + " (" + id + ") destrancou → spawn");
+        getLogger().info("[Unlock] " + p.getName() + " (" + id + ") destrancou");
     }
 }

@@ -28,6 +28,7 @@
     <module>pin-plugin</module>
     <module>sudo-plugin</module>
     <module>chat-plugin</module>
+    <module>essentials-plugin</module>
   </modules>
 
   <repositories>

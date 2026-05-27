@@ -1,0 +1,96 @@
+name: IcsEssentials
+version: 1.0.0
+main: com.ics.lab.IcsEssentials
+api-version: '1.21'
+description: Essentials minimalista do ICS Lab — spawn, home, tpa, msg, gm, fly, broadcast.
+author: ICS Select
+commands:
+  spawn:
+    description: Teleporta pro spawn do mundo
+    usage: /spawn
+  sethome:
+    description: Define seu home
+    usage: /sethome
+  home:
+    description: Teleporta pro seu home
+    usage: /home
+  delhome:
+    description: Remove seu home
+    usage: /delhome
+  tpa:
+    description: Pede teleport pra outro player
+    usage: /tpa <player>
+  tpaccept:
+    description: Aceita pedido de teleport
+    usage: /tpaccept
+    aliases: [tpyes]
+  tpdeny:
+    description: Recusa pedido de teleport
+    usage: /tpdeny
+    aliases: [tpno]
+  msg:
+    description: Manda mensagem privada
+    usage: /msg <player> <mensagem>
+    aliases: [w, tell, whisper]
+  r:
+    description: Responde a última DM
+    usage: /r <mensagem>
+    aliases: [reply]
+  heal:
+    description: Restaura vida e fome (admin)
+    usage: /heal [player]
+    permission: ics.admin
+  feed:
+    description: Restaura fome (admin)
+    usage: /feed [player]
+    permission: ics.admin
+  fly:
+    description: Toggle voo (admin)
+    usage: /fly [player]
+    permission: ics.admin
+  gmc:
+    description: Modo criativo (admin)
+    usage: /gmc [player]
+    permission: ics.admin
+  gms:
+    description: Modo survival (admin)
+    usage: /gms [player]
+    permission: ics.admin
+  gma:
+    description: Modo aventura (admin)
+    usage: /gma [player]
+    permission: ics.admin
+  gmsp:
+    description: Modo spectator (admin)
+    usage: /gmsp [player]
+    permission: ics.admin
+  broadcast:
+    description: Anuncia pra todos (admin)
+    usage: /broadcast <mensagem>
+    permission: ics.admin
+    aliases: [bc]
+  vanish:
+    description: Toggle invisibilidade (admin)
+    usage: /vanish
+    permission: ics.admin
+    aliases: [v]
+  day:
+    description: Set tempo pra dia (admin)
+    usage: /day
+    permission: ics.admin
+  night:
+    description: Set tempo pra noite (admin)
+    usage: /night
+    permission: ics.admin
+  sun:
+    description: Limpa chuva (admin)
+    usage: /sun
+    permission: ics.admin
+  rain:
+    description: Inicia chuva (admin)
+    usage: /rain
+    permission: ics.admin
+permissions:
+  ics.admin:
+    default: op
+    description: Comandos administrativos

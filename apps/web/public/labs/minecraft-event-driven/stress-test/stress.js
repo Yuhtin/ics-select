@@ -67,7 +67,9 @@ function spawn(i) {
       try { bot.chat(PIN); } catch (e) {}
     }, 1500);
 
-    // inicia chaos após 3s (1.5s pro PIN viajar + processar + restore)
+    // inicia chaos após 3s (1.5s pro PIN viajar + processar + restore).
+    // PinPlugin detecta nick "Bot###" e teleporta pra dentro da bot pen
+    // automaticamente (sem precisar /tp do client, que exige OP).
     setTimeout(() => {
       if (bot.ended) return;
       unlocked++;
