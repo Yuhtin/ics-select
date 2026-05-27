@@ -82,12 +82,30 @@ function spawn(i) {
     if (bot._chaos) {
       clearInterval(bot._chaos.jumpTimer);
       clearInterval(bot._chaos.lookTimer);
+      clearInterval(bot._chaos.walkTimer);
+      clearInterval(bot._chaos.chatTimer);
+      clearTimeout(bot._chaos.dieTimer);
     }
   });
 }
 
+const CHAT_MESSAGES = [
+  'oi pessoal',
+  'EDA é massa',
+  'estou stressando o servidor',
+  'cade o tps',
+  'packets/s tá subindo',
+  'sou um bot',
+  'tic tac tic tac',
+  'kafka quem?',
+  '@everyone',
+  'lag detected',
+];
+
+const BOT_LIFETIME_MS = 60_000;  // bot sai do server depois disso
+
 function startChaos(bot) {
-  // Pulo: a cada 600-900ms tap no jump
+  // Pulo: tap no jump a cada 600-900ms
   const jumpTimer = setInterval(() => {
     if (bot.ended || !bot.entity) return;
     try {
@@ -98,17 +116,48 @@ function startChaos(bot) {
     } catch (e) {}
   }, 600 + Math.random() * 300);
 
-  // Olhar randomico: a cada 100ms muda yaw + pitch
+  // SPIN da cabeça: incrementa yaw rapidão (50ms = 20Hz, 30°/tick = 600°/s = ~1.7 voltas/s)
+  let yaw = Math.random() * Math.PI * 2;
+  let pitch = 0;
+  let pitchDirection = 1;
   const lookTimer = setInterval(() => {
     if (bot.ended || !bot.entity) return;
     try {
-      const yaw = (Math.random() - 0.5) * Math.PI * 2;
-      const pitch = (Math.random() - 0.5) * Math.PI / 2;
+      yaw = (yaw + Math.PI / 6) % (Math.PI * 2);   // +30° a cada tick
+      pitch += pitchDirection * 0.15;
+      if (pitch > Math.PI / 3 || pitch < -Math.PI / 3) pitchDirection *= -1;
       bot.look(yaw, pitch, false);
     } catch (e) {}
-  }, 100 + Math.random() * 50);
+  }, 50);
 
-  bot._chaos = { jumpTimer, lookTimer };
+  // ANDAR: alterna forward/back a cada 2s (gera muito PLAYER_POSITION packet)
+  let movingForward = true;
+  bot.setControlState('forward', true);
+  const walkTimer = setInterval(() => {
+    if (bot.ended || !bot.entity) return;
+    try {
+      bot.setControlState('forward', !movingForward);
+      bot.setControlState('back', movingForward);
+      movingForward = !movingForward;
+    } catch (e) {}
+  }, 2000);
+
+  // CHAT a cada 5s — mensagem aleatória do pool
+  const chatTimer = setInterval(() => {
+    if (bot.ended) return;
+    try {
+      const msg = CHAT_MESSAGES[Math.floor(Math.random() * CHAT_MESSAGES.length)];
+      bot.chat(msg);
+    } catch (e) {}
+  }, 5000);
+
+  // DESCONEXÃO automática depois de BOT_LIFETIME_MS
+  const dieTimer = setTimeout(() => {
+    if (bot.ended) return;
+    try { bot.quit(); } catch (e) {}
+  }, BOT_LIFETIME_MS);
+
+  bot._chaos = { jumpTimer, lookTimer, walkTimer, chatTimer, dieTimer };
 }
 
 // Status report a cada 5s
