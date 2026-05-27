@@ -15,9 +15,11 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.time.Duration;
@@ -191,6 +193,39 @@ public class PinPlugin extends JavaPlugin implements Listener {
             p.sendMessage(Component.text("[PIN] PIN incorreto.", NamedTextColor.RED));
         }
         return true;
+    }
+
+    // ──────────────────────────────────────────────────────────────────
+    // Imunidade a dano enquanto trancado (Paper 1.21 aplica void damage
+    // mesmo em spectator se a Y for muito baixa — esse handler segura)
+    // ──────────────────────────────────────────────────────────────────
+
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
+    public void onDamage(EntityDamageEvent e) {
+        if (!(e.getEntity() instanceof Player p)) return;
+        if (!locked.contains(p.getUniqueId())) return;
+        e.setCancelled(true);
+    }
+
+    // ──────────────────────────────────────────────────────────────────
+    // Re-engaja void se um locked player respawn (defesa em profundidade)
+    // ──────────────────────────────────────────────────────────────────
+
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void onRespawn(PlayerRespawnEvent e) {
+        Player p = e.getPlayer();
+        if (!locked.contains(p.getUniqueId())) return;
+        // força respawn no void mesmo
+        Location voidLoc = e.getRespawnLocation().clone();
+        voidLoc.setY(VOID_Y);
+        e.setRespawnLocation(voidLoc);
+        // schedule de re-locking pq o gamemode pode ter sido reset pelo respawn
+        Bukkit.getScheduler().runTask(this, () -> {
+            if (locked.contains(p.getUniqueId())) {
+                p.setGameMode(GameMode.SPECTATOR);
+                showLockTitle(p);
+            }
+        });
     }
 
     // ──────────────────────────────────────────────────────────────────
