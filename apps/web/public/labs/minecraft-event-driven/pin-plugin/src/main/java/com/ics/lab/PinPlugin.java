@@ -29,45 +29,42 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * PinPlugin — protege o servidor de scan bots da internet.
+ * PinPlugin — anti-scanbot.
  *
- * Toda conta que entra é travada: gamemode spectator + teleport pra y=-200
- * (void aparente, sem dano). Chat e comandos ficam bloqueados, exceto
- * digitar "6769" no chat ou rodar "/pin 6769". Aí o player é destravado,
- * volta pro gamemode e local original.
+ * Princípio de design: o bot NÃO PODE descobrir o PIN observando.
+ *   • Zero menção a "PIN" em chat ou title
+ *   • Zero feedback de PIN errado (apenas silêncio)
+ *   • Title genérico "ICS" sem instrução
+ *   • Membros ICS já sabem o código de antemão (passado fora do servidor)
  *
- * Modelo de ameaça: scan bots geralmente listam servidores via SLP (Status)
- * mas não autenticam. Mesmo se conseguirem login (online-mode=false), o
- * primeiro impacto deles é zero — não conseguem mexer no mundo nem mandar
- * comando até inserirem o PIN. Pra aula presencial, basta avisar a turma
- * que o código é 6769.
+ * Lock behavior:
+ *   • Join → spectator + tp pra y=-200 (void)
+ *   • Chat & commands cancelados (sem feedback)
+ *   • Imune a dano (EntityDamageEvent)
+ *   • Se respawnar de algum jeito, re-engaja
  *
- * Limitações honestas:
- *   - PIN hardcoded no source · pra um lab tudo bem; em produção viria de config
- *   - Não criptografa nem hash do PIN (texto puro na memória)
- *   - Player pode ser detectado pelo nick em outro servidor — outra camada
+ * Unlock behavior:
+ *   • Digita "6769" no chat OR "/pin 6769"
+ *   • Teleporta pro SPAWN DO MUNDO (não pra última loc)
+ *   • Restaura gamemode original
+ *   • Zero menção a unlock no chat
  */
 public class PinPlugin extends JavaPlugin implements Listener {
 
     private static final String PIN = "6769";
     private static final int VOID_Y = -200;
 
-    /** Players atualmente trancados (cleared on unlock/quit). */
     private final Set<UUID> locked = ConcurrentHashMap.newKeySet();
-
-    /** Estado original pra restaurar quando o PIN for aceito. */
-    private final Map<UUID, Location> originalLocation = new ConcurrentHashMap<>();
     private final Map<UUID, GameMode> originalGameMode = new ConcurrentHashMap<>();
 
     @Override
     public void onEnable() {
         getServer().getPluginManager().registerEvents(this, this);
-        getLogger().info("PinPlugin enabled · PIN=" + PIN + " · todos os joins serão travados até digitar");
+        getLogger().info("PinPlugin enabled (silent mode)");
     }
 
     // ──────────────────────────────────────────────────────────────────
-    // Lock no join (HIGH priority pra rodar depois de plugins que setam
-    // posição inicial, mas antes de plugins que dependem do gameplay)
+    // Lock no join (silencioso)
     // ──────────────────────────────────────────────────────────────────
 
     @EventHandler(priority = EventPriority.HIGH)
@@ -75,55 +72,36 @@ public class PinPlugin extends JavaPlugin implements Listener {
         Player p = e.getPlayer();
         UUID id = p.getUniqueId();
 
-        // Salva estado original
-        originalLocation.put(id, p.getLocation().clone());
         originalGameMode.put(id, p.getGameMode());
-
-        // Trava
         locked.add(id);
 
-        // Spectator: sem dano, sem interação, sem colisão
         p.setGameMode(GameMode.SPECTATOR);
-
-        // Teleporta pro void
         Location voidLoc = p.getLocation().clone();
         voidLoc.setY(VOID_Y);
         p.teleport(voidLoc);
 
-        // Title cobrindo a tela (60s, depois precisa renovar)
+        // Title genérico sem revelar nada
         showLockTitle(p);
-
-        // Agenda renovação do title a cada 50s (Bukkit limita o stay máximo)
         Bukkit.getScheduler().runTaskTimer(this, () -> {
             if (locked.contains(id) && p.isOnline()) {
                 showLockTitle(p);
             }
         }, 20L * 50, 20L * 50);
 
-        // Mensagem no chat também
-        p.sendMessage(Component.text()
-            .append(Component.text("[PIN] ", NamedTextColor.RED, TextDecoration.BOLD))
-            .append(Component.text("Servidor travado. Digite ", NamedTextColor.GRAY))
-            .append(Component.text("/pin 6769", NamedTextColor.GREEN))
-            .append(Component.text(" ou só ", NamedTextColor.GRAY))
-            .append(Component.text("6769", NamedTextColor.GREEN))
-            .append(Component.text(" no chat.", NamedTextColor.GRAY))
-            .build()
-        );
-
-        getLogger().info("[Lock] " + p.getName() + " (" + id + ") trancado no void");
+        getLogger().info("[Lock] " + p.getName() + " (" + id + ") trancado");
     }
 
     private void showLockTitle(Player p) {
+        // Title minimalista — sem instrução, sem hint, só a marca
         p.showTitle(Title.title(
-            Component.text("PIN REQUIRED", NamedTextColor.DARK_RED, TextDecoration.BOLD),
-            Component.text("Digite /pin 6769 ou 6769 no chat", NamedTextColor.GRAY),
+            Component.text("ICS", NamedTextColor.DARK_RED, TextDecoration.BOLD),
+            Component.empty(),
             Title.Times.times(Duration.ofMillis(300), Duration.ofSeconds(50), Duration.ofMillis(500))
         ));
     }
 
     // ──────────────────────────────────────────────────────────────────
-    // Bloqueio de chat (única forma de entrar o PIN sem comando)
+    // Chat: SILENCIOSO. Cancela tudo. Se for o PIN, destrava sem feedback
     // ──────────────────────────────────────────────────────────────────
 
     @EventHandler(priority = EventPriority.LOWEST)
@@ -131,21 +109,17 @@ public class PinPlugin extends JavaPlugin implements Listener {
         Player p = e.getPlayer();
         if (!locked.contains(p.getUniqueId())) return;
 
-        // Sempre cancela: trancados não falam no chat
         e.setCancelled(true);
 
         String msg = PlainTextComponentSerializer.plainText().serialize(e.message()).trim();
         if (PIN.equals(msg)) {
-            // Async event · agenda no main thread pra mexer no player
             Bukkit.getScheduler().runTask(this, () -> unlock(p));
-        } else {
-            // Feedback (sync ou async ambos OK pra sendMessage)
-            p.sendMessage(Component.text("[PIN] PIN incorreto. Use /pin 6769", NamedTextColor.RED));
         }
+        // PIN errado: silêncio. Nenhuma resposta. Bot não tem o que medir.
     }
 
     // ──────────────────────────────────────────────────────────────────
-    // Bloqueio de TODOS os comandos exceto /pin
+    // Commands: SILENCIOSO. Cancela tudo
     // ──────────────────────────────────────────────────────────────────
 
     @EventHandler(priority = EventPriority.LOWEST)
@@ -155,49 +129,34 @@ public class PinPlugin extends JavaPlugin implements Listener {
 
         String cmd = e.getMessage().trim().toLowerCase();
 
+        // /pin <pin> destrava silenciosamente se correto
         if (cmd.equals("/pin " + PIN)) {
             e.setCancelled(true);
             unlock(p);
             return;
         }
 
-        if (cmd.startsWith("/pin")) {
-            e.setCancelled(true);
-            p.sendMessage(Component.text("[PIN] PIN incorreto. Use /pin 6769", NamedTextColor.RED));
-            return;
-        }
-
-        // Qualquer outro comando: bloqueia
+        // Qualquer outro comando (inclusive /pin errado): cancela sem feedback
         e.setCancelled(true);
-        p.sendMessage(Component.text("[PIN] Digite o PIN primeiro: /pin 6769", NamedTextColor.RED));
     }
 
     // ──────────────────────────────────────────────────────────────────
-    // Implementação do /pin como CommandExecutor
-    // (caso o PlayerCommandPreprocessEvent não bata por algum motivo)
+    // /pin como CommandExecutor (backup)
     // ──────────────────────────────────────────────────────────────────
 
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
-        if (!(sender instanceof Player p)) {
-            sender.sendMessage("Esse comando só funciona pra player.");
-            return true;
-        }
-        if (!locked.contains(p.getUniqueId())) {
-            p.sendMessage(Component.text("Você já está desbloqueado.", NamedTextColor.GRAY));
-            return true;
-        }
+        if (!(sender instanceof Player p)) return true;
+        if (!locked.contains(p.getUniqueId())) return true;
         if (args.length == 1 && PIN.equals(args[0])) {
             unlock(p);
-        } else {
-            p.sendMessage(Component.text("[PIN] PIN incorreto.", NamedTextColor.RED));
         }
+        // PIN errado: silêncio
         return true;
     }
 
     // ──────────────────────────────────────────────────────────────────
-    // Imunidade a dano enquanto trancado (Paper 1.21 aplica void damage
-    // mesmo em spectator se a Y for muito baixa — esse handler segura)
+    // Imunidade a dano enquanto trancado
     // ──────────────────────────────────────────────────────────────────
 
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
@@ -208,18 +167,16 @@ public class PinPlugin extends JavaPlugin implements Listener {
     }
 
     // ──────────────────────────────────────────────────────────────────
-    // Re-engaja void se um locked player respawn (defesa em profundidade)
+    // Re-engaja void no respawn
     // ──────────────────────────────────────────────────────────────────
 
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onRespawn(PlayerRespawnEvent e) {
         Player p = e.getPlayer();
         if (!locked.contains(p.getUniqueId())) return;
-        // força respawn no void mesmo
         Location voidLoc = e.getRespawnLocation().clone();
         voidLoc.setY(VOID_Y);
         e.setRespawnLocation(voidLoc);
-        // schedule de re-locking pq o gamemode pode ter sido reset pelo respawn
         Bukkit.getScheduler().runTask(this, () -> {
             if (locked.contains(p.getUniqueId())) {
                 p.setGameMode(GameMode.SPECTATOR);
@@ -228,20 +185,15 @@ public class PinPlugin extends JavaPlugin implements Listener {
         });
     }
 
-    // ──────────────────────────────────────────────────────────────────
-    // Cleanup no quit
-    // ──────────────────────────────────────────────────────────────────
-
     @EventHandler
     public void onQuit(PlayerQuitEvent e) {
         UUID id = e.getPlayer().getUniqueId();
         locked.remove(id);
-        originalLocation.remove(id);
         originalGameMode.remove(id);
     }
 
     // ──────────────────────────────────────────────────────────────────
-    // Unlock — sempre no main thread
+    // Unlock → spawn do MUNDO (não última loc) + gamemode original
     // ──────────────────────────────────────────────────────────────────
 
     private void unlock(Player p) {
@@ -249,18 +201,14 @@ public class PinPlugin extends JavaPlugin implements Listener {
         if (!locked.remove(id)) return;
 
         GameMode mode = originalGameMode.remove(id);
-        Location loc = originalLocation.remove(id);
-
         if (mode != null) p.setGameMode(mode);
-        if (loc != null) p.teleport(loc);
 
-        p.showTitle(Title.title(
-            Component.text("UNLOCKED", NamedTextColor.GREEN, TextDecoration.BOLD),
-            Component.text("Bem-vindo ao ICS Lab", NamedTextColor.GRAY),
-            Title.Times.times(Duration.ofMillis(300), Duration.ofSeconds(2), Duration.ofMillis(500))
-        ));
-        p.sendMessage(Component.text("[PIN] PIN aceito. Bem-vindo!", NamedTextColor.GREEN));
+        // Sempre teleporta pro spawn do mundo principal (configurado via /setworldspawn)
+        Location spawn = p.getWorld().getSpawnLocation();
+        p.teleport(spawn);
 
-        getLogger().info("[Unlock] " + p.getName() + " (" + id + ") destrancou");
+        // Clear title (sem mensagem de "unlocked" — neutralidade total)
+        p.clearTitle();
+        getLogger().info("[Unlock] " + p.getName() + " (" + id + ") destrancou → spawn");
     }
 }
