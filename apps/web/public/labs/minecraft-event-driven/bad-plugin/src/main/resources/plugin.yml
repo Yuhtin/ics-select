@@ -1,0 +1,6 @@
+name: BadPlugin
+version: 1.0.0
+main: com.ics.lab.BadPlugin
+api-version: '1.21'
+description: Plugin DIDÁTICO — bloqueia main thread no PlayerJoinEvent. (ICS Lab)
+author: ICS Select

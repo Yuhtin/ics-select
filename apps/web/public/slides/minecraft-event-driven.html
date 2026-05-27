@@ -1,0 +1,1270 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Minecraft é Event-Driven</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect" />
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=JetBrains+Mono:wght@400;500;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+<style>
+  @font-face { font-family: 'Geist'; src: url('https://cdn.jsdelivr.net/npm/@fontsource/geist-sans@5.0.1/files/geist-sans-latin-400-normal.woff2') format('woff2'); font-weight: 400; }
+  @font-face { font-family: 'Geist'; src: url('https://cdn.jsdelivr.net/npm/@fontsource/geist-sans@5.0.1/files/geist-sans-latin-500-normal.woff2') format('woff2'); font-weight: 500; }
+  @font-face { font-family: 'Geist'; src: url('https://cdn.jsdelivr.net/npm/@fontsource/geist-sans@5.0.1/files/geist-sans-latin-600-normal.woff2') format('woff2'); font-weight: 600; }
+  @font-face { font-family: 'Geist'; src: url('https://cdn.jsdelivr.net/npm/@fontsource/geist-sans@5.0.1/files/geist-sans-latin-700-normal.woff2') format('woff2'); font-weight: 700; }
+  @font-face { font-family: 'Geist'; src: url('https://cdn.jsdelivr.net/npm/@fontsource/geist-sans@5.0.1/files/geist-sans-latin-800-normal.woff2') format('woff2'); font-weight: 800; }
+  html, body { background: #0a0a0a; color: #e5e2e1; font-family: 'Inter', sans-serif; overflow: hidden; height: 100vh; margin: 0; }
+  .display { font-family: 'Geist', sans-serif; letter-spacing: -0.03em; }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+  .slide { display: none; height: 100vh; width: 100vw; position: relative; }
+  .slide.active { display: flex; }
+
+  @keyframes slideUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes scaleIn { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
+  @keyframes glowPulse { 0%, 100% { opacity: 0.15; transform: scale(1); } 50% { opacity: 0.25; transform: scale(1.05); } }
+  @keyframes redPulse { 0%, 100% { box-shadow: 0 0 40px rgba(239,68,68,0.35); } 50% { box-shadow: 0 0 80px rgba(239,68,68,0.55); } }
+  .slide.active .anim { animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) backwards; }
+  .slide.active .anim-fade { animation: fadeIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) backwards; }
+  .slide.active .anim-scale { animation: scaleIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) backwards; }
+  .slide.active .stagger > * { animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) backwards; }
+  .slide.active .stagger > *:nth-child(1) { animation-delay: 0.05s; }
+  .slide.active .stagger > *:nth-child(2) { animation-delay: 0.15s; }
+  .slide.active .stagger > *:nth-child(3) { animation-delay: 0.25s; }
+  .slide.active .stagger > *:nth-child(4) { animation-delay: 0.35s; }
+  .slide.active .stagger > *:nth-child(5) { animation-delay: 0.45s; }
+  .slide.active .stagger > *:nth-child(6) { animation-delay: 0.55s; }
+  .slide.active .stagger > *:nth-child(7) { animation-delay: 0.65s; }
+  .slide.active .stagger > *:nth-child(8) { animation-delay: 0.75s; }
+  .slide.active .delay-1 { animation-delay: 0.15s; }
+  .slide.active .delay-2 { animation-delay: 0.3s; }
+  .slide.active .delay-3 { animation-delay: 0.45s; }
+  .slide.active .delay-4 { animation-delay: 0.6s; }
+  .slide.active .glow-pulse { animation: glowPulse 4s ease-in-out infinite; }
+  .slide.active .red-pulse { animation: redPulse 2.2s ease-in-out infinite; }
+
+  /* Code block */
+  .code { font-family: 'JetBrains Mono', monospace; font-size: 18px; line-height: 1.7; background: #0f0f10; border: 1px solid #1f1f22; border-radius: 12px; padding: 28px 32px; }
+  .code .kw { color: #c084fc; font-weight: 600; }
+  .code .str { color: #fde68a; }
+  .code .num { color: #fb923c; }
+  .code .com { color: #525252; font-style: italic; }
+  .code .var { color: #60a5fa; }
+  .code .ann { color: #4ade80; font-weight: 600; }
+  .code .ind { color: #525252; }
+
+  /* HTML diagram primitives */
+  .box {
+    background: rgba(20,20,22,0.85); border: 1px solid #2a2a2e;
+    border-radius: 10px; padding: 16px 18px;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .box-eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase;
+    color: #a3a3a3;
+  }
+  .box-body { font-size: 15px; color: #e5e5e5; line-height: 1.4; }
+  .arrow-h {
+    flex: 0 0 50px; align-self: center; height: 2px;
+    background: #525252; position: relative;
+  }
+  .arrow-h::after {
+    content: ''; position: absolute; right: -1px; top: -5px;
+    border-left: 10px solid #525252;
+    border-top: 6px solid transparent; border-bottom: 6px solid transparent;
+  }
+  .arrow-h-label {
+    position: absolute; top: -22px; left: 50%; transform: translateX(-50%);
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    color: #737373; white-space: nowrap;
+  }
+  .arrow-down {
+    width: 2px; height: 40px; background: #525252;
+    position: relative; align-self: center;
+  }
+  .arrow-down::after {
+    content: ''; position: absolute; bottom: -1px; left: -5px;
+    border-top: 10px solid #525252;
+    border-left: 6px solid transparent; border-right: 6px solid transparent;
+  }
+
+  /* Pixel-blocky aesthetic accents */
+  .pixel-border {
+    image-rendering: pixelated;
+    border-style: solid; border-width: 4px;
+  }
+
+  /* Print mode */
+  @media print {
+    @page { size: 1600px 900px; margin: 0; }
+    html, body {
+      overflow: visible !important; height: auto !important; width: auto !important;
+      background: #0a0a0a !important;
+      -webkit-print-color-adjust: exact; print-color-adjust: exact;
+    }
+    #deck { overflow: visible !important; height: auto !important; width: auto !important; display: block !important; position: static !important; }
+    .slide {
+      display: flex !important; width: 1600px !important; height: 900px !important;
+      min-height: 900px !important; max-height: 900px !important;
+      page-break-after: always !important; page-break-inside: avoid !important;
+      break-after: page !important; break-inside: avoid !important;
+      animation: none !important; position: relative !important;
+    }
+    .slide:last-child { page-break-after: avoid !important; break-after: avoid !important; }
+    .slide *, .slide *::before, .slide *::after { animation: none !important; transition: none !important; }
+    body > div.fixed { display: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div id="deck" class="relative w-screen h-screen overflow-hidden"></div>
+
+<div class="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 mono text-[10px] uppercase tracking-[0.2em] text-neutral-600 pointer-events-none">
+  <span id="slide-num">01</span>
+  <span class="text-neutral-800">/</span>
+  <span id="slide-total">??</span>
+</div>
+
+<script>
+const GROUP = {
+  cover:       { name: 'CAPA',                 accent: '#ffffff', soft: 'rgba(255,255,255,0.08)' },
+  foundations: { name: 'FOUNDATIONS',          accent: '#a3a3a3', soft: 'rgba(163,163,163,0.10)' },
+  packets:     { name: 'PACKETS',              accent: '#c084fc', soft: 'rgba(192,132,252,0.12)' },
+  tick:        { name: 'TICK LOOP',            accent: '#fb923c', soft: 'rgba(251,146,60,0.12)' },
+  events:      { name: 'EVENTS & LISTENERS',   accent: '#4ade80', soft: 'rgba(74,222,128,0.12)' },
+  live:        { name: 'AO VIVO · MINECRAFT',  accent: '#ef4444', soft: 'rgba(239,68,68,0.18)' },
+  synthesis:   { name: 'SYNTHESIS',            accent: '#34d399', soft: 'rgba(52,211,153,0.12)' },
+};
+
+const D = '../diagrams/minecraft-event-driven';
+
+const slides = [
+  // ─── COVER ───────────────────────────────────────────────────────
+  { type: 'cover', group: 'cover' },
+
+  // ─── FOUNDATIONS ─────────────────────────────────────────────────
+  { type: 'divider', group: 'foundations', num: '00', label: 'Foundations',
+    text: 'Antes do Minecraft: dois conceitos que a gente vai usar sem parar. Protocolo (como dois processos conversam) e Evento (o paradigma central da aula).' },
+
+  // F1: Protocol
+  { type: 'hook', group: 'foundations',
+    title: 'Dois processos em <span class="text-neutral-300">máquinas diferentes</span><br/>precisam conversar.<br/><span class="text-neutral-300">Como?</span>',
+    subtitle: 'Sem mágica. Liste o que precisa existir antes de qualquer byte sair de um lado pro outro.',
+    tags: ['tcp', 'socket', 'bytes', 'serialização', 'stateful'] },
+  { type: 'list', group: 'foundations',
+    title: 'A pilha mínima',
+    items: [
+      { kw: 'Socket TCP',     text: 'um lado abre porta, outro conecta. Stream de bytes nas duas direções' },
+      { kw: 'Stream',         text: 'TCP entrega bytes em ordem. Não entrega "mensagens" — quem agrupa é a app' },
+      { kw: 'Protocolo',      text: 'o contrato sobre o significado dos bytes (header de tamanho, ID, payload)' },
+      { kw: 'Serialização',   text: 'como você transforma `{ name: "Davi" }` em bytes (JSON, Protobuf, binário próprio)' },
+      { kw: 'State',          text: 'mesmo byte ID pode querer dizer coisas diferentes em estados diferentes da conexão' },
+    ]},
+  { type: 'compare', group: 'foundations',
+    title: 'Formato · vs · Protocolo',
+    columns: [
+      { title: 'Formato', sub: 'COMO serializar', points: [
+        'JSON, XML, Protobuf, Avro, binário próprio',
+        'Define a estrutura dos bytes que viajam',
+        'Independente de como a conversa flui',
+        'Trocar formato: mudança local',
+      ]},
+      { title: 'Protocolo', sub: 'QUANDO mandar O QUÊ', points: [
+        'HTTP, gRPC, Minecraft protocol, Postgres wire',
+        'Define a sequência e a semântica de mensagens',
+        'Depende dos dois lados respeitarem o contrato',
+        'Trocar protocolo: mudança nos dois lados',
+      ]},
+    ]},
+
+  // F2: Events
+  { type: 'hook', group: 'foundations',
+    title: 'Em vez de <code class="mono text-neutral-300">A.chamar(B)</code>,<br/>A publica <span class="text-neutral-300">um evento</span><br/>e B se inscreve.',
+    subtitle: 'Esse paradigma se chama Event-Driven. É o coração da aula. Vamos fixar 4 palavras antes do Minecraft.',
+    tags: ['evento', 'listener', 'broker', 'pub/sub', 'fan-out'] },
+  { type: 'list', group: 'foundations',
+    title: '4 palavras pra carregar 90 min',
+    items: [
+      { kw: 'Evento',     text: 'um FATO que aconteceu. Imutável. No passado. "Player entrou", não "entre o player"' },
+      { kw: 'Listener',   text: 'código que diz "quando esse tipo de evento acontecer, executa essa função". Inscrição persistente' },
+      { kw: 'Broker',     text: 'o lugar onde os eventos passam. Quem publica não conhece quem consome' },
+      { kw: 'Fan-out',    text: 'um evento, N listeners reagindo. Adicionar consumer #6 não mexe nos 5 existentes' },
+    ]},
+  { type: 'compare', group: 'foundations',
+    title: 'Comando · vs · Evento',
+    columns: [
+      { title: 'Comando', sub: 'imperativo', points: [
+        '"Delete o usuário 42"',
+        'Tem destinatário específico',
+        'Acoplamento: quem manda conhece quem recebe',
+        'Falha se o destinatário não existir',
+      ]},
+      { title: 'Evento', sub: 'narração no passado', points: [
+        '"O usuário 42 foi deletado"',
+        'Não tem destinatário — quem se importa, escuta',
+        'Desacoplamento: produtor não sabe quem consome',
+        'Sobrevive a consumers que ainda nem existem',
+      ]},
+    ]},
+
+  // ─── BEAT 1: PACKETS ─────────────────────────────────────────────
+  { type: 'divider', group: 'packets', num: '01', label: 'Packets',
+    text: 'O byte sai do cliente. Atravessa a internet. Bate no servidor. O que ele é, e como o servidor sabe o que ele quer dizer?' },
+
+  { type: 'hook', group: 'packets', beat: 1,
+    title: 'Você aperta <span class="text-purple-400">Connect</span> no client.<br/>Primeiro byte sai do socket.<br/><span class="text-purple-400">Qual?</span>',
+    subtitle: 'E como o servidor, do outro lado, sabe o que esse byte significa antes de qualquer combinado?',
+    tags: ['packet', 'varint', 'handshake', 'state-machine', 'wireshark'] },
+
+  { type: 'htmlDiagram', group: 'packets', beat: 1,
+    title: 'Anatomia de um packet Minecraft',
+    diagram: `
+      <div class="flex flex-col gap-2 max-w-[1100px] w-full">
+        <div class="grid grid-cols-12 gap-2">
+          <div class="col-span-2 box" style="border-color: #c084fc;">
+            <div class="box-eyebrow" style="color: #c084fc;">VarInt</div>
+            <div class="box-body">Length (1-5 bytes)</div>
+          </div>
+          <div class="col-span-2 box" style="border-color: #c084fc;">
+            <div class="box-eyebrow" style="color: #c084fc;">VarInt</div>
+            <div class="box-body">Packet ID</div>
+          </div>
+          <div class="col-span-8 box" style="border-color: #c084fc;">
+            <div class="box-eyebrow" style="color: #c084fc;">Payload</div>
+            <div class="box-body">Formato definido pelo ID + estado da conexão. Sem delimitador.</div>
+          </div>
+        </div>
+        <div class="mono text-[12px] text-neutral-500 mt-2 text-center">
+          Loop de leitura: <span class="text-purple-300">readVarInt(length)</span> → <span class="text-purple-300">readBytes(length)</span> → parse de acordo com ID atual → repete.
+        </div>
+      </div>
+    `},
+
+  { type: 'htmlDiagram', group: 'packets', beat: 1,
+    title: 'A state machine da conexão',
+    diagram: `
+      <div class="flex items-center gap-0 max-w-[1300px] w-full">
+        <div class="box flex-1" style="border-color: #c084fc;">
+          <div class="box-eyebrow" style="color: #c084fc;">START</div>
+          <div class="box-body font-semibold">Handshake</div>
+          <div class="mono text-[10px] text-neutral-500">~1 packet</div>
+        </div>
+        <div class="arrow-h"><span class="arrow-h-label">0x00 Handshake</span></div>
+        <div class="flex flex-col gap-2 flex-1">
+          <div class="box" style="border-color: #c084fc;">
+            <div class="box-eyebrow" style="color: #c084fc;">OPCIONAL</div>
+            <div class="box-body font-semibold">Status</div>
+            <div class="mono text-[10px] text-neutral-500">pra "ver" servidor na lista</div>
+          </div>
+          <div class="box" style="border-color: #c084fc;">
+            <div class="box-eyebrow" style="color: #c084fc;">PARA CONECTAR</div>
+            <div class="box-body font-semibold">Login</div>
+            <div class="mono text-[10px] text-neutral-500">autenticação Mojang</div>
+          </div>
+        </div>
+        <div class="arrow-h"><span class="arrow-h-label">success</span></div>
+        <div class="box flex-1" style="border-color: #c084fc;">
+          <div class="box-eyebrow" style="color: #c084fc;">SETUP</div>
+          <div class="box-body font-semibold">Configuration</div>
+          <div class="mono text-[10px] text-neutral-500">cliente recebe registries</div>
+        </div>
+        <div class="arrow-h"><span class="arrow-h-label">finish</span></div>
+        <div class="box flex-1 red-pulse" style="border-color: #c084fc; box-shadow: 0 0 30px rgba(192,132,252,0.3);">
+          <div class="box-eyebrow" style="color: #c084fc;">GAMEPLAY</div>
+          <div class="box-body font-semibold">Play</div>
+          <div class="mono text-[10px] text-neutral-500">tsunami de packets a 20Hz</div>
+        </div>
+      </div>
+    `},
+
+  { type: 'code', group: 'packets', beat: 1,
+    title: 'Loop de leitura, em pseudocódigo',
+    code: [
+      { line: '<span class="kw">while</span> (socket.<span class="var">isOpen</span>()) {' },
+      { line: '<span class="ind">  </span><span class="kw">int</span> <span class="var">length</span> = readVarInt(socket);          <span class="com">// 1..5 bytes</span>' },
+      { line: '<span class="ind">  </span><span class="kw">byte</span>[] <span class="var">payload</span> = socket.readNBytes(<span class="var">length</span>);' },
+      { line: '<span class="ind">  </span><span class="kw">int</span> <span class="var">packetId</span> = readVarInt(payload);' },
+      { line: '' },
+      { line: '<span class="ind">  </span><span class="com">// ID + estado da conexão = identidade do packet</span>' },
+      { line: '<span class="ind">  </span>Packet <span class="var">p</span> = registry.lookup(<span class="var">connection.state</span>, <span class="var">packetId</span>);' },
+      { line: '<span class="ind">  </span><span class="var">p</span>.decode(payload);' },
+      { line: '<span class="ind">  </span>dispatcher.handle(<span class="var">p</span>);                  <span class="com">// vira evento Bukkit lá no fim</span>' },
+      { line: '}' },
+    ]},
+
+  // LIVE DEMO 1: Wireshark
+  { type: 'liveDemo', group: 'live', beat: 1,
+    app: 'WIRESHARK + MINECRAFT',
+    title: 'Hora de ver no Wireshark.',
+    subtitle: 'Os bytes existem de verdade. Bora abrir o filtro e ver eles passando.',
+    steps: [
+      'Wireshark aberto. Filtro: tcp.port == 25565',
+      'Abre o client Minecraft, digita localhost, aperta Connect',
+      'Aponta os 4 primeiros packets: Handshake → Login Start → Login Success → Play',
+      'Mostra um packet de Player Position chegando 20×/segundo',
+    ],
+    backTo: 'Próximo slide: ainda em Packets · cadência',
+  },
+
+  { type: 'list', group: 'packets', beat: 1,
+    title: 'Volume real (gameplay)',
+    items: [
+      { kw: '20 ticks/s', text: 'cliente manda packet de posição em cada tick' },
+      { kw: '~30 packets/tick/player', text: 'em gameplay (movimento, chunks, entidades próximas, animação)' },
+      { kw: '× 100 players', text: '~60.000 packets por segundo num servidor médio' },
+      { kw: '∴ binário, não JSON', text: 'JSON nesse volume mata CPU em parse. Por isso protocolo próprio compacto' },
+    ]},
+
+  // ─── BEAT 2: TICK LOOP ───────────────────────────────────────────
+  { type: 'divider', group: 'tick', num: '02', label: 'Tick Loop',
+    text: 'Pacotes chegam. Pacotes saem. Entre uma coisa e outra, o servidor processa o mundo. Em ciclos discretos, 20 vezes por segundo.' },
+
+  { type: 'hook', group: 'tick', beat: 2,
+    title: 'O servidor tá <span class="text-orange-400">ligado</span>.<br/>Ninguém conectou ainda.<br/><span class="text-orange-400">O que ele tá fazendo, milissegundo por milissegundo?</span>',
+    subtitle: 'A resposta muda tudo no design. Servidor de jogo NÃO é request-response.',
+    tags: ['tick', 'tps', 'main-thread', 'game-loop', 'scheduler'] },
+
+  { type: 'htmlDiagram', group: 'tick', beat: 2,
+    title: 'O que acontece em UM tick (50ms de budget)',
+    diagram: `
+      <div class="flex flex-col gap-0 max-w-[900px] w-full items-center">
+        <div class="box w-full" style="border-color: #fb923c;">
+          <div class="box-eyebrow" style="color: #fb923c;">1. INPUT</div>
+          <div class="box-body">Processa packets que chegaram nos sockets dos players</div>
+        </div>
+        <div class="arrow-down"></div>
+        <div class="box w-full" style="border-color: #fb923c;">
+          <div class="box-eyebrow" style="color: #fb923c;">2. WORLD</div>
+          <div class="box-body">Física, movimento, redstone, mobs, entidades, projetiles</div>
+        </div>
+        <div class="arrow-down"></div>
+        <div class="box w-full red-pulse" style="border-color: #fb923c; box-shadow: 0 0 30px rgba(251,146,60,0.3);">
+          <div class="box-eyebrow" style="color: #fb923c;">3. EVENTS ★</div>
+          <div class="box-body">Dispara eventos pra os listeners dos plugins reagirem (próximo beat)</div>
+        </div>
+        <div class="arrow-down"></div>
+        <div class="box w-full" style="border-color: #fb923c;">
+          <div class="box-eyebrow" style="color: #fb923c;">4. AUTOSAVE</div>
+          <div class="box-body">Snapshot incremental do mundo (chunks modificados)</div>
+        </div>
+        <div class="arrow-down"></div>
+        <div class="box w-full" style="border-color: #fb923c;">
+          <div class="box-eyebrow" style="color: #fb923c;">5. OUTPUT</div>
+          <div class="box-body">Envia packets de saída pra cada player conectado</div>
+        </div>
+      </div>
+    `},
+
+  { type: 'compare', group: 'tick', beat: 2,
+    title: 'Game loop · vs · Request-response',
+    columns: [
+      { title: 'Servidor de Jogo', sub: 'Minecraft, Counter-Strike, MMORPG', points: [
+        'Loop constante a 20 TPS, mesmo idle',
+        'Estado vivo em memória entre ticks',
+        'Tudo no main thread (single-threaded)',
+        'Latência sub-50ms exigida no caminho crítico',
+      ]},
+      { title: 'Servidor Web', sub: 'API REST, GraphQL, microservice', points: [
+        'Thread pool atende requests independentes',
+        'Stateless: cada request carrega tudo',
+        'Idle quando ninguém pede',
+        'p99 < 500ms aceitável na maioria dos casos',
+      ]},
+    ]},
+
+  { type: 'list', group: 'tick', beat: 2,
+    title: 'TPS · o heartbeat do servidor',
+    items: [
+      { kw: '20 TPS',  text: 'tick rate normal · 50ms por tick · gameplay smooth' },
+      { kw: '18 TPS',  text: 'alerta · players começam a sentir movimento engasgando' },
+      { kw: '10 TPS',  text: 'crítico · mobs travam, redstone quebra, comandos demoram' },
+      { kw: '5 TPS',   text: 'servidor inviável · players desconectam por timeout' },
+      { kw: '/tps',    text: 'comando que mostra TPS atual · sempre o primeiro a checar' },
+    ]},
+
+  // LIVE DEMO 2: TPS
+  { type: 'liveDemo', group: 'live', beat: 2,
+    app: 'CONSOLE DO SERVIDOR',
+    title: 'Hora de ver o /tps.',
+    subtitle: 'Mostra que o servidor tem heartbeat. Em servidor saudável fica em 20.0. Em servidor lagado, despenca.',
+    steps: [
+      'Cola no terminal do server: /tps',
+      'Aponta o número (20.0 = saudável)',
+      'OPCIONAL: roda /spawn fill com 100 mobs e mostra TPS caindo',
+      'Comenta: cada tick tem 50ms pra fazer TUDO',
+    ],
+    backTo: 'Próximo slide: Events & Listeners',
+  },
+
+  // ─── BEAT 3: EVENT + LISTENER ────────────────────────────────────
+  { type: 'divider', group: 'events', num: '03', label: 'Event + Listener',
+    text: 'O servidor descobriu que um player entrou. Como ele AVISA os plugins? Não chama. Dispara. Plugin reage.' },
+
+  { type: 'hook', group: 'events', beat: 3,
+    title: 'Player entra no servidor.<br/>Plugin Welcome quer mostrar <code class="mono text-green-400">"Bem-vindo, Davi!"</code><br/><span class="text-green-400">Quantas linhas e onde elas moram?</span>',
+    subtitle: 'A inversão de controle do Bukkit em 15 linhas de Java. É literalmente assim — sem mock, sem boilerplate.',
+    tags: ['event', 'listener', '@EventHandler', 'priority', 'cancellable'] },
+
+  { type: 'code', group: 'events', beat: 3,
+    title: 'WelcomePlugin.java · 15 linhas',
+    code: [
+      { line: '<span class="kw">public class</span> <span class="var">WelcomePlugin</span> <span class="kw">extends</span> JavaPlugin <span class="kw">implements</span> Listener {' },
+      { line: '' },
+      { line: '<span class="ind">  </span><span class="ann">@Override</span>' },
+      { line: '<span class="ind">  </span><span class="kw">public void</span> <span class="var">onEnable</span>() {' },
+      { line: '<span class="ind">    </span>getServer().getPluginManager().registerEvents(<span class="kw">this</span>, <span class="kw">this</span>);' },
+      { line: '<span class="ind">  </span>}', note: 'inscrição: só roda 1x no startup' },
+      { line: '' },
+      { line: '<span class="ind">  </span><span class="ann">@EventHandler</span>(priority = EventPriority.NORMAL)' },
+      { line: '<span class="ind">  </span><span class="kw">public void</span> <span class="var">onJoin</span>(PlayerJoinEvent <span class="var">e</span>) {' },
+      { line: '<span class="ind">    </span>Player <span class="var">p</span> = <span class="var">e</span>.getPlayer();' },
+      { line: '<span class="ind">    </span><span class="var">p</span>.sendMessage(<span class="str">"§eBem-vindo, "</span> + <span class="var">p</span>.getName() + <span class="str">"!"</span>);' },
+      { line: '<span class="ind">  </span>}', note: 'reage: roda toda vez que alguém entrar' },
+      { line: '}' },
+    ]},
+
+  { type: 'htmlDiagram', group: 'events', beat: 3,
+    title: 'O fluxo · de packet a listener',
+    diagram: `
+      <div class="flex items-center gap-0 max-w-[1300px] w-full">
+        <div class="box flex-1" style="border-color: #4ade80;">
+          <div class="box-eyebrow" style="color: #4ade80;">CLIENT</div>
+          <div class="box-body font-semibold">Login Start packet</div>
+          <div class="mono text-[10px] text-neutral-500">"oi, sou Davi"</div>
+        </div>
+        <div class="arrow-h"><span class="arrow-h-label">socket</span></div>
+        <div class="box flex-1" style="border-color: #4ade80;">
+          <div class="box-eyebrow" style="color: #4ade80;">SERVER · TICK</div>
+          <div class="box-body font-semibold">Decode + auth</div>
+          <div class="mono text-[10px] text-neutral-500">cria Player object</div>
+        </div>
+        <div class="arrow-h"><span class="arrow-h-label">dispatch</span></div>
+        <div class="box flex-1 red-pulse" style="border-color: #4ade80; box-shadow: 0 0 30px rgba(74,222,128,0.3);">
+          <div class="box-eyebrow" style="color: #4ade80;">EVENT BUS</div>
+          <div class="box-body font-semibold">PlayerJoinEvent</div>
+          <div class="mono text-[10px] text-neutral-500">cria objeto Event</div>
+        </div>
+        <div class="arrow-h"><span class="arrow-h-label">iterate</span></div>
+        <div class="box flex-1" style="border-color: #4ade80;">
+          <div class="box-eyebrow" style="color: #4ade80;">PLUGIN</div>
+          <div class="box-body font-semibold">@EventHandler</div>
+          <div class="mono text-[10px] text-neutral-500">seu código roda</div>
+        </div>
+      </div>
+    `},
+
+  { type: 'list', group: 'events', beat: 3,
+    title: 'EventPriority · ordem entre listeners',
+    items: [
+      { kw: 'LOWEST',  text: 'anti-cheat, sistema de permissões · chegam primeiro pra cancelar antes' },
+      { kw: 'LOW',     text: 'modificadores iniciais de gameplay' },
+      { kw: 'NORMAL',  text: 'padrão · a maioria dos plugins' },
+      { kw: 'HIGH',    text: 'modificadores finais · sobrescrevem decisões anteriores' },
+      { kw: 'HIGHEST', text: 'último a poder modificar' },
+      { kw: 'MONITOR', text: 'observa o estado final · NUNCA modifica · estatísticas e logging' },
+    ]},
+
+  { type: 'hook', group: 'events', beat: 3,
+    title: 'Cancellable.<br/><code class="mono text-green-400">event.setCancelled(true)</code><br/>= a alavanca mais poderosa do Bukkit.',
+    subtitle: 'Anti-cheat usa pra desfazer ações. World protection usa pra impedir quebra. Plugin de PVP usa pra zerar dano. Um único método muda toda a regra.',
+    tags: ['cancellable', 'anti-cheat', 'world-protection', 'override'] },
+
+  // ─── BEAT 4: FAN-OUT + LAB ───────────────────────────────────────
+  { type: 'divider', group: 'events', num: '04', label: 'Fan-out · 1 evento, N plugins',
+    text: 'Cinco plugins instalados. Um player entra. O que acontece? E o que acontece se você arranca um deles do servidor enquanto ele tá rodando?' },
+
+  { type: 'hook', group: 'events', beat: 4,
+    title: 'Você tem <span class="text-green-400">5 plugins</span>, cada um com seu listener no <code class="mono text-green-400">PlayerJoinEvent</code>.<br/>O player entra.<br/><span class="text-green-400">Em que ordem rodam?</span>',
+    subtitle: 'E o que acontece se um deles trava? E se um deles cancela o evento?',
+    tags: ['fan-out', 'decoupling', 'event-bus', 'isolation', 'plugin'] },
+
+  { type: 'htmlDiagram', group: 'events', beat: 4,
+    title: 'Fan-out · 1 evento, 5 reações independentes',
+    diagram: `
+      <div class="flex items-center gap-0 max-w-[1400px] w-full">
+        <div class="box flex-1 red-pulse" style="border-color: #4ade80; box-shadow: 0 0 40px rgba(74,222,128,0.35);">
+          <div class="box-eyebrow" style="color: #4ade80;">EVENT</div>
+          <div class="box-body font-semibold text-[18px]">PlayerJoinEvent</div>
+          <div class="mono text-[10px] text-neutral-500">player = Davi</div>
+        </div>
+        <div class="arrow-h"></div>
+        <div class="flex flex-col gap-3 flex-[2]">
+          <div class="grid grid-cols-5 gap-2">
+            <div class="box" style="border-color: #4ade80;">
+              <div class="box-eyebrow" style="color: #4ade80;">L1 · LOW</div>
+              <div class="box-body text-[13px]">AntiCheat</div>
+            </div>
+            <div class="box" style="border-color: #4ade80;">
+              <div class="box-eyebrow" style="color: #4ade80;">L2 · NORMAL</div>
+              <div class="box-body text-[13px]">Welcome</div>
+            </div>
+            <div class="box" style="border-color: #4ade80;">
+              <div class="box-eyebrow" style="color: #4ade80;">L3 · NORMAL</div>
+              <div class="box-body text-[13px]">Scoreboard</div>
+            </div>
+            <div class="box" style="border-color: #4ade80;">
+              <div class="box-eyebrow" style="color: #4ade80;">L4 · HIGH</div>
+              <div class="box-body text-[13px]">Economy</div>
+            </div>
+            <div class="box" style="border-color: #4ade80;">
+              <div class="box-eyebrow" style="color: #4ade80;">L5 · MONITOR</div>
+              <div class="box-body text-[13px]">Analytics</div>
+            </div>
+          </div>
+          <div class="mono text-[11px] text-neutral-500 text-center mt-2">
+            Cada plugin tem seu próprio jar, seu próprio onEnable, seu próprio listener.<br/>
+            <span class="text-green-400">Nenhum deles conhece a existência dos outros.</span>
+          </div>
+        </div>
+      </div>
+    `},
+
+  { type: 'compare', group: 'events', beat: 4,
+    title: 'O ganho · vs · O custo',
+    columns: [
+      { title: 'Ganho', sub: 'desacoplamento total', points: [
+        'Adiciona plugin #6: zero mudança nos 5 existentes',
+        'Remove plugin #3: outros 4 não percebem',
+        'Cada plugin é mantido por um time/dev diferente',
+        'Falha isolada: exception num listener não derruba os outros',
+      ]},
+      { title: 'Custo', sub: 'tradeoffs intrínsecos', points: [
+        'Ordem entre prioridades iguais: não-determinística',
+        '5 listeners pesados = tick 5× mais lento (serial)',
+        'Debug fica difícil: quem alterou o evento?',
+        'Estado compartilhado entre listeners é territorio minado',
+      ]},
+    ]},
+
+  // ─── LAB AO VIVO (centro da aula) ─────────────────────────────────
+  { type: 'liveDemo', group: 'live', beat: 4,
+    app: 'PAPER SERVER · CONSOLE PROJETADO',
+    title: 'Hora do LAB ao vivo.',
+    subtitle: 'Tudo que a gente discutiu até aqui, acontecendo num servidor real. 10 minutos.',
+    steps: [
+      'Servidor Paper rodando · localhost:25565 · 3 plugins instalados',
+      'Voluntário da turma entra com seu Minecraft',
+      'Console mostra 3 mensagens em sequência: [Welcome] [Scoreboard] [Analytics]',
+      'Comenta: 3 listeners diferentes, mesmo evento, sequencialmente',
+    ],
+    backTo: 'Próximo slide: drop do plugin',
+  },
+
+  { type: 'liveDemo', group: 'live', beat: 4,
+    app: 'TERMINAL · plugins/ folder',
+    title: 'Ainda no LAB · arranca o Welcome.',
+    subtitle: 'Mata um dos 3 plugins SEM reiniciar o servidor. Mostra que os outros 2 continuam reagindo. Isolamento na prática.',
+    steps: [
+      'No terminal: rm plugins/WelcomePlugin.jar',
+      'Executa /reload confirm (ou usa o PlugMan se tiver)',
+      'Voluntário sai e entra de novo no servidor',
+      'Console mostra apenas [Scoreboard] [Analytics] · Welcome sumiu',
+      'Comenta: você acabou de ver desacoplamento de verdade',
+    ],
+    backTo: 'Próximo slide: pegadinhas que aparecem na real',
+  },
+
+  // ─── BEAT 5: PEGADINHAS ──────────────────────────────────────────
+  { type: 'divider', group: 'events', num: '05', label: 'Pegadinhas',
+    text: 'Tudo que a gente viu até aqui é o caminho feliz. As pegadinhas começam quando o listener faz I/O, depende de ordem, ou cancela coisa que não devia.' },
+
+  { type: 'hook', group: 'events', beat: 5,
+    title: 'Listener no <code class="mono text-green-400">PlayerJoinEvent</code> chama <code class="mono">httpClient.send(...)</code> bloqueante.<br/>O webhook demora <span class="text-green-400">2 segundos</span>.<br/><span class="text-green-400">Tick por tick, descreve o que acontece.</span>',
+    subtitle: 'Você acabou de derrubar 40 ticks. TPS caiu pra 0. Players desconectaram. Por quê?',
+    tags: ['main-thread', 'async', 'tps', 'blocking', 'scheduler'] },
+
+  { type: 'htmlDiagram', group: 'events', beat: 5,
+    title: 'O remédio · main → async → main',
+    diagram: `
+      <div class="flex items-center gap-0 max-w-[1400px] w-full">
+        <div class="box flex-1 red-pulse" style="border-color: #fb923c; box-shadow: 0 0 30px rgba(251,146,60,0.3);">
+          <div class="box-eyebrow" style="color: #fb923c;">TICK · MAIN</div>
+          <div class="box-body font-semibold">@EventHandler dispara</div>
+          <div class="mono text-[10px] text-neutral-500">no main thread</div>
+        </div>
+        <div class="arrow-h"><span class="arrow-h-label">runTaskAsync</span></div>
+        <div class="box flex-1" style="border-color: #4ade80;">
+          <div class="box-eyebrow" style="color: #4ade80;">WORKER · ASYNC</div>
+          <div class="box-body font-semibold">HTTP call</div>
+          <div class="mono text-[10px] text-neutral-500">demora 2s</div>
+        </div>
+        <div class="arrow-h"><span class="arrow-h-label">runTask</span></div>
+        <div class="box flex-1 red-pulse" style="border-color: #fb923c; box-shadow: 0 0 30px rgba(251,146,60,0.3);">
+          <div class="box-eyebrow" style="color: #fb923c;">TICK · MAIN</div>
+          <div class="box-body font-semibold">Aplica no mundo</div>
+          <div class="mono text-[10px] text-neutral-500">player.sendMessage()</div>
+        </div>
+      </div>
+    `},
+
+  { type: 'code', group: 'events', beat: 5,
+    title: 'O pattern · em código',
+    code: [
+      { line: '<span class="ann">@EventHandler</span>' },
+      { line: '<span class="kw">public void</span> <span class="var">onJoin</span>(PlayerJoinEvent <span class="var">e</span>) {' },
+      { line: '<span class="ind">  </span>Player <span class="var">p</span> = <span class="var">e</span>.getPlayer();' },
+      { line: '' },
+      { line: '<span class="ind">  </span><span class="com">// 1. listener síncrono dispara task async e RETORNA</span>' },
+      { line: '<span class="ind">  </span>Bukkit.getScheduler().<span class="var">runTaskAsynchronously</span>(<span class="kw">this</span>, () -> {' },
+      { line: '<span class="ind">    </span>String <span class="var">data</span> = httpClient.send(<span class="str">"https://..."</span>);  <span class="com">// 2s</span>' },
+      { line: '' },
+      { line: '<span class="ind">    </span><span class="com">// 2. resultado volta pro main thread pra aplicar</span>' },
+      { line: '<span class="ind">    </span>Bukkit.getScheduler().<span class="var">runTask</span>(<span class="kw">this</span>, () -> {' },
+      { line: '<span class="ind">      </span><span class="var">p</span>.sendMessage(<span class="str">"Resposta: "</span> + <span class="var">data</span>);' },
+      { line: '<span class="ind">    </span>});' },
+      { line: '<span class="ind">  </span>});' },
+      { line: '<span class="ind">  </span><span class="com">// método retorna AGORA, próximo listener executa</span>' },
+      { line: '}' },
+    ]},
+
+  { type: 'list', group: 'events', beat: 5,
+    title: 'As 3 armadilhas universais de EDA',
+    items: [
+      { kw: 'Bloqueio síncrono', text: 'I/O no main thread trava tudo · Bukkit, Kafka consumer, Node event loop · mesmo erro' },
+      { kw: 'Ordering implícito', text: 'depender de ordem entre listeners (Bukkit) ou entre partições (Kafka) sem garantia formal' },
+      { kw: 'Cancelar/reverter', text: 'Cancellable.setCancelled() no Bukkit · saga compensating tx em distribuído · mesma dor' },
+    ]},
+
+  // ─── BEAT 6: ARCHITECTURE ────────────────────────────────────────
+  { type: 'divider', group: 'events', num: '06', label: 'Architecture',
+    text: 'Um Paper aguenta ~100 players. Hypixel atende 200 mil simultâneos. Como você passa de UM servidor pra UMA INFRA?' },
+
+  { type: 'hookBig', group: 'events', beat: 6,
+    title: 'Player digita <code class="mono text-green-400">play.hypixel.net</code> e aperta <span class="text-green-400">Connect</span>.<br/>Desenha CADA camada<br/>até ele aparecer correndo na lobby.',
+    subtitle: 'Esse é o teste de coerência. Tudo que a gente viu nos 5 beats anteriores tem que aparecer no diagrama.',
+    tags: ['velocity', 'proxy', 'sharding', 'redis-pubsub', 'plugin-messaging'] },
+
+  { type: 'htmlDiagram', group: 'events', beat: 6,
+    title: 'Cluster Minecraft · arquitetura completa',
+    diagram: `
+      <div class="flex flex-col gap-3 max-w-[1400px] w-full">
+        <div class="flex items-center gap-0">
+          <div class="box flex-1" style="border-color: #4ade80;">
+            <div class="box-eyebrow" style="color: #4ade80;">CLIENT</div>
+            <div class="box-body font-semibold">Minecraft Client</div>
+            <div class="mono text-[10px] text-neutral-500">Davi conectando</div>
+          </div>
+          <div class="arrow-h"><span class="arrow-h-label">DNS · TCP</span></div>
+          <div class="box flex-[1.2] red-pulse" style="border-color: #4ade80; box-shadow: 0 0 30px rgba(74,222,128,0.3);">
+            <div class="box-eyebrow" style="color: #4ade80;">PROXY · STATEFUL</div>
+            <div class="box-body font-semibold">Velocity</div>
+            <div class="mono text-[10px] text-neutral-500">handshake + roteamento</div>
+          </div>
+          <div class="arrow-h"><span class="arrow-h-label">internal TCP</span></div>
+          <div class="flex flex-col gap-2 flex-[1.5]">
+            <div class="box" style="border-color: #4ade80;">
+              <div class="box-eyebrow" style="color: #4ade80;">SHARD A</div>
+              <div class="box-body font-semibold">Lobby Server</div>
+              <div class="mono text-[10px] text-neutral-500">Paper · ~100 players</div>
+            </div>
+            <div class="box" style="border-color: #4ade80;">
+              <div class="box-eyebrow" style="color: #4ade80;">SHARD B</div>
+              <div class="box-body font-semibold">BedWars #4</div>
+              <div class="mono text-[10px] text-neutral-500">Paper · 16 players</div>
+            </div>
+            <div class="box" style="border-color: #4ade80;">
+              <div class="box-eyebrow" style="color: #4ade80;">SHARD C</div>
+              <div class="box-body font-semibold">SkyBlock</div>
+              <div class="mono text-[10px] text-neutral-500">Paper · 80 players</div>
+            </div>
+          </div>
+        </div>
+        <div class="grid grid-cols-3 gap-3 mt-4">
+          <div class="box" style="border-color: #c084fc;">
+            <div class="box-eyebrow" style="color: #c084fc;">SHARED · HOT</div>
+            <div class="box-body font-semibold">Redis</div>
+            <div class="mono text-[11px] text-neutral-500">username, party, economy<br/>+ pub/sub cross-server</div>
+          </div>
+          <div class="box" style="border-color: #fb923c;">
+            <div class="box-eyebrow" style="color: #fb923c;">DURABLE</div>
+            <div class="box-body font-semibold">Postgres / Aurora</div>
+            <div class="mono text-[11px] text-neutral-500">inventário, XP, ban list,<br/>compras (estado durável)</div>
+          </div>
+          <div class="box" style="border-color: #34d399;">
+            <div class="box-eyebrow" style="color: #34d399;">WORLD FILES</div>
+            <div class="box-body font-semibold">EBS + S3 snapshot</div>
+            <div class="mono text-[11px] text-neutral-500">chunks/regiões salvos<br/>localmente · backup remoto</div>
+          </div>
+        </div>
+      </div>
+    `},
+
+  { type: 'list', group: 'events', beat: 6,
+    title: 'A primitiva EDA reaparece em escala',
+    items: [
+      { kw: 'Plugin local',          text: '@EventHandler no Bukkit · event bus em memória · mesmo processo' },
+      { kw: 'Cross-shard',           text: 'Redis pub/sub · 1 servidor publica em topic, todos os outros consomem' },
+      { kw: 'Server ↔ Proxy',        text: 'Plugin Messaging via BungeeCord protocol · channel TCP interno' },
+      { kw: 'Estado quente',         text: 'Redis com TTL curto · cache + invalidação por evento pub/sub' },
+      { kw: 'Estado durável',        text: 'Postgres central · 1-2 writes/min por player · escala tranquila' },
+    ]},
+
+  // ─── BEAT 7: AWS ─────────────────────────────────────────────────
+  { type: 'divider', group: 'events', num: '07', label: 'AWS · managed services',
+    text: 'Cada caixa do diagrama vira UM service AWS. Justifica pela restrição do protocolo, não pela familiaridade.' },
+
+  { type: 'hookBig', group: 'events', beat: 7,
+    title: 'Olha a arquitetura.<br/>Pra cada caixa,<br/><span class="text-emerald-400">qual AWS service e por quê?</span>',
+    subtitle: 'TCP persistente, estado em memória, latência sub-50ms. Cada restrição corta opções.',
+    tags: ['ec2', 'fargate', 'nlb', 'elasticache', 'rds', 'global-accelerator'] },
+
+  { type: 'compare3', group: 'events', beat: 7,
+    title: 'Compute · 3 opções, 1 vencedor',
+    columns: [
+      { title: 'Lambda', sub: 'serverless', tag: 'NÃO SERVE', points: [
+        'Morre em 15 min',
+        'Conexão Minecraft dura horas',
+        'Cold start de 200ms = timeout',
+        'Não persiste estado',
+      ]},
+      { title: 'Fargate', sub: 'container gerenciado', tag: 'CARO PRA ESCALA', points: [
+        'Cap de RAM fica caro',
+        'Player ~10MB · mundo ~2GB',
+        'Funciona, mas custa',
+        'Bom pra shard pequeno',
+      ]},
+      { title: 'EC2 + ASG', sub: 'VM completa', tag: 'VENCE', points: [
+        'Estado em memória OK',
+        'Tipo certo por carga (c5.large)',
+        'Spot pra economizar',
+        'Padrão de mercado',
+      ]},
+    ]},
+
+  { type: 'compare3', group: 'events', beat: 7,
+    title: 'Load balancer · 3 opções, 1 vencedor',
+    columns: [
+      { title: 'ALB', sub: 'L7 · HTTP/HTTPS', tag: 'NÃO SERVE', points: [
+        'Não fala TCP raw',
+        'Não persiste conexão indefinida',
+        'Pensado pra REST/web',
+        'Minecraft não é HTTP',
+      ]},
+      { title: 'CloudFront', sub: 'edge HTTP', tag: 'NÃO SE APLICA', points: [
+        'Cacheia HTTP responses',
+        'Minecraft é stream contínuo',
+        'Não tem o que cachear',
+        'Use Global Accelerator pra latência',
+      ]},
+      { title: 'NLB', sub: 'L4 · TCP raw', tag: 'VENCE', points: [
+        'TCP puro, conexão persistente',
+        'Anycast pra latência global',
+        'Suporta conexão por horas',
+        'Padrão de game server',
+      ]},
+    ]},
+
+  { type: 'htmlDiagram', group: 'events', beat: 7,
+    title: 'O mapa completo · Minecraft on AWS',
+    diagram: `
+      <div class="flex flex-col gap-2 max-w-[1400px] w-full">
+        <div class="grid grid-cols-6 gap-2">
+          <div class="box col-span-1" style="border-color: #4ade80;">
+            <div class="box-eyebrow" style="color: #4ade80;">EDGE</div>
+            <div class="box-body font-semibold text-[14px]">Route 53</div>
+            <div class="mono text-[10px] text-neutral-500">DNS · health</div>
+          </div>
+          <div class="box col-span-1" style="border-color: #4ade80;">
+            <div class="box-eyebrow" style="color: #4ade80;">GLOBAL</div>
+            <div class="box-body font-semibold text-[14px]">Global Accel.</div>
+            <div class="mono text-[10px] text-neutral-500">anycast TCP</div>
+          </div>
+          <div class="box col-span-1" style="border-color: #4ade80;">
+            <div class="box-eyebrow" style="color: #4ade80;">LB · L4</div>
+            <div class="box-body font-semibold text-[14px]">NLB</div>
+            <div class="mono text-[10px] text-neutral-500">TCP raw</div>
+          </div>
+          <div class="box col-span-1" style="border-color: #4ade80;">
+            <div class="box-eyebrow" style="color: #4ade80;">PROXY</div>
+            <div class="box-body font-semibold text-[14px]">EC2 · Velocity</div>
+            <div class="mono text-[10px] text-neutral-500">stateful</div>
+          </div>
+          <div class="box col-span-2 red-pulse" style="border-color: #4ade80; box-shadow: 0 0 30px rgba(74,222,128,0.3);">
+            <div class="box-eyebrow" style="color: #4ade80;">SHARDS</div>
+            <div class="box-body font-semibold text-[14px]">EC2 ASG · Paper × N</div>
+            <div class="mono text-[10px] text-neutral-500">c5.large pra lobby · c5.xlarge pra BedWars · spot pra economizar</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-4 gap-2 mt-4">
+          <div class="box" style="border-color: #c084fc;">
+            <div class="box-eyebrow" style="color: #c084fc;">HOT STATE</div>
+            <div class="box-body font-semibold text-[14px]">ElastiCache Redis</div>
+            <div class="mono text-[10px] text-neutral-500">username, party, pub/sub</div>
+          </div>
+          <div class="box" style="border-color: #fb923c;">
+            <div class="box-eyebrow" style="color: #fb923c;">DURABLE</div>
+            <div class="box-body font-semibold text-[14px]">RDS Aurora Postgres</div>
+            <div class="mono text-[10px] text-neutral-500">inventário, XP, bans</div>
+          </div>
+          <div class="box" style="border-color: #34d399;">
+            <div class="box-eyebrow" style="color: #34d399;">WORLD</div>
+            <div class="box-body font-semibold text-[14px]">EBS gp3 + S3</div>
+            <div class="mono text-[10px] text-neutral-500">hot · snapshot</div>
+          </div>
+          <div class="box" style="border-color: #c084fc;">
+            <div class="box-eyebrow" style="color: #c084fc;">OBS</div>
+            <div class="box-body font-semibold text-[14px]">CloudWatch + X-Ray</div>
+            <div class="mono text-[10px] text-neutral-500">TPS, MSPT, custom</div>
+          </div>
+        </div>
+      </div>
+    `},
+
+  // ─── SYNTHESIS ───────────────────────────────────────────────────
+  { type: 'divider', group: 'synthesis', num: '08', label: 'Synthesis',
+    text: 'A virada. Tudo que vocês aprenderam em Minecraft é o mesmo modelo mental que descreve Netflix, Kafka, e qualquer EDA em produção.' },
+
+  { type: 'hookBig', group: 'synthesis', beat: 8,
+    title: 'Vocês acabaram de entender <span class="text-emerald-400">Kafka</span>,<br/><span class="text-emerald-400">SQS</span>, e a arquitetura da <span class="text-emerald-400">Netflix</span>.<br/>Só que via Minecraft.',
+    subtitle: 'O mapeamento é direto. As primitivas são as mesmas. Só o broker mudou de in-process pra distribuído.',
+    tags: ['kafka', 'sqs', 'sns', 'netflix', 'redis-pubsub', 'rabbitmq'] },
+
+  { type: 'htmlDiagram', group: 'synthesis',
+    title: 'O mapeamento Bukkit ↔ Kafka',
+    diagram: `
+      <div class="flex flex-col gap-2 max-w-[1300px] w-full">
+        <div class="grid grid-cols-12 gap-3 items-center">
+          <div class="col-span-5 box" style="border-color: #4ade80;">
+            <div class="box-eyebrow" style="color: #4ade80;">BUKKIT (in-process)</div>
+            <div class="box-body font-semibold">PlayerJoinEvent</div>
+          </div>
+          <div class="col-span-2 text-center mono text-[14px] text-emerald-400">≡</div>
+          <div class="col-span-5 box" style="border-color: #34d399;">
+            <div class="box-eyebrow" style="color: #34d399;">KAFKA (distribuído)</div>
+            <div class="box-body font-semibold">VideoStartedEvent</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-12 gap-3 items-center">
+          <div class="col-span-5 box" style="border-color: #4ade80;">
+            <div class="box-eyebrow" style="color: #4ade80;">BUKKIT</div>
+            <div class="box-body font-semibold">@EventHandler em listener</div>
+          </div>
+          <div class="col-span-2 text-center mono text-[14px] text-emerald-400">≡</div>
+          <div class="col-span-5 box" style="border-color: #34d399;">
+            <div class="box-eyebrow" style="color: #34d399;">KAFKA</div>
+            <div class="box-body font-semibold">consumer subscribe em topic</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-12 gap-3 items-center">
+          <div class="col-span-5 box" style="border-color: #4ade80;">
+            <div class="box-eyebrow" style="color: #4ade80;">BUKKIT</div>
+            <div class="box-body font-semibold">event bus interno</div>
+          </div>
+          <div class="col-span-2 text-center mono text-[14px] text-emerald-400">≡</div>
+          <div class="col-span-5 box" style="border-color: #34d399;">
+            <div class="box-eyebrow" style="color: #34d399;">KAFKA</div>
+            <div class="box-body font-semibold">Kafka cluster + topic</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-12 gap-3 items-center">
+          <div class="col-span-5 box" style="border-color: #4ade80;">
+            <div class="box-eyebrow" style="color: #4ade80;">BUKKIT</div>
+            <div class="box-body font-semibold">EventPriority</div>
+          </div>
+          <div class="col-span-2 text-center mono text-[14px] text-emerald-400">≡</div>
+          <div class="col-span-5 box" style="border-color: #34d399;">
+            <div class="box-eyebrow" style="color: #34d399;">KAFKA</div>
+            <div class="box-body font-semibold">partição por chave (ordem)</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-12 gap-3 items-center">
+          <div class="col-span-5 box" style="border-color: #4ade80;">
+            <div class="box-eyebrow" style="color: #4ade80;">BUKKIT</div>
+            <div class="box-body font-semibold">tick estourando 50ms</div>
+          </div>
+          <div class="col-span-2 text-center mono text-[14px] text-emerald-400">≡</div>
+          <div class="col-span-5 box" style="border-color: #34d399;">
+            <div class="box-eyebrow" style="color: #34d399;">KAFKA</div>
+            <div class="box-body font-semibold">consumer lag crescendo</div>
+          </div>
+        </div>
+      </div>
+    `},
+
+  { type: 'list', group: 'synthesis', beat: 8,
+    title: 'O que vocês saem daqui sabendo',
+    items: [
+      { kw: 'É paradigma',     text: 'Event-Driven Architecture é um padrão · Kafka, SQS, Bukkit, Redis pub/sub são implementações' },
+      { kw: 'Primitivas iguais', text: 'evento, listener, broker, fan-out · vocabulário comum em qualquer escala' },
+      { kw: 'Tradeoffs iguais',  text: 'desacoplamento vs rastreabilidade · simplicidade vs ordering · intrínseco ao paradigma' },
+      { kw: 'Escolha por necessidade', text: 'Kafka pra durabilidade + replay · Redis pra latência · in-process pra simplicidade' },
+    ]},
+
+  // ─── CLOSING ─────────────────────────────────────────────────────
+  { type: 'closing', group: 'synthesis' },
+];
+
+// ─── Layout helpers ──────────────────────────────────────────────
+function header(group, beat) {
+  const g = GROUP[group];
+  return `
+    <header class="absolute top-0 left-0 right-0 px-16 py-6 flex justify-between items-center mono text-[11px] uppercase tracking-[0.2em] text-neutral-500 z-30">
+      <span class="text-neutral-400 anim">MINECRAFT · EVENT-DRIVEN</span>
+      ${beat !== undefined ? `<span class="px-3 py-1 border rounded-sm anim delay-1" style="border-color: ${g.accent}40; color: ${g.accent};">BEAT ${String(beat).padStart(2,'0')}</span>` : '<span></span>'}
+      <span class="anim delay-2" style="color: ${g.accent};">${g.name}</span>
+    </header>
+  `;
+}
+
+function footer(group) {
+  const g = GROUP[group];
+  return `
+    <footer class="absolute bottom-0 left-0 right-0 px-16 py-4 flex justify-between items-center mono text-[10px] uppercase tracking-[0.25em] text-neutral-600 z-30">
+      <span class="text-neutral-500">HOT STUFF 2026.2</span>
+      <span style="color: ${g.accent}99;">${g.name}</span>
+    </footer>
+  `;
+}
+
+function ambientGlow(group, pos='center') {
+  const g = GROUP[group];
+  if (group === 'cover') return `
+    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1100px] h-[800px] rounded-full blur-[200px] glow-pulse" style="background: radial-gradient(circle, ${g.soft} 0%, transparent 70%);"></div>`;
+  const positions = {
+    right: 'top-[10%] right-[-300px]',
+    left:  'top-[10%] left-[-300px]',
+    center: 'top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2',
+  };
+  return `<div class="absolute ${positions[pos]} w-[700px] h-[700px] rounded-full blur-[200px] glow-pulse" style="background: radial-gradient(circle, ${g.soft} 0%, transparent 70%);"></div>`;
+}
+
+function tagsRow(tags, group) {
+  const g = GROUP[group];
+  return `
+    <div class="stagger flex flex-wrap gap-2">
+      ${tags.map(t => `<span class="mono text-[12px] uppercase tracking-[0.15em] px-3 py-1.5 rounded-sm border" style="border-color: ${g.accent}40; background: ${g.soft}; color: ${g.accent};">${t}</span>`).join('')}
+    </div>
+  `;
+}
+
+// ─── Slide renderers ─────────────────────────────────────────────
+function r_cover(s) {
+  const g = GROUP[s.group];
+  return `
+    <section class="slide active w-full h-full overflow-hidden bg-black" data-group="${s.group}">
+      ${ambientGlow(s.group)}
+      <header class="absolute top-0 left-0 right-0 px-16 py-6 flex justify-between items-center mono text-[11px] uppercase tracking-[0.2em] text-neutral-500 z-30">
+        <span class="text-neutral-400">MINECRAFT · EVENT-DRIVEN</span>
+        <span class="px-3 py-1 border border-neutral-800 rounded-sm text-neutral-300">SYSTEM DESIGN SERIES</span>
+        <span class="text-neutral-500">HOT STUFF 2026.2</span>
+      </header>
+      <div class="relative z-10 w-full max-w-[1400px] mx-auto px-16 grid grid-cols-12 gap-8 self-center">
+        <div class="col-span-1 flex justify-end pr-6 border-r border-neutral-800/60 relative">
+          <div class="absolute top-0 right-[-1.5px] w-[3px] h-48 rounded-full anim delay-1" style="background: #4ade80; box-shadow: 0 0 24px #4ade8099;"></div>
+        </div>
+        <div class="col-span-11 pl-8 flex flex-col gap-10">
+          <div class="flex items-center gap-3 mono text-[12px] uppercase tracking-[0.25em] text-neutral-500 anim">
+            <span class="text-white">HOT STUFF 2026.2</span>
+            <span class="text-neutral-800">·</span>
+            <span>90 MIN</span>
+            <span class="text-neutral-800">·</span>
+            <span class="border border-neutral-800 px-3 py-1 rounded-sm text-white">7 BEATS · 1 LAB</span>
+          </div>
+          <h1 class="display text-white text-[120px] leading-[0.95] font-bold anim delay-1">Minecraft é<br/><span class="text-green-400">Event-Driven.</span></h1>
+          <h2 class="display text-neutral-400 text-[36px] leading-tight font-medium anim delay-2">Packets · Tick · Events</h2>
+          <p class="display text-neutral-500 text-[20px] leading-relaxed font-normal max-w-[900px] anim delay-3">A primitiva que faz Netflix processar bilhão de evento por dia é a mesma que faz um servidor de Minecraft funcionar. Vamos aprender via o que vocês já jogam.</p>
+          <div class="mt-4 w-[400px] flex gap-2 anim delay-4">
+            <div class="h-[2px] flex-grow rounded-full" style="background: #4ade80; box-shadow: 0 0 12px #4ade8080;"></div>
+            <div class="h-[2px] flex-grow bg-neutral-800 rounded-full"></div>
+            <div class="h-[2px] flex-grow bg-neutral-800 rounded-full"></div>
+          </div>
+        </div>
+      </div>
+      <footer class="absolute bottom-0 left-0 right-0 px-16 py-4 flex justify-between items-center mono text-[10px] uppercase tracking-[0.25em] text-neutral-600 z-30">
+        <span>→ comece pela próxima</span>
+        <span class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-[14px]">terminal</span>
+          MINECRAFT_EDA.SH
+        </span>
+      </footer>
+    </section>
+  `;
+}
+
+function r_divider(s) {
+  const g = GROUP[s.group];
+  return `
+    <section class="slide w-full h-full overflow-hidden bg-black" data-group="${s.group}">
+      ${ambientGlow(s.group, 'center')}
+      <div class="relative z-10 w-full max-w-[1400px] mx-auto px-16 grid grid-cols-12 gap-8 self-center">
+        <div class="col-span-12 flex flex-col gap-12 anim">
+          <div class="mono text-[14px] uppercase tracking-[0.4em] anim" style="color: ${g.accent};">PARTE ${s.num}</div>
+          <h1 class="display text-[180px] leading-[0.9] font-bold anim delay-1" style="color: ${g.accent};">${s.label}</h1>
+          <p class="display text-neutral-400 text-[30px] leading-tight font-normal max-w-[1100px] anim delay-2">${s.text}</p>
+        </div>
+      </div>
+      <footer class="absolute bottom-0 left-0 right-0 px-16 py-4 flex justify-between items-center mono text-[10px] uppercase tracking-[0.25em] text-neutral-600 z-30">
+        <span style="color: ${g.accent}99;">${g.name}</span>
+        <span>→</span>
+      </footer>
+    </section>
+  `;
+}
+
+function r_hook(s, big=false) {
+  const g = GROUP[s.group];
+  const titleSize = big ? 'text-[88px]' : 'text-[80px]';
+  return `
+    <section class="slide w-full h-full overflow-hidden bg-black" data-group="${s.group}">
+      ${ambientGlow(s.group, 'right')}
+      ${header(s.group, s.beat)}
+      <div class="relative z-10 w-full max-w-[1400px] mx-auto px-16 grid grid-cols-12 gap-8 self-center pt-20 pb-20">
+        <div class="col-span-1 flex justify-end pr-6 border-r border-neutral-800/40 relative">
+          <div class="absolute top-0 right-[-1.5px] w-[3px] h-40 rounded-full anim delay-1" style="background: ${g.accent}; box-shadow: 0 0 24px ${g.accent}99;"></div>
+        </div>
+        <div class="col-span-11 pl-8 flex flex-col gap-10 justify-center">
+          <h1 class="display ${titleSize} leading-[1.05] font-bold text-white anim">${s.title}</h1>
+          ${s.subtitle ? `<p class="display text-neutral-400 text-[26px] leading-snug font-normal max-w-[1000px] anim delay-1">${s.subtitle}</p>` : ''}
+          ${s.tags ? `<div class="anim delay-2">${tagsRow(s.tags, s.group)}</div>` : ''}
+        </div>
+      </div>
+      ${footer(s.group)}
+    </section>
+  `;
+}
+
+function r_hookBig(s) { return r_hook(s, true); }
+
+function r_code(s) {
+  const g = GROUP[s.group];
+  return `
+    <section class="slide w-full h-full overflow-hidden bg-black" data-group="${s.group}">
+      ${ambientGlow(s.group, 'right')}
+      ${header(s.group, s.beat)}
+      <div class="relative z-10 w-full max-w-[1500px] mx-auto px-16 flex flex-col gap-8 self-center justify-center pt-20 pb-20">
+        <h2 class="display text-[36px] font-semibold text-white anim" style="border-left: 3px solid ${g.accent}; padding-left: 20px;">${s.title}</h2>
+        <div class="code anim-scale delay-1 max-w-[1200px]" style="box-shadow: 0 0 60px ${g.soft};">
+          ${s.code.map((c, i) => `
+            <div class="flex items-baseline gap-6">
+              <div class="flex-1 min-w-0 whitespace-pre">${c.line || '&nbsp;'}</div>
+              ${c.note ? `<div class="mono text-[13px] text-neutral-600 italic shrink-0">← ${c.note}</div>` : ''}
+            </div>
+          `).join('')}
+        </div>
+      </div>
+      ${footer(s.group)}
+    </section>
+  `;
+}
+
+function r_list(s) {
+  const g = GROUP[s.group];
+  return `
+    <section class="slide w-full h-full overflow-hidden bg-black" data-group="${s.group}">
+      ${ambientGlow(s.group, 'right')}
+      ${header(s.group, s.beat)}
+      <div class="relative z-10 w-full max-w-[1400px] mx-auto px-16 flex flex-col gap-10 self-center justify-center pt-20 pb-20">
+        <h2 class="display text-[44px] font-semibold text-white anim" style="border-left: 3px solid ${g.accent}; padding-left: 20px;">${s.title}</h2>
+        <ul class="stagger flex flex-col gap-5 max-w-[1100px]">
+          ${s.items.map((it, i) => `
+            <li class="flex items-baseline gap-6">
+              <span class="mono text-[28px] font-bold w-12 shrink-0 text-right" style="color: ${g.accent};">${String(i+1).padStart(2,'0')}</span>
+              <div class="flex-1">
+                <span class="display text-[28px] font-semibold text-white">${it.kw}</span>
+                <span class="display text-[22px] font-normal text-neutral-400 ml-3">${it.text}</span>
+              </div>
+            </li>
+          `).join('')}
+        </ul>
+      </div>
+      ${footer(s.group)}
+    </section>
+  `;
+}
+
+function r_compare(s) {
+  const g = GROUP[s.group];
+  return `
+    <section class="slide w-full h-full overflow-hidden bg-black" data-group="${s.group}">
+      ${ambientGlow(s.group, 'center')}
+      ${header(s.group, s.beat)}
+      <div class="relative z-10 w-full max-w-[1400px] mx-auto px-16 flex flex-col gap-10 self-center justify-center pt-20 pb-20">
+        <h2 class="display text-[44px] font-semibold text-white anim" style="border-left: 3px solid ${g.accent}; padding-left: 20px;">${s.title}</h2>
+        <div class="grid grid-cols-2 gap-8 stagger">
+          ${s.columns.map((col, i) => `
+            <div class="rounded-xl border border-neutral-800 bg-neutral-950/60 p-8 flex flex-col gap-3">
+              <h3 class="display text-[40px] font-bold leading-none" style="color: ${g.accent};">${col.title}</h3>
+              ${col.sub ? `<p class="mono text-[12px] uppercase tracking-[0.2em] text-neutral-500">${col.sub}</p>` : ''}
+              <ul class="flex flex-col gap-3 mt-3">
+                ${col.points.map(p => `<li class="display text-[18px] text-neutral-300 leading-snug">· ${p}</li>`).join('')}
+              </ul>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+      ${footer(s.group)}
+    </section>
+  `;
+}
+
+function r_compare3(s) {
+  const g = GROUP[s.group];
+  return `
+    <section class="slide w-full h-full overflow-hidden bg-black" data-group="${s.group}">
+      ${ambientGlow(s.group, 'center')}
+      ${header(s.group, s.beat)}
+      <div class="relative z-10 w-full max-w-[1500px] mx-auto px-12 flex flex-col gap-10 self-center justify-center pt-20 pb-20">
+        <h2 class="display text-[44px] font-semibold text-white anim" style="border-left: 3px solid ${g.accent}; padding-left: 20px;">${s.title}</h2>
+        <div class="grid grid-cols-3 gap-6 stagger">
+          ${s.columns.map((col, i) => `
+            <div class="rounded-xl border border-neutral-800 bg-neutral-950/60 p-7 flex flex-col gap-4">
+              <div class="mono text-[10px] uppercase tracking-[0.2em] text-neutral-500">${col.tag}</div>
+              <h3 class="display text-[30px] font-bold leading-tight" style="color: ${g.accent};">${col.title}</h3>
+              <p class="mono text-[12px] uppercase tracking-[0.15em] text-neutral-500 -mt-2">${col.sub}</p>
+              <ul class="flex flex-col gap-2.5 mt-3">
+                ${col.points.map(p => `<li class="display text-[16px] text-neutral-300 leading-snug">· ${p}</li>`).join('')}
+              </ul>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+      ${footer(s.group)}
+    </section>
+  `;
+}
+
+function r_htmlDiagram(s) {
+  const g = GROUP[s.group];
+  return `
+    <section class="slide w-full h-full overflow-hidden bg-black" data-group="${s.group}">
+      ${ambientGlow(s.group, 'center')}
+      ${header(s.group, s.beat)}
+      <div class="relative z-10 w-full h-full px-16 pt-20 pb-16 flex flex-col items-center justify-center gap-10">
+        ${s.title ? `<h2 class="display text-[36px] font-semibold text-white anim" style="border-left: 3px solid ${g.accent}; padding-left: 20px;">${s.title}</h2>` : ''}
+        <div class="anim-scale delay-1 flex items-center justify-center w-full">
+          ${s.diagram}
+        </div>
+      </div>
+      ${footer(s.group)}
+    </section>
+  `;
+}
+
+function r_liveDemo(s) {
+  const g = GROUP['live'];
+  return `
+    <section class="slide w-full h-full overflow-hidden" data-group="live" style="background: linear-gradient(135deg, #1a0606 0%, #0a0a0a 60%);">
+      <div class="absolute inset-0 pointer-events-none">
+        <div class="absolute top-0 left-0 right-0 h-[6px]" style="background: linear-gradient(90deg, transparent, #ef4444, transparent);"></div>
+        <div class="absolute bottom-0 left-0 right-0 h-[6px]" style="background: linear-gradient(90deg, transparent, #ef4444, transparent);"></div>
+      </div>
+      <div class="absolute top-1/2 right-[-200px] -translate-y-1/2 w-[800px] h-[800px] rounded-full blur-[200px] glow-pulse" style="background: radial-gradient(circle, rgba(239,68,68,0.25) 0%, transparent 70%);"></div>
+      <header class="absolute top-0 left-0 right-0 px-16 py-8 flex justify-between items-center mono text-[12px] uppercase tracking-[0.3em] z-30">
+        <span class="text-red-400 anim flex items-center gap-3">
+          <span class="inline-block w-3 h-3 rounded-full bg-red-500 red-pulse"></span>
+          AO VIVO
+        </span>
+        ${s.beat !== undefined ? `<span class="px-4 py-1.5 border border-red-500/60 text-red-400 rounded-sm anim delay-1">BEAT ${String(s.beat).padStart(2,'0')} · DEMO</span>` : ''}
+        <span class="text-red-400 anim delay-2">${s.app}</span>
+      </header>
+      <div class="relative z-10 w-full max-w-[1400px] mx-auto px-16 grid grid-cols-12 gap-8 self-center pt-24 pb-24">
+        <div class="col-span-12 flex flex-col gap-10">
+          <div class="mono text-[14px] uppercase tracking-[0.4em] text-red-400 anim">TROCAR TELA →</div>
+          <h1 class="display text-white text-[100px] leading-[0.95] font-bold anim delay-1">${s.title}</h1>
+          ${s.subtitle ? `<p class="display text-neutral-300 text-[28px] leading-snug font-normal max-w-[1100px] anim delay-2">${s.subtitle}</p>` : ''}
+          ${s.steps ? `
+            <div class="anim delay-3 mt-4">
+              <div class="mono text-[12px] uppercase tracking-[0.3em] text-red-400 mb-4">CHECKLIST</div>
+              <ol class="flex flex-col gap-3 stagger max-w-[1100px]">
+                ${s.steps.map((step, i) => `
+                  <li class="flex items-start gap-4 display text-[20px] text-neutral-200 leading-snug">
+                    <span class="mono text-red-500 font-bold shrink-0 w-8">${String(i+1).padStart(2,'0')}</span>
+                    <span>${step}</span>
+                  </li>
+                `).join('')}
+              </ol>
+            </div>
+          ` : ''}
+          ${s.backTo ? `<div class="mono text-[11px] uppercase tracking-[0.25em] text-neutral-500 anim delay-4 mt-6">↪ depois do demo · ${s.backTo}</div>` : ''}
+        </div>
+      </div>
+      <footer class="absolute bottom-0 left-0 right-0 px-16 py-6 flex justify-between items-center mono text-[10px] uppercase tracking-[0.3em] text-red-500/60 z-30">
+        <span>HOT STUFF 2026.2</span>
+        <span>${s.app}</span>
+      </footer>
+    </section>
+  `;
+}
+
+function r_closing(s) {
+  const g = GROUP[s.group];
+  return `
+    <section class="slide w-full h-full overflow-hidden bg-black" data-group="${s.group}">
+      ${ambientGlow(s.group, 'center')}
+      <header class="absolute top-0 left-0 right-0 px-16 py-6 flex justify-between items-center mono text-[11px] uppercase tracking-[0.2em] text-neutral-500 z-30">
+        <span class="text-neutral-400">MINECRAFT · EVENT-DRIVEN</span>
+        <span style="color: ${g.accent};">END</span>
+      </header>
+      <div class="relative z-10 w-full max-w-[1400px] mx-auto px-16 flex flex-col gap-10 self-center justify-center">
+        <div class="mono text-[14px] uppercase tracking-[0.4em] anim" style="color: ${g.accent};">A JORNADA</div>
+        <h1 class="display text-[88px] leading-[1.0] font-bold text-white anim delay-1">Packets<br/><span class="text-neutral-500">→</span> Tick Loop<br/><span class="text-neutral-500">→</span> Events<br/><span class="text-neutral-500">→</span> Fan-out<br/><span class="text-neutral-500">→</span> <span style="color: ${g.accent};">Kafka, SQS, Netflix</span></h1>
+        <p class="display text-neutral-400 text-[28px] leading-tight font-normal anim delay-3 max-w-[1100px]">A primitiva é a mesma. O modelo mental cabe num servidor de Minecraft. Da próxima vez que alguém te falar "Event-Driven", você já viu.</p>
+      </div>
+      <footer class="absolute bottom-0 left-0 right-0 px-16 py-4 flex justify-between items-center mono text-[10px] uppercase tracking-[0.25em] text-neutral-600 z-30">
+        <span>HOT STUFF 2026.2</span>
+        <span style="color: ${g.accent}99;">SYSTEM DESIGN SERIES</span>
+      </footer>
+    </section>
+  `;
+}
+
+const RENDERERS = {
+  cover: r_cover,
+  divider: r_divider,
+  hook: r_hook,
+  hookBig: r_hookBig,
+  code: r_code,
+  list: r_list,
+  compare: r_compare,
+  compare3: r_compare3,
+  htmlDiagram: r_htmlDiagram,
+  liveDemo: r_liveDemo,
+  closing: r_closing,
+};
+
+// Render all
+const deck = document.getElementById('deck');
+deck.innerHTML = slides.map(s => RENDERERS[s.type](s)).join('');
+
+let current = 0;
+const allSlides = deck.querySelectorAll('.slide');
+document.getElementById('slide-total').textContent = String(allSlides.length).padStart(2, '0');
+
+function show(idx) {
+  current = Math.max(0, Math.min(allSlides.length - 1, idx));
+  allSlides.forEach((s, i) => s.classList.toggle('active', i === current));
+  document.getElementById('slide-num').textContent = String(current + 1).padStart(2, '0');
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown' || e.key === 'j') {
+    e.preventDefault(); show(current + 1);
+  } else if (e.key === 'ArrowLeft' || e.key === 'PageUp' || e.key === 'k') {
+    e.preventDefault(); show(current - 1);
+  } else if (e.key === 'Home') {
+    show(0);
+  } else if (e.key === 'End') {
+    show(allSlides.length - 1);
+  }
+});
+
+document.addEventListener('click', (e) => {
+  if (e.target.closest('a, button, code')) return;
+  show(current + 1);
+});
+
+const wantsPrint = new URLSearchParams(window.location.search).get('print') === '1';
+if (wantsPrint) {
+  allSlides.forEach(s => s.classList.add('active'));
+  window.addEventListener('load', () => {
+    setTimeout(() => window.print(), 1000);
+  });
+} else {
+  show(0);
+}
+</script>
+</body>
+</html>

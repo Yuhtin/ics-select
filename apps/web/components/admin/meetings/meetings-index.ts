@@ -3,12 +3,14 @@ import { urlShortener } from './lessons/url-shortener';
 import { chatMessaging } from './lessons/chat-messaging';
 import { deployJourney } from './lessons/deploy-journey';
 import { backendFundamentos } from './lessons/backend-fundamentos';
+import { minecraftEventDriven } from './lessons/minecraft-event-driven';
 
 const LESSONS: Record<string, Lesson> = {
   [urlShortener.slug]: urlShortener,
   [chatMessaging.slug]: chatMessaging,
   [deployJourney.slug]: deployJourney,
   [backendFundamentos.slug]: backendFundamentos,
+  [minecraftEventDriven.slug]: minecraftEventDriven,
 };
 
 export function getLesson(slug: string): Lesson | undefined {

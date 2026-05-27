@@ -1,0 +1,6 @@
+name: WelcomePlugin
+version: 1.0.0
+main: com.ics.lab.WelcomePlugin
+api-version: '1.21'
+description: Listener no PlayerJoinEvent — manda saudação. (ICS Lab)
+author: ICS Select

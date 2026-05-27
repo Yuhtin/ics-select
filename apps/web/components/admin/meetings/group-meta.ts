@@ -114,4 +114,28 @@ export const GROUP_META: Record<NodeGroup, GroupVisual> = {
     stripeClass: 'bg-primary',
     tintClass: 'bg-primary-soft/40',
   },
+  packets: {
+    label: 'Packets',
+    eyebrow: 'Packets',
+    accentClass: 'text-reflect',
+    ringClass: 'bg-reflect',
+    stripeClass: 'bg-reflect',
+    tintClass: 'bg-reflect-soft/40',
+  },
+  tick: {
+    label: 'Tick Loop',
+    eyebrow: 'Tick Loop',
+    accentClass: 'text-warn',
+    ringClass: 'bg-warn',
+    stripeClass: 'bg-warn',
+    tintClass: 'bg-warn-soft/40',
+  },
+  events: {
+    label: 'Events & Listeners',
+    eyebrow: 'Events & Listeners',
+    accentClass: 'text-success',
+    ringClass: 'bg-success',
+    stripeClass: 'bg-success',
+    tintClass: 'bg-success-soft/40',
+  },
 };

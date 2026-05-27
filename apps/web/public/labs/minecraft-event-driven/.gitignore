@@ -1,0 +1,10 @@
+# Maven build output (jars finais ficam em plugins/, commitados)
+target/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/

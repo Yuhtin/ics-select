@@ -1,0 +1,6 @@
+name: AnalyticsPlugin
+version: 1.0.0
+main: com.ics.lab.AnalyticsPlugin
+api-version: '1.21'
+description: Listener no PlayerJoinEvent (MONITOR priority) — registra evento. (ICS Lab)
+author: ICS Select

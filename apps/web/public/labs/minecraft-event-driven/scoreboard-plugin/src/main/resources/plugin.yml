@@ -1,0 +1,6 @@
+name: ScoreboardPlugin
+version: 1.0.0
+main: com.ics.lab.ScoreboardPlugin
+api-version: '1.21'
+description: Listener no PlayerJoinEvent — monta scoreboard. (ICS Lab)
+author: ICS Select

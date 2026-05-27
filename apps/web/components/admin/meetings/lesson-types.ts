@@ -11,7 +11,10 @@ export type NodeGroup =
   | 'devops'
   | 'infra'
   | 'api'
-  | 'nestjs';
+  | 'nestjs'
+  | 'packets'
+  | 'tick'
+  | 'events';
 
 export type Asker = {
   name: string;
