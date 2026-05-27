@@ -1,0 +1,13 @@
+name: SudoPlugin
+version: 1.0.0
+main: com.ics.lab.SudoPlugin
+api-version: '1.21'
+description: Run commands as another player (chat-based, fires AsyncChatEvent). (ICS Lab)
+commands:
+  sudo:
+    description: Run command as another player
+    usage: /sudo <player> <command...>
+    permission: ics.sudo
+permissions:
+  ics.sudo:
+    default: op

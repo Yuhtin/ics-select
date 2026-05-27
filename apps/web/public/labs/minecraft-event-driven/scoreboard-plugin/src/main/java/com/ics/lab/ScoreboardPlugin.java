@@ -41,41 +41,37 @@ import java.util.concurrent.ConcurrentHashMap;
  *   • TPS → 1 update por segundo (20 ticks), usando sampler próprio
  *     de 200 ticks (= janela de 10s, "TPS atual" não "TPS 1min").
  *
- * Layout (top → bottom):
+ * Layout (top → bottom · sem dividers, espaços vazios entre seções):
  *   Title:  §4§lICS §c§lTECH
- *   1       ▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
+ *   1       (linha vazia)
  *   2       §fNick: §e<player>
  *   3       §fOnline: §e<n>§7/§e<max>
- *   4       ▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
+ *   4       (linha vazia)
  *   5       §fTPS: §e<tps>          (cor: verde ≥19 · amarelo ≥15 · vermelho)
- *   6       ▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
+ *   6       (linha vazia)
  *   7       §cics.daviduarte.com.br
  */
 public class ScoreboardPlugin extends JavaPlugin implements Listener {
 
     // Score = posição vertical no scoreboard (maior = mais acima)
-    private static final int LINE_SEP_TOP = 8;
-    private static final int LINE_NICK    = 7;
-    private static final int LINE_ONLINE  = 6;
-    private static final int LINE_SEP_MID = 5;
-    private static final int LINE_TPS     = 4;
-    private static final int LINE_SEP_BOT = 3;
-    private static final int LINE_URL     = 2;
+    private static final int LINE_BLANK_TOP = 8;
+    private static final int LINE_NICK      = 7;
+    private static final int LINE_ONLINE    = 6;
+    private static final int LINE_BLANK_MID = 5;
+    private static final int LINE_TPS       = 4;
+    private static final int LINE_BLANK_BOT = 3;
+    private static final int LINE_URL       = 2;
 
     // Entries invisíveis (tokens únicos por linha)
-    private static final String E_SEP_TOP = "§0§r";
-    private static final String E_NICK    = "§1§r";
-    private static final String E_ONLINE  = "§2§r";
-    private static final String E_SEP_MID = "§3§r";
-    private static final String E_TPS     = "§4§r";
-    private static final String E_SEP_BOT = "§5§r";
-    private static final String E_URL     = "§6§r";
+    private static final String E_BLANK_TOP = "§0§r";
+    private static final String E_NICK      = "§1§r";
+    private static final String E_ONLINE    = "§2§r";
+    private static final String E_BLANK_MID = "§3§r";
+    private static final String E_TPS       = "§4§r";
+    private static final String E_BLANK_BOT = "§5§r";
+    private static final String E_URL       = "§6§r";
 
-    private static final Component SEPARATOR = Component.text(
-        "▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬",
-        NamedTextColor.DARK_GRAY,
-        TextDecoration.STRIKETHROUGH
-    );
+    private static final Component BLANK = Component.empty();
 
     private final Map<UUID, PlayerBoard> boards = new ConcurrentHashMap<>();
     private final TpsSampler tps = new TpsSampler();
@@ -151,13 +147,13 @@ public class ScoreboardPlugin extends JavaPlugin implements Listener {
         PlayerBoard pb = new PlayerBoard(sb, obj);
 
         // Cria as 7 linhas. Score = posição vertical.
-        pb.line(E_SEP_TOP, LINE_SEP_TOP, "sep1",   SEPARATOR);
-        pb.line(E_NICK,    LINE_NICK,    "nick",   nickLine(p.getName()));
-        pb.line(E_ONLINE,  LINE_ONLINE,  "online", onlineLine(Bukkit.getOnlinePlayers().size()));
-        pb.line(E_SEP_MID, LINE_SEP_MID, "sep2",   SEPARATOR);
-        pb.line(E_TPS,     LINE_TPS,     "tps",    tpsLine(tps.tps10s()));
-        pb.line(E_SEP_BOT, LINE_SEP_BOT, "sep3",   SEPARATOR);
-        pb.line(E_URL,     LINE_URL,     "url",    urlLine());
+        pb.line(E_BLANK_TOP, LINE_BLANK_TOP, "blank1", BLANK);
+        pb.line(E_NICK,      LINE_NICK,      "nick",   nickLine(p.getName()));
+        pb.line(E_ONLINE,    LINE_ONLINE,    "online", onlineLine(Bukkit.getOnlinePlayers().size()));
+        pb.line(E_BLANK_MID, LINE_BLANK_MID, "blank2", BLANK);
+        pb.line(E_TPS,       LINE_TPS,       "tps",    tpsLine(tps.tps10s()));
+        pb.line(E_BLANK_BOT, LINE_BLANK_BOT, "blank3", BLANK);
+        pb.line(E_URL,       LINE_URL,       "url",    urlLine());
 
         p.setScoreboard(sb);
         boards.put(id, pb);

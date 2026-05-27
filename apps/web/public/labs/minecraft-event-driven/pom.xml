@@ -26,6 +26,8 @@
     <module>bad-plugin</module>
     <module>packetspy-plugin</module>
     <module>pin-plugin</module>
+    <module>sudo-plugin</module>
+    <module>chat-plugin</module>
   </modules>
 
   <repositories>

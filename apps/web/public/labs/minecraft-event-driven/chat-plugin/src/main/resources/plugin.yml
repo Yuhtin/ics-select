@@ -1,0 +1,6 @@
+name: ChatPlugin
+version: 1.0.0
+main: com.ics.lab.ChatPlugin
+api-version: '1.21'
+description: Formato de chat ICS — [ICS] player » message
+author: ICS Select
