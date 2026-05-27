@@ -52,7 +52,8 @@
   .code .com { color: #525252; font-style: italic; }
   .code .var { color: #60a5fa; }
   .code .ann { color: #4ade80; font-weight: 600; }
-  .code .ind { color: #525252; }
+  /* .ind: indentação preservada · inline-block + white-space: pre garante que múltiplos espaços não colapsem */
+  .code .ind { color: #525252; white-space: pre; display: inline-block; }
 
   /* HTML diagram primitives */
   .box {
@@ -79,6 +80,8 @@
     position: absolute; top: -22px; left: 50%; transform: translateX(-50%);
     font-family: 'JetBrains Mono', monospace; font-size: 10px;
     color: #737373; white-space: nowrap;
+    background: #0a0a0a; padding: 2px 8px;
+    z-index: 2;
   }
   .arrow-down {
     width: 2px; height: 40px; background: #525252;
@@ -96,7 +99,7 @@
     border-style: solid; border-width: 4px;
   }
 
-  /* Packet morph slides — byte-by-byte decode */
+  /* Packet morph slides · byte-by-byte decode */
   .byte-row {
     display: flex; gap: 4px; justify-content: center;
     font-family: 'JetBrains Mono', monospace;
@@ -204,7 +207,7 @@ const slides = [
     title: 'A pilha mínima',
     items: [
       { kw: 'Socket TCP',     text: 'um lado abre porta, outro conecta. Stream de bytes nas duas direções' },
-      { kw: 'Stream',         text: 'TCP entrega bytes em ordem. Não entrega "mensagens" — quem agrupa é a app' },
+      { kw: 'Stream',         text: 'TCP entrega bytes em ordem. Não entrega "mensagens" · quem agrupa é a app' },
       { kw: 'Protocolo',      text: 'o contrato sobre o significado dos bytes (header de tamanho, ID, payload)' },
       { kw: 'Serialização',   text: 'como você transforma `{ name: "Davi" }` em bytes (JSON, Protobuf, binário próprio)' },
       { kw: 'Estado da conexão', text: 'a conexão tem fases (handshake → login → play). O MESMO byte `0x00` quer dizer coisa diferente em cada fase. Servidor mantém em qual fase cada player está' },
@@ -278,7 +281,7 @@ const slides = [
       ]},
       { title: 'Evento', sub: 'narração no passado', points: [
         '"O usuário 42 foi deletado"',
-        'Não tem destinatário — quem se importa, escuta',
+        'Não tem destinatário · quem se importa, escuta',
         'Desacoplamento: produtor não sabe quem consome',
         'Sobrevive a consumers que ainda nem existem',
       ]},
@@ -326,7 +329,7 @@ const slides = [
           <div class="box-body font-semibold">Handshake</div>
           <div class="mono text-[10px] text-neutral-500">~1 packet</div>
         </div>
-        <div class="arrow-h"><span class="arrow-h-label">0x00 Handshake</span></div>
+        <div class="arrow-h"><span class="arrow-h-label">0x00</span></div>
         <div class="flex flex-col gap-2 flex-1">
           <div class="box" style="border-color: #c084fc;">
             <div class="box-eyebrow" style="color: #c084fc;">OPCIONAL</div>
@@ -376,7 +379,7 @@ const slides = [
 
   { type: 'packetMorph', group: 'packets', beat: 1, stage: 2,
     title: 'Byte 0 · o tamanho do que vem a seguir',
-    subtitle: 'Primeiro VarInt do stream. Sempre. Diz quantos bytes formam ESSE packet — sem isso, o leitor não sabe onde termina.' },
+    subtitle: 'Primeiro VarInt do stream. Sempre. Diz quantos bytes formam ESSE packet. Sem isso, o leitor não sabe onde termina.' },
 
   { type: 'packetMorph', group: 'packets', beat: 1, stage: 3,
     title: 'Byte 1 · que tipo de packet é esse',
@@ -384,7 +387,7 @@ const slides = [
 
   { type: 'packetMorph', group: 'packets', beat: 1, stage: 4,
     title: 'Bytes 2-9 · o payload, formato definido pelo ID',
-    subtitle: 'Cada tipo de packet tem um formato próprio pro payload. Keep Alive é só um long (8 bytes) — número aleatório que o cliente vai devolver pra provar que tá vivo.' },
+    subtitle: 'Cada tipo de packet tem um formato próprio pro payload. Keep Alive é só um long (8 bytes), um número aleatório que o cliente vai devolver pra provar que tá vivo.' },
 
   { type: 'packetMorph', group: 'packets', beat: 1, stage: 5,
     title: 'Os 10 bytes, decodificados.',
@@ -399,8 +402,8 @@ const slides = [
       'Voluntário entra no servidor (212.38.89.33)',
       'Pede pra ele andar uns segundos, quebrar um bloco, falar no chat',
       'No console (ou /resumepackets no chat): mostra o ranking ao vivo',
-      'Aponta PLAYER_POSITION dominando (centenas/min) — esse é o packet mais frequente',
-      '/readpacket CHAT_MESSAGE — mostra contagem + última mensagem',
+      'Aponta PLAYER_POSITION dominando (centenas/min) · esse é o packet mais frequente',
+      '/readpacket CHAT_MESSAGE · mostra contagem + última mensagem',
     ],
     backTo: 'Próximo slide: cadência (volume real de packets em gameplay)',
   },
@@ -501,7 +504,7 @@ const slides = [
 
   { type: 'hook', group: 'events', beat: 3,
     title: 'Player entra no servidor.<br/>Plugin Welcome quer mostrar <code class="mono text-green-400">"Bem-vindo, Davi!"</code><br/><span class="text-green-400">Quantas linhas e onde elas moram?</span>',
-    subtitle: 'A inversão de controle do Bukkit em 15 linhas de Java. É literalmente assim — sem mock, sem boilerplate.',
+    subtitle: 'A inversão de controle do Bukkit em 15 linhas de Java. É literalmente assim, sem mock, sem boilerplate.',
     tags: ['event', 'listener', '@EventHandler', 'priority', 'cancellable'] },
 
   { type: 'code', group: 'events', beat: 3,
@@ -612,7 +615,7 @@ const slides = [
       </div>
     `},
 
-  // ─── Plugin load = topological sort (Kahn) — quando isso aparece em CS de verdade
+  // ─── Plugin load = topological sort (Kahn) · quando isso aparece em CS de verdade
   { type: 'htmlDiagram', group: 'events', beat: 3,
     title: 'Plugin LOAD order · topological sort do DAG de depend:',
     diagram: `
@@ -784,7 +787,7 @@ const slides = [
     title: 'Hora do LAB ao vivo.',
     subtitle: 'Tudo que a gente discutiu até aqui, acontecendo num servidor real. 10 minutos.',
     steps: [
-      'Servidor Paper rodando · localhost:25565 · 3 plugins instalados',
+      'Servidor Paper rodando · 212.38.89.33:25565 · 3 plugins instalados',
       'Voluntário da turma entra com seu Minecraft',
       'Console mostra 3 mensagens em sequência: [Welcome] [Scoreboard] [Analytics]',
       'Comenta: 3 listeners diferentes, mesmo evento, sequencialmente',
@@ -811,8 +814,8 @@ const slides = [
     text: 'Tudo que a gente viu até aqui é o caminho feliz. As pegadinhas começam quando o listener faz I/O, depende de ordem, ou cancela coisa que não devia.' },
 
   { type: 'hook', group: 'events', beat: 5,
-    title: 'Listener no <code class="mono text-green-400">PlayerJoinEvent</code> chama <code class="mono">httpClient.send(...)</code> bloqueante.<br/>O webhook demora <span class="text-green-400">2 segundos</span>.<br/><span class="text-green-400">Tick por tick, descreve o que acontece.</span>',
-    subtitle: 'Você acabou de derrubar 40 ticks. TPS caiu pra 0. Players desconectaram. Por quê?',
+    title: 'O webhook demora <span class="text-green-400">2 segundos</span>.<br/><span class="text-green-400">E aí?</span>',
+    subtitle: 'Listener no PlayerJoinEvent chama httpClient.send(...) bloqueante. Você acabou de derrubar 40 ticks · TPS caiu pra 0 · players desconectaram. Tick por tick, descreve o que aconteceu.',
     tags: ['main-thread', 'async', 'tps', 'blocking', 'scheduler'] },
 
   { type: 'htmlDiagram', group: 'events', beat: 5,
@@ -1378,11 +1381,13 @@ function r_packetMorph(s) {
   const showPayloadLayer = s.stage >= 4;
   const showMeaning      = s.stage >= 5;
 
-  // Decode lines (revealed progressivamente)
+  // Decode lines (revealed progressivamente, escondidos na stage final pra dar espaço ao "significado")
   const decodes = [];
-  if (showLengthLayer)  decodes.push({ color: '#c084fc', label: 'LENGTH', text: '<span style="color:#d8b4fe">0x09</span> = 9 bytes seguem (ID + payload)' });
-  if (showIdLayer)      decodes.push({ color: '#fb923c', label: 'PACKET ID', text: '<span style="color:#fdba74">0x27</span> = 39 · lookup na tabela Play/clientbound → <span class="text-white font-bold">KEEP_ALIVE</span>' });
-  if (showPayloadLayer) decodes.push({ color: '#4ade80', label: 'PAYLOAD · long (8 bytes)', text: '<span style="color:#86efac">0x0000_0000_7FFF_0001</span> = 2.147.549.185 (keepAliveId · número aleatório)' });
+  if (s.stage < 5) {
+    if (showLengthLayer)  decodes.push({ color: '#c084fc', label: 'LENGTH', text: '<span style="color:#d8b4fe">0x09</span> = 9 bytes seguem (ID + payload)' });
+    if (showIdLayer)      decodes.push({ color: '#fb923c', label: 'PACKET ID', text: '<span style="color:#fdba74">0x27</span> = 39 · lookup na tabela Play/clientbound → <span class="text-white font-bold">KEEP_ALIVE</span>' });
+    if (showPayloadLayer) decodes.push({ color: '#4ade80', label: 'PAYLOAD · long (8 bytes)', text: '<span style="color:#86efac">0x0000_0000_7FFF_0001</span> = 2.147.549.185 (keepAliveId · número aleatório)' });
+  }
 
   // Brackets above bytes
   const lengthBracket = `<div style="grid-column: 1 / span 1;">
@@ -1442,17 +1447,27 @@ function r_packetMorph(s) {
         ` : ''}
 
         ${showMeaning ? `
-          <div class="anim-fade delay-2 mt-8 pt-6 border-t border-neutral-800">
-            <div class="mono text-[12px] uppercase tracking-[0.3em] text-neutral-500 mb-3">significado</div>
-            <h3 class="display text-[44px] font-bold text-white leading-tight">
+          <div class="anim-fade delay-2 mt-6">
+            <h3 class="display text-[52px] font-bold text-white leading-[1.05]">
               <span style="color: ${g.accent};">Keep Alive</span> · "você ainda tá aí?"
             </h3>
-            <p class="display text-[20px] text-neutral-400 leading-snug mt-3 max-w-[1100px]">
-              Servidor manda esse packet a cada <span class="text-white">1 segundo (20 ticks)</span>.
-              Cliente devolve o mesmo <code class="mono text-neutral-200">keepAliveId</code>.
-              Sem resposta em 30s → <span class="text-red-400">disconnect</span>.
-              Esses 10 bytes são <span class="text-white">um dos packets mais frequentes no fio</span> durante gameplay.
-            </p>
+            <div class="grid grid-cols-3 gap-6 mt-6 max-w-[1200px]">
+              <div class="flex flex-col">
+                <div class="mono text-[10px] uppercase tracking-[0.25em] text-neutral-500">CADÊNCIA</div>
+                <div class="display text-[22px] text-white mt-1">1× / segundo</div>
+                <div class="mono text-[11px] text-neutral-500 mt-1">20 ticks · por player</div>
+              </div>
+              <div class="flex flex-col">
+                <div class="mono text-[10px] uppercase tracking-[0.25em] text-neutral-500">PROTOCOLO</div>
+                <div class="display text-[22px] text-white mt-1">echo do id</div>
+                <div class="mono text-[11px] text-neutral-500 mt-1">cliente devolve o mesmo long</div>
+              </div>
+              <div class="flex flex-col">
+                <div class="mono text-[10px] uppercase tracking-[0.25em] text-neutral-500">TIMEOUT</div>
+                <div class="display text-[22px] text-red-400 mt-1">disconnect</div>
+                <div class="mono text-[11px] text-neutral-500 mt-1">sem resposta em 30s</div>
+              </div>
+            </div>
           </div>
         ` : ''}
       </div>
