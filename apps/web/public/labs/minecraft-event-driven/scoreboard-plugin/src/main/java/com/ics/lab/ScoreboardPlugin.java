@@ -9,7 +9,11 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -22,6 +26,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * ScoreboardPlugin · estilo FeatherBoard
@@ -45,20 +50,22 @@ import java.util.concurrent.ConcurrentHashMap;
  *   Title:  §4§lICS §c§lTECH
  *   1       (linha vazia)
  *   2       §fNick: §e<player>
- *   3       §fOnline: §e<n>§7/§e<max>
+ *   3       §fOnline: §e<n>
  *   4       (linha vazia)
- *   5       §fTPS: §e<tps>          (cor: verde ≥19 · amarelo ≥15 · vermelho)
- *   6       (linha vazia)
- *   7       §cics.daviduarte.com.br
+ *   5       §fTPS: §e<tps>            (cor: verde ≥19 · amarelo ≥15 · vermelho)
+ *   6       §fPackets/s: §e<rate>      (cor: branco <100 · amarelo <1k · vermelho >1k)
+ *   7       (linha vazia)
+ *   8       §cics.daviduarte.com.br
  */
 public class ScoreboardPlugin extends JavaPlugin implements Listener {
 
     // Score = posição vertical no scoreboard (maior = mais acima)
-    private static final int LINE_BLANK_TOP = 8;
-    private static final int LINE_NICK      = 7;
-    private static final int LINE_ONLINE    = 6;
-    private static final int LINE_BLANK_MID = 5;
-    private static final int LINE_TPS       = 4;
+    private static final int LINE_BLANK_TOP = 9;
+    private static final int LINE_NICK      = 8;
+    private static final int LINE_ONLINE    = 7;
+    private static final int LINE_BLANK_MID = 6;
+    private static final int LINE_TPS       = 5;
+    private static final int LINE_PACKETS   = 4;
     private static final int LINE_BLANK_BOT = 3;
     private static final int LINE_URL       = 2;
 
@@ -68,13 +75,15 @@ public class ScoreboardPlugin extends JavaPlugin implements Listener {
     private static final String E_ONLINE    = "§2§r";
     private static final String E_BLANK_MID = "§3§r";
     private static final String E_TPS       = "§4§r";
-    private static final String E_BLANK_BOT = "§5§r";
-    private static final String E_URL       = "§6§r";
+    private static final String E_PACKETS   = "§5§r";
+    private static final String E_BLANK_BOT = "§6§r";
+    private static final String E_URL       = "§7§r";
 
     private static final Component BLANK = Component.empty();
 
     private final Map<UUID, PlayerBoard> boards = new ConcurrentHashMap<>();
     private final TpsSampler tps = new TpsSampler();
+    private final PacketCounter packets = new PacketCounter();
 
     @Override
     public void onEnable() {
@@ -85,9 +94,13 @@ public class ScoreboardPlugin extends JavaPlugin implements Listener {
             @Override public void run() { tps.record(); }
         }.runTaskTimer(this, 1L, 1L);
 
-        // Update de TPS — 1× por segundo (1 packet por player online)
+        // Update de TPS + Packets/s — 1× por segundo (2 packets por player online)
         new BukkitRunnable() {
-            @Override public void run() { updateTpsForAll(); }
+            @Override public void run() {
+                packets.snapshot();
+                updateTpsForAll();
+                updatePacketsForAll();
+            }
         }.runTaskTimer(this, 20L, 20L);
 
         // Caso o plugin recarregue com players já online
@@ -107,6 +120,21 @@ public class ScoreboardPlugin extends JavaPlugin implements Listener {
     // ──────────────────────────────────────────────────────────────────
     // Lifecycle
     // ──────────────────────────────────────────────────────────────────
+
+    // ──────────────────────────────────────────────────────────────────
+    // Packet counters (espelha PacketSpy · serve linha "Packets/s")
+    // ──────────────────────────────────────────────────────────────────
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void countMove(PlayerMoveEvent e) {
+        // PlayerMove dispara mesmo quando o player só olha em volta. Domina o volume.
+        packets.tick();
+    }
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void countBreak(BlockBreakEvent e) { packets.tick(); }
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void countPlace(BlockPlaceEvent e) { packets.tick(); }
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void countInteract(PlayerInteractEvent e) { packets.tick(); }
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onJoin(PlayerJoinEvent e) {
@@ -146,14 +174,15 @@ public class ScoreboardPlugin extends JavaPlugin implements Listener {
 
         PlayerBoard pb = new PlayerBoard(sb, obj);
 
-        // Cria as 7 linhas. Score = posição vertical.
-        pb.line(E_BLANK_TOP, LINE_BLANK_TOP, "blank1", BLANK);
-        pb.line(E_NICK,      LINE_NICK,      "nick",   nickLine(p.getName()));
-        pb.line(E_ONLINE,    LINE_ONLINE,    "online", onlineLine(Bukkit.getOnlinePlayers().size()));
-        pb.line(E_BLANK_MID, LINE_BLANK_MID, "blank2", BLANK);
-        pb.line(E_TPS,       LINE_TPS,       "tps",    tpsLine(tps.tps10s()));
-        pb.line(E_BLANK_BOT, LINE_BLANK_BOT, "blank3", BLANK);
-        pb.line(E_URL,       LINE_URL,       "url",    urlLine());
+        // Cria as 8 linhas. Score = posição vertical.
+        pb.line(E_BLANK_TOP, LINE_BLANK_TOP, "blank1",  BLANK);
+        pb.line(E_NICK,      LINE_NICK,      "nick",    nickLine(p.getName()));
+        pb.line(E_ONLINE,    LINE_ONLINE,    "online",  onlineLine(Bukkit.getOnlinePlayers().size()));
+        pb.line(E_BLANK_MID, LINE_BLANK_MID, "blank2",  BLANK);
+        pb.line(E_TPS,       LINE_TPS,       "tps",     tpsLine(tps.tps10s()));
+        pb.line(E_PACKETS,   LINE_PACKETS,   "packets", packetsLine(packets.lastRate()));
+        pb.line(E_BLANK_BOT, LINE_BLANK_BOT, "blank3",  BLANK);
+        pb.line(E_URL,       LINE_URL,       "url",     urlLine());
 
         p.setScoreboard(sb);
         boards.put(id, pb);
@@ -181,6 +210,13 @@ public class ScoreboardPlugin extends JavaPlugin implements Listener {
         }
     }
 
+    private void updatePacketsForAll() {
+        Component line = packetsLine(packets.lastRate());
+        for (PlayerBoard pb : boards.values()) {
+            pb.updatePrefix("packets", line);
+        }
+    }
+
     // ──────────────────────────────────────────────────────────────────
     // Linhas
     // ──────────────────────────────────────────────────────────────────
@@ -193,12 +229,23 @@ public class ScoreboardPlugin extends JavaPlugin implements Listener {
     }
 
     private static Component onlineLine(int n) {
-        int max = Bukkit.getServer().getMaxPlayers();
         return Component.text()
             .append(Component.text("Online: ", NamedTextColor.WHITE))
             .append(Component.text(n, NamedTextColor.YELLOW))
-            .append(Component.text("/", NamedTextColor.GRAY))
-            .append(Component.text(max, NamedTextColor.YELLOW))
+            .build();
+    }
+
+    private static Component packetsLine(long rate) {
+        TextColor color = rate < 100 ? NamedTextColor.WHITE
+                        : rate < 1000 ? NamedTextColor.YELLOW
+                        : NamedTextColor.RED;
+        String label;
+        if (rate < 1000)      label = String.valueOf(rate);
+        else if (rate < 10000) label = String.format("%.1fk", rate / 1000.0);
+        else                  label = (rate / 1000) + "k";
+        return Component.text()
+            .append(Component.text("Packets/s: ", NamedTextColor.WHITE))
+            .append(Component.text(label, color, TextDecoration.BOLD))
             .build();
     }
 
@@ -255,6 +302,20 @@ public class ScoreboardPlugin extends JavaPlugin implements Listener {
      *   Retorna [1m, 5m, 15m] — janelas longas demais pra mostrar TPS
      *   "agora" durante demos ao vivo. 10s é o sweet spot.
      */
+    /**
+     * Contador de packets/sec. Incrementa em cada evento (movement/chat/break/place/interact)
+     * via AtomicLong. A cada tick do timer (20L), faz snapshot do counter e zera —
+     * lastRate vira a métrica exibida no scoreboard.
+     */
+    private static class PacketCounter {
+        private final AtomicLong counter = new AtomicLong();
+        private volatile long lastRate = 0;
+
+        void tick() { counter.incrementAndGet(); }
+        void snapshot() { lastRate = counter.getAndSet(0); }
+        long lastRate() { return lastRate; }
+    }
+
     private static class TpsSampler {
         private static final int SAMPLES = 200;
         private final long[] stamps = new long[SAMPLES];
