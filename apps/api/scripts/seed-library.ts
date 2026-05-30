@@ -6004,6 +6004,174 @@ const ITEMS: ItemSeed[] = [
     tags: ['concept', 'cache-aside', 'read-through', 'database-bottleneck', 'performance', 'renato-augusto'],
     topicOrder: { 'caching': 9 },
   },
+
+  // ---------------------------------------------------------------------------
+  // consistent hashing (3 items) — 2026-05-30
+  // ---------------------------------------------------------------------------
+  {
+    title: 'Consistent Hashing: Easy Explanation for System Design Interviews',
+    url: 'https://www.youtube.com/watch?v=vccwdhfqIrI',
+    description:
+      'Hello Interview — consistent hashing montado passo a passo no Excalidraw: do problema (re-hashear tudo quando um nó entra ou sai) até o anel. 8min, focado em system design interview.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 8,
+    topicSlugs: ['hashmap', 'sharding', 'caching', 'load-balancers'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Hello Interview',
+    tags: ['concept', 'hashmap', 'consistent-hashing', 'sharding', 'distributed', 'hello-interview'],
+  },
+  {
+    title: 'Consistent Hashing 101',
+    url: 'https://thecodinggopher.substack.com/p/consistent-hashing-for-dummies',
+    description:
+      'The Coding Gopher — o anel de hash, virtual nodes pra distribuição uniforme, e como Amazon, Netflix e Discord usam isso na prática. ~7min de leitura.',
+    format: 'ARTICLE',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 7,
+    topicSlugs: ['hashmap', 'sharding', 'caching', 'load-balancers'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'The Coding Gopher',
+    tags: ['concept', 'hashmap', 'consistent-hashing', 'virtual-nodes', 'sharding', 'distributed', 'the-coding-gopher'],
+  },
+  {
+    title: 'Consistent Hashing — The Backend Engineering Show',
+    url: 'https://www.youtube.com/watch?v=p6wwj0ozifw',
+    description:
+      'Hussein Nasser — por que simple hashing quebra ao adicionar ou remover um nó, e como consistent hashing resolve. 24min passando por adicionar servidor, remover servidor e as limitações do algoritmo. Aparece em Cassandra e DynamoDB.',
+    format: 'VIDEO',
+    difficulty: 'HARD',
+    estimatedMinutes: 24,
+    topicSlugs: ['hashmap', 'sharding', 'caching', 'load-balancers'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Hussein Nasser',
+    tags: ['concept', 'hashmap', 'consistent-hashing', 'sharding', 'distributed', 'cassandra', 'dynamodb', 'hussein-nasser'],
+  },
+
+  // ---------------------------------------------------------------------------
+  // case-chat — Discord (1 item) — 2026-05-30
+  // ---------------------------------------------------------------------------
+  {
+    title: 'How Discord Stores TRILLIONS of Messages',
+    url: 'https://www.youtube.com/watch?v=lLrzoyU4BPc',
+    description:
+      'Coding with Lewis — a evolução de storage do Discord: MongoDB virou gargalo, migraram pra Cassandra e depois ScyllaDB. Mostra como eles bucketizam mensagens por canal e tempo e o problema das hot partitions. 14min.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 14,
+    topicSlugs: ['case-chat', 'databases', 'sharding'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Coding with Lewis',
+    tags: ['case-study', 'discord', 'cassandra', 'scylladb', 'sharding', 'hot-partition', 'coding-with-lewis'],
+  },
+
+  // ---------------------------------------------------------------------------
+  // Coding with Lewis case studies (8 items) — 2026-05-30
+  // ---------------------------------------------------------------------------
+  {
+    title: "How Discord Handled the World's Largest Server",
+    url: 'https://www.youtube.com/watch?v=fv_MPosiINw',
+    description:
+      'Coding with Lewis — como o Discord lidou com o maior servidor da plataforma (milhões de membros num só server): por que isso quebra o modelo normal de fan-out de mensagens e o que eles fizeram. 8min.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 8,
+    topicSlugs: ['case-chat', 'scalability'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Coding with Lewis',
+    tags: ['case-study', 'discord', 'fan-out', 'scalability', 'coding-with-lewis'],
+  },
+  {
+    title: 'How Notion Handles 200 BILLION Notes',
+    url: 'https://www.youtube.com/watch?v=NwZ26lxl8wU',
+    description:
+      'Coding with Lewis — como o Notion guarda 200 bilhões de blocos: o modelo de dados em blocks no Postgres e o sharding que fizeram quando uma tabela só não dava mais conta. 11min.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 11,
+    topicSlugs: ['databases', 'sharding'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Coding with Lewis',
+    tags: ['case-study', 'notion', 'postgres', 'sharding', 'data-model', 'coding-with-lewis'],
+  },
+  {
+    title: 'What a Billion Database Rows Look Like in Real Life',
+    url: 'https://www.youtube.com/watch?v=sEQ1ecQq0HI',
+    description:
+      'Coding with Lewis — o que muda quando uma tabela passa de um bilhão de linhas: índice que não cabe em memória, query que era rápida e vira lenta, e as saídas. 10min.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 10,
+    topicSlugs: ['databases'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Coding with Lewis',
+    tags: ['case-study', 'database-scale', 'indexing', 'query-performance', 'coding-with-lewis'],
+  },
+  {
+    title: 'How Much Does it Cost to Scale an App to 100,000 Users?',
+    url: 'https://www.youtube.com/watch?v=AuodUoWEWw0',
+    description:
+      'Coding with Lewis — quanto custa de verdade escalar um app de zero a 100 mil usuários: onde o dinheiro vai (banco, servidores, CDN) e quais decisões de arquitetura mexem na conta. 14min.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 14,
+    topicSlugs: ['scalability', 'cloud'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Coding with Lewis',
+    tags: ['case-study', 'scalability', 'cloud-cost', 'cdn', 'coding-with-lewis'],
+  },
+  {
+    title: 'The Engineering That Saved Slack During COVID',
+    url: 'https://www.youtube.com/watch?v=WFpEvs2sjgs',
+    description:
+      'Coding with Lewis — o pico de carga que o Slack levou quando o mundo foi pra home office em 2020 e a engenharia que segurou o serviço de pé. 19min.',
+    format: 'VIDEO',
+    difficulty: 'HARD',
+    estimatedMinutes: 19,
+    topicSlugs: ['reliability', 'scalability', 'case-chat'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Coding with Lewis',
+    tags: ['case-study', 'slack', 'load-spike', 'reliability', 'scalability', 'coding-with-lewis'],
+  },
+  {
+    title: "GitHub's Code Was Breaking Every 8 Hours. Here's Why",
+    url: 'https://www.youtube.com/watch?v=JJZQr2AuEI0',
+    description:
+      'Coding with Lewis — o bug que derrubava o GitHub a cada 8 horas e a investigação até a causa raiz. 19min de debugging de produção em escala.',
+    format: 'VIDEO',
+    difficulty: 'HARD',
+    estimatedMinutes: 19,
+    topicSlugs: ['reliability'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Coding with Lewis',
+    tags: ['case-study', 'github', 'root-cause', 'production-debugging', 'reliability', 'coding-with-lewis'],
+  },
+  {
+    title: '3 Algorithms Netflix Uses to Scan BILLIONS of Frames',
+    url: 'https://www.youtube.com/watch?v=T5gTIFhPDaY',
+    description:
+      'Coding with Lewis — três algoritmos que a Netflix usa pra varrer bilhões de frames de vídeo: detecção de cena, geração de thumbnail e checagem de qualidade. 16min.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 16,
+    topicSlugs: ['case-streaming'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Coding with Lewis',
+    tags: ['case-study', 'netflix', 'video-processing', 'algorithms', 'coding-with-lewis'],
+  },
+  {
+    title: 'How the New York Times Beat Paywall Hackers For Good',
+    url: 'https://www.youtube.com/watch?v=9Ej9JUnFCO0',
+    description:
+      'Coding with Lewis — como o New York Times fechou as brechas que deixavam furar o paywall, e o jogo de gato e rato com quem burlava. 12min.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 12,
+    topicSlugs: ['security'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Coding with Lewis',
+    tags: ['case-study', 'nyt', 'paywall', 'security', 'coding-with-lewis'],
+  },
 ];
 
 // -----------------------------------------------------------------------------
