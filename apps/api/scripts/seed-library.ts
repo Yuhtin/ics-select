@@ -6004,6 +6004,49 @@ const ITEMS: ItemSeed[] = [
     tags: ['concept', 'cache-aside', 'read-through', 'database-bottleneck', 'performance', 'renato-augusto'],
     topicOrder: { 'caching': 9 },
   },
+
+  // ---------------------------------------------------------------------------
+  // consistent hashing (3 items) — 2026-05-30
+  // ---------------------------------------------------------------------------
+  {
+    title: 'Consistent Hashing: Easy Explanation for System Design Interviews',
+    url: 'https://www.youtube.com/watch?v=vccwdhfqIrI',
+    description:
+      'Hello Interview — consistent hashing montado passo a passo no Excalidraw: do problema (re-hashear tudo quando um nó entra ou sai) até o anel. 8min, focado em system design interview.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 8,
+    topicSlugs: ['hashmap', 'sharding', 'caching', 'load-balancers'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Hello Interview',
+    tags: ['concept', 'hashmap', 'consistent-hashing', 'sharding', 'distributed', 'hello-interview'],
+  },
+  {
+    title: 'Consistent Hashing 101',
+    url: 'https://thecodinggopher.substack.com/p/consistent-hashing-for-dummies',
+    description:
+      'The Coding Gopher — o anel de hash, virtual nodes pra distribuição uniforme, e como Amazon, Netflix e Discord usam isso na prática. ~7min de leitura.',
+    format: 'ARTICLE',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 7,
+    topicSlugs: ['hashmap', 'sharding', 'caching', 'load-balancers'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'The Coding Gopher',
+    tags: ['concept', 'hashmap', 'consistent-hashing', 'virtual-nodes', 'sharding', 'distributed', 'the-coding-gopher'],
+  },
+  {
+    title: 'Consistent Hashing — The Backend Engineering Show',
+    url: 'https://www.youtube.com/watch?v=p6wwj0ozifw',
+    description:
+      'Hussein Nasser — por que simple hashing quebra ao adicionar ou remover um nó, e como consistent hashing resolve. 24min passando por adicionar servidor, remover servidor e as limitações do algoritmo. Aparece em Cassandra e DynamoDB.',
+    format: 'VIDEO',
+    difficulty: 'HARD',
+    estimatedMinutes: 24,
+    topicSlugs: ['hashmap', 'sharding', 'caching', 'load-balancers'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Hussein Nasser',
+    tags: ['concept', 'hashmap', 'consistent-hashing', 'sharding', 'distributed', 'cassandra', 'dynamodb', 'hussein-nasser'],
+  },
 ];
 
 // -----------------------------------------------------------------------------
