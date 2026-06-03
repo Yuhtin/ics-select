@@ -19,7 +19,10 @@ export type NodeGroup =
   | 'ledger'
   | 'nearest'
   | 'index'
-  | 'dispatch';
+  | 'dispatch'
+  | 'stream'
+  | 'smooth'
+  | 'fanout';
 
 export type Asker = {
   name: string;

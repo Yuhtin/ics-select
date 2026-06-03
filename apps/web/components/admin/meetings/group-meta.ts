@@ -178,4 +178,28 @@ export const GROUP_META: Record<NodeGroup, GroupVisual> = {
     stripeClass: 'bg-reflect',
     tintClass: 'bg-reflect-soft/40',
   },
+  stream: {
+    label: 'Streaming / Push',
+    eyebrow: 'Stream',
+    accentClass: 'text-primary',
+    ringClass: 'bg-primary',
+    stripeClass: 'bg-primary',
+    tintClass: 'bg-primary-soft/40',
+  },
+  smooth: {
+    label: 'Suavizar o movimento',
+    eyebrow: 'Smoothing',
+    accentClass: 'text-success',
+    ringClass: 'bg-success',
+    stripeClass: 'bg-success',
+    tintClass: 'bg-success-soft/40',
+  },
+  fanout: {
+    label: 'Fan-out & Arquitetura',
+    eyebrow: 'Fan-out',
+    accentClass: 'text-warn',
+    ringClass: 'bg-warn',
+    stripeClass: 'bg-warn',
+    tintClass: 'bg-warn-soft/40',
+  },
 };

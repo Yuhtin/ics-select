@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>O Mapa em Tempo Real da Uber</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect" />
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+  /* ── Spotify design language (awesome-design-md/spotify) ──
+     The STRUCTURE is the metaphor: a music player. A persistent now-playing
+     transport bar at the bottom (the scrubber = the deck's live position),
+     a library sidebar (playlists = chapters), and an album-card grid where
+     SHADOW is the structure (no borders). Green = the "live/now" signal.
+     Spotify Circular -> Montserrat substitute. */
+  :root {
+    --canvas: #121212;
+    --sidebar: #000000;
+    --bar: #181818;
+    --card: #181818;
+    --card-hi: #282828;
+    --line: #2a2a2a;
+    --track: #4d4d4d;
+    --ink: #ffffff;
+    --muted: #b3b3b3;
+    --faint: #6a6a6a;
+    --green: #1ed760;
+    --green-dim: #1db954;
+  }
+  * { box-sizing: border-box; }
+  html, body { background: #000; color: var(--ink); font-family: 'Inter', system-ui, sans-serif; overflow: hidden; height: 100vh; margin: 0; }
+  .display { font-family: 'Montserrat', sans-serif; font-weight: 800; letter-spacing: -0.02em; line-height: 1.04; }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+  .slide { display: none; height: 100vh; width: 100vw; flex-direction: column; }
+  .slide.active { display: flex; }
+  .shadow-float { box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
+  .shadow-soft { box-shadow: 0 8px 16px rgba(0,0,0,0.3); }
+  .card { background: var(--card); border-radius: 8px; }
+  .card-hi { background: var(--card-hi); border-radius: 8px; }
+  .pill { border-radius: 999px; }
+
+  @keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes livePulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+  .slide.active .anim { animation: slideUp 0.5s cubic-bezier(0.16,1,0.3,1) backwards; }
+  .slide.active .anim-fade { animation: fadeIn 0.7s ease backwards; }
+  .slide.active .stagger > * { animation: slideUp 0.45s cubic-bezier(0.16,1,0.3,1) backwards; }
+  .slide.active .stagger > *:nth-child(1) { animation-delay: 0.05s; }
+  .slide.active .stagger > *:nth-child(2) { animation-delay: 0.12s; }
+  .slide.active .stagger > *:nth-child(3) { animation-delay: 0.19s; }
+  .slide.active .stagger > *:nth-child(4) { animation-delay: 0.26s; }
+  .slide.active .delay-1 { animation-delay: 0.14s; }
+  .slide.active .delay-2 { animation-delay: 0.26s; }
+  .live-dot { animation: livePulse 1.8s ease-in-out infinite; }
+
+  @media print {
+    @page { size: 1600px 900px; margin: 0; }
+    html, body { overflow: visible !important; height: auto !important; background: #000 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    #deck { overflow: visible !important; height: auto !important; width: auto !important; display: block !important; }
+    .slide { display: flex !important; width: 1600px !important; height: 900px !important; min-height: 900px !important; max-height: 900px !important; page-break-after: always !important; break-after: page !important; break-inside: avoid !important; animation: none !important; }
+    .slide:last-child { page-break-after: avoid !important; break-after: avoid !important; }
+    .slide *, .slide *::before, .slide *::after { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div id="deck"></div>
+
+<script>
+const SECTIONS = [
+  { num: '01', label: 'Streaming / Push',       beats: [1, 2] },
+  { num: '02', label: 'Suavizar o movimento',   beats: [3, 4] },
+  { num: '03', label: 'Fan-out & Arquitetura',  beats: [5, 6] },
+  { num: '04', label: 'AWS por camada',         beats: [7] },
+];
+function sectionOf(beat) { return SECTIONS.find(s => s.beats.includes(beat)); }
+
+const SLIDES = [
+  { type: 'cover', track: 'O Mapa em Tempo Real' },
+
+  { type: 'divider', num: '01', label: 'Streaming / Push', meta: '2 faixas · push vs polling, transporte', track: 'Streaming / Push' },
+  { type: 'hook', beat: 1, track: 'O carro que não pula', kicker: 'Faixa 01 · O carro que não pula',
+    title: 'O GPS chega a cada ~4s, mas o carro desliza liso na tela.',
+    sub: 'Aponte as DUAS coisas que o app precisa resolver pra essa suavidade existir.',
+    tags: ['taxa de dados', 'taxa de tela', '60fps vs 4s'] },
+  { type: 'stat', beat: 1, track: 'Dois relógios', kicker: 'Os dois relógios', stats: [
+      ['~60 fps', 'a tela redesenha (a cada ~16ms)'],
+      ['~4 s', 'o GPS do motorista chega'],
+      ['~240', 'quadros sem dado novo entre pontos'],
+      ['~80 %', 'das requisições eram polling vazio'],
+    ] },
+  { type: 'hook', beat: 2, track: 'Push, não polling', kicker: 'Faixa 02 · Push, não polling',
+    title: 'Carro parado no sinal por 40 segundos. Você pergunta "cadê?" a cada segundo.',
+    sub: 'Conte o desperdício, e diga o que o servidor faz no lugar.',
+    tags: ['push', 'polling', 'conexão viva'] },
+  { type: 'list', beat: 2, track: 'SSE · WebSocket · gRPC', kicker: 'O transporte do push, em ordem de poder',
+    items: [
+      ['SSE', 'Mão única (servidor → cliente), sobre HTTP comum, reconexão automática de graça. Perfeito pra "me empurra a posição".'],
+      ['WebSocket', 'Mão dupla, menor overhead por mensagem. Você ganha bidirecionalidade e passa a cuidar da reconexão.'],
+      ['gRPC streaming', 'Mão dupla, binário, sobre HTTP/2. Pra onde a Uber foi (gRPC sobre QUIC, com acks embutidos).'],
+      ['Escolha por', 'Direcionalidade, overhead e quem cuida da reconexão. Não por moda.'],
+    ] },
+
+  { type: 'divider', num: '02', label: 'Suavizar o movimento', meta: '2 faixas · interpolação, Kalman', track: 'Suavizar o movimento' },
+  { type: 'hook', beat: 3, track: 'Preencher o vão', kicker: 'Faixa 03 · Preencher o vão',
+    title: 'Chegou A às 12:00:00, B só às 12:00:04. São 12:00:02 e você desenha o carro AGORA.',
+    sub: 'Dê duas posições possíveis (uma esperando B, uma sem esperar) e o risco de cada uma.',
+    tags: ['interpolação', 'dead reckoning', 'latência vs suavidade'] },
+  { type: 'compare', beat: 3, track: 'Interpolar vs prever', kicker: 'Duas filosofias que brigam',
+    left: { tag: 'interpolação', title: 'Espera os dois pontos', points: [
+      'LERP: desliza de A pra B ao longo dos 4s',
+      'Suave e sempre certo (só desenha entre pontos REAIS)',
+      'Fica sempre ~uma janela no passado',
+      'Trocou atraso por suavidade perfeita' ] },
+    right: { tag: 'dead reckoning', title: 'Prevê pra frente', live: true, points: [
+      'Projeta de A por velocidade + direção + tempo',
+      'Zero atraso',
+      'Erra quando o motorista vira ou para',
+      'O erro cresce quanto mais demora o próximo ponto' ] } },
+  { type: 'codeNote', beat: 3, track: 'LERP + rubber-banding', kicker: 'O LERP, e o salto a evitar', file: 'interp.js',
+    code: [
+      "<span class='cm'>// interpolação linear entre A e B</span>",
+      "pos = A + <span class='gr'>v</span> * (B - A)   <span class='cm'>// v: 0 em A, 1 em B</span>",
+      "<span class='cm'>// um timer empurra v de 0 a 1 na janela de 4s</span>",
+      "",
+      "<span class='cm'>// dead reckoning: prevê sem esperar B</span>",
+      "pos = A + velocidade * tempo_decorrido",
+      "",
+      "<span class='cm'>// chegou GPS real != previsão? NÃO teleporta</span>",
+      "<span class='gr'>converge</span>(previsto -> real, janelinha) <span class='cm'>// sem pulo</span>",
+    ],
+    notes: [
+      ['Rubber-banding', 'Saltar pro ponto novo quando ele desmente a previsão dá um pulo feio. Misture suave da previsão pro real.'],
+      ['Extrapolar é arriscado', 'Dead reckoning assume reta na velocidade atual. Em cruzamento e freada, erra. Quanto mais sem GPS, pior.'],
+      ['Enfileire updates', 'Ponto novo no meio da animação: enfileire e re-mire, não descarte. O heading rotaciona o ícone pra frente.'],
+    ] },
+  { type: 'hook', beat: 4, track: 'Kalman e a via', kicker: 'Faixa 04 · Kalman e grudar na via',
+    title: 'O carro está num cruzamento e o GPS reporta ele 10m pra dentro de um prédio.',
+    sub: 'Você tem a posição anterior e a velocidade. Como decide onde o carro realmente está?',
+    tags: ['kalman', 'predict-update', 'snap-to-road'] },
+  { type: 'codeNote', beat: 4, track: 'predict, update', kicker: 'O loop de dois passos do Kalman', file: 'kalman.txt',
+    code: [
+      "<span class='cm'># PREVER (modelo de movimento)</span>",
+      "prev = pos + velocidade * dt   <span class='cm'># e incerteza sobe</span>",
+      "",
+      "<span class='cm'># ATUALIZAR (funde com a medição ruidosa)</span>",
+      "pos = prev + <span class='gr'>K</span> * (medição - prev)",
+      "<span class='cm'># K (0..1): perto de 1 confia no sensor,</span>",
+      "<span class='cm'>#           perto de 0 confia no modelo</span>",
+      "",
+      "<span class='cm'># atalho: snap-to-road (gruda na via provável)</span>",
+    ],
+    notes: [
+      ['Não é bola de cristal', 'Kalman funde uma previsão simples (velocidade) com a medição, pesando pela confiança. O poder está na fusão.'],
+      ['EMA é Kalman de ganho fixo', 'É estimativa bayesiana recursiva: crença + incerteza, prevê e corrige a cada tique. A média móvel é a versão simples.'],
+      ['Casa a SÉRIE, não o ponto', 'Um ponto só num viaduto não diz se você está em cima ou embaixo. A sequência de pontos desambigua a via.'],
+    ] },
+
+  { type: 'divider', num: '03', label: 'Fan-out & Arquitetura', meta: '2 faixas · pub/sub por célula, RAMEN', track: 'Fan-out & Arquitetura' },
+  { type: 'hook', beat: 5, track: 'Quem recebe o quê', kicker: 'Faixa 05 · Fan-out',
+    title: '1 milhão de motoristas mandando posição, milhões de telas olhando.',
+    sub: 'Se cada update fosse pra todo mundo seria N×M. Como entregar a posição de UM só pra quem precisa?',
+    tags: ['pub/sub', 'célula = canal', '9 células (3x3)'] },
+  { type: 'compare', beat: 5, track: 'N×M vs célula', kicker: 'Do broadcast global ao canal por célula',
+    left: { tag: 'broadcast', title: 'Mandar pra todo mundo', points: [
+      'Cada update vai pra todas as telas',
+      'O(N × M): tempestade de broadcast',
+      'O cliente filtra 1M de updates/s (não escala)',
+      'Derruba qualquer sistema' ] },
+    right: { tag: 'pub/sub por célula', title: 'Canal por célula', live: true, points: [
+      'Motorista PUBLICA na célula onde está',
+      'Tela ASSINA sua célula + as 8 vizinhas (3x3)',
+      'Arrastou o mapa: cancela e assina células',
+      'O(assinantes-por-célula): a chave sai do espaço' ] } },
+  { type: 'hook', beat: 6, track: 'Do GPS ao pixel', kicker: 'Faixa 06 · Arquitetura',
+    title: 'Desenhe do GPS do motorista até o pixel andando na minha tela.',
+    sub: 'Separe quem decide QUANDO, quem decide O QUÊ, quem ENTREGA. E por que 1,5M conexões é o caro.',
+    tags: ['ramen', 'gRPC/QUIC', 'stateless'] },
+  { type: 'list', beat: 6, track: 'Fireball · Gateway · RAMEN', kicker: 'O pipeline da Uber (RAMEN)',
+    items: [
+      ['Fireball', 'Decide QUANDO empurrar um update pra uma tela (o timing).'],
+      ['API Gateway', 'Decide O QUÊ mandar (monta o payload).'],
+      ['RAMEN', 'ENTREGA pela conexão viva. Transporte: gRPC sobre QUIC, com acks embutidos.'],
+      ['Conexão = o gargalo', '1,5M conexões vivas custam ESTADO por conexão, não throughput. Terminador stateless + sessão no Redis.'],
+    ] },
+  { type: 'stat', beat: 6, track: '1,5M conexões', kicker: 'O que o RAMEN sustenta', stats: [
+      ['1,5 M', 'conexões vivas concorrentes'],
+      ['70 k', 'requisições por segundo'],
+      ['99,99 %', 'confiabilidade'],
+      ['↓ 45 %', 'no p95 de latência (push vs polling)'],
+    ] },
+
+  { type: 'divider', num: '04', label: 'AWS por camada', meta: '1 faixa · managed services', track: 'AWS por camada' },
+  { type: 'hook', beat: 7, track: 'Cada caixa, um serviço', kicker: 'Faixa 07 · AWS',
+    title: 'Pra cada caixa, qual serviço da AWS?',
+    sub: 'E o que manda aqui é uma coisa: a conexão fica VIVA por minutos, não milissegundos.',
+    tags: ['api gateway ws', 'elasticache', 'kinesis', 'cloudfront'] },
+  { type: 'compare3', beat: 7, track: 'WebSocket · Redis · Edge', kicker: 'Caixa a serviço, pelo perfil de conexão longa',
+    cards: [
+      { tag: 'conexão viva', title: 'API Gateway WS', sub: 'ou ALB + ECS/EC2', live: true, points: ['Gerencia canais persistentes', 'NÃO Lambda comum (invocação curta)', 'AppSync pra subscriptions'] },
+      { tag: 'estado', title: 'ElastiCache Redis', sub: 'sessão fora do terminador', points: ['Qual conexão assina qual célula', 'Terminador fica stateless', 'Qualquer nó assume qualquer conexão'] },
+      { tag: 'entrada + borda', title: 'Kinesis + CloudFront', sub: 'firehose + dado quente', points: ['Kinesis/MSK absorve os pings', 'CloudFront/edge cacheia perto', 'Histórico async, fora do quente'] },
+    ] },
+
+  { type: 'closing', track: 'Desacople os relógios' },
+];
+
+const deck = document.getElementById('deck');
+const TOTAL = SLIDES.length;
+
+function tags(arr) {
+  if (!arr || !arr.length) return '';
+  return `<div class="flex flex-wrap gap-2 mt-8 stagger">${arr.map(t =>
+    `<span class="pill px-4 py-1.5 text-[14px] font-medium" style="background:#232323;color:var(--muted)">${t}</span>`).join('')}</div>`;
+}
+
+function ico(path) {
+  return `<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">${path}</svg>`;
+}
+
+// ── The persistent now-playing transport bar (the Spotify signature). ──
+// The scrubber fill = position in the deck (slide idx / total) = the "live position" metaphor.
+function nowbar(slide, idx) {
+  const sec = typeof slide.beat === 'number' ? sectionOf(slide.beat) : null;
+  const artist = slide.type === 'cover' ? 'ICS Select · Hot Stuff 2026.2'
+    : slide.type === 'closing' ? 'Síntese · ICS Select'
+    : slide.type === 'divider' ? 'Próximo capítulo'
+    : (sec ? sec.label : 'ICS Select');
+  const pct = Math.round(((idx + 1) / TOTAL) * 100);
+  const elapsed = String(idx + 1).padStart(2, '0');
+  const total = String(TOTAL).padStart(2, '0');
+  return `
+    <div class="flex items-center px-5 gap-4" style="height:92px;background:var(--bar);border-top:1px solid var(--card-hi)">
+      <div class="flex items-center gap-3.5" style="width:30%;min-width:0">
+        <div style="width:56px;height:56px;border-radius:6px;flex:0 0 auto;background:linear-gradient(135deg,#1ed760,#0a6b2f);display:flex;align-items:center;justify-content:center" class="shadow-soft">
+          <span class="mono text-[11px] font-bold" style="color:#06210f">UBER</span>
+        </div>
+        <div style="min-width:0">
+          <div class="text-[14px] font-bold truncate" style="color:var(--ink)">${slide.track || ''}</div>
+          <div class="text-[12px] truncate" style="color:var(--muted)">${artist}</div>
+        </div>
+        <span style="color:var(--green);flex:0 0 auto" class="ml-1">${ico('<path d="M12 21s-7-4.35-9.5-8.5C1 9.5 2.5 6 6 6c2 0 3.2 1.2 4 2.3C10.8 7.2 12 6 14 6c3.5 0 5 3.5 3.5 6.5C19 16.65 12 21 12 21z"/>')}</span>
+      </div>
+
+      <div class="flex flex-col items-center justify-center gap-2" style="width:40%">
+        <div class="flex items-center gap-5" style="color:var(--muted)">
+          ${ico('<path d="M16 4h2v16h-2zM6 4l10 8-10 8z" transform="scale(-1,1) translate(-24,0)"/>')}
+          <div style="width:40px;height:40px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="#000"><path d="M8 5v14l11-7z"/></svg>
+          </div>
+          ${ico('<path d="M6 4h2v16H6zM8 12l10-8v16z"/>')}
+        </div>
+        <div class="flex items-center gap-2.5 w-full" style="max-width:520px">
+          <span class="mono text-[11px]" style="color:var(--faint)">${elapsed}</span>
+          <div style="flex:1;height:4px;border-radius:2px;background:var(--track);position:relative">
+            <div style="position:absolute;left:0;top:0;height:100%;width:${pct}%;background:var(--ink);border-radius:2px"></div>
+            <div style="position:absolute;left:calc(${pct}% - 6px);top:-4px;width:12px;height:12px;border-radius:50%;background:var(--ink)" class="shadow-soft"></div>
+          </div>
+          <span class="mono text-[11px]" style="color:var(--faint)">${total}</span>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end gap-3" style="width:30%;color:var(--muted)">
+        <span class="live-dot" style="width:9px;height:9px;border-radius:50%;background:var(--green);flex:0 0 auto"></span>
+        <span class="text-[13px] font-medium" style="color:var(--ink)">ao vivo</span>
+        <span class="mono text-[12px]" style="color:var(--faint)">1,5M conexões</span>
+      </div>
+    </div>`;
+}
+
+// ── The library sidebar (playlists = chapters). ──
+function sidebar(slide) {
+  const activeSec = typeof slide.beat === 'number' ? sectionOf(slide.beat)
+    : slide.type === 'divider' ? SECTIONS.find(s => s.num === slide.num) : null;
+  const rows = SECTIONS.map((s) => {
+    const on = s === activeSec;
+    return `<div class="flex items-center gap-3 px-2 py-2 rounded-md" style="${on ? 'background:#1a1a1a' : ''}">
+        <div style="width:44px;height:44px;border-radius:5px;flex:0 0 auto;background:linear-gradient(135deg,${on ? '#1ed760,#0a6b2f' : '#3a3a3a,#1f1f1f'});display:flex;align-items:center;justify-content:center;position:relative">
+          ${on ? '<span class="live-dot" style="width:7px;height:7px;border-radius:50%;background:#06210f"></span>' : ''}
+        </div>
+        <div style="min-width:0">
+          <div class="text-[14px] truncate" style="color:${on ? 'var(--green)' : 'var(--ink)'};font-weight:${on ? 700 : 600}">${s.label}</div>
+          <div class="text-[12px]" style="color:var(--muted)">Capítulo ${s.num} · ${s.beats.length} ${s.beats.length === 1 ? 'faixa' : 'faixas'}</div>
+        </div>
+      </div>`;
+  }).join('');
+  return `
+    <aside class="h-full flex flex-col p-3 gap-1" style="width:280px;flex:0 0 auto;background:var(--sidebar)">
+      <div class="flex items-center gap-2.5 px-2 py-3">
+        <div style="width:30px;height:30px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="#000"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm4.6 14.4a.62.62 0 01-.86.21c-2.35-1.44-5.3-1.76-8.79-.96a.62.62 0 11-.28-1.2c3.8-.87 7.07-.5 9.71 1.1.3.18.39.57.22.85zm1.23-2.74a.78.78 0 01-1.07.26c-2.69-1.65-6.79-2.13-9.97-1.17a.78.78 0 11-.45-1.49c3.64-1.1 8.16-.56 11.24 1.33.36.22.48.7.25 1.07zm.1-2.85C14.84 8.95 9.6 8.78 6.6 9.69a.93.93 0 11-.54-1.78c3.45-1.05 9.24-.85 12.9 1.32a.93.93 0 11-.95 1.6z"/></svg>
+        </div>
+        <span class="text-[15px] font-bold">Sua Biblioteca</span>
+      </div>
+      <div class="px-2 pb-1 text-[11px] mono uppercase tracking-wider" style="color:var(--faint)">Playlists desta aula</div>
+      <div class="flex flex-col gap-0.5">${rows}</div>
+      <div class="mt-auto px-2 py-2 text-[11px]" style="color:var(--faint)">O Mapa em Tempo Real · 60 min</div>
+    </aside>`;
+}
+
+function chrome(slide, idx, mainInner, opts) {
+  const heroBg = (opts && opts.hero) ? 'background:radial-gradient(120% 80% at 12% 0%, rgba(30,215,96,0.14) 0%, var(--canvas) 55%)' : 'background:var(--canvas)';
+  return `<div class="slide">
+    <div class="flex" style="flex:1;min-height:0">
+      ${sidebar(slide)}
+      <main class="flex-1 h-full overflow-hidden" style="${heroBg}">
+        <div class="h-full flex flex-col px-14 py-10">${mainInner}</div>
+      </main>
+    </div>
+    ${nowbar(slide, idx)}
+  </div>`;
+}
+
+function render(slide, idx) {
+  switch (slide.type) {
+    case 'cover':
+      return chrome(slide, idx, `
+        <div class="flex-1 flex flex-col justify-end pb-6">
+          <div class="anim-fade flex items-center gap-2 mb-5">
+            <span class="pill px-3 py-1 text-[12px] font-bold" style="background:var(--green);color:#000">PLAYLIST</span>
+            <span class="text-[13px]" style="color:var(--muted)">Estudo de caso · Uber RAMEN</span>
+          </div>
+          <h1 class="display anim text-[84px] max-w-[15ch]">O mapa em tempo real da Uber.</h1>
+          <p class="anim delay-1 text-[24px] mt-7 max-w-[52ch]" style="color:var(--muted)">Por que o carro anda liso com GPS de 4 em 4 segundos: push, interpolação e Kalman.</p>
+          <div class="anim-fade delay-2 flex items-center gap-3 mt-8 text-[14px]" style="color:var(--muted)">
+            <span style="color:var(--ink);font-weight:700">ICS Select</span><span>·</span><span>Hot Stuff 2026.2</span><span>·</span><span>60 min</span><span>·</span><span>7 faixas</span>
+          </div>
+        </div>`, { hero: true });
+
+    case 'divider':
+      return chrome(slide, idx, `
+        <div class="flex-1 flex flex-col justify-end pb-6">
+          <span class="anim text-[14px] font-bold uppercase tracking-wider" style="color:var(--green)">Capítulo ${slide.num}</span>
+          <h2 class="display anim delay-1 text-[76px] mt-3 max-w-[16ch]">${slide.label}</h2>
+          <p class="anim delay-2 text-[18px] mt-5" style="color:var(--muted)">${slide.meta}</p>
+        </div>`, { hero: true });
+
+    case 'hook':
+      return chrome(slide, idx, `
+        <div class="flex-1 flex flex-col justify-center">
+          <div class="anim text-[14px] mono uppercase tracking-wider mb-7" style="color:var(--green)">${slide.kicker}</div>
+          <h2 class="display anim delay-1 text-[50px] max-w-[24ch]" style="letter-spacing:-0.01em">${slide.title}</h2>
+          ${slide.sub ? `<p class="anim delay-2 text-[23px] mt-7 max-w-[58ch]" style="color:var(--muted)">${slide.sub}</p>` : ''}
+          ${tags(slide.tags)}
+        </div>`);
+
+    case 'list':
+      return chrome(slide, idx, `
+        <div class="flex-1 flex flex-col justify-center">
+          <div class="anim text-[13px] mono uppercase tracking-wider mb-6" style="color:var(--muted)">${slide.kicker}</div>
+          <div class="stagger flex flex-col">
+            ${slide.items.map(([h, b], i) => `
+              <div class="flex items-center gap-6 px-4 py-4 rounded-md" style="min-height:74px;border-bottom:1px solid var(--line)">
+                <span class="mono text-[16px]" style="color:var(--faint);width:24px">${i + 1}</span>
+                <div class="text-[21px] font-bold" style="color:var(--ink);width:230px;flex:0 0 auto">${h}</div>
+                <div class="text-[17px]" style="color:var(--muted)">${b}</div>
+              </div>`).join('')}
+          </div>
+        </div>`);
+
+    case 'codeNote':
+      return chrome(slide, idx, `
+        <div class="flex-1 flex flex-col justify-center">
+          <div class="anim text-[13px] mono uppercase tracking-wider mb-6" style="color:var(--muted)">${slide.kicker}</div>
+          <div class="grid grid-cols-2 gap-8 items-stretch">
+            <div class="card shadow-float anim overflow-hidden flex flex-col">
+              <div class="flex items-center gap-2 px-5 py-3" style="background:#0d0d0d">
+                <span style="width:11px;height:11px;border-radius:50%;background:#ff5f56"></span>
+                <span style="width:11px;height:11px;border-radius:50%;background:#ffbd2e"></span>
+                <span style="width:11px;height:11px;border-radius:50%;background:#27c93f"></span>
+                <span class="mono text-[12px] ml-2" style="color:var(--faint)">${slide.file || 'snippet'}</span>
+              </div>
+              <pre class="mono whitespace-pre-wrap px-6 py-5 flex-1" style="font-size:17px;line-height:1.75;color:#e8e8e8">${slide.code.join('\n')}</pre>
+            </div>
+            <div class="stagger flex flex-col gap-3.5 justify-center">
+              ${slide.notes.map(([h, b]) => `
+                <div class="card shadow-soft p-5 flex gap-4 items-start">
+                  <span style="color:var(--green);flex:0 0 auto" class="mt-0.5">${ico('<path d="M8 5v14l11-7z"/>')}</span>
+                  <div>
+                    <div class="text-[18px] font-bold" style="color:var(--ink)">${h}</div>
+                    <div class="text-[16px] mt-1" style="color:var(--muted)">${b}</div>
+                  </div>
+                </div>`).join('')}
+            </div>
+          </div>
+        </div>`);
+
+    case 'compare':
+      return chrome(slide, idx, `
+        <div class="flex-1 flex flex-col justify-center">
+          <div class="anim text-[13px] mono uppercase tracking-wider mb-7" style="color:var(--muted)">${slide.kicker}</div>
+          <div class="grid grid-cols-2 gap-7 stagger">
+            ${[slide.left, slide.right].map((c) => `
+              <div class="card shadow-float p-8" style="${c.live ? 'background:linear-gradient(180deg,#1c2b1f,var(--card))' : ''}">
+                <div class="flex items-center gap-2.5 mb-5">
+                  <span class="pill px-3.5 py-1 text-[12px] font-bold mono" style="background:${c.live ? 'var(--green)' : '#2a2a2a'};color:${c.live ? '#000' : 'var(--muted)'}">${c.tag}</span>
+                  ${c.live ? '<span class="live-dot" style="width:8px;height:8px;border-radius:50%;background:var(--green)"></span>' : ''}
+                </div>
+                <div class="display text-[30px] mb-6" style="color:var(--ink);letter-spacing:-0.01em">${c.title}</div>
+                <div class="flex flex-col gap-3.5">
+                  ${c.points.map(p => `<div class="flex gap-3 items-start text-[18px]"><span style="color:${c.live ? 'var(--green)' : 'var(--faint)'};flex:0 0 auto" class="mt-1">${ico('<circle cx="12" cy="12" r="5"/>')}</span><span style="color:var(--muted)">${p}</span></div>`).join('')}
+                </div>
+              </div>`).join('')}
+          </div>
+        </div>`);
+
+    case 'compare3':
+      return chrome(slide, idx, `
+        <div class="flex-1 flex flex-col justify-center">
+          <div class="anim text-[13px] mono uppercase tracking-wider mb-7" style="color:var(--muted)">${slide.kicker}</div>
+          <div class="grid grid-cols-3 gap-6 stagger">
+            ${slide.cards.map(c => `
+              <div class="card shadow-float p-7 flex flex-col" style="${c.live ? 'background:linear-gradient(180deg,#1c2b1f,var(--card))' : ''}">
+                <span class="pill self-start px-3 py-1 text-[12px] font-bold mono mb-4" style="background:${c.live ? 'var(--green)' : '#2a2a2a'};color:${c.live ? '#000' : 'var(--muted)'}">${c.tag}</span>
+                <div class="display text-[25px]" style="color:var(--ink)">${c.title}</div>
+                <div class="text-[14px] mt-2 mb-6 mono" style="color:var(--muted)">${c.sub}</div>
+                <div class="flex flex-col gap-3 mt-auto">
+                  ${c.points.map(p => `<div class="flex gap-3 items-start text-[16px]"><span style="color:${c.live ? 'var(--green)' : 'var(--faint)'};flex:0 0 auto" class="mt-0.5">${ico('<circle cx="12" cy="12" r="5"/>')}</span><span style="color:var(--muted)">${p}</span></div>`).join('')}
+                </div>
+              </div>`).join('')}
+          </div>
+        </div>`);
+
+    case 'stat':
+      return chrome(slide, idx, `
+        <div class="flex-1 flex flex-col justify-center">
+          <div class="anim text-[13px] mono uppercase tracking-wider mb-8" style="color:var(--muted)">${slide.kicker}</div>
+          <div class="grid grid-cols-4 gap-5 stagger">
+            ${slide.stats.map(([n, l]) => `
+              <div class="card shadow-float p-7">
+                <div class="display text-[46px]" style="color:var(--green)">${n}</div>
+                <div class="text-[16px] mt-3" style="color:var(--muted)">${l}</div>
+              </div>`).join('')}
+          </div>
+        </div>`);
+
+    case 'closing':
+      return chrome(slide, idx, `
+        <div class="flex-1 flex flex-col justify-center">
+          <div class="anim text-[14px] mono uppercase tracking-wider mb-7" style="color:var(--green)">Síntese</div>
+          <h2 class="display anim delay-1 text-[58px] max-w-[20ch]">Desacople o relógio dos dados do relógio da tela.</h2>
+          <p class="anim delay-2 text-[23px] mt-8 max-w-[64ch]" style="color:var(--muted)">Os dados chegam num ritmo (lento, esparso, ruidoso) e a tela consome noutro (rápido, contínuo). O trabalho todo é o buffer esperto no meio. É netcode de jogo, interpolação de vídeo, fusão de sensores.</p>
+          <div class="anim-fade delay-2 mt-10 flex flex-wrap items-center gap-2">
+            ${['push', 'interpolar', 'Kalman', 'fan-out por célula', 'conexões vivas'].map((t, i, a) =>
+              `<span class="pill px-3.5 py-1.5 text-[13px] font-medium" style="background:#232323;color:var(--muted)">${t}</span>${i < a.length - 1 ? '<span style="color:var(--faint)">→</span>' : ''}`).join('')}
+          </div>
+        </div>`, { hero: true });
+
+    default:
+      return `<div class="slide"><div class="p-14">slide?</div></div>`;
+  }
+}
+
+deck.innerHTML = SLIDES.map((s, i) => render(s, i)).join('');
+const slides = [...document.querySelectorAll('.slide')];
+
+let cur = 0;
+function show(i) {
+  cur = Math.max(0, Math.min(slides.length - 1, i));
+  slides.forEach((el, idx) => el.classList.toggle('active', idx === cur));
+}
+function next() { show(cur + 1); }
+function prev() { show(cur - 1); }
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); next(); }
+  else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); prev(); }
+  else if (e.key === 'Home') show(0);
+  else if (e.key === 'End') show(slides.length - 1);
+});
+document.getElementById('deck').addEventListener('click', (e) => {
+  if (e.clientX < window.innerWidth * 0.28) prev(); else next();
+});
+
+if (new URLSearchParams(location.search).get('print') === '1') {
+  setTimeout(() => window.print(), 600);
+} else {
+  show(0);
+}
+</script>
+</body>
+</html>
