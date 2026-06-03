@@ -121,6 +121,8 @@ The output gives you the matrix `member × topic`. From it, identify:
 - **Everyone-knows-this** — topics 80%+ have studied → safe pra cold-call qualquer um
 - **Gaps** — topics nobody studied → these MUST be taught from zero, not cold-called
 
+**Topic COUNTS lie. Verify item-level before trusting them.** A single overview video (the Hot Stuff cohort's "10 Key Data Structures" is tagged array, hashmap, lists, tree, graph) increments the count of EVERY topic it touches for every member who watched it. So a member can show `tree: 1` and `graph: 1` while having zero real depth in either. Before you crown a specialist on a rare or advanced topic (tree, graph, trie), pull the actual item titles for that member and topic (`... AND t.slug = '<topic>'` joined to `LibraryItem.title`) and check: real coverage, or one overview video counted many times? A count of 1 that traces to an overview is NOT coverage. This bit us once: a member looked like a tree+graph voice on counts but was actually a hashing specialist, and the correction rewrote half the askWho map. When a topic is a true gap (nobody has real coverage), mark that beat `teachFromZero` with an `open`-floor asker instead of naming a fake specialist.
+
 Save this matrix in your scratch notes. Each beat's `askWho` will be derived from it.
 
 ### Step 4 — Draft beats one at a time
@@ -283,7 +285,37 @@ Study Mode and Live Mode are **facilitator-facing**. They contain askWho, scenar
 
 Output: `apps/web/public/slides/<slug>.html`, then set `slidesUrl: '/slides/<slug>.html'` on the `Lesson` (top-level field, not on a node). The lesson page exposes a "Slides · apresentar" button and the Exportar menu picks it up automatically.
 
-**Use `apps/web/public/slides/deploy-journey.html` as the template.** It's self-contained: Tailwind CDN, Geist + Inter + JetBrains Mono fonts loaded inline, no React, no build step.
+#### Step 7.0 — Pick the brand visual style FIRST (mandatory before writing any HTML)
+
+Every deck adopts the visual identity of a real company, pulled from the **awesome-design-md** repo (`github.com/VoltAgent/awesome-design-md`). It holds 72 brand `DESIGN.md` specs (exact palette, typography, radius, shadow, signature traits). Before you write a single slide, **choose the brand whose identity best fits THIS class**, fetch its spec, and build the deck's design tokens from it. This replaces the default deploy-journey look (Geist + blue) with a deliberate, topic-matched aesthetic.
+
+**How to pick.** Match the brand to the lesson's subject, in priority order:
+
+1. **The class IS about that company.** A LedgerStore class → `uber`. A Stripe-payments or idempotency class → `stripe`. A Spotify recommendation class → `spotify`. The strongest possible match: the deck wears the brand it studies.
+2. **The class is about that company's domain.** Fintech / money / ledger with no single company → `stripe`, `wise`, `coinbase`, `mastercard`, `revolut`, `binance`, `kraken`. Databases / backend → `supabase`, `mongodb`, `clickhouse`, `sentry`, `posthog`, `hashicorp`. AI / ML → `claude`, `openai`-adjacent (`cohere`, `mistral`, `elevenlabs`, `runway`), `together`. Dev tooling / DX → `vercel`, `linear`, `raycast`, `warp`, `cursor`. Design / frontend → `figma`, `framer`, `webflow`, `linear`.
+3. **Fallback by mood.** Clean editorial / neutral system-design class → `linear`, `vercel`, `notion`, `apple`. Bold / high-energy → `nike`, `spacex`, `tesla`, a supercar brand (`ferrari`, `lamborghini`, `bugatti`, `bmw-m`).
+
+**Full brand list (folder names under `design-md/`):**
+`airbnb, apple, airtable, binance, bmw, bmw-m, bugatti, cal-com, claude, clay, clickhouse, coinbase, cohere, composio, cursor, dell-1996, elevenlabs, expo, ferrari, figma, framer, hashicorp, hp, ibm, intercom, kraken, lamborghini, linear, lovable, mastercard, meta, minimax, mintlify, miro, mistral, mongodb, nike, notion, nvidia, ollama, opencode, pinterest, playstation, posthog, raycast, renault, replicate, resend, revolut, runway, sanity, sentry, shopify, spacex, spotify, starbucks, stripe, superhuman, supabase, tesla, the-verge, together, uber, vercel, vodafone, voltagent, warp, webflow, wired, wise, xai`
+(If a slug 404s, list the folder via `https://api.github.com/repos/VoltAgent/awesome-design-md/contents/design-md` and match the exact name.)
+
+**Fetch the spec:**
+```bash
+curl -s "https://raw.githubusercontent.com/VoltAgent/awesome-design-md/main/design-md/<brand>/DESIGN.md"
+```
+
+**Rethink the whole visual STRUCTURE, not just the palette. This is the part people get wrong.** Swapping colors into the generic centered cover/hook/grid template is NOT "using the brand's style" — it produces a recolored generic deck. A brand's identity lives in its *composition*: layout, signature components, navigation chrome, how hierarchy is built, what a "card" even looks like. Before writing slides, ask "what would this deck look like if it were a screen IN that company's product?" Examples of structural (not color) signatures:
+- **Linear** → an app-view: a persistent left sidebar nav (sections + items, current one highlighted) beside a framed main panel; "issue-row" lists with hairline dividers; kbd chips; surface-ladder depth (no shadows); a faint technical grid. The deck should feel like the Linear app, not a slideshow tinted purple.
+- **Uber** → full-bleed black/white bands, big sentence-case headlines, 999px pill chips, 2-up editorial promo cards, polarity-flipped dark bands as the depth cue.
+- **Stripe** → angled gradient hero, dense API-doc two-column (prose + code) layouts, sober grid of feature cards.
+- **Apple** → enormous centered hero type, generous whitespace, one product object per screen.
+The **`ics-math-slides`** skill is the bar: it defines bespoke slide *types* with their own layouts (formula boxes side by side, 3-column property grid with colored borders, cross-grid background, text-stroke display) — a real visual identity, not a recolor. Aim for that level of structural commitment per brand.
+
+**Apply the tokens within that structure.** Once the composition is right, wire the spec's exact values: page bg, surfaces, ink hierarchy, the ONE accent (many brands, like Uber, deliberately have none — respect that), display + body fonts (Google Fonts `<link>`, or the closest substitute when the brand ships a proprietary face: UberMove → Inter/Geist tight 700, Linear Display → Inter 600 negative-tracking), the border-radius signature, and shadow/elevation rules. Honor the do's/don'ts: "no second accent", "no shadows, flat", "don't pill-round CTAs" — these are structural rules, follow them literally.
+
+**State your pick to the user** with a one-line rationale that names the STRUCTURE, not just the color ("Deck no estilo Linear: app-view com sidebar de navegação e painéis hairline, porque a aula é sobre índices espaciais e fica como uma view técnica"), before building. Note any font substitution. When the same company already has a deck (e.g. a second Uber-case class), pick a *different* brand for visual variety and say why.
+
+**Reuse only the ENGINE from `apps/web/public/slides/deploy-journey.html`** — the plumbing: keyboard/click navigation, the `?print=1` PDF flow, the entrance-animation classes, the self-contained no-build setup (Tailwind CDN, inline fonts). **Throw away its layout and rebuild the slide composition from scratch** for the brand you chose. The template is a working engine to borrow, not a visual structure to recolor.
 
 Structure per beat (3 slides each on average): **hook** (the action-trigger-question pattern) → **support** (code | compare | list) → **diagram** (the PNG you generated in step 6). Plus section dividers between groups and a closing recap. A 13-beat lesson becomes ~30-40 slides.
 
@@ -302,7 +334,7 @@ Available slide types in the template:
 
 **Animations**: each slide has CSS keyframe animations (`slideUp`, `fadeIn`, `scaleIn`) triggered when `.active` is added. The `.stagger > *` selector auto-delays children for sequential reveal. Don't over-animate; the defaults work.
 
-**Color accents per group**: blue for `local`, cyan for `containers`, orange for `cloud`, purple for `infra`, green for `devops`, emerald for `synthesis`. The `GROUP` constant in the slide deck JS maps each group name to an accent + soft-bg pair.
+**Color accents per group**: the `GROUP` constant in the slide deck JS maps each group name to an accent + soft-bg pair. The deploy-journey defaults (blue `local`, cyan `containers`, orange `cloud`, purple `infra`, green `devops`, emerald `synthesis`) are a STARTING POINT — re-tint them to the brand palette you picked in Step 7.0. If the brand has a single accent (or none, like Uber's pure black/white), collapse the group colors into shades of that palette instead of a rainbow.
 
 **Print CSS for PDF export**: the template includes `@media print` rules that stack all slides one-per-page when the page is opened with `?print=1` (the page auto-triggers `window.print()` on load). The Exportar menu uses this URL form.
 

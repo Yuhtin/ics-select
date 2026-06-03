@@ -14,7 +14,12 @@ export type NodeGroup =
   | 'nestjs'
   | 'packets'
   | 'tick'
-  | 'events';
+  | 'events'
+  | 'money'
+  | 'ledger'
+  | 'nearest'
+  | 'index'
+  | 'dispatch';
 
 export type Asker = {
   name: string;
