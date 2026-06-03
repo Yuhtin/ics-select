@@ -4,6 +4,7 @@ import { chatMessaging } from './lessons/chat-messaging';
 import { deployJourney } from './lessons/deploy-journey';
 import { backendFundamentos } from './lessons/backend-fundamentos';
 import { minecraftEventDriven } from './lessons/minecraft-event-driven';
+import { ledgerFinanceiro } from './lessons/ledger-financeiro';
 
 const LESSONS: Record<string, Lesson> = {
   [urlShortener.slug]: urlShortener,
@@ -11,6 +12,7 @@ const LESSONS: Record<string, Lesson> = {
   [deployJourney.slug]: deployJourney,
   [backendFundamentos.slug]: backendFundamentos,
   [minecraftEventDriven.slug]: minecraftEventDriven,
+  [ledgerFinanceiro.slug]: ledgerFinanceiro,
 };
 
 export function getLesson(slug: string): Lesson | undefined {

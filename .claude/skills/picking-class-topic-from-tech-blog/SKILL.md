@@ -283,7 +283,30 @@ Study Mode and Live Mode are **facilitator-facing**. They contain askWho, scenar
 
 Output: `apps/web/public/slides/<slug>.html`, then set `slidesUrl: '/slides/<slug>.html'` on the `Lesson` (top-level field, not on a node). The lesson page exposes a "Slides · apresentar" button and the Exportar menu picks it up automatically.
 
-**Use `apps/web/public/slides/deploy-journey.html` as the template.** It's self-contained: Tailwind CDN, Geist + Inter + JetBrains Mono fonts loaded inline, no React, no build step.
+#### Step 7.0 — Pick the brand visual style FIRST (mandatory before writing any HTML)
+
+Every deck adopts the visual identity of a real company, pulled from the **awesome-design-md** repo (`github.com/VoltAgent/awesome-design-md`). It holds 72 brand `DESIGN.md` specs (exact palette, typography, radius, shadow, signature traits). Before you write a single slide, **choose the brand whose identity best fits THIS class**, fetch its spec, and build the deck's design tokens from it. This replaces the default deploy-journey look (Geist + blue) with a deliberate, topic-matched aesthetic.
+
+**How to pick.** Match the brand to the lesson's subject, in priority order:
+
+1. **The class IS about that company.** A LedgerStore class → `uber`. A Stripe-payments or idempotency class → `stripe`. A Spotify recommendation class → `spotify`. The strongest possible match: the deck wears the brand it studies.
+2. **The class is about that company's domain.** Fintech / money / ledger with no single company → `stripe`, `wise`, `coinbase`, `mastercard`, `revolut`, `binance`, `kraken`. Databases / backend → `supabase`, `mongodb`, `clickhouse`, `sentry`, `posthog`, `hashicorp`. AI / ML → `claude`, `openai`-adjacent (`cohere`, `mistral`, `elevenlabs`, `runway`), `together`. Dev tooling / DX → `vercel`, `linear`, `raycast`, `warp`, `cursor`. Design / frontend → `figma`, `framer`, `webflow`, `linear`.
+3. **Fallback by mood.** Clean editorial / neutral system-design class → `linear`, `vercel`, `notion`, `apple`. Bold / high-energy → `nike`, `spacex`, `tesla`, a supercar brand (`ferrari`, `lamborghini`, `bugatti`, `bmw-m`).
+
+**Full brand list (folder names under `design-md/`):**
+`airbnb, apple, airtable, binance, bmw, bmw-m, bugatti, cal-com, claude, clay, clickhouse, coinbase, cohere, composio, cursor, dell-1996, elevenlabs, expo, ferrari, figma, framer, hashicorp, hp, ibm, intercom, kraken, lamborghini, linear, lovable, mastercard, meta, minimax, mintlify, miro, mistral, mongodb, nike, notion, nvidia, ollama, opencode, pinterest, playstation, posthog, raycast, renault, replicate, resend, revolut, runway, sanity, sentry, shopify, spacex, spotify, starbucks, stripe, superhuman, supabase, tesla, the-verge, together, uber, vercel, vodafone, voltagent, warp, webflow, wired, wise, xai`
+(If a slug 404s, list the folder via `https://api.github.com/repos/VoltAgent/awesome-design-md/contents/design-md` and match the exact name.)
+
+**Fetch the spec:**
+```bash
+curl -s "https://raw.githubusercontent.com/VoltAgent/awesome-design-md/main/design-md/<brand>/DESIGN.md"
+```
+
+**Apply it.** Read the spec and translate it into the deck's CSS custom properties / Tailwind config: page bg, surface, ink/text hierarchy, the ONE accent (many brands, like Uber, deliberately have none — respect that), display + body font families (load via Google Fonts `<link>`, or the closest available substitute when the brand ships a proprietary face like UberMove → use Inter/Geist tight 700), border-radius signature (Uber = 999px pills, 16px cards), and shadow/elevation rules. Honor the brand's do's/don'ts: if the spec says "no second accent color" or "no shadows, flat by default," follow it. The `GROUP` accent map in the deck JS should be re-tinted to the brand palette, not the generic blue/cyan/orange.
+
+**State your pick to the user** with a one-line rationale ("Deck no estilo Uber, porque a aula é o case do LedgerStore deles") before building, and note any substitution you made (proprietary font → fallback).
+
+**Use `apps/web/public/slides/deploy-journey.html` as the structural template** (slide types, navigation, print CSS, animations). It's self-contained: Tailwind CDN, fonts loaded inline, no React, no build step. **Keep its structure, swap its design tokens** for the brand you chose in Step 7.0.
 
 Structure per beat (3 slides each on average): **hook** (the action-trigger-question pattern) → **support** (code | compare | list) → **diagram** (the PNG you generated in step 6). Plus section dividers between groups and a closing recap. A 13-beat lesson becomes ~30-40 slides.
 
@@ -302,7 +325,7 @@ Available slide types in the template:
 
 **Animations**: each slide has CSS keyframe animations (`slideUp`, `fadeIn`, `scaleIn`) triggered when `.active` is added. The `.stagger > *` selector auto-delays children for sequential reveal. Don't over-animate; the defaults work.
 
-**Color accents per group**: blue for `local`, cyan for `containers`, orange for `cloud`, purple for `infra`, green for `devops`, emerald for `synthesis`. The `GROUP` constant in the slide deck JS maps each group name to an accent + soft-bg pair.
+**Color accents per group**: the `GROUP` constant in the slide deck JS maps each group name to an accent + soft-bg pair. The deploy-journey defaults (blue `local`, cyan `containers`, orange `cloud`, purple `infra`, green `devops`, emerald `synthesis`) are a STARTING POINT — re-tint them to the brand palette you picked in Step 7.0. If the brand has a single accent (or none, like Uber's pure black/white), collapse the group colors into shades of that palette instead of a rainbow.
 
 **Print CSS for PDF export**: the template includes `@media print` rules that stack all slides one-per-page when the page is opened with `?print=1` (the page auto-triggers `window.print()` on load). The Exportar menu uses this URL form.
 

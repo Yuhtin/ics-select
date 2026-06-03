@@ -138,4 +138,20 @@ export const GROUP_META: Record<NodeGroup, GroupVisual> = {
     stripeClass: 'bg-success',
     tintClass: 'bg-success-soft/40',
   },
+  money: {
+    label: 'Por que dinheiro é difícil',
+    eyebrow: 'Money',
+    accentClass: 'text-warn',
+    ringClass: 'bg-warn',
+    stripeClass: 'bg-warn',
+    tintClass: 'bg-warn-soft/40',
+  },
+  ledger: {
+    label: 'Ledger / Double-entry',
+    eyebrow: 'Ledger',
+    accentClass: 'text-primary',
+    ringClass: 'bg-primary',
+    stripeClass: 'bg-primary',
+    tintClass: 'bg-primary-soft/40',
+  },
 };
