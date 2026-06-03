@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Como a Uber Acha o Motorista Mais Perto</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect" />
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+  /* ── Linear design language (awesome-design-md/linear) ──
+     Not just the palette: the STRUCTURE. App-view composition: a persistent
+     left sidebar nav + a framed main panel. Surface-ladder depth with 1px
+     hairlines (no shadows). Issue-row lists. kbd chips. Negative-tracked
+     display, mono for spatial IDs. Faint coordinate grid on splash slides. */
+  :root {
+    --canvas: #010102;
+    --s1: #0f1011;
+    --s2: #141516;
+    --s3: #18191a;
+    --hair: #23252a;
+    --hair-strong: #34343a;
+    --ink: #f7f8f8;
+    --ink-muted: #d0d6e0;
+    --ink-subtle: #8a8f98;
+    --ink-tertiary: #62666d;
+    --accent: #5e6ad2;
+    --accent-hi: #828fff;
+    --secure: #7a7fad;
+    --success: #27a644;
+  }
+  * { box-sizing: border-box; }
+  html, body { background: var(--canvas); color: var(--ink); font-family: 'Inter', system-ui, sans-serif; overflow: hidden; height: 100vh; margin: 0; }
+  .display { font-weight: 600; letter-spacing: -0.035em; line-height: 1.05; }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+  .eyebrow { font-weight: 500; letter-spacing: 0.06em; color: var(--ink-subtle); text-transform: uppercase; }
+  .slide { display: none; height: 100vh; width: 100vw; position: relative; }
+  .slide.active { display: flex; }
+
+  /* faint coordinate grid for splash slides (spatial theme) */
+  .grid-bg {
+    background-image:
+      linear-gradient(rgba(94,106,210,0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(94,106,210,0.05) 1px, transparent 1px);
+    background-size: 64px 64px;
+  }
+  .glow { background: radial-gradient(60% 55% at 18% 30%, rgba(94,106,210,0.16) 0%, transparent 60%); }
+
+  /* ── app chrome ── */
+  .rail { width: 320px; flex: 0 0 320px; border-right: 1px solid var(--hair); background: linear-gradient(180deg,#0b0c0d, var(--canvas)); }
+  .nav-beat { border-radius: 8px; }
+  .nav-beat.on { background: var(--s2); box-shadow: inset 3px 0 0 var(--accent); }
+  .kbd { background: var(--s2); border: 1px solid var(--hair-strong); border-radius: 6px; color: var(--ink-subtle); font-family: 'JetBrains Mono', monospace; }
+
+  /* ── panels ── */
+  .panel { background: var(--s1); border: 1px solid var(--hair); border-radius: 14px; }
+  .panel-lift { background: var(--s2); border: 1px solid var(--hair-strong); border-radius: 14px; box-shadow: 0 0 0 1px rgba(94,106,210,0.45); }
+  .row-div { border-top: 1px solid var(--hair); }
+  .chip { background: var(--s2); border: 1px solid var(--hair); color: var(--ink-subtle); border-radius: 6px; font-weight: 500; }
+  .code { font-family: 'JetBrains Mono', monospace; font-size: 17px; line-height: 1.7; color: var(--ink-muted); }
+  .code .ac { color: var(--accent-hi); font-weight: 600; }
+  .code .ok { color: var(--success); font-weight: 600; }
+  .code .bad { color: #e06c75; font-weight: 600; }
+  .code .com { color: var(--ink-tertiary); }
+
+  @keyframes slideUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .slide.active .anim { animation: slideUp 0.55s cubic-bezier(0.16,1,0.3,1) backwards; }
+  .slide.active .anim-fade { animation: fadeIn 0.7s cubic-bezier(0.16,1,0.3,1) backwards; }
+  .slide.active .stagger > * { animation: slideUp 0.45s cubic-bezier(0.16,1,0.3,1) backwards; }
+  .slide.active .stagger > *:nth-child(1) { animation-delay: 0.05s; }
+  .slide.active .stagger > *:nth-child(2) { animation-delay: 0.12s; }
+  .slide.active .stagger > *:nth-child(3) { animation-delay: 0.19s; }
+  .slide.active .stagger > *:nth-child(4) { animation-delay: 0.26s; }
+  .slide.active .delay-1 { animation-delay: 0.14s; }
+  .slide.active .delay-2 { animation-delay: 0.26s; }
+
+  @media print {
+    @page { size: 1600px 900px; margin: 0; }
+    html, body { overflow: visible !important; height: auto !important; background: #010102 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    #deck { overflow: visible !important; height: auto !important; width: auto !important; display: block !important; position: static !important; }
+    .slide { display: flex !important; width: 1600px !important; height: 900px !important; min-height: 900px !important; max-height: 900px !important; page-break-after: always !important; break-after: page !important; break-inside: avoid !important; animation: none !important; }
+    .slide:last-child { page-break-after: avoid !important; break-after: avoid !important; }
+    .slide *, .slide *::before, .slide *::after { animation: none !important; transition: none !important; }
+    body > div.fixed { display: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div id="deck" class="relative w-screen h-screen overflow-hidden"></div>
+
+<div class="fixed bottom-4 right-6 z-50 flex items-center gap-2 text-[11px]">
+  <span class="kbd px-1.5 py-0.5">←</span><span class="kbd px-1.5 py-0.5">→</span>
+</div>
+
+<script>
+// Section + beat tree drives the persistent sidebar nav (Linear app-view).
+const NAV = [
+  { num: '01', label: 'O problema do mais perto', beats: [ {n:1,t:'O problema'}, {n:2,t:'Por que o ingênuo derrete'} ] },
+  { num: '02', label: 'Índice espacial',           beats: [ {n:3,t:'Geohash'}, {n:4,t:'Quadtree e H3'} ] },
+  { num: '03', label: 'Dispatch & ETA',            beats: [ {n:5,t:'DISCO'}, {n:6,t:'Arquitetura'} ] },
+  { num: '04', label: 'AWS por camada',            beats: [ {n:7,t:'Managed services'} ] },
+];
+function sectionOf(beat) { return NAV.find(s => s.beats.some(b => b.n === beat)); }
+
+const SLIDES = [
+  { type: 'cover' },
+
+  { type: 'divider', num: '01', label: 'O problema do mais perto', intro: 'Cerca de 2 milhões de motoristas online. Achar os mais perto de você em milissegundos.' },
+  { type: 'hook', beat: 1, kicker: 'O problema',
+    title: 'Você aperta pedir Uber. ~2 milhões de motoristas online.',
+    sub: 'Como achar os 3 mais perto de você em milissegundos, sem calcular distância pra todos os 2 milhões?',
+    tags: ['nearest-neighbor', 'haversine', 'pontos que se movem'] },
+  { type: 'stat', beat: 1, kicker: 'A escala que quebra o ingênuo', stats: [
+      ['~2 mi', 'motoristas online no pico (o N)'],
+      ['~1 mi/s', 'requisições de matching'],
+      ['~40 mi', 'corridas por dia'],
+      ['~4 s', 'cada motorista manda GPS'],
+    ] },
+
+  { type: 'hook', beat: 2, kicker: 'Por que o ingênuo derrete',
+    title: 'O jeito ingênuo tem dois furos. Um você vê. O outro derruba entrevista.',
+    sub: 'Haversine pra todos é O(N). E cada motorista reescreve a posição a cada 4 segundos.',
+    tags: ['O(n)', 'write-firehose', 'in-memory', 'staleness ~30s'] },
+  { type: 'codeNote', beat: 2, kicker: 'Cronometre os dois lados', file: 'naive.txt',
+    code: [
+      "<span class='com'># LEITURA: Haversine contra todos</span>",
+      "for d in <span class='ac'>2_000_000</span>: haversine(rider, d)  <span class='com'># O(N)/req</span>",
+      "  × <span class='ac'>1_000_000</span> req/s   <span class='bad'>derrete</span>",
+      "",
+      "<span class='com'># ESCRITA: o furo esquecido</span>",
+      "2_000_000 motoristas / 4s ≈ <span class='bad'>500k a 1M writes/s</span>",
+      "pedidos de corrida ≈ <span class='ac'>230/s</span>  <span class='com'># escrita DOMINA</span>",
+    ],
+    notes: [
+      ['B-tree 1D não resolve 2D', 'Índice em lat OU long estreita uma dimensão e deixa milhares na outra. Proximidade é 2D.'],
+      ['Otimize o N, não o Haversine', 'Trocar a trig economiza um fator constante. O assassino é rodar a conta N vezes.'],
+      ['Staleness libera memória', 'Localização tolera ~30s velha. Índice em memória; histórico persiste async, fora do caminho quente.'],
+    ] },
+
+  { type: 'divider', num: '02', label: 'Índice espacial', intro: 'Transforme 2D numa chave 1D ordenável. Aí busca por vizinho vira range query.' },
+  { type: 'hook', beat: 3, kicker: 'Geohash',
+    title: 'Guarde a posição numa coluna que um índice comum busque por "quem está perto".',
+    sub: 'Você quer rodar WHERE ... LIKE pra achar vizinho. Como (lat, long) vira UM valor ordenável onde prefixo compartilhado = proximidade?',
+    tags: ['geohash', 'z-order', 'prefixo = proximidade'] },
+  { type: 'codeNote', beat: 3, kicker: 'Intercala os bits, vira string', file: 'geohash.txt',
+    code: [
+      "lat  → 0 1 1 0 1 ...   <span class='com'># busca binária no eixo</span>",
+      "long → 1 0 0 1 0 ...   <span class='com'># busca binária no eixo</span>",
+      "intercala → 10 11 01 00 ... → base32",
+      "(-23.56, -46.64) → <span class='ac'>\"6gycfx\"</span>",
+      "",
+      "prefixo igual = perto:  6gycf<span class='ac'>x</span> ~ 6gycf<span class='ac'>w</span>",
+      "WHERE geohash LIKE <span class='ac'>'6gycf%'</span>  <span class='com'># range query</span>",
+    ],
+    notes: [
+      ['Precisão é o comprimento', '5 chars ~5km, 6 ~1.2km, 7 ~150m, 8 ~40m. Escolha o tamanho ~ o raio da busca.'],
+      ['O prefixo é mão única', 'Prefixo longo => perto (verdade). Perto => prefixo (FALSO). É o problema da borda.'],
+      ['Vira range scan num B-tree', '2D virou 1D ordenável. Qualquer índice comum acha vizinho por prefixo.'],
+    ] },
+  { type: 'list', beat: 3, kicker: 'A armadilha da borda, e o conserto', title: 'Consulte 9 células, depois re-rank',
+    items: [
+      ['Regra de mão única', 'Dois pontos colados em lados opostos de uma borda têm prefixos diferentes: 011111 vs 100000, quase todo bit vira.'],
+      ['Exemplo real', 'Duas cidades na França a ~30km: zero caractere de prefixo em comum (lados opostos de uma célula de topo).'],
+      ['O conserto: 3x3', 'Não consulte só a sua célula. Consulte ela + as 8 vizinhas. Pega quem cruza qualquer borda.'],
+      ['Depois, Haversine', 'A célula é retângulo, o canto está mais longe que o raio. Re-rank exato nos poucos candidatos.'],
+    ] },
+
+  { type: 'hook', beat: 4, kicker: 'Quadtree e H3',
+    title: 'No centro da cidade, uma célula tem 5 mil carros.',
+    sub: 'Melhore de duas formas: uma que adapta o tamanho da célula, uma que troca o formato dela.',
+    tags: ['quadtree', 'h3', 'hexágono', 'resolução'] },
+  { type: 'compare', beat: 4, kicker: 'Adaptar o tamanho ou trocar o formato',
+    left: { tag: 'quadtree', title: 'Adapta o tamanho', points: [
+      'Cada nó vira 4 filhos onde a densidade pede',
+      'Centro lotado: muitas células pequenas',
+      'Subúrbio vazio: uma célula grande',
+      'Custo: rebalancear quando os pontos andam' ] },
+    right: { tag: 'h3 · uber', title: 'Troca o formato (hexágono)', accent: true, points: [
+      'Os 6 vizinhos ficam à MESMA distância',
+      'Quadrado tem 2 distâncias (lado vs canto)',
+      'k-ring limpo: k=1 → 7 hex, k=2 → 19',
+      'Erro mínimo quando o carro cruza de célula' ] } },
+  { type: 'list', beat: 4, kicker: 'H3 em números', title: 'O hexágono da Uber, por dentro',
+    items: [
+      ['16 resoluções', '0 grossa (continente) a 15 fininha (<1m²); cada uma ~1/7 da área da anterior.'],
+      ['64 bits por célula', 'Truncar os bits do índice = zoom out pro pai. Hierarquia barata.'],
+      ['12 pentágonos', 'Não dá pra ladrilhar a esfera só com hexágono. Ficam sobre o oceano, atrapalham pouco.'],
+      ['Encaixe aproximado', 'Filhos não enchem o pai certinho (diferente do quadtree). É o preço da distância uniforme.'],
+    ] },
+
+  { type: 'divider', num: '03', label: 'Dispatch & ETA', intro: 'O índice só acha candidatos. Quem escolhe é o ETA na malha viária. Perto em linha reta mente.' },
+  { type: 'hook', beat: 5, kicker: 'DISCO',
+    title: 'Os 10 mais perto em linha reta. Mas qual chega antes?',
+    sub: 'O #1 a 200m do outro lado de um rio, a 8 min. O #4 a 600m, a 3 min. Quem o app manda?',
+    tags: ['candidate vs rank', 'eta', 'road graph', 'retrieve-then-rank'] },
+  { type: 'compare', beat: 5, kicker: 'Filtro grosso, depois rank fino',
+    left: { tag: 'retrieve', title: 'O índice acha candidatos', points: [
+      'Milhões de motoristas → um punhado perto',
+      'Distância aproximada em linha reta',
+      'Geohash / quadtree / H3',
+      'Não sabe do rio, da via dividida, da mão única' ] },
+    right: { tag: 'rank', title: 'O ETA escolhe', accent: true, points: [
+      'Cidade = grafo de ruas direcionado e ponderado',
+      'Ordena por tempo de chegada, não distância',
+      'O carro do outro lado do rio cai no ranking',
+      'Pode preferir quem está terminando corrida perto' ] } },
+  { type: 'codeNote', beat: 5, kicker: 'retrieve-then-rank, o padrão transferível', file: 'match.py',
+    code: [
+      "<span class='com'># retrieve: filtro grosso (índice espacial)</span>",
+      "candidatos = index.<span class='ac'>near</span>(rider)  <span class='com'># milhões → ~centenas</span>",
+      "",
+      "<span class='com'># rank: score caro SÓ nos candidatos</span>",
+      "melhor = <span class='ac'>min</span>(candidatos, key=eta_malha_viaria)",
+      "",
+      "<span class='com'># Dijkstra puro em ~500k nós? lento.</span>",
+      "<span class='com'># particiona o grafo → ~700 nós por busca</span>",
+    ],
+    notes: [
+      ['Linha reta mente', '200m em linha reta podem ser 5+ min de carro. Distância é proxy pro candidato, nunca o score final.'],
+      ['O índice filtra, o ETA ranqueia', 'Se você ordena por distância e para, entrega o bug do "outro lado do rio".'],
+      ['Vale fora de mapas', 'Busca (índice invertido + rerank), recomendação (candidatos + modelo). Mesmo padrão.'],
+    ] },
+
+  { type: 'hook', beat: 6, kicker: 'Arquitetura',
+    title: 'Desenhe do GPS a cada 4s até a oferta chegar.',
+    sub: 'Separe a trilha de escrita da de leitura, e diga onde o índice vive e por qual chave ele sharda.',
+    tags: ['write-path', 'read-path', 'shard-by-cell', 'consistent hashing'] },
+  { type: 'compare', beat: 6, kicker: 'Duas trilhas, perfis opostos',
+    left: { tag: 'write path', title: 'O firehose', points: [
+      'Ping ~4s → índice em memória',
+      'delete da célula antiga + insert na nova',
+      'Histórico vai pra fila, persiste async',
+      'Sharded pelo cell id (a célula é a chave)' ] },
+    right: { tag: 'read path', title: 'O pedido', accent: true, points: [
+      'Célula do rider + as 8 vizinhas',
+      'Fan-out SÓ nesses shards, não no mundo',
+      'Candidatos em sub-milissegundo',
+      'Depois o ETA ranqueia e oferta' ] } },
+
+  { type: 'divider', num: '04', label: 'AWS por camada', intro: 'O perfil de carga da caixa manda no serviço. E elimina o candidato mais óbvio.' },
+  { type: 'hook', beat: 7, kicker: 'Managed services',
+    title: 'Pra cada caixa do diagrama, qual serviço da AWS?',
+    sub: 'E por que NÃO um Postgres com PostGIS pra tudo?',
+    tags: ['kinesis', 'elasticache', 'dynamodb', 's3', 'geosearch'] },
+  { type: 'compare3', beat: 7, kicker: 'Caixa a serviço, pelo perfil de carga',
+    cards: [
+      { tag: 'firehose', title: 'Kinesis / MSK', sub: 'stream, ~1M writes/s', points: ['Absorve o rio de pings', 'Desacopla apps dos consumidores', 'Dá pra reprocessar'] },
+      { tag: 'índice quente', title: 'ElastiCache Redis', sub: 'GEOADD/GEOSEARCH, sub-ms', accent: true, points: ['Comandos geo nativos', 'Score = geohash de 52 bits', 'É o beat 3 por baixo'] },
+      { tag: 'estado + frio', title: 'DynamoDB + S3', sub: 'kv quente, frio barato', points: ['DynamoDB: online, corrida atual', 'S3/Glacier: histórico async', 'Matching em ECS/EC2, não Lambda'] },
+    ] },
+  { type: 'codeNote', beat: 7, kicker: 'A armadilha do PostGIS', file: 'redis-geo.txt',
+    code: [
+      "<span class='com'># Redis GEO é geohash por baixo:</span>",
+      "GEOADD drivers -46.64 -23.56 <span class='ac'>\"driver:42\"</span>",
+      "GEOSEARCH drivers ... BYRADIUS <span class='ac'>1 km</span> ASC",
+      "<span class='com'># score do sorted set = geohash 52 bits</span>",
+      "",
+      "<span class='com'># PostGIS? ótimo pra dado que muda devagar.</span>",
+      "<span class='com'># 1M writes/s de posição → WAL/fsync</span> <span class='bad'>trava</span>",
+    ],
+    notes: [
+      ['O perfil de escrita elimina o óbvio', 'PostGIS + GIST é certo pra lojas/imóveis (mudam devagar). 1M writes/s de pontos que andam derruba o banco durável.'],
+      ['Lambda não pro matching', 'Matching é stateful e sensível a latência. Cold start mata o p99. ECS/EC2 segura índice e conexões quentes.'],
+      ['Histórico frio no S3', 'Dado que quase nunca é lido mas não pode sumir: centavos por GB.'],
+    ] },
+
+  { type: 'closing' },
+];
+
+const deck = document.getElementById('deck');
+
+function kbds(tags) {
+  if (!tags || !tags.length) return '';
+  return `<div class="flex flex-wrap gap-2 mt-9 stagger">${tags.map(t =>
+    `<span class="kbd px-3 py-1.5 text-[14px]">${t}</span>`).join('')}</div>`;
+}
+
+// The persistent sidebar (Linear app-view). Highlights the active beat.
+function rail(activeBeat) {
+  const sec = sectionOf(activeBeat);
+  const items = NAV.map((s) => {
+    const head = `<div class="flex items-center gap-2.5 px-3 mt-6 mb-2">
+        <span class="mono text-[12px]" style="color:${s === sec ? 'var(--accent-hi)' : 'var(--ink-tertiary)'}">${s.num}</span>
+        <span class="text-[12px] eyebrow" style="color:${s === sec ? 'var(--ink-muted)' : 'var(--ink-tertiary)'}">${s.label}</span>
+      </div>`;
+    const beats = s.beats.map((b) => {
+      const on = b.n === activeBeat;
+      return `<div class="nav-beat ${on ? 'on' : ''} flex items-center gap-3 px-3 py-2.5 mx-1">
+          <span class="mono text-[12px]" style="color:${on ? 'var(--accent-hi)' : 'var(--ink-tertiary)'}">${String(b.n).padStart(2,'0')}</span>
+          <span class="text-[14px]" style="color:${on ? 'var(--ink)' : 'var(--ink-subtle)'};font-weight:${on ? 600 : 500}">${b.t}</span>
+        </div>`;
+    }).join('');
+    return head + beats;
+  }).join('');
+
+  return `<aside class="rail h-full flex flex-col py-7">
+      <div class="px-4 flex items-center gap-3">
+        <div style="width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--accent-hi));display:flex;align-items:center;justify-content:center">
+          <span class="mono text-[14px] font-bold" style="color:#fff">U</span>
+        </div>
+        <div>
+          <div class="text-[14px] font-semibold leading-tight">ICS Select</div>
+          <div class="mono text-[11px]" style="color:var(--ink-subtle)">motorista-mais-perto</div>
+        </div>
+      </div>
+      <div class="row-div mt-6 mx-3"></div>
+      <div class="flex-1 overflow-hidden">${items}</div>
+      <div class="row-div mx-3"></div>
+      <div class="px-4 pt-4 flex items-center justify-between">
+        <span class="mono text-[12px]" style="color:var(--ink-tertiary)">Hot Stuff 2026.2</span>
+        <span class="mono text-[12px]" style="color:var(--ink-subtle)"><span id="rail-num">00</span> / <span id="rail-tot">00</span></span>
+      </div>
+    </aside>`;
+}
+
+// Wrap a content view in the app chrome (rail + main with breadcrumb).
+function chrome(beat, kicker, mainInner) {
+  const sec = sectionOf(beat);
+  return `<div class="slide">
+      ${rail(beat)}
+      <main class="flex-1 h-full flex flex-col px-16 py-10 min-w-0">
+        <div class="anim-fade flex items-center justify-between">
+          <div class="flex items-center gap-2.5 mono text-[12px]" style="color:var(--ink-subtle)">
+            <span style="color:var(--ink-tertiary)">${sec.num}</span>
+            <span style="color:var(--ink-tertiary)">/</span>
+            <span>${sec.label}</span>
+            <span style="color:var(--ink-tertiary)">/</span>
+            <span class="eyebrow" style="color:var(--accent-hi)">Beat ${String(beat).padStart(2,'0')}</span>
+          </div>
+          <span class="kbd px-2 py-1 text-[11px]">esc</span>
+        </div>
+        <div class="flex-1 flex flex-col justify-center min-h-0">${mainInner}</div>
+      </main>
+    </div>`;
+}
+
+function render(s) {
+  switch (s.type) {
+    case 'cover':
+      return `<div class="slide grid-bg">
+        <div class="glow w-full h-full flex flex-col justify-between px-24 py-20">
+          <div class="anim-fade flex items-center gap-3">
+            <div style="width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--accent),var(--accent-hi));display:flex;align-items:center;justify-content:center">
+              <span class="mono text-[15px] font-bold" style="color:#fff">U</span>
+            </div>
+            <span class="mono text-[13px] tracking-[0.18em] uppercase" style="color:var(--ink-subtle)">ICS Select · Hot Stuff 2026.2</span>
+          </div>
+          <div>
+            <div class="anim eyebrow mono text-[15px] mb-6">Estudo de caso · Uber H3 + DISCO</div>
+            <h1 class="display anim text-[88px] max-w-[17ch]">Como a Uber acha o motorista mais perto.</h1>
+            <p class="anim delay-1 text-[26px] mt-8 max-w-[50ch]" style="color:var(--ink-muted)">Busca espacial: de Haversine em todos a geohash, quadtree e o hexágono H3.</p>
+          </div>
+          <div class="anim-fade delay-2 flex gap-2.5">
+            ${['60 min', '7 beats', 'Curiosidade → System Design'].map(t =>
+              `<span class="kbd px-4 py-2 text-[14px]" style="color:var(--ink-muted)">${t}</span>`).join('')}
+          </div>
+        </div>
+      </div>`;
+
+    case 'divider': {
+      const sec = NAV.find(n => n.num === s.num);
+      const beatList = sec ? sec.beats.map(b =>
+        `<div class="flex items-center gap-3 py-2"><span class="mono text-[14px]" style="color:var(--accent)">${String(b.n).padStart(2,'0')}</span><span class="text-[18px]" style="color:var(--ink-muted)">${b.t}</span></div>`).join('') : '';
+      return `<div class="slide grid-bg">
+        <div class="glow w-full h-full flex items-center px-24 gap-20">
+          <div class="flex-1">
+            <div class="anim mono text-[140px] font-semibold leading-none" style="color:var(--accent);opacity:0.92">${s.num}</div>
+            <h2 class="display anim delay-1 text-[60px] mt-4 max-w-[16ch]">${s.label}</h2>
+            <p class="anim delay-2 text-[23px] mt-7 max-w-[48ch]" style="color:var(--ink-muted)">${s.intro}</p>
+          </div>
+          <div class="panel anim delay-2 p-7 w-[360px]">
+            <div class="eyebrow text-[12px] mb-3">Nesta seção</div>
+            ${beatList}
+          </div>
+        </div>
+      </div>`;
+    }
+
+    case 'hook':
+      return chrome(s.beat, s.kicker, `
+        <div class="anim eyebrow mono text-[15px] mb-7">${s.kicker}</div>
+        <h2 class="display anim delay-1 text-[54px] max-w-[26ch]">${s.title}</h2>
+        ${s.sub ? `<p class="anim delay-2 text-[24px] mt-7 max-w-[58ch]" style="color:var(--ink-muted)">${s.sub}</p>` : ''}
+        ${kbds(s.tags)}`);
+
+    case 'codeNote':
+      return chrome(s.beat, s.kicker, `
+        <div class="anim eyebrow mono text-[14px] mb-7">${s.kicker}</div>
+        <div class="grid grid-cols-2 gap-9 items-stretch">
+          <div class="panel anim overflow-hidden flex flex-col">
+            <div class="flex items-center gap-2 px-5 py-3" style="border-bottom:1px solid var(--hair)">
+              <span style="width:11px;height:11px;border-radius:50%;background:var(--hair-strong)"></span>
+              <span style="width:11px;height:11px;border-radius:50%;background:var(--hair-strong)"></span>
+              <span style="width:11px;height:11px;border-radius:50%;background:var(--hair-strong)"></span>
+              <span class="mono text-[12px] ml-2" style="color:var(--ink-subtle)">${s.file || 'snippet'}</span>
+            </div>
+            <pre class="code whitespace-pre-wrap px-6 py-5 flex-1">${s.code.join('\n')}</pre>
+          </div>
+          <div class="stagger flex flex-col gap-3.5 justify-center">
+            ${s.notes.map(([h, b]) => `
+              <div class="panel p-5 flex gap-4 items-start">
+                <span class="mono text-[15px] mt-0.5" style="color:var(--accent)">→</span>
+                <div>
+                  <div class="text-[18px] font-semibold" style="color:var(--ink)">${h}</div>
+                  <div class="text-[16px] mt-1" style="color:var(--ink-subtle)">${b}</div>
+                </div>
+              </div>`).join('')}
+          </div>
+        </div>`);
+
+    case 'list':
+      return chrome(s.beat, s.kicker, `
+        <div class="anim eyebrow mono text-[14px] mb-2">${s.kicker}</div>
+        <h2 class="display anim delay-1 text-[38px] mb-7">${s.title}</h2>
+        <div class="panel anim delay-1 overflow-hidden">
+          ${s.items.map(([h, b], i) => `
+            <div class="flex items-center gap-6 px-7 py-5 ${i ? 'row-div' : ''}">
+              <span class="mono text-[16px] font-semibold" style="color:var(--accent);min-width:28px">${String(i + 1).padStart(2, '0')}</span>
+              <div class="text-[21px] font-semibold whitespace-nowrap" style="color:var(--ink);min-width:230px">${h}</div>
+              <div class="text-[17px]" style="color:var(--ink-subtle)">${b}</div>
+            </div>`).join('')}
+        </div>`);
+
+    case 'compare':
+      return chrome(s.beat, s.kicker, `
+        <div class="anim eyebrow mono text-[14px] mb-8">${s.kicker}</div>
+        <div class="grid grid-cols-2 gap-7 stagger">
+          ${[s.left, s.right].map((c) => `
+            <div class="${c.accent ? 'panel-lift' : 'panel'} p-8">
+              <div class="flex items-center gap-2.5 mb-5">
+                <span class="kbd px-2.5 py-1 text-[12px] mono" style="${c.accent ? 'color:var(--accent-hi);border-color:var(--accent)' : ''}">${c.tag}</span>
+                ${c.accent ? `<span style="width:7px;height:7px;border-radius:50%;background:var(--accent)"></span>` : ''}
+              </div>
+              <div class="display text-[30px] mb-6" style="color:var(--ink)">${c.title}</div>
+              <div class="flex flex-col gap-3.5">
+                ${c.points.map(p => `<div class="flex gap-3 items-start text-[18px]"><span class="mono mt-0.5" style="color:${c.accent ? 'var(--accent)' : 'var(--ink-tertiary)'}">·</span><span style="color:var(--ink-muted)">${p}</span></div>`).join('')}
+              </div>
+            </div>`).join('')}
+        </div>`);
+
+    case 'compare3':
+      return chrome(s.beat, s.kicker, `
+        <div class="anim eyebrow mono text-[14px] mb-8">${s.kicker}</div>
+        <div class="grid grid-cols-3 gap-6 stagger">
+          ${s.cards.map(c => `
+            <div class="${c.accent ? 'panel-lift' : 'panel'} p-7 flex flex-col">
+              <span class="kbd self-start px-2.5 py-1 text-[12px] mono mb-4" style="${c.accent ? 'color:var(--accent-hi);border-color:var(--accent)' : ''}">${c.tag}</span>
+              <div class="display text-[26px]" style="color:var(--ink)">${c.title}</div>
+              <div class="text-[14px] mt-2 mb-6 mono" style="color:var(--ink-subtle)">${c.sub}</div>
+              <div class="flex flex-col gap-3 mt-auto">
+                ${c.points.map(p => `<div class="flex gap-3 items-start text-[16px]"><span class="mono mt-0.5" style="color:${c.accent ? 'var(--accent)' : 'var(--ink-tertiary)'}">·</span><span style="color:var(--ink-muted)">${p}</span></div>`).join('')}
+              </div>
+            </div>`).join('')}
+        </div>`);
+
+    case 'stat':
+      return chrome(s.beat, s.kicker, `
+        <div class="anim eyebrow mono text-[14px] mb-9">${s.kicker}</div>
+        <div class="grid grid-cols-4 gap-5 stagger">
+          ${s.stats.map(([n, l]) => `
+            <div class="panel p-7">
+              <div style="width:28px;height:3px;border-radius:2px;background:var(--accent);margin-bottom:18px"></div>
+              <div class="display text-[48px]" style="color:var(--accent-hi)">${n}</div>
+              <div class="text-[16px] mt-3" style="color:var(--ink-subtle)">${l}</div>
+            </div>`).join('')}
+        </div>`);
+
+    case 'closing':
+      return `<div class="slide grid-bg">
+        <div class="glow w-full h-full flex flex-col justify-center px-24" style="background-position:right bottom">
+          <div class="anim eyebrow mono text-[15px] mb-8">Síntese</div>
+          <h2 class="display anim delay-1 text-[60px] max-w-[22ch]">Proximidade é um problema 1D disfarçado.</h2>
+          <p class="anim delay-2 text-[24px] mt-9 max-w-[64ch]" style="color:var(--ink-muted)">Transforme o espaço 2D numa chave ordenável, e nunca deixe o filtro grosso ser o ranking fino. O índice acha candidatos perto; o ETA na malha viária escolhe.</p>
+          <div class="anim-fade delay-2 mt-12 flex flex-wrap gap-2">
+            ${['Haversine pra todos', 'geohash', 'quadtree / H3', 'retrieve-then-rank', 'DISCO'].map((t, i, a) =>
+              `<span class="kbd px-3 py-1.5 text-[13px]">${t}</span>${i < a.length - 1 ? '<span class="mono self-center" style="color:var(--ink-tertiary)">→</span>' : ''}`).join('')}
+          </div>
+        </div>
+      </div>`;
+
+    default:
+      return `<div class="slide"><div class="px-24 flex items-center">slide?</div></div>`;
+  }
+}
+
+deck.innerHTML = SLIDES.map(render).join('');
+const slides = [...document.querySelectorAll('.slide')];
+const tot = String(slides.length).padStart(2, '0');
+
+let cur = 0;
+function show(i) {
+  cur = Math.max(0, Math.min(slides.length - 1, i));
+  slides.forEach((el, idx) => el.classList.toggle('active', idx === cur));
+  // update the rail counter inside the active slide (rails are per-slide)
+  const rn = slides[cur].querySelector('#rail-num');
+  if (rn) rn.textContent = String(cur + 1).padStart(2, '0');
+  const rt = slides[cur].querySelector('#rail-tot');
+  if (rt) rt.textContent = tot;
+}
+function next() { show(cur + 1); }
+function prev() { show(cur - 1); }
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); next(); }
+  else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); prev(); }
+  else if (e.key === 'Home') show(0);
+  else if (e.key === 'End') show(slides.length - 1);
+});
+deck.addEventListener('click', (e) => { if (e.clientX < window.innerWidth * 0.3) prev(); else next(); });
+
+// fill every rail's total counter once
+slides.forEach((el) => { const rt = el.querySelector('#rail-tot'); if (rt) rt.textContent = tot; });
+
+if (new URLSearchParams(location.search).get('print') === '1') {
+  document.body.classList.add('printing');
+  setTimeout(() => window.print(), 600);
+} else {
+  show(0);
+}
+</script>
+</body>
+</html>

@@ -154,4 +154,28 @@ export const GROUP_META: Record<NodeGroup, GroupVisual> = {
     stripeClass: 'bg-primary',
     tintClass: 'bg-primary-soft/40',
   },
+  nearest: {
+    label: 'O problema do mais perto',
+    eyebrow: 'Nearest',
+    accentClass: 'text-warn',
+    ringClass: 'bg-warn',
+    stripeClass: 'bg-warn',
+    tintClass: 'bg-warn-soft/40',
+  },
+  index: {
+    label: 'Índice espacial',
+    eyebrow: 'Spatial index',
+    accentClass: 'text-primary',
+    ringClass: 'bg-primary',
+    stripeClass: 'bg-primary',
+    tintClass: 'bg-primary-soft/40',
+  },
+  dispatch: {
+    label: 'Dispatch & ETA',
+    eyebrow: 'Dispatch',
+    accentClass: 'text-reflect',
+    ringClass: 'bg-reflect',
+    stripeClass: 'bg-reflect',
+    tintClass: 'bg-reflect-soft/40',
+  },
 };

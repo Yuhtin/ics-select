@@ -121,6 +121,8 @@ The output gives you the matrix `member × topic`. From it, identify:
 - **Everyone-knows-this** — topics 80%+ have studied → safe pra cold-call qualquer um
 - **Gaps** — topics nobody studied → these MUST be taught from zero, not cold-called
 
+**Topic COUNTS lie. Verify item-level before trusting them.** A single overview video (the Hot Stuff cohort's "10 Key Data Structures" is tagged array, hashmap, lists, tree, graph) increments the count of EVERY topic it touches for every member who watched it. So a member can show `tree: 1` and `graph: 1` while having zero real depth in either. Before you crown a specialist on a rare or advanced topic (tree, graph, trie), pull the actual item titles for that member and topic (`... AND t.slug = '<topic>'` joined to `LibraryItem.title`) and check: real coverage, or one overview video counted many times? A count of 1 that traces to an overview is NOT coverage. This bit us once: a member looked like a tree+graph voice on counts but was actually a hashing specialist, and the correction rewrote half the askWho map. When a topic is a true gap (nobody has real coverage), mark that beat `teachFromZero` with an `open`-floor asker instead of naming a fake specialist.
+
 Save this matrix in your scratch notes. Each beat's `askWho` will be derived from it.
 
 ### Step 4 — Draft beats one at a time
@@ -302,11 +304,18 @@ Every deck adopts the visual identity of a real company, pulled from the **aweso
 curl -s "https://raw.githubusercontent.com/VoltAgent/awesome-design-md/main/design-md/<brand>/DESIGN.md"
 ```
 
-**Apply it.** Read the spec and translate it into the deck's CSS custom properties / Tailwind config: page bg, surface, ink/text hierarchy, the ONE accent (many brands, like Uber, deliberately have none — respect that), display + body font families (load via Google Fonts `<link>`, or the closest available substitute when the brand ships a proprietary face like UberMove → use Inter/Geist tight 700), border-radius signature (Uber = 999px pills, 16px cards), and shadow/elevation rules. Honor the brand's do's/don'ts: if the spec says "no second accent color" or "no shadows, flat by default," follow it. The `GROUP` accent map in the deck JS should be re-tinted to the brand palette, not the generic blue/cyan/orange.
+**Rethink the whole visual STRUCTURE, not just the palette. This is the part people get wrong.** Swapping colors into the generic centered cover/hook/grid template is NOT "using the brand's style" — it produces a recolored generic deck. A brand's identity lives in its *composition*: layout, signature components, navigation chrome, how hierarchy is built, what a "card" even looks like. Before writing slides, ask "what would this deck look like if it were a screen IN that company's product?" Examples of structural (not color) signatures:
+- **Linear** → an app-view: a persistent left sidebar nav (sections + items, current one highlighted) beside a framed main panel; "issue-row" lists with hairline dividers; kbd chips; surface-ladder depth (no shadows); a faint technical grid. The deck should feel like the Linear app, not a slideshow tinted purple.
+- **Uber** → full-bleed black/white bands, big sentence-case headlines, 999px pill chips, 2-up editorial promo cards, polarity-flipped dark bands as the depth cue.
+- **Stripe** → angled gradient hero, dense API-doc two-column (prose + code) layouts, sober grid of feature cards.
+- **Apple** → enormous centered hero type, generous whitespace, one product object per screen.
+The **`ics-math-slides`** skill is the bar: it defines bespoke slide *types* with their own layouts (formula boxes side by side, 3-column property grid with colored borders, cross-grid background, text-stroke display) — a real visual identity, not a recolor. Aim for that level of structural commitment per brand.
 
-**State your pick to the user** with a one-line rationale ("Deck no estilo Uber, porque a aula é o case do LedgerStore deles") before building, and note any substitution you made (proprietary font → fallback).
+**Apply the tokens within that structure.** Once the composition is right, wire the spec's exact values: page bg, surfaces, ink hierarchy, the ONE accent (many brands, like Uber, deliberately have none — respect that), display + body fonts (Google Fonts `<link>`, or the closest substitute when the brand ships a proprietary face: UberMove → Inter/Geist tight 700, Linear Display → Inter 600 negative-tracking), the border-radius signature, and shadow/elevation rules. Honor the do's/don'ts: "no second accent", "no shadows, flat", "don't pill-round CTAs" — these are structural rules, follow them literally.
 
-**Use `apps/web/public/slides/deploy-journey.html` as the structural template** (slide types, navigation, print CSS, animations). It's self-contained: Tailwind CDN, fonts loaded inline, no React, no build step. **Keep its structure, swap its design tokens** for the brand you chose in Step 7.0.
+**State your pick to the user** with a one-line rationale that names the STRUCTURE, not just the color ("Deck no estilo Linear: app-view com sidebar de navegação e painéis hairline, porque a aula é sobre índices espaciais e fica como uma view técnica"), before building. Note any font substitution. When the same company already has a deck (e.g. a second Uber-case class), pick a *different* brand for visual variety and say why.
+
+**Reuse only the ENGINE from `apps/web/public/slides/deploy-journey.html`** — the plumbing: keyboard/click navigation, the `?print=1` PDF flow, the entrance-animation classes, the self-contained no-build setup (Tailwind CDN, inline fonts). **Throw away its layout and rebuild the slide composition from scratch** for the brand you chose. The template is a working engine to borrow, not a visual structure to recolor.
 
 Structure per beat (3 slides each on average): **hook** (the action-trigger-question pattern) → **support** (code | compare | list) → **diagram** (the PNG you generated in step 6). Plus section dividers between groups and a closing recap. A 13-beat lesson becomes ~30-40 slides.
 

@@ -16,7 +16,10 @@ export type NodeGroup =
   | 'tick'
   | 'events'
   | 'money'
-  | 'ledger';
+  | 'ledger'
+  | 'nearest'
+  | 'index'
+  | 'dispatch';
 
 export type Asker = {
   name: string;
