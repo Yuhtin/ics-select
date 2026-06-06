@@ -1013,6 +1013,20 @@ const ITEMS: ItemSeed[] = [
     tags: ['practice', 'bash', 'terminal', 'cli', 'onboarding', 'fireship'],
     topicOrder: { 'foundations': 2 },
   },
+  {
+    title: 'How to Read Code in the AI Era (6 Techniques)',
+    url: 'https://www.youtube.com/watch?v=4t8QcDdrL6Y',
+    description:
+      'KodeKloud — 6 técnicas pra ler código que você não escreveu, demonstradas num endpoint de login: seguir a variável que importa, ignorar o ruído, achar os bugs de segurança que a IA deixou passar (timing attack, enumeração de usuário). 4min.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 4,
+    topicSlugs: ['foundations'],
+    tracks: [],
+    source: 'YouTube — KodeKloud',
+    tags: ['concept', 'code-reading', 'ai-coding', 'code-review', 'onboarding'],
+    topicOrder: { 'foundations': 12 },
+  },
 
   // ---------------------------------------------------------------------------
   // HASHMAP — ED canônica pra interview prep.
