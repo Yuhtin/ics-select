@@ -6186,6 +6186,81 @@ const ITEMS: ItemSeed[] = [
     source: 'YouTube — Coding with Lewis',
     tags: ['case-study', 'nyt', 'paywall', 'security', 'coding-with-lewis'],
   },
+
+  // ---------------------------------------------------------------------------
+  // OBSERVABILITY — 2026-06-07. Tópico magro nos canais aprovados; ladder ancorado
+  // no Coding Gopher (aprovado) + CodeOpinion (novo, arquitetura/EDA, não-vendor).
+  // ---------------------------------------------------------------------------
+  {
+    title: 'Distributed Tracing Explained: Understanding Microservice Observability',
+    url: 'https://www.youtube.com/watch?v=fldLP22QUKg',
+    description:
+      'The Coding Gopher — tracing distribuído num diagrama: traces (a jornada completa de uma request entre serviços) e spans (cada passo). Como você debuga quando algo quebra no meio de vários microsserviços.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 5,
+    topicSlugs: ['observability'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — The Coding Gopher',
+    tags: ['concept', 'distributed-tracing', 'spans', 'microservices', 'coding-gopher'],
+    topicOrder: { 'observability': 1 },
+  },
+  {
+    title: 'Logging, Tracing, and Metrics',
+    url: 'https://bytebytego.com/guides/logging-tracing-metrics/',
+    description:
+      'ByteByteGo — os 3 pilares de observability: logs (eventos discretos), métricas (agregados tipo QPS e latência) e traces (a request atravessando os serviços). Guia ilustrado.',
+    format: 'ARTICLE',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 8,
+    topicSlugs: ['observability'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'ByteByteGo',
+    tags: ['concept', 'logs', 'metrics', 'tracing', 'three-pillars', 'bytebytego'],
+    topicOrder: { 'observability': 2 },
+  },
+  {
+    title: 'Percentile Tail Latency Explained (95%, 99%)',
+    url: 'https://www.youtube.com/watch?v=3JdQOExKtUY',
+    description:
+      'Hussein Nasser — o que significa "meu p95 é 30ms, meu p99 é 100ms". Por que percentil de cauda mede performance de backend melhor que média, e onde percentil engana.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 7,
+    topicSlugs: ['observability'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Hussein Nasser',
+    tags: ['concept', 'tail-latency', 'percentile', 'p99', 'metrics', 'hussein-nasser'],
+    topicOrder: { 'observability': 3 },
+  },
+  {
+    title: 'Consumer Lag: Event Driven Architecture Monitoring',
+    url: 'https://www.youtube.com/watch?v=jguxDV1gWk8',
+    description:
+      'CodeOpinion — consumer lag em event-driven architecture: a fila crescendo é o primeiro sinal de que um serviço travou. Como ler throughput de publishers e consumers antes do sistema desmoronar.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 11,
+    topicSlugs: ['observability'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — CodeOpinion',
+    tags: ['concept', 'consumer-lag', 'event-driven', 'throughput', 'monitoring', 'codeopinion'],
+    topicOrder: { 'observability': 4 },
+  },
+  {
+    title: 'Discover a Distributed Big Ball of Mud with Distributed Tracing',
+    url: 'https://www.youtube.com/watch?v=94pr3XEB0L0',
+    description:
+      'CodeOpinion — tracing distribuído mostra como uma request flui entre serviços, mas também vira band-aid que esconde acoplamento que você nem precisava ter. Quando o trace revela um big ball of mud.',
+    format: 'VIDEO',
+    difficulty: 'HARD',
+    estimatedMinutes: 15,
+    topicSlugs: ['observability'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — CodeOpinion',
+    tags: ['case-study', 'distributed-tracing', 'coupling', 'big-ball-of-mud', 'codeopinion'],
+    topicOrder: { 'observability': 5 },
+  },
 ];
 
 // -----------------------------------------------------------------------------
