@@ -7,10 +7,7 @@ import {
 import type { ItemOutcome, UserEventType } from '@ics-select/prisma';
 import { computeEngagementScore } from './engagement-score.js';
 import { classifyRisk } from './risk-thresholds.js';
-import {
-  canonicalCompletions,
-  countCanonicalDone,
-} from '../../common/completions/canonical-completions.js';
+import { canonicalCompletions } from '../../common/completions/canonical-completions.js';
 import type { CockpitRange, CockpitResponse } from './cockpit.types.js';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -864,6 +861,11 @@ export class CockpitService {
     // not worth the cost for the sparkline use-case. Documented simplification.
     const cohortRankFromBottom = cohortIds.length === 0 ? 0 : Math.floor(cohortIds.length / 2);
 
+    // One canonical completion per material (earliest positive). Cumulative
+    // itemsDone below counts by WHEN it was actually completed (completedAt),
+    // so a carried item re-marked in later weeks doesn't recount.
+    const canonAll = canonicalCompletions(memberPlans.flatMap((p) => p.items));
+
     const out: number[] = [];
     for (let w = 1; w <= weeksElapsed; w++) {
       const weekEnd = new Date(cycleStart.getTime() + w * WEEK_MS);
@@ -874,11 +876,12 @@ export class CockpitService {
       );
 
       const plansUpToWeek = memberPlans.filter((p) => p.weekStart < weekEnd);
-      // Cumulative across weeks → dedup by material so a carried item completed
-      // in several weeks counts once in the sparkline.
-      const itemsUpToWeek = plansUpToWeek.flatMap((p) => p.items);
-      const itemsDone = countCanonicalDone(itemsUpToWeek);
-      const itemsPlanned = new Set(itemsUpToWeek.map((i) => i.libraryItemId)).size;
+      // itemsDone = distinct materials actually completed (completedAt) by the
+      // end of this week; itemsPlanned = distinct materials assigned by then.
+      const itemsDone = canonAll.filter(
+        (r) => r.completedAt && r.completedAt.getTime() < weekEnd.getTime(),
+      ).length;
+      const itemsPlanned = new Set(plansUpToWeek.flatMap((p) => p.items).map((i) => i.libraryItemId)).size;
       const retrosSubmitted = memberRetros.filter((r) => r.weekStart < weekEnd).length;
 
       const daysActive = await this.distinctDaysOfEvents(memberId, cycleStart, effectiveEnd);
@@ -939,10 +942,11 @@ type PlanLike = {
 };
 
 /**
- * Flatten every plan-item tagged with its plan's week, then keep one canonical
- * completion per material (earliest positive). Each canonical row lands in its
- * own first-completion week — a material carried + done across weeks counts
- * once, in the week it was first completed.
+ * Flatten every plan-item, then keep one canonical completion per material
+ * (earliest positive). A material carried + completed across weeks counts once,
+ * carrying its `completedAt` so callers can bucket it by WHEN it was actually
+ * done (not the plan's assigned week) — re-marking a carried duplicate later
+ * doesn't recount it.
  */
 function canonicalItemsByWeek(plans: PlanLike[]) {
   const flat = plans.flatMap((p) =>
@@ -950,23 +954,40 @@ function canonicalItemsByWeek(plans: PlanLike[]) {
       libraryItemId: it.libraryItemId,
       outcome: it.outcome,
       completedAt: it.completedAt ?? null,
-      weekStartMs: p.weekStart.getTime(),
       minutes: it.actualMinutes ?? it.scheduledMinutes ?? it.libraryItem?.estimatedMinutes ?? 0,
     })),
   );
   return canonicalCompletions(flat);
 }
 
+/**
+ * Cycle-week index (0-based) a completion falls into, by `completedAt` relative
+ * to the cycle's first Monday — so the per-week chart reflects WHEN the member
+ * actually did the work, matching daysActive/streak. Clamped into range; null
+ * when there is no completion date.
+ */
+function weekIndexOfCompletion(
+  completedAt: Date | null | undefined,
+  cycleStart: Date,
+  weeksElapsed: number,
+): number | null {
+  if (!completedAt) return null;
+  const idx = Math.floor((completedAt.getTime() - cycleStart.getTime()) / WEEK_MS);
+  if (idx < 0) return 0;
+  if (idx >= weeksElapsed) return weeksElapsed - 1;
+  return idx;
+}
+
 function bucketPerWeek(plans: PlanLike[], weeksElapsed: number, cycleStart: Date) {
   const canon = canonicalItemsByWeek(plans);
-  const buckets: Array<{ weekStart: string; byOutcome: Record<ItemOutcome, number> }> = [];
-  for (let i = 0; i < weeksElapsed; i++) {
-    const weekStart = new Date(cycleStart.getTime() + i * WEEK_MS);
-    const byOutcome = { ...ZERO_OUTCOMES };
-    for (const r of canon) {
-      if (r.weekStartMs === weekStart.getTime()) byOutcome[r.outcome] += 1;
-    }
-    buckets.push({ weekStart: weekStart.toISOString(), byOutcome });
+  const buckets = Array.from({ length: weeksElapsed }, (_, i) => ({
+    weekStart: new Date(cycleStart.getTime() + i * WEEK_MS).toISOString(),
+    byOutcome: { ...ZERO_OUTCOMES },
+  }));
+  for (const r of canon) {
+    const idx = weekIndexOfCompletion(r.completedAt, cycleStart, weeksElapsed);
+    if (idx === null) continue;
+    buckets[idx]!.byOutcome[r.outcome] += 1;
   }
   return buckets;
 }
@@ -977,10 +998,13 @@ function bucketMinutesPerWeek(
   cycleStart: Date,
 ): number[] {
   const canon = canonicalItemsByWeek(plans);
-  return Array.from({ length: weeksElapsed }, (_, i) => {
-    const wkMs = cycleStart.getTime() + i * WEEK_MS;
-    return canon.filter((r) => r.weekStartMs === wkMs).reduce((s, r) => s + r.minutes, 0);
-  });
+  const out = Array.from({ length: weeksElapsed }, () => 0);
+  for (const r of canon) {
+    const idx = weekIndexOfCompletion(r.completedAt, cycleStart, weeksElapsed);
+    if (idx === null) continue;
+    out[idx]! += r.minutes;
+  }
+  return out;
 }
 
 // Test seam for the per-week bucketing dedup.
