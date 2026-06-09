@@ -4,6 +4,7 @@ import { resolveActiveMembership } from '../common/cycle/active-cycle.js';
 import { GoogleCalendarService } from '../google-calendar/google-calendar.service.js';
 import { BusyCacheService } from '../google-calendar/busy-cache.service.js';
 import { type ItemOutcome, allocatedMinutes, isPositiveOutcome } from '@ics-select/shared';
+import { isPlanWeekCurrent } from '../common/cycle/current-week.js';
 
 type CreateInput = {
   userId: string;
@@ -402,11 +403,12 @@ export class WeeklyPlansService {
     itemId: string,
     userId: string,
     input: { outcome: ItemOutcome; reflection?: string | null; actualMinutes: number | null },
+    now: Date = new Date(),
   ) {
     const item = await this.prisma.weeklyPlanItem.findUnique({
       where: { id: itemId },
       include: {
-        weeklyPlan: { select: { id: true, userId: true, status: true, weekStart: true } },
+        weeklyPlan: { select: { id: true, userId: true, status: true, weekStart: true, weekEnd: true } },
         libraryItem: { include: { topics: { include: { topic: { select: { slug: true } } } } } },
         calendarEvents: { select: { id: true, googleEventId: true } },
       },
@@ -414,6 +416,12 @@ export class WeeklyPlansService {
     if (!item) throw new NotFoundException('Item not found');
     if (item.weeklyPlan.userId !== userId) {
       throw new ForbiddenException("Forbidden: cannot change someone else's item");
+    }
+    // Only the current week's items can be marked — a stale carried copy from a
+    // closed week must not be back-markable (e.g. reached via calendar history).
+    // The current-week carried copy is the right place to finish it.
+    if (!isPlanWeekCurrent(item.weeklyPlan.weekStart, item.weeklyPlan.weekEnd, now)) {
+      throw new ForbiddenException('Este item não está na sua semana atual.');
     }
     if (input.outcome === 'SKIPPED' && !isItemSkippable(item.libraryItem)) {
       throw new ForbiddenException('Only foundations or video items can be skipped');

@@ -44,7 +44,11 @@ describe('ItemService', () => {
       completedAt: null,
       scheduledAt: null,
       scheduledMinutes: null,
-      weeklyPlan: { userId: 'user-1' },
+      weeklyPlan: {
+        userId: 'user-1',
+        weekStart: new Date('2026-04-13T00:00:00Z'),
+        weekEnd: new Date('2026-04-19T23:59:59Z'),
+      },
       libraryItem: {
         id: 'lib-1',
         title: 'DP intro',
@@ -67,7 +71,7 @@ describe('ItemService', () => {
       },
     });
 
-    const result = await service.getItem('i1', 'user-1');
+    const result = await service.getItem('i1', 'user-1', new Date('2026-04-15T12:00:00Z'));
     expect(result.id).toBe('i1');
     expect(result.libraryItem.topic?.slug).toBe('dp');
     expect(result.carriedFrom?.outcome).toBe('STUCK');
@@ -84,7 +88,11 @@ describe('ItemService', () => {
       completedAt: null,
       scheduledAt: null,
       scheduledMinutes: null,
-      weeklyPlan: { userId: 'user-1' },
+      weeklyPlan: {
+        userId: 'user-1',
+        weekStart: new Date('2026-04-13T00:00:00Z'),
+        weekEnd: new Date('2026-04-19T23:59:59Z'),
+      },
       libraryItem: {
         id: 'lib-1',
         title: 'Fresh item',
@@ -97,7 +105,31 @@ describe('ItemService', () => {
       carriedFrom: null,
     });
 
-    const result = await service.getItem('i1', 'user-1');
+    const result = await service.getItem('i1', 'user-1', new Date('2026-04-15T12:00:00Z'));
     expect(result.carriedFrom).toBeNull();
+  });
+
+  it('throws ForbiddenException when the item belongs to a past (closed) week', async () => {
+    prisma.weeklyPlanItem.findUnique.mockResolvedValue({
+      id: 'i1',
+      weeklyPlanId: 'plan-old',
+      order: 1,
+      outcome: 'PENDING',
+      reflection: null,
+      completedAt: null,
+      scheduledAt: null,
+      scheduledMinutes: null,
+      weeklyPlan: {
+        userId: 'user-1',
+        weekStart: new Date('2026-04-13T00:00:00Z'),
+        weekEnd: new Date('2026-04-19T23:59:59Z'),
+      },
+      libraryItem: { id: 'lib-1', title: 'Old item', description: null, url: null, format: 'ARTICLE', estimatedMinutes: 20, topics: [] },
+      carriedFrom: null,
+    });
+    // now is well after that week ended → blocked.
+    await expect(
+      service.getItem('i1', 'user-1', new Date('2026-05-30T12:00:00Z')),
+    ).rejects.toThrow(ForbiddenException);
   });
 });
