@@ -42,8 +42,8 @@ function seedHappyPath(prisma: Mock): void {
       status: 'PUBLISHED',
       publishedAt: new Date('2026-04-27T08:00:00Z'),
       items: [
-        { id: 'i1', outcome: 'DONE_EASY', scheduledMinutes: 60, actualMinutes: 45, carriedFromItemId: null, libraryItem: { topics: [{ topicId: 't1', isPrimary: true }] } },
-        { id: 'i2', outcome: 'STUCK',     scheduledMinutes: 90, actualMinutes: null, carriedFromItemId: null, libraryItem: { topics: [{ topicId: 't2', isPrimary: true }] } },
+        { id: 'i1', libraryItemId: 'li1', outcome: 'DONE_EASY', completedAt: new Date('2026-04-28T10:00:00Z'), scheduledMinutes: 60, actualMinutes: 45, carriedFromItemId: null, libraryItem: { topics: [{ topicId: 't1', isPrimary: true }] } },
+        { id: 'i2', libraryItemId: 'li2', outcome: 'STUCK',     completedAt: new Date('2026-04-29T10:00:00Z'), scheduledMinutes: 90, actualMinutes: null, carriedFromItemId: null, libraryItem: { topics: [{ topicId: 't2', isPrimary: true }] } },
       ],
     },
   ]);

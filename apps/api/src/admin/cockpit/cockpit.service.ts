@@ -7,6 +7,10 @@ import {
 import type { ItemOutcome, UserEventType } from '@ics-select/prisma';
 import { computeEngagementScore } from './engagement-score.js';
 import { classifyRisk } from './risk-thresholds.js';
+import {
+  canonicalCompletions,
+  countCanonicalDone,
+} from '../../common/completions/canonical-completions.js';
 import type { CockpitRange, CockpitResponse } from './cockpit.types.js';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -124,9 +128,11 @@ export class CockpitService {
         }
       : null;
 
-    // Items aggregates
+    // Items aggregates. A material carried across N weeks and marked done in
+    // each is N rows in `allItems`; dedup to one canonical completion per
+    // material (earliest positive) so counts/minutes don't multiply.
     const allItems = plans.flatMap((p) => p.items);
-    const completed = allItems.filter((i) => i.outcome !== 'PENDING');
+    const completed = canonicalCompletions(allItems);
     const byOutcome = countByOutcome(completed.map((i) => i.outcome));
     const perWeekItems = bucketPerWeek(plans, weeksElapsed, cycleStart);
     const needsAttention = {
@@ -140,7 +146,13 @@ export class CockpitService {
       (sum, i) => sum + (i.actualMinutes ?? i.scheduledMinutes ?? i.libraryItem.estimatedMinutes ?? 0),
       0,
     );
-    const scheduledMinutes = allItems.reduce(
+    // Planned minutes: one row per distinct material (a re-planned material
+    // isn't budgeted N times), keeping its first appearance.
+    const plannedByMaterial = new Map<string, (typeof allItems)[number]>();
+    for (const i of allItems) {
+      if (!plannedByMaterial.has(i.libraryItemId)) plannedByMaterial.set(i.libraryItemId, i);
+    }
+    const scheduledMinutes = [...plannedByMaterial.values()].reduce(
       (sum, i) => sum + (i.scheduledMinutes ?? i.libraryItem.estimatedMinutes ?? 0),
       0,
     );
@@ -210,7 +222,7 @@ export class CockpitService {
       daysActive: daysCompletedForScore,
       daysElapsed,
       itemsDone: completed.length,
-      itemsPlanned: allItems.length,
+      itemsPlanned: plannedByMaterial.size,
       retrosSubmitted: retros.length,
       weeksElapsed,
       daysSinceLastSession,
@@ -222,7 +234,8 @@ export class CockpitService {
     const scoreByWeek = await this.scoreByWeek(memberId, cycle, weeksElapsed, cohortIds, now);
 
     // Risk
-    const completionRate = allItems.length === 0 ? 0 : completed.length / allItems.length;
+    const completionRate =
+      plannedByMaterial.size === 0 ? 0 : completed.length / plannedByMaterial.size;
     const risk = classifyRisk({
       daysSinceLastSession,
       completionRate,
@@ -259,7 +272,7 @@ export class CockpitService {
       },
       itemsCompleted: {
         total: completed.length,
-        planned: allItems.length,
+        planned: plannedByMaterial.size,
         completionPct: Math.round(completionRate * 100),
         cohortMedian: cohortMedians.itemsDone,
         cohortMedianPlanned: cohortMedians.itemsPlanned,
@@ -494,7 +507,8 @@ export class CockpitService {
     if (cohortIds.length === 0) return 1;
     const allIds = [memberId, ...cohortIds];
     const rows = await this.prisma.$queryRawUnsafe<Array<{ userId: string; done: bigint }>>(
-      `SELECT wp."userId", SUM(CASE WHEN wpi."outcome" <> 'PENDING' THEN 1 ELSE 0 END) AS done
+      // Dedup carried completions: distinct materials with any non-PENDING row.
+      `SELECT wp."userId", COUNT(DISTINCT CASE WHEN wpi."outcome" <> 'PENDING' THEN wpi."libraryItemId" END) AS done
        FROM "WeeklyPlanItem" wpi
        JOIN "WeeklyPlan" wp ON wp.id = wpi."weeklyPlanId"
        WHERE wp."userId" = ANY($1::text[])
@@ -584,7 +598,8 @@ export class CockpitService {
       `SELECT percentile_cont(0.5) WITHIN GROUP (ORDER BY COALESCE(per_user.cnt, 0)) AS median
        FROM unnest($1::text[]) AS u("userId")
        LEFT JOIN (
-         SELECT wp."userId", COUNT(*)::int AS cnt
+         -- distinct completed materials (dedup carried re-marks)
+         SELECT wp."userId", COUNT(DISTINCT wpi."libraryItemId")::int AS cnt
          FROM "WeeklyPlanItem" wpi
          JOIN "WeeklyPlan" wp ON wp.id = wpi."weeklyPlanId"
          WHERE wp."cycleId" = $2
@@ -601,14 +616,22 @@ export class CockpitService {
       `SELECT percentile_cont(0.5) WITHIN GROUP (ORDER BY COALESCE(per_user.mins, 0)) AS median
        FROM unnest($1::text[]) AS u("userId")
        LEFT JOIN (
-         SELECT wp."userId", SUM(COALESCE(wpi."actualMinutes", wpi."scheduledMinutes", li."estimatedMinutes", 0))::int AS mins
-         FROM "WeeklyPlanItem" wpi
-         JOIN "WeeklyPlan" wp ON wp.id = wpi."weeklyPlanId"
-         JOIN "LibraryItem" li ON li.id = wpi."libraryItemId"
-         WHERE wp."cycleId" = $2
-           AND wp."userId" = ANY($1::text[])
-           AND wpi."outcome" <> 'PENDING'
-         GROUP BY wp."userId"
+         -- One canonical row per (user, material) so a material completed across
+         -- N weeks contributes its minutes once.
+         SELECT canon."userId", SUM(canon.mins)::int AS mins
+         FROM (
+           SELECT DISTINCT ON (wp."userId", wpi."libraryItemId")
+                  wp."userId",
+                  COALESCE(wpi."actualMinutes", wpi."scheduledMinutes", li."estimatedMinutes", 0) AS mins
+           FROM "WeeklyPlanItem" wpi
+           JOIN "WeeklyPlan" wp ON wp.id = wpi."weeklyPlanId"
+           JOIN "LibraryItem" li ON li.id = wpi."libraryItemId"
+           WHERE wp."cycleId" = $2
+             AND wp."userId" = ANY($1::text[])
+             AND wpi."outcome" <> 'PENDING'
+           ORDER BY wp."userId", wpi."libraryItemId", wpi."completedAt" ASC NULLS LAST
+         ) canon
+         GROUP BY canon."userId"
        ) AS per_user USING ("userId")`,
       cohortIds, cycleId,
     );
@@ -655,16 +678,24 @@ export class CockpitService {
        FROM (SELECT DISTINCT "topicId" FROM "LibraryItemTopic") AS lit
        CROSS JOIN unnest($1::text[]) AS u("userId")
        LEFT JOIN (
-         SELECT wp."userId", lit2."topicId",
-                SUM(COALESCE(wpi."actualMinutes", wpi."scheduledMinutes", li."estimatedMinutes", 0))::int AS mins
-         FROM "WeeklyPlanItem" wpi
-         JOIN "WeeklyPlan" wp ON wp.id = wpi."weeklyPlanId"
-         JOIN "LibraryItem" li ON li.id = wpi."libraryItemId"
-         JOIN "LibraryItemTopic" lit2 ON lit2."itemId" = wpi."libraryItemId"
-         WHERE wp."cycleId" = $2
-           AND wp."userId" = ANY($1::text[])
-           AND wpi."outcome" <> 'PENDING'
-         GROUP BY wp."userId", lit2."topicId"
+         -- Dedup to one canonical row per (user, material) BEFORE joining topics,
+         -- so a material covering K topics and completed across N weeks adds its
+         -- minutes once per topic, not N times.
+         SELECT canon."userId", lit2."topicId", SUM(canon.mins)::int AS mins
+         FROM (
+           SELECT DISTINCT ON (wp."userId", wpi."libraryItemId")
+                  wp."userId", wpi."libraryItemId",
+                  COALESCE(wpi."actualMinutes", wpi."scheduledMinutes", li."estimatedMinutes", 0) AS mins
+           FROM "WeeklyPlanItem" wpi
+           JOIN "WeeklyPlan" wp ON wp.id = wpi."weeklyPlanId"
+           JOIN "LibraryItem" li ON li.id = wpi."libraryItemId"
+           WHERE wp."cycleId" = $2
+             AND wp."userId" = ANY($1::text[])
+             AND wpi."outcome" <> 'PENDING'
+           ORDER BY wp."userId", wpi."libraryItemId", wpi."completedAt" ASC NULLS LAST
+         ) canon
+         JOIN "LibraryItemTopic" lit2 ON lit2."itemId" = canon."libraryItemId"
+         GROUP BY canon."userId", lit2."topicId"
        ) AS per_user ON per_user."userId" = u."userId" AND per_user."topicId" = lit."topicId"
        GROUP BY lit."topicId"`,
       cohortIds, cycleId,
@@ -721,13 +752,13 @@ export class CockpitService {
          GROUP BY wp."userId"
        ) wp_done_days ON wp_done_days."userId" = u."userId"
        LEFT JOIN (
-         SELECT wp."userId", COUNT(*)::int AS cnt
+         SELECT wp."userId", COUNT(DISTINCT wpi."libraryItemId")::int AS cnt
          FROM "WeeklyPlanItem" wpi JOIN "WeeklyPlan" wp ON wp.id = wpi."weeklyPlanId"
          WHERE wp."cycleId" = $4 AND wp."userId" = ANY($1::text[]) AND wpi."outcome" <> 'PENDING'
          GROUP BY wp."userId"
        ) wp_done ON wp_done."userId" = u."userId"
        LEFT JOIN (
-         SELECT wp."userId", COUNT(*)::int AS cnt
+         SELECT wp."userId", COUNT(DISTINCT wpi."libraryItemId")::int AS cnt
          FROM "WeeklyPlanItem" wpi JOIN "WeeklyPlan" wp ON wp.id = wpi."weeklyPlanId"
          WHERE wp."cycleId" = $4 AND wp."userId" = ANY($1::text[])
          GROUP BY wp."userId"
@@ -807,7 +838,10 @@ export class CockpitService {
     const [memberPlans, memberRetros] = await Promise.all([
       this.prisma.weeklyPlan.findMany({
         where: { userId: memberId, cycleId: cycle.id },
-        select: { weekStart: true, items: { select: { outcome: true } } },
+        select: {
+          weekStart: true,
+          items: { select: { outcome: true, libraryItemId: true, completedAt: true } },
+        },
       }),
       this.prisma.weeklyRetro.findMany({
         where: { userId: memberId, cycleId: cycle.id },
@@ -830,10 +864,11 @@ export class CockpitService {
       );
 
       const plansUpToWeek = memberPlans.filter((p) => p.weekStart < weekEnd);
-      const itemsDone = plansUpToWeek
-        .flatMap((p) => p.items)
-        .filter((i) => i.outcome !== 'PENDING').length;
-      const itemsPlanned = plansUpToWeek.reduce((s, p) => s + p.items.length, 0);
+      // Cumulative across weeks → dedup by material so a carried item completed
+      // in several weeks counts once in the sparkline.
+      const itemsUpToWeek = plansUpToWeek.flatMap((p) => p.items);
+      const itemsDone = countCanonicalDone(itemsUpToWeek);
+      const itemsPlanned = new Set(itemsUpToWeek.map((i) => i.libraryItemId)).size;
       const retrosSubmitted = memberRetros.filter((r) => r.weekStart < weekEnd).length;
 
       const daysActive = await this.distinctDaysOfEvents(memberId, cycleStart, effectiveEnd);
@@ -880,7 +915,9 @@ type PlanLike = {
   weekStart: Date;
   publishedAt: Date | null;
   items: Array<{
+    libraryItemId: string;
     outcome: ItemOutcome;
+    completedAt?: Date | null;
     scheduledMinutes: number | null;
     actualMinutes: number | null;
     carriedFromItemId?: string | null;
@@ -891,16 +928,33 @@ type PlanLike = {
   }>;
 };
 
+/**
+ * Flatten every plan-item tagged with its plan's week, then keep one canonical
+ * completion per material (earliest positive). Each canonical row lands in its
+ * own first-completion week — a material carried + done across weeks counts
+ * once, in the week it was first completed.
+ */
+function canonicalItemsByWeek(plans: PlanLike[]) {
+  const flat = plans.flatMap((p) =>
+    p.items.map((it) => ({
+      libraryItemId: it.libraryItemId,
+      outcome: it.outcome,
+      completedAt: it.completedAt ?? null,
+      weekStartMs: p.weekStart.getTime(),
+      minutes: it.actualMinutes ?? it.scheduledMinutes ?? it.libraryItem?.estimatedMinutes ?? 0,
+    })),
+  );
+  return canonicalCompletions(flat);
+}
+
 function bucketPerWeek(plans: PlanLike[], weeksElapsed: number, cycleStart: Date) {
+  const canon = canonicalItemsByWeek(plans);
   const buckets: Array<{ weekStart: string; byOutcome: Record<ItemOutcome, number> }> = [];
   for (let i = 0; i < weeksElapsed; i++) {
     const weekStart = new Date(cycleStart.getTime() + i * WEEK_MS);
     const byOutcome = { ...ZERO_OUTCOMES };
-    const planThisWeek = plans.find((p) => p.weekStart.getTime() === weekStart.getTime());
-    if (planThisWeek) {
-      for (const item of planThisWeek.items) {
-        if (item.outcome !== 'PENDING') byOutcome[item.outcome] += 1;
-      }
+    for (const r of canon) {
+      if (r.weekStartMs === weekStart.getTime()) byOutcome[r.outcome] += 1;
     }
     buckets.push({ weekStart: weekStart.toISOString(), byOutcome });
   }
@@ -912,15 +966,15 @@ function bucketMinutesPerWeek(
   weeksElapsed: number,
   cycleStart: Date,
 ): number[] {
+  const canon = canonicalItemsByWeek(plans);
   return Array.from({ length: weeksElapsed }, (_, i) => {
-    const weekStart = new Date(cycleStart.getTime() + i * WEEK_MS);
-    const planThisWeek = plans.find((p) => p.weekStart.getTime() === weekStart.getTime());
-    if (!planThisWeek) return 0;
-    return planThisWeek.items
-      .filter((it) => it.outcome !== 'PENDING')
-      .reduce((s, it) => s + (it.actualMinutes ?? it.scheduledMinutes ?? it.libraryItem?.estimatedMinutes ?? 0), 0);
+    const wkMs = cycleStart.getTime() + i * WEEK_MS;
+    return canon.filter((r) => r.weekStartMs === wkMs).reduce((s, r) => s + r.minutes, 0);
   });
 }
+
+// Test seam for the per-week bucketing dedup.
+export const bucketPerWeekForTest = bucketPerWeek;
 
 function bucketCarryPerWeek(
   plans: PlanLike[],
@@ -952,26 +1006,28 @@ async function arrayPerWeek<T>(
 function computeTopicEngagement(
   topics: Array<{ id: string; label: string; order: number }>,
   items: Array<{
+    libraryItemId: string;
     outcome: ItemOutcome;
+    completedAt?: Date | null;
     scheduledMinutes: number | null;
     actualMinutes: number | null;
     libraryItem?: { estimatedMinutes?: number; topics: Array<{ topicId: string; isPrimary: boolean }> };
   }>,
   cohortByTopic: Map<string, number>,
 ) {
-  const totalMinutes = items
-    .filter((i) => i.outcome !== 'PENDING')
-    .reduce((s, i) => s + (i.actualMinutes ?? i.scheduledMinutes ?? i.libraryItem?.estimatedMinutes ?? 0), 0);
+  const minutesOf = (i: (typeof items)[number]) =>
+    i.actualMinutes ?? i.scheduledMinutes ?? i.libraryItem?.estimatedMinutes ?? 0;
+
+  // Dedup carried completions before tallying: a material studied across N weeks
+  // counts (and contributes its minutes) once.
+  const totalMinutes = canonicalCompletions(items).reduce((s, i) => s + minutesOf(i), 0);
 
   return topics.map((topic) => {
     const itemsForTopic = items.filter((i) =>
       i.libraryItem?.topics.some((t) => t.topicId === topic.id),
     );
-    const completed = itemsForTopic.filter((i) => i.outcome !== 'PENDING');
-    const minutes = completed.reduce(
-      (s, i) => s + (i.actualMinutes ?? i.scheduledMinutes ?? i.libraryItem?.estimatedMinutes ?? 0),
-      0,
-    );
+    const completed = canonicalCompletions(itemsForTopic);
+    const minutes = completed.reduce((s, i) => s + minutesOf(i), 0);
     const pctOfTotal = totalMinutes === 0 ? 0 : Math.round((minutes / totalMinutes) * 100);
     return {
       topicId: topic.id,
@@ -979,7 +1035,7 @@ function computeTopicEngagement(
       minutes,
       pctOfTotal,
       itemsDone: completed.length,
-      itemsPlanned: itemsForTopic.length,
+      itemsPlanned: new Set(itemsForTopic.map((i) => i.libraryItemId)).size,
       cohortMedianMinutes: cohortByTopic.get(topic.id) ?? 0,
     };
   });

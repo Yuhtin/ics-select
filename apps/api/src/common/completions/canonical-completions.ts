@@ -9,10 +9,10 @@ import { isPositiveOutcome, type ItemOutcome } from '@ics-select/shared';
 export interface CompletionRow {
   libraryItemId: string;
   outcome: ItemOutcome;
-  completedAt: Date | null;
+  completedAt?: Date | null;
 }
 
-function earlier(a: Date | null, b: Date | null): boolean {
+function earlier(a: Date | null | undefined, b: Date | null | undefined): boolean {
   // Returns true if `a` is strictly earlier than `b`. NULL completedAt sorts
   // last (a real timestamp always wins over a missing one).
   const at = a?.getTime() ?? Number.POSITIVE_INFINITY;
