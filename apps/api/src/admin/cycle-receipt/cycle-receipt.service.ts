@@ -1,6 +1,7 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { POSITIVE_OUTCOMES } from '@ics-select/shared';
 import { PrismaService } from '../../common/prisma/prisma.service.js';
+import { canonicalCompletions } from '../../common/completions/canonical-completions.js';
 import { computeEngagementScore } from '../cockpit/engagement-score.js';
 import { computeEngagementInputsForCohort } from '../cockpit/engagement-inputs.js';
 import type { CycleReceiptResponse, ReceiptMember, ReceiptMode } from './cycle-receipt.types.js';
@@ -65,9 +66,30 @@ export class CycleReceiptService {
       .sort((a: any, b: any) => a.name.localeCompare(b.name));
     const memberSet = new Set<string>(members.map((m: any) => m.userId));
 
-    const totalsBase = this.computeTotals(items, memberCount);
-    const byTopic = this.computeByTopic(items, memberCount);
-    const knowledgeGrid = this.buildKnowledgeGrid(cycle, items, stuckItems);
+    // Dedup carried completions per member: a material completed across several
+    // weeks is one canonical row (earliest positive), so receipt totals,
+    // superlatives, and topic counts reflect distinct materials, not re-marks.
+    // Movers keep raw rows — they measure week-over-week momentum, not totals.
+    const canonByUser = new Map<string, any[]>();
+    for (const it of items) {
+      const u = it.weeklyPlan.userId;
+      if (!canonByUser.has(u)) canonByUser.set(u, []);
+      canonByUser.get(u)!.push(it);
+    }
+    const canonItems: any[] = [...canonByUser.values()].flatMap((rows) =>
+      canonicalCompletions(
+        rows.map((r) => ({
+          libraryItemId: r.libraryItemId,
+          outcome: r.outcome,
+          completedAt: r.completedAt ?? null,
+          ref: r,
+        })),
+      ).map((c) => c.ref),
+    );
+
+    const totalsBase = this.computeTotals(canonItems, memberCount);
+    const byTopic = this.computeByTopic(canonItems, memberCount);
+    const knowledgeGrid = this.buildKnowledgeGrid(cycle, canonItems, stuckItems);
 
     const allMovers = this.computeMovers(items, members);
     const windowMovers = this.computeMovers(windowItems, members);
@@ -75,7 +97,7 @@ export class CycleReceiptService {
     const cycleTopMover = allMovers[0] ?? null;
 
     const itemsByUser = new Map<string, Array<{ completedAt: Date | null }>>();
-    for (const it of items) {
+    for (const it of canonItems) {
       const u = it.weeklyPlan.userId;
       if (!memberSet.has(u)) continue;
       if (!itemsByUser.has(u)) itemsByUser.set(u, []);
@@ -103,7 +125,7 @@ export class CycleReceiptService {
     // Hall of Fame: most hours + most items (derived from cumulative items)
     const minutesByUser = new Map<string, number>();
     const itemsByUserCount = new Map<string, number>();
-    for (const it of items) {
+    for (const it of canonItems) {
       const u = it.weeklyPlan.userId;
       if (!memberSet.has(u)) continue;
       minutesByUser.set(u, (minutesByUser.get(u) ?? 0) + (it.libraryItem?.estimatedMinutes ?? 0));
@@ -144,7 +166,7 @@ export class CycleReceiptService {
       return shifted.toISOString().slice(0, 10);
     };
 
-    for (const it of items) {
+    for (const it of canonItems) {
       const u = it.weeklyPlan.userId;
       if (!memberSet.has(u)) continue;
 
