@@ -59,6 +59,32 @@ export function canonicalCompletions<T extends CompletionRow>(rows: readonly T[]
   return [...best.values()];
 }
 
+/**
+ * Like `canonicalCompletions`, but dedups PER MEMBER: groups rows by user, keeps
+ * one canonical completion per (user, libraryItem), and returns the flattened
+ * canonical rows. Use for cohort-wide lists/feeds/movers where the same material
+ * done by two different members must still count separately, but the same
+ * material re-marked across weeks by one member must collapse to one.
+ */
+export function canonicalCompletionsByUser<T extends CompletionRow>(
+  rows: readonly T[],
+  userIdOf: (row: T) => string,
+): T[] {
+  const byUser = new Map<string, T[]>();
+  for (const r of rows) {
+    const u = userIdOf(r);
+    let group = byUser.get(u);
+    if (!group) {
+      group = [];
+      byUser.set(u, group);
+    }
+    group.push(r);
+  }
+  const out: T[] = [];
+  for (const group of byUser.values()) out.push(...canonicalCompletions(group));
+  return out;
+}
+
 /** Count of distinct materials with ANY non-PENDING outcome (cohort-rank "itemsDone"). */
 export function countCanonicalDone(rows: readonly CompletionRow[]): number {
   return canonicalCompletions(rows).length;

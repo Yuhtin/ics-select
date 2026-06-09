@@ -1,7 +1,7 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { POSITIVE_OUTCOMES } from '@ics-select/shared';
 import { PrismaService } from '../../common/prisma/prisma.service.js';
-import { canonicalCompletions } from '../../common/completions/canonical-completions.js';
+import { canonicalCompletionsByUser } from '../../common/completions/canonical-completions.js';
 import { computeEngagementScore } from '../cockpit/engagement-score.js';
 import { computeEngagementInputsForCohort } from '../cockpit/engagement-inputs.js';
 import type { CycleReceiptResponse, ReceiptMember, ReceiptMode } from './cycle-receipt.types.js';
@@ -67,32 +67,25 @@ export class CycleReceiptService {
     const memberSet = new Set<string>(members.map((m: any) => m.userId));
 
     // Dedup carried completions per member: a material completed across several
-    // weeks is one canonical row (earliest positive), so receipt totals,
-    // superlatives, and topic counts reflect distinct materials, not re-marks.
-    // Movers keep raw rows — they measure week-over-week momentum, not totals.
-    const canonByUser = new Map<string, any[]>();
-    for (const it of items) {
-      const u = it.weeklyPlan.userId;
-      if (!canonByUser.has(u)) canonByUser.set(u, []);
-      canonByUser.get(u)!.push(it);
-    }
-    const canonItems: any[] = [...canonByUser.values()].flatMap((rows) =>
-      canonicalCompletions(
-        rows.map((r) => ({
-          libraryItemId: r.libraryItemId,
-          outcome: r.outcome,
-          completedAt: r.completedAt ?? null,
-          ref: r,
-        })),
-      ).map((c) => c.ref),
+    // weeks collapses to one canonical row (earliest positive), so receipt
+    // totals, superlatives, topic counts AND movers reflect distinct materials,
+    // not re-marks. ("+N items" must mean N materials, like the rest of the
+    // receipt.) Different members doing the same material still count separately.
+    const canonItems: any[] = canonicalCompletionsByUser(
+      items as any[],
+      (it: any) => it.weeklyPlan.userId,
+    );
+    const canonWindowItems: any[] = canonicalCompletionsByUser(
+      windowItems as any[],
+      (it: any) => it.weeklyPlan.userId,
     );
 
     const totalsBase = this.computeTotals(canonItems, memberCount);
     const byTopic = this.computeByTopic(canonItems, memberCount);
     const knowledgeGrid = this.buildKnowledgeGrid(cycle, canonItems, stuckItems);
 
-    const allMovers = this.computeMovers(items, members);
-    const windowMovers = this.computeMovers(windowItems, members);
+    const allMovers = this.computeMovers(canonItems, members);
+    const windowMovers = this.computeMovers(canonWindowItems, members);
     const topMovers = windowMovers.slice(0, 3);
     const cycleTopMover = allMovers[0] ?? null;
 

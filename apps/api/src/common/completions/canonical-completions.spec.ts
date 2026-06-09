@@ -1,5 +1,6 @@
 import {
   canonicalCompletions,
+  canonicalCompletionsByUser,
   countCanonicalDone,
   countCanonicalPositive,
 } from './canonical-completions.js';
@@ -78,5 +79,30 @@ describe('canonicalCompletions', () => {
     ];
     expect(countCanonicalDone(rows)).toBe(3); // A, B, G (non-PENDING materials)
     expect(countCanonicalPositive(rows)).toBe(2); // A (DONE), G (DOUBTS); B is STUCK
+  });
+});
+
+describe('canonicalCompletionsByUser', () => {
+  const d = (iso: string) => new Date(iso);
+
+  it('dedups per member: same material by two members counts once each', () => {
+    const rows = [
+      { userId: 'u1', libraryItemId: 'A', outcome: 'DONE_EASY' as const, completedAt: d('2026-05-06') },
+      { userId: 'u1', libraryItemId: 'A', outcome: 'DONE_EASY' as const, completedAt: d('2026-05-13') }, // carried re-mark
+      { userId: 'u2', libraryItemId: 'A', outcome: 'DONE_EASY' as const, completedAt: d('2026-05-07') },
+    ];
+    const canon = canonicalCompletionsByUser(rows, (r) => r.userId);
+    expect(canon).toHaveLength(2); // one per (member, material), NOT collapsed across members
+    const u1 = canon.find((r) => r.userId === 'u1')!;
+    expect(u1.completedAt).toEqual(d('2026-05-06')); // earliest for u1
+    expect(canon.some((r) => r.userId === 'u2')).toBe(true);
+  });
+
+  it('preserves the original row (for feed rendering)', () => {
+    const rows = [
+      { userId: 'u1', libraryItemId: 'A', outcome: 'DONE_EASY' as const, completedAt: d('2026-05-06'), title: 'Arrays' },
+    ];
+    const canon = canonicalCompletionsByUser(rows, (r) => r.userId);
+    expect(canon[0]!.title).toBe('Arrays');
   });
 });
