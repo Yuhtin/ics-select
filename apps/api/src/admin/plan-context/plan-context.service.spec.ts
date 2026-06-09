@@ -303,17 +303,17 @@ describe('PlanContextService', () => {
       {
         id: 'plan-1',
         items: [
-          { outcome: 'DONE_EASY', libraryItem: { topics: [{ topicId: 'topic-a' }] } },
-          { outcome: 'PENDING', libraryItem: { topics: [{ topicId: 'topic-a' }] } },
-          { outcome: 'STUCK', libraryItem: { topics: [{ topicId: 'topic-b' }] } },
+          { libraryItemId: 'li-a1', completedAt: new Date('2026-05-02'), outcome: 'DONE_EASY', libraryItem: { topics: [{ topicId: 'topic-a' }] } },
+          { libraryItemId: 'li-a2', completedAt: null, outcome: 'PENDING', libraryItem: { topics: [{ topicId: 'topic-a' }] } },
+          { libraryItemId: 'li-b1', completedAt: new Date('2026-05-03'), outcome: 'STUCK', libraryItem: { topics: [{ topicId: 'topic-b' }] } },
         ],
       },
       {
         id: 'plan-2',
         items: [
-          { outcome: 'DONE_HARD', libraryItem: { topics: [{ topicId: 'topic-b' }] } },
+          { libraryItemId: 'li-b2', completedAt: new Date('2026-05-04'), outcome: 'DONE_HARD', libraryItem: { topics: [{ topicId: 'topic-b' }] } },
           // item with no topics shouldn't count toward any topic.
-          { outcome: 'DONE_EASY', libraryItem: { topics: [] } },
+          { libraryItemId: 'li-c1', completedAt: new Date('2026-05-05'), outcome: 'DONE_EASY', libraryItem: { topics: [] } },
         ],
       },
     ];

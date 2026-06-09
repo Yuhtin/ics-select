@@ -11,9 +11,9 @@ function fakePrisma() {
       userId: 'u-1',
       status: 'PUBLISHED',
       items: [
-        { id: 'i-1', outcome: 'DONE_EASY', libraryItem: { tags: ['arrays'] } },
-        { id: 'i-2', outcome: 'SKIPPED', libraryItem: { tags: ['dp'] } },
-        { id: 'i-3', outcome: 'PENDING', libraryItem: { tags: ['graphs'] } },
+        { id: 'i-1', libraryItemId: 'li-1', completedAt: new Date('2026-05-02'), outcome: 'DONE_EASY', libraryItem: { tags: ['arrays'] } },
+        { id: 'i-2', libraryItemId: 'li-2', completedAt: new Date('2026-05-03'), outcome: 'SKIPPED', libraryItem: { tags: ['dp'] } },
+        { id: 'i-3', libraryItemId: 'li-3', completedAt: null, outcome: 'PENDING', libraryItem: { tags: ['graphs'] } },
       ],
     },
     {
@@ -46,6 +46,13 @@ function fakePrisma() {
         if (where.outcome?.in) return items.filter((i) => where.outcome.in.includes(i.outcome)).length;
         if (typeof where.outcome === 'string') return items.filter((i) => i.outcome === where.outcome).length;
         return items.length;
+      }),
+      findMany: jest.fn(async ({ where }: any) => {
+        const rel = plans.filter((p) => p.userId === where.weeklyPlan.userId);
+        let items = rel.flatMap((p) => p.items);
+        if (where.outcome?.in) items = items.filter((i) => where.outcome.in.includes(i.outcome));
+        else if (typeof where.outcome === 'string') items = items.filter((i) => i.outcome === where.outcome);
+        return items;
       }),
     },
   };

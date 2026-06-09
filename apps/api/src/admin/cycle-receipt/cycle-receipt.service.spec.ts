@@ -107,13 +107,13 @@ describe('CycleReceiptService — totals + byTopic', () => {
     const prisma = mockPrisma();
     prisma.cycle.findUnique.mockResolvedValue(cycleBase);
     prisma.weeklyPlanItem.findMany.mockResolvedValue([
-      { outcome: 'DONE_EASY', completedAt: new Date('2026-04-10T15:00:00Z'),
+      { libraryItemId: 'li-h1', outcome: 'DONE_EASY', completedAt: new Date('2026-04-10T15:00:00Z'),
         libraryItem: { estimatedMinutes: 1, topics: [{ topicId: 't1', topic: { id: 't1', slug: 'hashmap', label: 'Hashmap', order: 1 } }] },
         weeklyPlan: { userId: 'u1' } },
-      { outcome: 'DONE_EASY', completedAt: new Date('2026-04-10T15:00:00Z'),
+      { libraryItemId: 'li-t1', outcome: 'DONE_EASY', completedAt: new Date('2026-04-10T15:00:00Z'),
         libraryItem: { estimatedMinutes: 1, topics: [{ topicId: 't2', topic: { id: 't2', slug: 'tree', label: 'Tree', order: 2 } }] },
         weeklyPlan: { userId: 'u1' } },
-      { outcome: 'DONE_EASY', completedAt: new Date('2026-04-10T15:00:00Z'),
+      { libraryItemId: 'li-t2', outcome: 'DONE_EASY', completedAt: new Date('2026-04-10T15:00:00Z'),
         libraryItem: { estimatedMinutes: 1, topics: [{ topicId: 't2', topic: { id: 't2', slug: 'tree', label: 'Tree', order: 2 } }] },
         weeklyPlan: { userId: 'u2' } },
     ]);
@@ -156,10 +156,10 @@ describe('CycleReceiptService — knowledgeGrid', () => {
       // positive-only query — return two completions for u1 on t1
       if (args.where.outcome?.in) {
         return Promise.resolve([
-          { outcome: 'DONE_EASY', completedAt: new Date('2026-04-10T15:00:00Z'),
+          { libraryItemId: 'li-1', outcome: 'DONE_EASY', completedAt: new Date('2026-04-10T15:00:00Z'),
             libraryItem: { estimatedMinutes: 60, topics: [{ topicId: 't1', topic: { id: 't1', slug: 'hashmap', label: 'Hashmap', order: 1 } }] },
             weeklyPlan: { userId: 'u1' } },
-          { outcome: 'DONE_HARD', completedAt: new Date('2026-04-11T15:00:00Z'),
+          { libraryItemId: 'li-2', outcome: 'DONE_HARD', completedAt: new Date('2026-04-11T15:00:00Z'),
             libraryItem: { estimatedMinutes: 60, topics: [{ topicId: 't1', topic: { id: 't1', slug: 'hashmap', label: 'Hashmap', order: 1 } }] },
             weeklyPlan: { userId: 'u1' } },
         ]);
@@ -312,12 +312,12 @@ describe('CycleReceiptService — nominal blocks', () => {
       if (isCumulative) {
         return Promise.resolve([
           // u1: completions on May 12 and May 11 BRT → streak 2 ending at asOf
-          { libraryItem: { estimatedMinutes: 1, topics: [{ topicId: 't1', topic: { id: 't1', slug: 'h', label: 'H', order: 1 } }] },
+          { libraryItemId: 'li-u1a', libraryItem: { estimatedMinutes: 1, topics: [{ topicId: 't1', topic: { id: 't1', slug: 'h', label: 'H', order: 1 } }] },
             weeklyPlan: { userId: 'u1' }, completedAt: new Date('2026-05-12T21:00:00Z'), outcome: 'DONE_EASY' },
-          { libraryItem: { estimatedMinutes: 1, topics: [{ topicId: 't1', topic: { id: 't1', slug: 'h', label: 'H', order: 1 } }] },
+          { libraryItemId: 'li-u1b', libraryItem: { estimatedMinutes: 1, topics: [{ topicId: 't1', topic: { id: 't1', slug: 'h', label: 'H', order: 1 } }] },
             weeklyPlan: { userId: 'u1' }, completedAt: new Date('2026-05-11T21:00:00Z'), outcome: 'DONE_EASY' },
           // u2: completion on May 9 (gap on May 10/11) → streak 0 from asOf
-          { libraryItem: { estimatedMinutes: 1, topics: [{ topicId: 't1', topic: { id: 't1', slug: 'h', label: 'H', order: 1 } }] },
+          { libraryItemId: 'li-u2a', libraryItem: { estimatedMinutes: 1, topics: [{ topicId: 't1', topic: { id: 't1', slug: 'h', label: 'H', order: 1 } }] },
             weeklyPlan: { userId: 'u2' }, completedAt: new Date('2026-05-09T21:00:00Z'), outcome: 'DONE_EASY' },
         ]);
       }
@@ -372,11 +372,11 @@ describe('CycleReceiptService — nominal blocks', () => {
       const isCumulative = gte?.getTime() === cycleBase.startsAt.getTime();
       if (isCumulative) {
         return Promise.resolve([
-          { outcome: 'DONE_EASY', completedAt: new Date('2026-04-10T15:00:00Z'),
+          { libraryItemId: 'li-1', outcome: 'DONE_EASY', completedAt: new Date('2026-04-10T15:00:00Z'),
             libraryItem: { estimatedMinutes: 30, topics: [] }, weeklyPlan: { userId: 'u2' } },
-          { outcome: 'DONE_EASY', completedAt: new Date('2026-04-11T15:00:00Z'),
+          { libraryItemId: 'li-2', outcome: 'DONE_EASY', completedAt: new Date('2026-04-11T15:00:00Z'),
             libraryItem: { estimatedMinutes: 30, topics: [] }, weeklyPlan: { userId: 'u2' } },
-          { outcome: 'DONE_EASY', completedAt: new Date('2026-04-12T15:00:00Z'),
+          { libraryItemId: 'li-3', outcome: 'DONE_EASY', completedAt: new Date('2026-04-12T15:00:00Z'),
             libraryItem: { estimatedMinutes: 30, topics: [] }, weeklyPlan: { userId: 'u1' } },
         ]);
       }

@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service.js';
 import { POSITIVE_OUTCOMES, isPositiveOutcome } from '@ics-select/shared';
 import type { ItemOutcome } from '@ics-select/prisma';
+import { countCanonicalPositive, canonicalCompletions } from '../common/completions/canonical-completions.js';
 
 const POSITIVE_OUTCOMES_ARR = Array.from(POSITIVE_OUTCOMES) as ItemOutcome[];
 
@@ -27,18 +28,28 @@ export class AdminDashboardService {
     const users = await this.prisma.user.findMany();
     const cards: MemberCard[] = [];
     for (const u of users) {
-      const [plansCount, doneItems, skippedItems, stuckItems] = await Promise.all([
+      const [plansCount, doneRows, skippedRows, stuckRows] = await Promise.all([
         this.prisma.weeklyPlan.count({ where: { userId: u.id, status: 'PUBLISHED' } }),
-        this.prisma.weeklyPlanItem.count({
+        // Dedup carried completions: count distinct materials, not one row per
+        // week a material was re-planned. doneItems and its sub-breakdowns
+        // (skipped/stuck) all use the same per-material dedup so they stay
+        // consistent on the admin card.
+        this.prisma.weeklyPlanItem.findMany({
           where: { weeklyPlan: { userId: u.id }, outcome: { in: POSITIVE_OUTCOMES_ARR } },
+          select: { libraryItemId: true, outcome: true, completedAt: true },
         }),
-        this.prisma.weeklyPlanItem.count({
+        this.prisma.weeklyPlanItem.findMany({
           where: { weeklyPlan: { userId: u.id }, outcome: 'SKIPPED' },
+          select: { libraryItemId: true, outcome: true, completedAt: true },
         }),
-        this.prisma.weeklyPlanItem.count({
+        this.prisma.weeklyPlanItem.findMany({
           where: { weeklyPlan: { userId: u.id }, outcome: 'STUCK' },
+          select: { libraryItemId: true, outcome: true, completedAt: true },
         }),
       ]);
+      const doneItems = countCanonicalPositive(doneRows);
+      const skippedItems = canonicalCompletions(skippedRows).length;
+      const stuckItems = canonicalCompletions(stuckRows).length;
       cards.push({
         id: u.id,
         name: u.name,
@@ -64,16 +75,31 @@ export class AdminDashboardService {
         },
       },
     });
-    const topicCoverage = new Map<string, { done: number; total: number }>();
-    for (const plan of plans) {
-      for (const item of plan.items) {
-        for (const tag of item.libraryItem.tags) {
-          const cur = topicCoverage.get(tag) ?? { done: 0, total: 0 };
-          cur.total += 1;
-          if (isPositiveOutcome(item.outcome)) cur.done += 1;
-          topicCoverage.set(tag, cur);
-        }
+    // Dedup carried completions: per tag, total = distinct materials,
+    // done = distinct materials with a positive canonical completion.
+    const items = plans.flatMap((p) => p.items);
+    const totalByTag = new Map<string, Set<string>>();
+    for (const item of items) {
+      for (const tag of item.libraryItem.tags) {
+        if (!totalByTag.has(tag)) totalByTag.set(tag, new Set());
+        totalByTag.get(tag)!.add(item.libraryItemId);
       }
+    }
+    const doneByTag = new Map<string, number>();
+    for (const r of canonicalCompletions(
+      items.map((i) => ({
+        libraryItemId: i.libraryItemId,
+        outcome: i.outcome,
+        completedAt: i.completedAt,
+        tags: i.libraryItem.tags,
+      })),
+    )) {
+      if (!isPositiveOutcome(r.outcome)) continue;
+      for (const tag of r.tags) doneByTag.set(tag, (doneByTag.get(tag) ?? 0) + 1);
+    }
+    const topicCoverage = new Map<string, { done: number; total: number }>();
+    for (const [tag, materials] of totalByTag) {
+      topicCoverage.set(tag, { done: doneByTag.get(tag) ?? 0, total: materials.size });
     }
     return {
       user: {

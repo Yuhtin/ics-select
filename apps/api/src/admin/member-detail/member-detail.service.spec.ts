@@ -245,9 +245,9 @@ describe('MemberDetailService', () => {
       {
         id: 'plan-1',
         items: [
-          { outcome: 'DONE_EASY', libraryItem: { topics: [{ topicId: 'topic-a' }] } },
-          { outcome: 'STUCK', libraryItem: { topics: [{ topicId: 'topic-a' }] } },
-          { outcome: 'PENDING', libraryItem: { topics: [] } },
+          { libraryItemId: 'li-a1', completedAt: new Date('2026-05-02'), outcome: 'DONE_EASY', libraryItem: { topics: [{ topicId: 'topic-a' }] } },
+          { libraryItemId: 'li-a2', completedAt: new Date('2026-05-03'), outcome: 'STUCK', libraryItem: { topics: [{ topicId: 'topic-a' }] } },
+          { libraryItemId: 'li-z1', completedAt: null, outcome: 'PENDING', libraryItem: { topics: [] } },
         ],
       },
     ];

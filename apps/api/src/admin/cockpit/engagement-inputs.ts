@@ -57,13 +57,18 @@ export async function computeEngagementInputsForCohort(
        GROUP BY wp."userId"
      ) ev_days ON ev_days."userId" = u."userId"
      LEFT JOIN (
-       SELECT wp."userId", COUNT(*)::int AS cnt
+       -- Dedup carried-over completions: a material carried across N weeks and
+       -- marked done in each must count once. COUNT(DISTINCT libraryItemId)
+       -- among non-PENDING rows == number of distinct completed materials.
+       SELECT wp."userId", COUNT(DISTINCT wpi."libraryItemId")::int AS cnt
        FROM "WeeklyPlanItem" wpi JOIN "WeeklyPlan" wp ON wp.id = wpi."weeklyPlanId"
        WHERE wp."cycleId" = $4 AND wp."userId" = ANY($1::text[]) AND wpi."outcome" <> 'PENDING'
        GROUP BY wp."userId"
      ) wp_done ON wp_done."userId" = u."userId"
      LEFT JOIN (
-       SELECT wp."userId", COUNT(*)::int AS cnt
+       -- Denominator must match: count DISTINCT planned materials so a material
+       -- re-planned every week isn't counted as N separate assignments.
+       SELECT wp."userId", COUNT(DISTINCT wpi."libraryItemId")::int AS cnt
        FROM "WeeklyPlanItem" wpi JOIN "WeeklyPlan" wp ON wp.id = wpi."weeklyPlanId"
        WHERE wp."cycleId" = $4 AND wp."userId" = ANY($1::text[])
        GROUP BY wp."userId"

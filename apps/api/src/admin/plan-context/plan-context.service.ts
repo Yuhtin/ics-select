@@ -5,6 +5,7 @@ import {
   resolveActiveMembership,
 } from '../../common/cycle/active-cycle.js';
 import { POSITIVE_OUTCOMES } from '@ics-select/shared';
+import { canonicalCompletions } from '../../common/completions/canonical-completions.js';
 import { BusyCacheService } from '../../google-calendar/busy-cache.service.js';
 import { computeRemainingWeekCapacity } from '../../scheduler/capacity.js';
 import type { AvailabilitySlotInput, BusyBlock } from '../../scheduler/scheduler.types.js';
@@ -202,7 +203,9 @@ type LastWeekPlan = {
 };
 
 type CyclePlanItem = {
+  libraryItemId: string;
   outcome: Outcome;
+  completedAt: Date | null;
   libraryItem: { topics: Array<{ topicId: string }> };
 };
 
@@ -305,7 +308,9 @@ export class PlanContextService {
           id: true,
           items: {
             select: {
+              libraryItemId: true,
               outcome: true,
+              completedAt: true,
               libraryItem: {
                 select: {
                   topics: { select: { topicId: true } },
@@ -520,19 +525,34 @@ export class PlanContextService {
     topics: TopicRow[],
     plans: CyclePlan[],
   ): PlanContextResponse['topicCoverage'] {
-    return topics.map((topic) => {
-      let itemsPlanned = 0;
-      let itemsDone = 0;
-      for (const plan of plans) {
-        for (const item of plan.items) {
-          const touchesTopic = item.libraryItem.topics.some(
-            (t) => t.topicId === topic.id,
-          );
-          if (!touchesTopic) continue;
-          itemsPlanned += 1;
-          if (POSITIVE_OUTCOMES.has(item.outcome)) itemsDone += 1;
-        }
+    // Dedup carried completions: a material re-planned/completed across weeks
+    // counts once per topic it covers.
+    const items = plans.flatMap((p) => p.items);
+    const plannedByTopic = new Map<string, Set<string>>();
+    for (const t of topics) plannedByTopic.set(t.id, new Set());
+    for (const item of items) {
+      for (const t of item.libraryItem.topics) {
+        plannedByTopic.get(t.topicId)?.add(item.libraryItemId);
       }
+    }
+    const doneByTopic = new Map<string, number>();
+    for (const r of canonicalCompletions(
+      items.map((i) => ({
+        libraryItemId: i.libraryItemId,
+        outcome: i.outcome,
+        completedAt: i.completedAt,
+        topicIds: i.libraryItem.topics.map((t) => t.topicId),
+      })),
+    )) {
+      if (!POSITIVE_OUTCOMES.has(r.outcome)) continue;
+      for (const topicId of r.topicIds) {
+        doneByTopic.set(topicId, (doneByTopic.get(topicId) ?? 0) + 1);
+      }
+    }
+
+    return topics.map((topic) => {
+      const itemsPlanned = plannedByTopic.get(topic.id)?.size ?? 0;
+      const itemsDone = doneByTopic.get(topic.id) ?? 0;
       const coveragePct = itemsPlanned === 0 ? 0 : Math.round((100 * itemsDone) / itemsPlanned);
       return {
         topicId: topic.id,

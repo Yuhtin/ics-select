@@ -353,11 +353,11 @@ describe('DraftPlanService', () => {
             id: 'p-1',
             weekStart: new Date('2026-04-13'),
             items: [
-              { outcome: 'DONE_HARD', libraryItem: { topics: [{ topic: { label: 'Foundations' } }] } },
-              { outcome: 'DONE_EASY', libraryItem: { topics: [{ topic: { label: 'Foundations' } }] } },
-              { outcome: 'DONE_EASY', libraryItem: { topics: [{ topic: { label: 'Foundations' } }] } },
+              { libraryItemId: 'li-f1', completedAt: new Date('2026-04-14'), outcome: 'DONE_HARD', libraryItem: { topics: [{ topic: { label: 'Foundations' } }] } },
+              { libraryItemId: 'li-f2', completedAt: new Date('2026-04-15'), outcome: 'DONE_EASY', libraryItem: { topics: [{ topic: { label: 'Foundations' } }] } },
+              { libraryItemId: 'li-f3', completedAt: new Date('2026-04-16'), outcome: 'DONE_EASY', libraryItem: { topics: [{ topic: { label: 'Foundations' } }] } },
               // 1 DONE on Array → focus must move to Array
-              { outcome: 'DONE_EASY', libraryItem: { topics: [{ topic: { label: 'Array' } }] } },
+              { libraryItemId: 'li-arr1', completedAt: new Date('2026-04-17'), outcome: 'DONE_EASY', libraryItem: { topics: [{ topic: { label: 'Array' } }] } },
             ],
           },
         ]),
@@ -387,6 +387,15 @@ describe('DraftPlanService', () => {
     expect(prompt).toMatch(/Lists: 0 DONE — bloqueado/);
     // The old coverage block must be gone
     expect(prompt).not.toMatch(/COBERTURA DE TÓPICOS \(ciclo atual\):/);
+
+    // Guard: the active-cycle coverage query MUST select the scalars the dedup
+    // reads (libraryItemId, completedAt). Without them canonicalCompletions
+    // keys on `undefined` and silently collapses every row to one.
+    const covCall = (prisma.weeklyPlan.findMany as jest.Mock).mock.calls.find(
+      (c) => c[0]?.include?.items?.select,
+    );
+    expect(covCall?.[0].include.items.select.libraryItemId).toBe(true);
+    expect(covCall?.[0].include.items.select.completedAt).toBe(true);
   });
 });
 
