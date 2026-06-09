@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { resolveActiveMembership } from '../../common/cycle/active-cycle';
 import { type ItemOutcome, isPositiveOutcome } from '@ics-select/shared';
+import { canonicalCompletionsByUser } from '../../common/completions/canonical-completions.js';
 import { computeEngagementInputsForCohort } from '../../admin/cockpit/engagement-inputs';
 import { computeEngagementScore } from '../../admin/cockpit/engagement-score';
 
@@ -107,7 +108,9 @@ export class CohortService {
         },
       },
       orderBy: { completedAt: 'desc' },
-      take: 40,
+      // Cap generously: carried re-marks are deduped below before the feed is
+      // sliced, so they can't crowd out other members' distinct completions.
+      take: 200,
     });
 
     const recentRetros = await this.prisma.weeklyRetro.findMany({
@@ -120,8 +123,14 @@ export class CohortService {
       take: 40,
     });
 
+    // Dedup carried re-marks: one feed entry per (member, material) — the
+    // earliest positive completion (matches the admin cohort feed).
+    const canonicalRecent = canonicalCompletionsByUser(
+      recentItems as any[],
+      (it: any) => it.weeklyPlan.userId,
+    );
     const feed: CohortEvent[] = [];
-    for (const item of recentItems) {
+    for (const item of canonicalRecent) {
       if (!item.completedAt) continue;
       let kind: CohortEvent['kind'] | null = null;
       // Specific signals (STUCK / DOUBTS) win over the generic "finished"

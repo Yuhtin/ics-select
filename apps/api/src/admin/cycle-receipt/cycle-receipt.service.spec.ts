@@ -255,11 +255,11 @@ describe('CycleReceiptService — nominal blocks', () => {
       const isSevenDayWindow = windowMs > 6 * 24 * 60 * 60 * 1000 && windowMs < 8 * 24 * 60 * 60 * 1000;
       if (isSevenDayWindow) {
         return Promise.resolve([
-          { libraryItem: { estimatedMinutes: 1, topics: [{ topicId: 't1', topic: { id: 't1', slug: 'hashmap', label: 'Hashmap', order: 1 } }] },
+          { libraryItemId: 'li-1', libraryItem: { estimatedMinutes: 1, topics: [{ topicId: 't1', topic: { id: 't1', slug: 'hashmap', label: 'Hashmap', order: 1 } }] },
             weeklyPlan: { userId: 'u1' }, completedAt: new Date('2026-05-12T10:00:00Z'), outcome: 'DONE_EASY' },
-          { libraryItem: { estimatedMinutes: 1, topics: [{ topicId: 't1', topic: { id: 't1', slug: 'hashmap', label: 'Hashmap', order: 1 } }] },
+          { libraryItemId: 'li-2', libraryItem: { estimatedMinutes: 1, topics: [{ topicId: 't1', topic: { id: 't1', slug: 'hashmap', label: 'Hashmap', order: 1 } }] },
             weeklyPlan: { userId: 'u1' }, completedAt: new Date('2026-05-12T11:00:00Z'), outcome: 'DONE_EASY' },
-          { libraryItem: { estimatedMinutes: 1, topics: [{ topicId: 't2', topic: { id: 't2', slug: 'tree', label: 'Tree', order: 2 } }] },
+          { libraryItemId: 'li-3', libraryItem: { estimatedMinutes: 1, topics: [{ topicId: 't2', topic: { id: 't2', slug: 'tree', label: 'Tree', order: 2 } }] },
             weeklyPlan: { userId: 'u2' }, completedAt: new Date('2026-05-10T11:00:00Z'), outcome: 'DONE_EASY' },
         ]);
       }
@@ -273,6 +273,31 @@ describe('CycleReceiptService — nominal blocks', () => {
     ]);
   });
 
+  it('movers dedup carried re-marks: same material marked twice counts as +1', async () => {
+    const prisma = mockPrisma();
+    prisma.cycle.findUnique.mockResolvedValue(cycleBase);
+    const asOf = new Date('2026-05-12T20:00:00Z');
+    prisma.weeklyPlanItem.findMany.mockImplementation((args: any) => {
+      if (!args.where.outcome?.in) return Promise.resolve([]);
+      const gte: Date = args.where.completedAt.gte;
+      const windowMs = asOf.getTime() - gte.getTime();
+      const isSevenDayWindow = windowMs > 6 * 24 * 60 * 60 * 1000 && windowMs < 8 * 24 * 60 * 60 * 1000;
+      if (isSevenDayWindow) {
+        return Promise.resolve([
+          // u1 marked the SAME material (li-x) done twice (carried re-mark).
+          { libraryItemId: 'li-x', libraryItem: { estimatedMinutes: 1, topics: [{ topicId: 't1', topic: { id: 't1', slug: 'h', label: 'H', order: 1 } }] },
+            weeklyPlan: { userId: 'u1' }, completedAt: new Date('2026-05-10T10:00:00Z'), outcome: 'DONE_EASY' },
+          { libraryItemId: 'li-x', libraryItem: { estimatedMinutes: 1, topics: [{ topicId: 't1', topic: { id: 't1', slug: 'h', label: 'H', order: 1 } }] },
+            weeklyPlan: { userId: 'u1' }, completedAt: new Date('2026-05-12T10:00:00Z'), outcome: 'DONE_EASY' },
+        ]);
+      }
+      return Promise.resolve([]);
+    });
+    const svc = makeService(prisma);
+    const r = await svc.build('c1', asOf);
+    expect(r.topMovers.find((m) => m.userId === 'u1')?.deltaItems).toBe(1);
+  });
+
   it('cycleTopMover uses cumulative cycle items, not the 7-day window', async () => {
     const prisma = mockPrisma();
     prisma.cycle.findUnique.mockResolvedValue(cycleBase);
@@ -283,13 +308,13 @@ describe('CycleReceiptService — nominal blocks', () => {
       const isCumulative = gte?.getTime() === cycleBase.startsAt.getTime();
       if (isCumulative) {
         return Promise.resolve([
-          { libraryItem: { estimatedMinutes: 1, topics: [{ topicId: 't1', topic: { id: 't1', slug: 'hashmap', label: 'Hashmap', order: 1 } }] },
+          { libraryItemId: 'li-1', libraryItem: { estimatedMinutes: 1, topics: [{ topicId: 't1', topic: { id: 't1', slug: 'hashmap', label: 'Hashmap', order: 1 } }] },
             weeklyPlan: { userId: 'u2' }, completedAt: new Date('2026-04-05T10:00:00Z'), outcome: 'DONE_EASY' },
-          { libraryItem: { estimatedMinutes: 1, topics: [{ topicId: 't1', topic: { id: 't1', slug: 'hashmap', label: 'Hashmap', order: 1 } }] },
+          { libraryItemId: 'li-2', libraryItem: { estimatedMinutes: 1, topics: [{ topicId: 't1', topic: { id: 't1', slug: 'hashmap', label: 'Hashmap', order: 1 } }] },
             weeklyPlan: { userId: 'u2' }, completedAt: new Date('2026-04-06T10:00:00Z'), outcome: 'DONE_EASY' },
-          { libraryItem: { estimatedMinutes: 1, topics: [{ topicId: 't1', topic: { id: 't1', slug: 'hashmap', label: 'Hashmap', order: 1 } }] },
+          { libraryItemId: 'li-3', libraryItem: { estimatedMinutes: 1, topics: [{ topicId: 't1', topic: { id: 't1', slug: 'hashmap', label: 'Hashmap', order: 1 } }] },
             weeklyPlan: { userId: 'u2' }, completedAt: new Date('2026-04-07T10:00:00Z'), outcome: 'DONE_EASY' },
-          { libraryItem: { estimatedMinutes: 1, topics: [{ topicId: 't1', topic: { id: 't1', slug: 'hashmap', label: 'Hashmap', order: 1 } }] },
+          { libraryItemId: 'li-4', libraryItem: { estimatedMinutes: 1, topics: [{ topicId: 't1', topic: { id: 't1', slug: 'hashmap', label: 'Hashmap', order: 1 } }] },
             weeklyPlan: { userId: 'u1' }, completedAt: new Date('2026-04-08T10:00:00Z'), outcome: 'DONE_EASY' },
         ]);
       }

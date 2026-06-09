@@ -10,6 +10,7 @@ import {
   POSITIVE_OUTCOMES,
   sumAllocatedMinutes,
 } from '@ics-select/shared';
+import { canonicalCompletionsByUser } from '../../common/completions/canonical-completions.js';
 
 const DEFAULT_AVAILABILITY = {
   mondayMinutes: 60,
@@ -297,7 +298,10 @@ export class CycleOverviewService {
               },
             },
             orderBy: { completedAt: 'desc' },
-            take: 60,
+            // Cap generously: we dedup carried re-marks below BEFORE the feed is
+            // sliced, so a member's duplicate marks can't crowd out other
+            // members' distinct completions.
+            take: 200,
           });
 
     const recentRetros =
@@ -313,8 +317,15 @@ export class CycleOverviewService {
             take: 60,
           });
 
+    // Dedup carried re-marks: one feed entry per (member, material) — the
+    // earliest positive completion. A material marked done in several carried
+    // weeks otherwise shows up as N "completou" rows (the duplicate the admin saw).
+    const canonicalRecent = canonicalCompletionsByUser(
+      recentItems as any[],
+      (it: any) => it.weeklyPlan.userId,
+    );
     const feed: CycleOverviewResponse['feed'] = [];
-    for (const item of recentItems as any[]) {
+    for (const item of canonicalRecent) {
       if (!item.completedAt) continue;
       let kind: CycleOverviewResponse['feed'][number]['kind'] | null = null;
       // DOUBTS / STUCK get their own feed kinds (so admin sees the signal
