@@ -81,7 +81,7 @@ function fakePrisma() {
         return {
           ...item,
           weeklyPlan: plan
-            ? { id: plan.id, userId: plan.userId, status: plan.status, weekStart: plan.weekStart }
+            ? { id: plan.id, userId: plan.userId, status: plan.status, weekStart: plan.weekStart, weekEnd: plan.weekEnd }
             : null,
           libraryItem: { topics: [] },
           calendarEvents: [],
@@ -132,7 +132,7 @@ describe('WeeklyPlansService', () => {
         outcome: 'DONE_EASY',
         reflection: 'foi tranquilo',
         actualMinutes: null,
-      });
+      }, new Date('2026-04-15T12:00:00Z'));
 
       expect(prisma.weeklyPlanItem.update).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -160,7 +160,7 @@ describe('WeeklyPlansService', () => {
       });
       const itemId = plan.items[0]!.id;
 
-      await svc.setItemOutcome(itemId, 'u-1', { outcome: 'PENDING', actualMinutes: null });
+      await svc.setItemOutcome(itemId, 'u-1', { outcome: 'PENDING', actualMinutes: null }, new Date('2026-04-15T12:00:00Z'));
 
       expect(prisma.weeklyPlanItem.update).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -189,6 +189,29 @@ describe('WeeklyPlansService', () => {
       await expect(
         svc.setItemOutcome(itemId, 'someone-else', { outcome: 'DONE_EASY', actualMinutes: null }),
       ).rejects.toThrow(/forbidden/i);
+    });
+
+    it('throws ForbiddenException when marking an item from a past (closed) week', async () => {
+      const prisma = fakePrisma();
+      const svc = new WeeklyPlansService(prisma as any, stubCalendar, stubBusyCache);
+      const plan = await svc.createDraft({
+        userId: 'u-1',
+        cycleId: 'c-1',
+        weekStart: new Date('2026-04-13'),
+        weekEnd: new Date('2026-04-19'),
+        items: [{ libraryItemId: 'li-9', order: 0 }],
+      });
+      const itemId = plan.items[0]!.id;
+
+      // Owner, but "now" is well after that week ended → back-mark is blocked.
+      await expect(
+        svc.setItemOutcome(
+          itemId,
+          'u-1',
+          { outcome: 'DONE_EASY', actualMinutes: null },
+          new Date('2026-05-30T12:00:00Z'),
+        ),
+      ).rejects.toThrow(/semana atual/i);
     });
   });
 });

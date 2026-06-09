@@ -1,15 +1,16 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service.js';
+import { isPlanWeekCurrent } from '../../common/cycle/current-week.js';
 
 @Injectable()
 export class ItemService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getItem(itemId: string, userId: string) {
+  async getItem(itemId: string, userId: string, now: Date = new Date()) {
     const row = await this.prisma.weeklyPlanItem.findUnique({
       where: { id: itemId },
       include: {
-        weeklyPlan: { select: { userId: true } },
+        weeklyPlan: { select: { userId: true, weekStart: true, weekEnd: true } },
         libraryItem: {
           include: {
             topics: {
@@ -30,6 +31,11 @@ export class ItemService {
     if (!row) throw new NotFoundException('Item not found');
     if (row.weeklyPlan.userId !== userId) {
       throw new ForbiddenException('Cannot view this item');
+    }
+    // Only the current week's items are accessible — a stale carried copy from a
+    // closed week must not be reachable (e.g. via calendar history) and marked.
+    if (!isPlanWeekCurrent(row.weeklyPlan.weekStart, row.weeklyPlan.weekEnd, now)) {
+      throw new ForbiddenException('Este item não está na sua semana atual.');
     }
 
     return {
