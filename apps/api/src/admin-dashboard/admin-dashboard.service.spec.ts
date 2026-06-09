@@ -51,6 +51,7 @@ function fakePrisma() {
         const rel = plans.filter((p) => p.userId === where.weeklyPlan.userId);
         let items = rel.flatMap((p) => p.items);
         if (where.outcome?.in) items = items.filter((i) => where.outcome.in.includes(i.outcome));
+        else if (typeof where.outcome === 'string') items = items.filter((i) => i.outcome === where.outcome);
         return items;
       }),
     },

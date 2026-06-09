@@ -501,19 +501,21 @@ export class CockpitService {
   private async cohortRankPct(
     memberId: string,
     cohortIds: string[],
-    _cycleId: string,
+    cycleId: string,
     _daysElapsed: number,
   ): Promise<number> {
     if (cohortIds.length === 0) return 1;
     const allIds = [memberId, ...cohortIds];
     const rows = await this.prisma.$queryRawUnsafe<Array<{ userId: string; done: bigint }>>(
       // Dedup carried completions: distinct materials with any non-PENDING row.
+      // Scoped to this cycle so cockpit rank matches the cycle-overview ranking
+      // (engagement-inputs wp_done is also cycle-scoped — "share one number").
       `SELECT wp."userId", COUNT(DISTINCT CASE WHEN wpi."outcome" <> 'PENDING' THEN wpi."libraryItemId" END) AS done
        FROM "WeeklyPlanItem" wpi
        JOIN "WeeklyPlan" wp ON wp.id = wpi."weeklyPlanId"
-       WHERE wp."userId" = ANY($1::text[])
+       WHERE wp."userId" = ANY($1::text[]) AND wp."cycleId" = $2
        GROUP BY wp."userId"`,
-      allIds,
+      allIds, cycleId,
     );
     const sumByUser = new Map<string, number>();
     for (const r of rows) {
@@ -629,7 +631,11 @@ export class CockpitService {
            WHERE wp."cycleId" = $2
              AND wp."userId" = ANY($1::text[])
              AND wpi."outcome" <> 'PENDING'
-           ORDER BY wp."userId", wpi."libraryItemId", wpi."completedAt" ASC NULLS LAST
+           -- Prefer the earliest POSITIVE row (match canonicalCompletions);
+           -- fall back to earliest non-PENDING only when never positive.
+           ORDER BY wp."userId", wpi."libraryItemId",
+                    (CASE WHEN wpi."outcome" IN ('DONE_EASY','DONE_HARD','DOUBTS','SKIPPED') THEN 0 ELSE 1 END) ASC,
+                    wpi."completedAt" ASC NULLS LAST
          ) canon
          GROUP BY canon."userId"
        ) AS per_user USING ("userId")`,
@@ -692,7 +698,11 @@ export class CockpitService {
            WHERE wp."cycleId" = $2
              AND wp."userId" = ANY($1::text[])
              AND wpi."outcome" <> 'PENDING'
-           ORDER BY wp."userId", wpi."libraryItemId", wpi."completedAt" ASC NULLS LAST
+           -- Prefer the earliest POSITIVE row (match canonicalCompletions);
+           -- fall back to earliest non-PENDING only when never positive.
+           ORDER BY wp."userId", wpi."libraryItemId",
+                    (CASE WHEN wpi."outcome" IN ('DONE_EASY','DONE_HARD','DOUBTS','SKIPPED') THEN 0 ELSE 1 END) ASC,
+                    wpi."completedAt" ASC NULLS LAST
          ) canon
          JOIN "LibraryItemTopic" lit2 ON lit2."itemId" = canon."libraryItemId"
          GROUP BY canon."userId", lit2."topicId"

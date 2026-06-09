@@ -243,6 +243,8 @@ export class DraftPlanService {
           include: {
             items: {
               select: {
+                libraryItemId: true,
+                completedAt: true,
                 outcome: true,
                 actualMinutes: true,
                 libraryItem: {

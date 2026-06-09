@@ -387,6 +387,15 @@ describe('DraftPlanService', () => {
     expect(prompt).toMatch(/Lists: 0 DONE — bloqueado/);
     // The old coverage block must be gone
     expect(prompt).not.toMatch(/COBERTURA DE TÓPICOS \(ciclo atual\):/);
+
+    // Guard: the active-cycle coverage query MUST select the scalars the dedup
+    // reads (libraryItemId, completedAt). Without them canonicalCompletions
+    // keys on `undefined` and silently collapses every row to one.
+    const covCall = (prisma.weeklyPlan.findMany as jest.Mock).mock.calls.find(
+      (c) => c[0]?.include?.items?.select,
+    );
+    expect(covCall?.[0].include.items.select.libraryItemId).toBe(true);
+    expect(covCall?.[0].include.items.select.completedAt).toBe(true);
   });
 });
 

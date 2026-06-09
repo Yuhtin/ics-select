@@ -28,22 +28,28 @@ export class AdminDashboardService {
     const users = await this.prisma.user.findMany();
     const cards: MemberCard[] = [];
     for (const u of users) {
-      const [plansCount, doneRows, skippedItems, stuckItems] = await Promise.all([
+      const [plansCount, doneRows, skippedRows, stuckRows] = await Promise.all([
         this.prisma.weeklyPlan.count({ where: { userId: u.id, status: 'PUBLISHED' } }),
-        // Dedup carried completions: count distinct positively-completed
-        // materials, not one row per week the material was re-planned.
+        // Dedup carried completions: count distinct materials, not one row per
+        // week a material was re-planned. doneItems and its sub-breakdowns
+        // (skipped/stuck) all use the same per-material dedup so they stay
+        // consistent on the admin card.
         this.prisma.weeklyPlanItem.findMany({
           where: { weeklyPlan: { userId: u.id }, outcome: { in: POSITIVE_OUTCOMES_ARR } },
           select: { libraryItemId: true, outcome: true, completedAt: true },
         }),
-        this.prisma.weeklyPlanItem.count({
+        this.prisma.weeklyPlanItem.findMany({
           where: { weeklyPlan: { userId: u.id }, outcome: 'SKIPPED' },
+          select: { libraryItemId: true, outcome: true, completedAt: true },
         }),
-        this.prisma.weeklyPlanItem.count({
+        this.prisma.weeklyPlanItem.findMany({
           where: { weeklyPlan: { userId: u.id }, outcome: 'STUCK' },
+          select: { libraryItemId: true, outcome: true, completedAt: true },
         }),
       ]);
       const doneItems = countCanonicalPositive(doneRows);
+      const skippedItems = canonicalCompletions(skippedRows).length;
+      const stuckItems = canonicalCompletions(stuckRows).length;
       cards.push({
         id: u.id,
         name: u.name,
