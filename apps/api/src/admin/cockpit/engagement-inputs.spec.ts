@@ -150,5 +150,21 @@ describe('computeEngagementInputsForCohort', () => {
     expect(input.classesHeld).toBe(4);
   });
 
+  it('dedups carried completions: itemsDone/itemsPlanned count DISTINCT libraryItems', async () => {
+    const prisma = makePrisma([
+      { userId: 'u-1', daysActive: 1, itemsDone: 1, itemsPlanned: 1, retrosSubmitted: 0, daysSinceLastSession: 1 },
+    ]);
+    await computeEngagementInputsForCohort(prisma as any, ['u-1'], 'cycle-1', CYCLE_START, NOW);
+    const sql = (prisma.$queryRawUnsafe as jest.Mock).mock.calls[0][0] as string;
+    // wp_done: distinct materials among non-PENDING rows (the carried-over fix).
+    expect(sql).toMatch(
+      /COUNT\(DISTINCT wpi\."libraryItemId"\)::int AS cnt[\s\S]*?wpi\."outcome" <> 'PENDING'[\s\S]*?\) wp_done/,
+    );
+    // wp_plan: distinct planned materials so the denominator matches.
+    expect(sql).toMatch(/COUNT\(DISTINCT wpi\."libraryItemId"\)::int AS cnt[\s\S]*?\) wp_plan/);
+    // The old un-deduped COUNT(*) for the done join must be gone.
+    expect(sql).not.toMatch(/COUNT\(\*\)::int AS cnt[\s\S]*?\) wp_done/);
+  });
+
 });
 
