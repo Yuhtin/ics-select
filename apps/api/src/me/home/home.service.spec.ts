@@ -235,10 +235,10 @@ describe('HomeService', () => {
       { id: 't-graphs', slug: 'graphs', label: 'Graphs', order: 1 },
     ]);
     prisma.__setCoverageItems([
-      { outcome: 'DONE_EASY', libraryItem: { topics: [{ topicId: 't-dp' }] } },
-      { outcome: 'DONE_HARD', libraryItem: { topics: [{ topicId: 't-dp' }] } },
-      { outcome: 'STUCK', libraryItem: { topics: [{ topicId: 't-dp' }] } },
-      { outcome: 'PENDING', libraryItem: { topics: [{ topicId: 't-graphs' }] } },
+      { libraryItemId: 'li-dp1', completedAt: new Date('2026-04-10'), outcome: 'DONE_EASY', libraryItem: { topics: [{ topicId: 't-dp' }] } },
+      { libraryItemId: 'li-dp2', completedAt: new Date('2026-04-11'), outcome: 'DONE_HARD', libraryItem: { topics: [{ topicId: 't-dp' }] } },
+      { libraryItemId: 'li-dp3', completedAt: new Date('2026-04-12'), outcome: 'STUCK', libraryItem: { topics: [{ topicId: 't-dp' }] } },
+      { libraryItemId: 'li-g1', completedAt: null, outcome: 'PENDING', libraryItem: { topics: [{ topicId: 't-graphs' }] } },
     ]);
 
     const result = await service.getHome('user-1', new Date('2026-04-17T19:00:00Z'));

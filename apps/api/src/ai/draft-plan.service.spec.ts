@@ -353,11 +353,11 @@ describe('DraftPlanService', () => {
             id: 'p-1',
             weekStart: new Date('2026-04-13'),
             items: [
-              { outcome: 'DONE_HARD', libraryItem: { topics: [{ topic: { label: 'Foundations' } }] } },
-              { outcome: 'DONE_EASY', libraryItem: { topics: [{ topic: { label: 'Foundations' } }] } },
-              { outcome: 'DONE_EASY', libraryItem: { topics: [{ topic: { label: 'Foundations' } }] } },
+              { libraryItemId: 'li-f1', completedAt: new Date('2026-04-14'), outcome: 'DONE_HARD', libraryItem: { topics: [{ topic: { label: 'Foundations' } }] } },
+              { libraryItemId: 'li-f2', completedAt: new Date('2026-04-15'), outcome: 'DONE_EASY', libraryItem: { topics: [{ topic: { label: 'Foundations' } }] } },
+              { libraryItemId: 'li-f3', completedAt: new Date('2026-04-16'), outcome: 'DONE_EASY', libraryItem: { topics: [{ topic: { label: 'Foundations' } }] } },
               // 1 DONE on Array → focus must move to Array
-              { outcome: 'DONE_EASY', libraryItem: { topics: [{ topic: { label: 'Array' } }] } },
+              { libraryItemId: 'li-arr1', completedAt: new Date('2026-04-17'), outcome: 'DONE_EASY', libraryItem: { topics: [{ topic: { label: 'Array' } }] } },
             ],
           },
         ]),

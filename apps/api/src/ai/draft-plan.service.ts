@@ -7,6 +7,10 @@ import { UsageLoggerService } from './usage-logger.service.js';
 import { searchLibraryTool, makeLibraryToolExecutor } from './library-tool.js';
 import { WRITING_GUIDELINES_PT } from './writing-guidelines.js';
 import { isPositiveOutcome } from '@ics-select/shared';
+import {
+  canonicalCompletions,
+  countCanonicalPositive,
+} from '../common/completions/canonical-completions.js';
 
 type DraftInput = {
   memberId: string;
@@ -262,49 +266,65 @@ export class DraftPlanService {
     let totalActual = 0;
     let totalEstimated = 0;
     let totalTimedItems = 0;
-    for (const plan of coverageSource) {
-      for (const item of plan.items ?? []) {
-        // An item touches every topic in its M2M set (primary + secondary
-        // covers). Increment each topic's counts so cross-topic items
-        // contribute to all they cover — matches the home/member-detail
-        // topic coverage semantics.
-        const topicLabels: string[] =
-          (item.libraryItem?.topics ?? [])
-            .map((t: any) => t.topic?.label)
-            .filter((l: unknown): l is string => typeof l === 'string');
-        const labels = topicLabels.length > 0 ? topicLabels : ['sem tópico'];
-        const done = isPositiveOutcome(item.outcome);
-        for (const label of labels) {
-          const cur = topicCoverage.get(label) ?? { planned: 0, done: 0 };
-          cur.planned += 1;
-          if (done) cur.done += 1;
-          topicCoverage.set(label, cur);
-        }
-        // Study time aggregation. Skip rows without a reported number — the
-        // member chose "Não sei" or hadn't completed the item. Estimated
-        // mirrors actual so the ratio compares the same subset.
-        const actual = item.actualMinutes;
-        const estimated = item.libraryItem?.estimatedMinutes;
-        if (
-          done &&
-          typeof actual === 'number' &&
-          typeof estimated === 'number' &&
-          estimated > 0
-        ) {
-          totalActual += actual;
-          totalEstimated += estimated;
-          totalTimedItems += 1;
-          for (const label of labels) {
-            const cur = topicTime.get(label) ?? {
-              actual: 0,
-              estimated: 0,
-              items: 0,
-            };
-            cur.actual += actual;
-            cur.estimated += estimated;
-            cur.items += 1;
-            topicTime.set(label, cur);
-          }
+    // An item touches every topic in its M2M set (primary + secondary covers).
+    // A material carried across weeks is many rows but must count once per topic,
+    // so dedup: planned = distinct materials per label; done = distinct materials
+    // with a positive canonical completion per label.
+    const labelsOf = (item: any): string[] => {
+      const topicLabels: string[] = (item.libraryItem?.topics ?? [])
+        .map((t: any) => t.topic?.label)
+        .filter((l: unknown): l is string => typeof l === 'string');
+      return topicLabels.length > 0 ? topicLabels : ['sem tópico'];
+    };
+    const coverageItems: any[] = coverageSource.flatMap((p: any) => p.items ?? []);
+    const plannedByLabel = new Map<string, Set<string>>();
+    for (const item of coverageItems) {
+      for (const label of labelsOf(item)) {
+        if (!plannedByLabel.has(label)) plannedByLabel.set(label, new Set());
+        plannedByLabel.get(label)!.add(item.libraryItemId);
+      }
+    }
+    const doneByLabel = new Map<string, number>();
+    for (const r of canonicalCompletions(
+      coverageItems.map((i: any) => ({
+        libraryItemId: i.libraryItemId,
+        outcome: i.outcome,
+        completedAt: i.completedAt ?? null,
+        labels: labelsOf(i),
+      })),
+    )) {
+      if (!isPositiveOutcome(r.outcome)) continue;
+      for (const label of r.labels) doneByLabel.set(label, (doneByLabel.get(label) ?? 0) + 1);
+    }
+    for (const [label, materials] of plannedByLabel) {
+      topicCoverage.set(label, { planned: materials.size, done: doneByLabel.get(label) ?? 0 });
+    }
+
+    // Study time aggregation (per canonical material so a re-studied carry isn't
+    // double-counted). Skip rows without a reported number — the member chose
+    // "Não sei" or hadn't completed. Estimated mirrors actual so the ratio
+    // compares the same subset.
+    for (const item of canonicalCompletions(
+      coverageItems.map((i: any) => ({
+        libraryItemId: i.libraryItemId,
+        outcome: i.outcome,
+        completedAt: i.completedAt ?? null,
+        ref: i,
+      })),
+    ).map((c) => c.ref)) {
+      const done = isPositiveOutcome(item.outcome);
+      const actual = item.actualMinutes;
+      const estimated = item.libraryItem?.estimatedMinutes;
+      if (done && typeof actual === 'number' && typeof estimated === 'number' && estimated > 0) {
+        totalActual += actual;
+        totalEstimated += estimated;
+        totalTimedItems += 1;
+        for (const label of labelsOf(item)) {
+          const cur = topicTime.get(label) ?? { actual: 0, estimated: 0, items: 0 };
+          cur.actual += actual;
+          cur.estimated += estimated;
+          cur.items += 1;
+          topicTime.set(label, cur);
         }
       }
     }
@@ -346,30 +366,26 @@ export class DraftPlanService {
     });
 
     // 7) Member stats summary — total plans, items, completion %, last 4 weeks.
-    const [totalPlansCount, allItemsAgg] = await Promise.all([
+    const [totalPlansCount, allItemRows] = await Promise.all([
       this.prisma.weeklyPlan.count({
         where: { userId: input.memberId, status: 'PUBLISHED' },
       }),
-      this.prisma.weeklyPlanItem.groupBy({
-        by: ['outcome'],
-        where: {
-          weeklyPlan: { userId: input.memberId, status: 'PUBLISHED' },
-        },
-        _count: { _all: true },
+      // Dedup carried items: completion % over DISTINCT materials, not one row
+      // per week a material was re-planned (else the % fed to the LLM inflates).
+      this.prisma.weeklyPlanItem.findMany({
+        where: { weeklyPlan: { userId: input.memberId, status: 'PUBLISHED' } },
+        select: { libraryItemId: true, outcome: true, completedAt: true },
       }),
     ]);
-    const outcomeCounts = allItemsAgg.reduce<Record<string, number>>(
-      (acc, row: any) => {
-        acc[row.outcome] = row._count._all;
-        return acc;
-      },
-      {},
-    );
-    const totalItems = Object.values(outcomeCounts).reduce((s, n) => s + n, 0);
-    const totalDone = (Object.entries(outcomeCounts) as Array<[string, number]>)
-      .filter(([outcome]) => isPositiveOutcome(outcome as any))
-      .reduce((s, [, n]) => s + n, 0);
+    const totalItems = new Set(allItemRows.map((r) => r.libraryItemId)).size;
+    const canonRows = canonicalCompletions(allItemRows);
+    const totalDone = countCanonicalPositive(allItemRows);
     const completionPct = totalItems === 0 ? 0 : Math.round((totalDone / totalItems) * 100);
+    // Per-outcome breakdown over DISTINCT materials (canonical outcome each),
+    // so the counts sum to totalItems and stay consistent with completionPct.
+    const outcomeCounts: Record<string, number> = {};
+    for (const r of canonRows) outcomeCounts[r.outcome] = (outcomeCounts[r.outcome] ?? 0) + 1;
+    outcomeCounts['PENDING'] = totalItems - canonRows.length;
 
     // 8) Build user prompt sections
     const memberLine = `MEMBRO: ${memberName} — track: ${trackLabel}`;

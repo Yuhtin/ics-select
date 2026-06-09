@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import type { ItemOutcome } from '@ics-select/prisma';
 import { POSITIVE_OUTCOMES, isPositiveOutcome } from '@ics-select/shared';
 import { PrismaService } from '../../common/prisma/prisma.service.js';
+import { canonicalCompletions } from '../../common/completions/canonical-completions.js';
 
 const POSITIVE_OUTCOMES_ARR = Array.from(POSITIVE_OUTCOMES) as ItemOutcome[];
 
@@ -306,7 +307,9 @@ export class HomeService {
       this.prisma.weeklyPlanItem.findMany({
         where: { weeklyPlan: { userId, cycleId } },
         select: {
+          libraryItemId: true,
           outcome: true,
+          completedAt: true,
           libraryItem: {
             select: {
               topics: { select: { topicId: true } },
@@ -316,19 +319,38 @@ export class HomeService {
       }),
     ]);
 
-    const byTopic = new Map<string, { planned: number; done: number }>();
-    for (const t of topics) byTopic.set(t.id, { planned: 0, done: 0 });
     // An item with N topics (primary + covers) contributes to all N topics'
-    // coverage. Cross-topic videos "complete" every topic they touch.
+    // coverage. Cross-topic videos "complete" every topic they touch. A material
+    // carried across weeks is many rows but must count once per topic, so we
+    // dedup: planned = distinct materials per topic; done = distinct materials
+    // with a positive canonical completion per topic.
+    const plannedByTopic = new Map<string, Set<string>>();
+    for (const t of topics) plannedByTopic.set(t.id, new Set());
     for (const it of items) {
-      const topicIds = it.libraryItem?.topics?.map((t) => t.topicId) ?? [];
-      const done = isPositiveOutcome(it.outcome);
-      for (const topicId of topicIds) {
-        const stat = byTopic.get(topicId);
-        if (!stat) continue;
-        stat.planned += 1;
-        if (done) stat.done += 1;
+      for (const topicId of it.libraryItem?.topics?.map((t) => t.topicId) ?? []) {
+        plannedByTopic.get(topicId)?.add(it.libraryItemId);
       }
+    }
+    const doneByTopic = new Map<string, number>();
+    for (const r of canonicalCompletions(
+      items.map((i) => ({
+        libraryItemId: i.libraryItemId,
+        outcome: i.outcome,
+        completedAt: i.completedAt,
+        topicIds: i.libraryItem?.topics?.map((t) => t.topicId) ?? [],
+      })),
+    )) {
+      if (!isPositiveOutcome(r.outcome)) continue;
+      for (const topicId of r.topicIds) {
+        doneByTopic.set(topicId, (doneByTopic.get(topicId) ?? 0) + 1);
+      }
+    }
+    const byTopic = new Map<string, { planned: number; done: number }>();
+    for (const t of topics) {
+      byTopic.set(t.id, {
+        planned: plannedByTopic.get(t.id)?.size ?? 0,
+        done: doneByTopic.get(t.id) ?? 0,
+      });
     }
 
     return topics.map((t) => {
