@@ -33,6 +33,35 @@ function isItemSkippable(libraryItem: {
   return libraryItem.topics.some((t) => t.topic.slug === 'foundations');
 }
 
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+
+// Carry-over re-seeds last week's UNFINISHED items (PENDING/STUCK) into the new
+// draft — mirrors plan-context's carryOverCandidates. DOUBTS is positive (the
+// work was done), so it's not carried.
+const CARRY_OUTCOMES = new Set<ItemOutcome>(['PENDING', 'STUCK']);
+
+/**
+ * For each incoming plan item, set `carriedFromItemId` to the previous week's
+ * PUBLISHED-plan row with the SAME libraryItem when that row was PENDING/STUCK.
+ * The editor save path (createDraft/update) otherwise persists items as plain
+ * {libraryItemId, order} and drops the carry link entirely, so carries become
+ * untraceable in the data. Pure — unit-tested.
+ */
+export function deriveCarryLinks(
+  incoming: ReadonlyArray<{ libraryItemId: string; order: number }>,
+  prevItems: ReadonlyArray<{ id: string; libraryItemId: string; outcome: ItemOutcome }>,
+): Array<{ libraryItemId: string; order: number; carriedFromItemId: string | null }> {
+  const prevByLib = new Map<string, string>();
+  for (const p of prevItems) {
+    if (CARRY_OUTCOMES.has(p.outcome)) prevByLib.set(p.libraryItemId, p.id);
+  }
+  return incoming.map((i) => ({
+    libraryItemId: i.libraryItemId,
+    order: i.order,
+    carriedFromItemId: prevByLib.get(i.libraryItemId) ?? null,
+  }));
+}
+
 @Injectable()
 export class WeeklyPlansService {
   private readonly logger = new Logger(WeeklyPlansService.name);
@@ -108,6 +137,10 @@ export class WeeklyPlansService {
         },
       });
     }
+    const linked = deriveCarryLinks(
+      input.items,
+      await this.prevWeekCarrySource(input.userId, input.weekStart),
+    );
     return this.prisma.weeklyPlan.create({
       data: {
         userId: input.userId,
@@ -117,14 +150,29 @@ export class WeeklyPlansService {
         adminNotes: input.adminNotes,
         status: 'DRAFT',
         items: {
-          create: input.items.map((i) => ({
+          create: linked.map((i) => ({
             libraryItemId: i.libraryItemId,
             order: i.order,
+            carriedFromItemId: i.carriedFromItemId,
           })),
         },
       },
       include: { items: { include: { libraryItem: true } } },
     });
+  }
+
+  /**
+   * Previous week's PUBLISHED-plan items (id, libraryItemId, outcome) for the
+   * same member — the source `deriveCarryLinks` matches incoming items against
+   * to restore the carried-from link the editor save path would otherwise drop.
+   */
+  private async prevWeekCarrySource(userId: string, weekStart: Date) {
+    const prevWeekStart = new Date(weekStart.getTime() - WEEK_MS);
+    const prev = await this.prisma.weeklyPlan.findFirst({
+      where: { userId, weekStart: prevWeekStart, status: 'PUBLISHED' },
+      select: { items: { select: { id: true, libraryItemId: true, outcome: true } } },
+    });
+    return prev?.items ?? [];
   }
 
   async update(id: string, input: UpdateInput) {
@@ -140,6 +188,14 @@ export class WeeklyPlansService {
     // had been pre-scheduled, which currently never happens — autoSchedule
     // runs on PUBLISHED plans — but the cascade keeps us correct if that
     // ever changes).
+    // Re-derive carry links here too: this method deletes+recreates all items
+    // on every save, so without this the carriedFromItemId would be wiped.
+    const linked = input.items
+      ? deriveCarryLinks(
+          input.items,
+          await this.prevWeekCarrySource(existing.userId, existing.weekStart),
+        )
+      : null;
     await this.prisma.$transaction(async (tx) => {
       if (input.items) {
         await tx.weeklyPlanItem.deleteMany({ where: { weeklyPlanId: id } });
@@ -148,12 +204,13 @@ export class WeeklyPlansService {
         where: { id },
         data: {
           adminNotes: input.adminNotes,
-          ...(input.items
+          ...(linked
             ? {
                 items: {
-                  create: input.items.map((i) => ({
+                  create: linked.map((i) => ({
                     libraryItemId: i.libraryItemId,
                     order: i.order,
+                    carriedFromItemId: i.carriedFromItemId,
                   })),
                 },
               }

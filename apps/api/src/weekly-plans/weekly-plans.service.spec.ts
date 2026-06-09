@@ -51,6 +51,19 @@ function fakePrisma() {
         return created;
       }),
       findUnique: jest.fn(async ({ where }: any) => plans.get(where.id) ?? null),
+      // Carry-link lookup (previous week's PUBLISHED plan). Default: none.
+      findFirst: jest.fn(async ({ where }: any) => {
+        for (const p of plans.values()) {
+          if (
+            p.userId === where.userId &&
+            where.status === p.status &&
+            p.weekStart?.getTime?.() === where.weekStart?.getTime?.()
+          ) {
+            return { items: Array.from(items.values()).filter((it: any) => it.weeklyPlanId === p.id) };
+          }
+        }
+        return null;
+      }),
       update: jest.fn(async ({ where, data }: any) => {
         const cur = plans.get(where.id);
         const next = { ...cur, ...data };
