@@ -35,6 +35,17 @@ class AllowAllGuard implements CanActivate {
   }
 }
 
+// A week that is always strictly in the FUTURE relative to now, so the
+// scheduler has open days regardless of when the suite runs. Hardcoding a fixed
+// week date-rots: once that week is in the past the scheduler returns no
+// placements and the test fails for a reason unrelated to the code.
+function futureWeek(from: Date = new Date()): { weekStart: Date; weekEnd: Date } {
+  const d = new Date(Date.UTC(from.getUTCFullYear(), from.getUTCMonth(), from.getUTCDate()));
+  const daysUntilNextMonday = ((8 - d.getUTCDay()) % 7) || 7; // strictly next Monday
+  d.setUTCDate(d.getUTCDate() + daysUntilNextMonday);
+  return { weekStart: d, weekEnd: new Date(d.getTime() + 7 * 24 * 60 * 60 * 1000 - 1) };
+}
+
 function makeFakePrisma(plan: any | null) {
   return {
     $connect: jest.fn().mockResolvedValue(undefined),
@@ -106,11 +117,12 @@ describe('POST /plans/:id/preview-scheduling (e2e)', () => {
   });
 
   it('returns placements when plan exists and items fit', async () => {
+    const { weekStart, weekEnd } = futureWeek();
     app = await buildApp({
       id: 'plan-1',
       userId: 'user-1',
-      weekStart: new Date('2026-05-18T00:00:00-03:00'),
-      weekEnd: new Date('2026-05-25T00:00:00-03:00'),
+      weekStart,
+      weekEnd,
       status: 'DRAFT',
     });
 
@@ -130,11 +142,12 @@ describe('POST /plans/:id/preview-scheduling (e2e)', () => {
   });
 
   it('returns empty placements when body items array is empty', async () => {
+    const { weekStart, weekEnd } = futureWeek();
     app = await buildApp({
       id: 'plan-1',
       userId: 'user-1',
-      weekStart: new Date('2026-05-18T00:00:00-03:00'),
-      weekEnd: new Date('2026-05-25T00:00:00-03:00'),
+      weekStart,
+      weekEnd,
       status: 'DRAFT',
     });
 
