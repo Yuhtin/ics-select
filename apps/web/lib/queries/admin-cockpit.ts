@@ -7,7 +7,8 @@ export type CockpitResponse = {
   cycle: { id: string; name: string; weekNumber: number; weeksTotal: number; startsAt: string; endsAt: string } | null;
   range: 'cycle' | '7d' | 'all';
   risk: { status: 'ON_TRACK' | 'WATCH' | 'AT_RISK'; reasons: string[] };
-  engagement: { score: number; cohortMedian: number; breakdown: Array<{ label: string; value: number; weight: number; status: 'ok' | 'warn' | 'bad' }>; scoreByWeek: number[] };
+  /** Null when range === 'all' — the score and its cohort medians are only defined inside one cycle. */
+  engagement: { score: number; cohortMedian: number; breakdown: Array<{ label: string; value: number; weight: number; status: 'ok' | 'warn' | 'bad' }>; scoreByWeek: number[] } | null;
   itemsCompleted: { total: number; planned: number; completionPct: number; cohortMedian: number; cohortMedianPlanned: number; byOutcome: Record<string, number>; perWeek: Array<{ weekStart: string; byOutcome: Record<string, number> }>; needsAttention: { total: number; stuck: number; doubts: number } };
   timeInvested: { actualMinutes: number; scheduledMinutes: number; cohortMedianMinutes: number; naoSeiCount: number; perWeekMinutes: number[] };
   behavior: {

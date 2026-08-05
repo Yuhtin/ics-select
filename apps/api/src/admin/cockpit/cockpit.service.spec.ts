@@ -139,4 +139,71 @@ describe('CockpitService', () => {
     expect(out.cycle).toBeNull();
     expect(out.risk.status).toBe('ON_TRACK');
   });
+
+  describe('range scoping', () => {
+    it('keeps engagement scoped to the resolved cycle on range=cycle', async () => {
+      const prisma = buildPrisma();
+      seedHappyPath(prisma);
+      const svc = new CockpitService(prisma as never);
+      const out = await svc.getCockpit('u1', null, 'cycle', NOW);
+      expect(out.engagement).not.toBeNull();
+      expect(prisma.weeklyPlan.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { userId: 'u1', cycleId: { in: ['cy1'] } },
+        }),
+      );
+    });
+
+    it('range=all spans every cycle the member was in and drops engagement', async () => {
+      const prisma = buildPrisma();
+      seedHappyPath(prisma);
+      // In 'all' mode the only cycleMembership.findMany is the one collecting
+      // the member's cycles — the cohort lookup is skipped entirely.
+      prisma.cycleMembership.findMany.mockResolvedValue([
+        { cycleId: 'cy0' },
+        { cycleId: 'cy1' },
+      ]);
+      const svc = new CockpitService(prisma as never);
+      const out = await svc.getCockpit('u1', null, 'all', NOW);
+
+      expect(prisma.weeklyPlan.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { userId: 'u1', cycleId: { in: ['cy0', 'cy1'] } },
+        }),
+      );
+      // Cohort comparison has no meaning across cycles.
+      expect(out.engagement).toBeNull();
+      expect(out.itemsCompleted.cohortMedian).toBe(0);
+      // Individual history still counts: li1 DONE_EASY + li2 STUCK.
+      expect(out.itemsCompleted.total).toBe(2);
+    });
+
+    it('range=7d counts only completions inside the window, keeping the cycle plan as denominator', async () => {
+      const prisma = buildPrisma();
+      seedHappyPath(prisma);
+      // NOW is 2026-05-02, so the window opens 2026-04-25. One completion sits
+      // inside it, one is three weeks older.
+      prisma.weeklyPlan.findMany.mockResolvedValue([
+        {
+          id: 'p1',
+          weekStart: new Date('2026-04-27T00:00:00Z'),
+          cycleId: 'cy1',
+          status: 'PUBLISHED',
+          publishedAt: new Date('2026-04-27T08:00:00Z'),
+          items: [
+            { id: 'i1', libraryItemId: 'li1', outcome: 'DONE_EASY', completedAt: new Date('2026-04-28T10:00:00Z'), scheduledMinutes: 60, actualMinutes: 45, carriedFromItemId: null, libraryItem: { topics: [{ topicId: 't1', isPrimary: true }] } },
+            { id: 'i2', libraryItemId: 'li2', outcome: 'DONE_EASY', completedAt: new Date('2026-04-06T10:00:00Z'), scheduledMinutes: 90, actualMinutes: 30, carriedFromItemId: null, libraryItem: { topics: [{ topicId: 't2', isPrimary: true }] } },
+          ],
+        },
+      ]);
+      const svc = new CockpitService(prisma as never);
+      const out = await svc.getCockpit('u1', null, '7d', NOW);
+
+      expect(out.itemsCompleted.total).toBe(1);
+      // Denominator stays the full cycle plan — both materials were planned.
+      expect(out.itemsCompleted.planned).toBe(2);
+      // Only the in-window item's minutes count.
+      expect(out.timeInvested.actualMinutes).toBe(45);
+    });
+  });
 });

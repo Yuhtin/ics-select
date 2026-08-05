@@ -4,7 +4,8 @@ import { clsx } from 'clsx';
 import type { CockpitResponse } from '../../../lib/queries/admin-cockpit';
 
 type Props = {
-  engagement: CockpitResponse['engagement'];
+  /** Non-null by construction: the parent unmounts this card when range === 'all'. */
+  engagement: NonNullable<CockpitResponse['engagement']>;
   status: CockpitResponse['risk']['status'];
 };
 

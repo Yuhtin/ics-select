@@ -117,8 +117,13 @@ export default function AdminMemberPage({ params }: { params: Promise<{ id: stri
         <RiskBanner status={risk.status} reasons={risk.reasons} />
       )}
 
-      <div className="grid grid-cols-12 gap-5">
-        <EngagementCard engagement={data.engagement} status={data.risk.status} />
+      {/* Engagement is null on range=all (cohort comparison has no meaning
+          across cycles). Drop the container to 9 columns so the two remaining
+          cards, 6 + 3, still fill the row instead of leaving a gap. */}
+      <div className={clsx('grid gap-5', data.engagement ? 'grid-cols-12' : 'grid-cols-9')}>
+        {data.engagement && (
+          <EngagementCard engagement={data.engagement} status={data.risk.status} />
+        )}
         <ItemsCompletedCard itemsCompleted={data.itemsCompleted} />
         <TimeInvestedCard timeInvested={data.timeInvested} weeksTotal={data.cycle?.weeksTotal ?? 9} />
       </div>
