@@ -250,12 +250,23 @@ export class CockpitService {
     );
     const carryOverPerWeek = bucketCarryPerWeek(plans, bucketWeeks, bucketStart);
 
-    // Null when the member has no events recorded yet (either never used the
-    // platform or activity capture only just deployed). classifyRisk and
-    // computeEngagementScore both skip the session criterion when this is null —
-    // we want "no data yet" to look neutral, not catastrophic.
-    const daysSinceLastSession: number | null = lastEvent
-      ? Math.floor((now.getTime() - lastEvent.occurredAt.getTime()) / DAY_MS)
+    // Scoped to the data window. The `lastEvent` fetched above stays global on
+    // purpose — behavior.lastSeen answers "when did we last see this person at
+    // all", which is true regardless of cycle. But the score and the risk
+    // verdict must not count activity from before the window they describe:
+    // unscoped, a member who merely opened the site before the cycle started
+    // collected the full 12 recency points for it.
+    //
+    // Null when there is no event in range (never used the platform, or the
+    // cycle hasn't started). classifyRisk and computeEngagementScore both treat
+    // null as neutral rather than catastrophic.
+    const lastEventInScope = await this.prisma.userEvent.findFirst({
+      where: { userId: memberId, occurredAt: { gte: bucketStart, lte: now } },
+      orderBy: { occurredAt: 'desc' },
+      select: { occurredAt: true },
+    });
+    const daysSinceLastSession: number | null = lastEventInScope
+      ? Math.floor((now.getTime() - lastEventInScope.occurredAt.getTime()) / DAY_MS)
       : null;
 
     // Cohort rank and the engagement score are cycle-scoped by construction, so
@@ -950,8 +961,14 @@ export class CockpitService {
 
       const daysActive = await this.distinctDaysOfEvents(memberId, cycleStart, effectiveEnd);
 
+      // Lower bound matters as much as the upper one: without it, week 1 of a
+      // cycle credits recency for a session that happened months earlier, in a
+      // previous cycle.
       const lastEvent = await this.prisma.userEvent.findFirst({
-        where: { userId: memberId, occurredAt: { lte: effectiveEnd } },
+        where: {
+          userId: memberId,
+          occurredAt: { gte: cycleStart, lte: effectiveEnd },
+        },
         orderBy: { occurredAt: 'desc' },
         select: { occurredAt: true },
       });
