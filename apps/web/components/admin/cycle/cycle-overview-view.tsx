@@ -1,6 +1,7 @@
 'use client';
+import { useState } from 'react';
 import Link from 'next/link';
-import { Receipt } from 'lucide-react';
+import { Receipt, UserPlus } from 'lucide-react';
 import {
   useAdminTriage,
   useDismissAlert,
@@ -16,10 +17,12 @@ import { ClassesSection } from '../cycles/classes-section';
 import { Eyebrow } from '../../ui/eyebrow';
 import { SectionLabel } from '../../ui/section-label';
 import { EngagementRankingTable } from '../engagement-ranking-table';
+import { ManageRosterModal } from './manage-roster-modal';
 
 export function CycleOverviewView({ data }: { data: CycleOverviewResponse }) {
   const triage = useAdminTriage(data.cycle.id);
   const dismiss = useDismissAlert();
+  const [rosterOpen, setRosterOpen] = useState(false);
 
   const alerts = triage.data?.alerts ?? [];
   const urgent = alerts.filter((a) => a.severity === 'urgent');
@@ -73,29 +76,47 @@ export function CycleOverviewView({ data }: { data: CycleOverviewResponse }) {
 
       <section>
         <SectionLabel>Members</SectionLabel>
-        {(() => {
-          const notStarted = new Date(data.cycle.startsAt) > new Date();
-          return notStarted ? (
-            <span
-              className="mb-4 inline-flex items-center gap-2 border border-dashed border-rule px-3 py-1.5 font-mono text-xs uppercase tracking-label text-ink-faint"
-              title="Cycle hasn't started yet"
-            >
-              <Receipt className="h-3.5 w-3.5" strokeWidth={1.5} />
-              Receipt
-            </span>
-          ) : (
-            <Link
-              href={`/admin/cycle/${data.cycle.id}/receipt`}
-              className="group mb-4 inline-flex items-center gap-2 border border-dashed border-rule px-3 py-1.5 font-mono text-xs uppercase tracking-label text-ink-soft hover:border-ink hover:text-ink"
-            >
-              <Receipt className="h-3.5 w-3.5" strokeWidth={1.5} />
-              Receipt
-              <span className="text-ink-faint group-hover:text-ink">→</span>
-            </Link>
-          );
-        })()}
+        <div className="mb-4 flex flex-wrap items-center gap-3">
+          {(() => {
+            const notStarted = new Date(data.cycle.startsAt) > new Date();
+            return notStarted ? (
+              <span
+                className="inline-flex items-center gap-2 border border-dashed border-rule px-3 py-1.5 font-mono text-xs uppercase tracking-label text-ink-faint"
+                title="Cycle hasn't started yet"
+              >
+                <Receipt className="h-3.5 w-3.5" strokeWidth={1.5} />
+                Receipt
+              </span>
+            ) : (
+              <Link
+                href={`/admin/cycle/${data.cycle.id}/receipt`}
+                className="group inline-flex items-center gap-2 border border-dashed border-rule px-3 py-1.5 font-mono text-xs uppercase tracking-label text-ink-soft hover:border-ink hover:text-ink"
+              >
+                <Receipt className="h-3.5 w-3.5" strokeWidth={1.5} />
+                Receipt
+                <span className="text-ink-faint group-hover:text-ink">→</span>
+              </Link>
+            );
+          })()}
+          <button
+            type="button"
+            onClick={() => setRosterOpen(true)}
+            className="group inline-flex items-center gap-2 border border-dashed border-rule px-3 py-1.5 font-mono text-xs uppercase tracking-label text-ink-soft hover:border-ink hover:text-ink"
+          >
+            <UserPlus className="h-3.5 w-3.5" strokeWidth={1.5} />
+            Manage roster
+          </button>
+        </div>
         <CycleMembersGrid members={data.members} />
       </section>
+
+      <ManageRosterModal
+        isOpen={rosterOpen}
+        onClose={() => setRosterOpen(false)}
+        cycleId={data.cycle.id}
+        cycleName={data.cycle.name}
+        members={data.members}
+      />
 
       {/* Left column stacks Engagement ranking → Triage → Heatmap so the
           admin lands on cohort engagement first; Activity is a tall column
