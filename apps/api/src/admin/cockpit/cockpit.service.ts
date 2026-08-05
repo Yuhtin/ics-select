@@ -57,16 +57,43 @@ export class CockpitService {
     }
 
     const cycle = membership.cycle;
-    const cohortIds = (
-      await this.prisma.cycleMembership.findMany({
-        where: { cycleId: cycle.id, NOT: { userId: memberId } },
-        select: { userId: true },
-      })
-    ).map((m) => m.userId);
+
+    // Data scope by range. 'all' spans every cycle the member was ever in;
+    // 'cycle' and '7d' stay on the resolved cycle.
+    //
+    // 'all' deliberately drops cohort comparison and the engagement score.
+    // Both are defined *inside* one cycle — the score is built from cohort
+    // rank, days active vs. days elapsed in the cycle, and retros vs. weeks
+    // in the cycle. Summing those across cycles produces a number with no
+    // meaning, so `engagement` comes back null and the card unmounts.
+    const isAllCycles = range === 'all';
+    const scopedCycleIds = isAllCycles
+      ? (
+          await this.prisma.cycleMembership.findMany({
+            where: { userId: memberId },
+            select: { cycleId: true },
+          })
+        ).map((m) => m.cycleId)
+      : [cycle.id];
+
+    // '7d' narrows what counts as *completed* to the last 7 days while keeping
+    // the cycle's plan as the denominator — "3 done in the last week, of 47
+    // planned for the cycle" is the reading the admin wants.
+    const windowStart =
+      range === '7d' ? new Date(now.getTime() - 7 * DAY_MS) : null;
+
+    const cohortIds = isAllCycles
+      ? []
+      : (
+          await this.prisma.cycleMembership.findMany({
+            where: { cycleId: cycle.id, NOT: { userId: memberId } },
+            select: { userId: true },
+          })
+        ).map((m) => m.userId);
 
     const [plans, retros, classes, lastEvent, recent, topics] = await Promise.all([
       this.prisma.weeklyPlan.findMany({
-        where: { userId: memberId, cycleId: cycle.id },
+        where: { userId: memberId, cycleId: { in: scopedCycleIds } },
         select: {
           id: true,
           weekStart: true,
@@ -85,11 +112,11 @@ export class CockpitService {
         orderBy: { weekStart: 'asc' },
       }),
       this.prisma.weeklyRetro.findMany({
-        where: { userId: memberId, cycleId: cycle.id },
+        where: { userId: memberId, cycleId: { in: scopedCycleIds } },
         orderBy: { submittedAt: 'desc' },
       }),
       this.prisma.classSession.findMany({
-        where: { cycleId: cycle.id },
+        where: { cycleId: { in: scopedCycleIds } },
         orderBy: { scheduledAt: 'asc' },
         include: { attendance: { where: { userId: memberId }, take: 1 } },
       }),
@@ -111,6 +138,20 @@ export class CockpitService {
     const cycleStart = mondayUTC(cycle.startsAt);
     const daysElapsed = Math.max(1, Math.floor((now.getTime() - cycleStart.getTime()) / DAY_MS));
 
+    // Per-week buckets. In 'all' mode the timeline runs from the member's very
+    // first planned week to now — using the resolved cycle's start would drop
+    // every week that happened before it. `plans` is ordered weekStart asc.
+    const firstPlanStart = plans[0]?.weekStart;
+    const bucketStart =
+      isAllCycles && firstPlanStart ? mondayUTC(firstPlanStart) : cycleStart;
+    const bucketWeeks =
+      isAllCycles && firstPlanStart
+        ? Math.max(
+            1,
+            Math.floor((now.getTime() - bucketStart.getTime()) / WEEK_MS) + 1,
+          )
+        : weeksElapsed;
+
     // Compute firstSession: earliest UserEvent within the cycle
     const firstEvent = await this.prisma.userEvent.findFirst({
       where: { userId: memberId, occurredAt: { gte: cycleStart, lte: now } },
@@ -129,9 +170,16 @@ export class CockpitService {
     // each is N rows in `allItems`; dedup to one canonical completion per
     // material (earliest positive) so counts/minutes don't multiply.
     const allItems = plans.flatMap((p) => p.items);
-    const completed = canonicalCompletions(allItems);
+    // canonicalCompletions is already the cross-cycle-safe dedup, so 'all' mode
+    // counts a material carried across cycles once, not once per cycle.
+    const completedInScope = canonicalCompletions(allItems);
+    const completed = windowStart
+      ? completedInScope.filter(
+          (i) => i.completedAt != null && i.completedAt >= windowStart,
+        )
+      : completedInScope;
     const byOutcome = countByOutcome(completed.map((i) => i.outcome));
-    const perWeekItems = bucketPerWeek(plans, weeksElapsed, cycleStart);
+    const perWeekItems = bucketPerWeek(plans, bucketWeeks, bucketStart);
     const needsAttention = {
       total: byOutcome.STUCK + byOutcome.DOUBTS,
       stuck: byOutcome.STUCK,
@@ -156,7 +204,7 @@ export class CockpitService {
     const naoSeiCount = completed.filter(
       (i) => i.actualMinutes === null && (i.scheduledMinutes ?? 0) > 0,
     ).length;
-    const perWeekMinutes = bucketMinutesPerWeek(plans, weeksElapsed, cycleStart);
+    const perWeekMinutes = bucketMinutesPerWeek(plans, bucketWeeks, bucketStart);
 
     // Cohort medians (per-metric SQL — percentile_cont across cohort users)
     const cohortMedians = await this.computeCohortMedians(
@@ -166,12 +214,18 @@ export class CockpitService {
       now,
     );
 
-    // Behavior
-    const daysActive = await this.distinctDaysOfEvents(memberId, cycleStart, now);
+    // Behavior. These use bucketStart/bucketWeeks, not cycleStart/weeksElapsed,
+    // so that in 'all' mode the counters span the same timeline as the per-week
+    // charts instead of silently reporting only the resolved cycle. In 'cycle'
+    // and '7d' the two are the same value, so nothing changes there.
+    const scopeDays = isAllCycles
+      ? Math.max(1, Math.floor((now.getTime() - bucketStart.getTime()) / DAY_MS))
+      : daysElapsed;
+    const daysActive = await this.distinctDaysOfEvents(memberId, bucketStart, now);
     const daysStudying = await this.distinctDaysOfOutcomeMarks(
       memberId,
       cycle.id,
-      cycleStart,
+      bucketStart,
       now,
     );
     // Same definition as engagement-inputs.ts: BRT days with at least one
@@ -183,18 +237,18 @@ export class CockpitService {
       cycleStart,
       now,
     );
-    const sessions = await this.countSessions(memberId, cycleStart, now);
+    const sessions = await this.countSessions(memberId, bucketStart, now);
     const carryOver = allItems.filter((i) => i.carriedFromItemId !== null).length;
 
-    const sessionsPerWeek = await this.sessionsPerWeek(memberId, weeksElapsed, cycleStart);
-    const daysActivePerWeek = await this.daysActivePerWeek(memberId, weeksElapsed, cycleStart);
+    const sessionsPerWeek = await this.sessionsPerWeek(memberId, bucketWeeks, bucketStart);
+    const daysActivePerWeek = await this.daysActivePerWeek(memberId, bucketWeeks, bucketStart);
     const daysStudyingPerWeek = await this.daysStudyingPerWeek(
       memberId,
       cycle.id,
-      weeksElapsed,
-      cycleStart,
+      bucketWeeks,
+      bucketStart,
     );
-    const carryOverPerWeek = bucketCarryPerWeek(plans, weeksElapsed, cycleStart);
+    const carryOverPerWeek = bucketCarryPerWeek(plans, bucketWeeks, bucketStart);
 
     // Null when the member has no events recorded yet (either never used the
     // platform or activity capture only just deployed). classifyRisk and
@@ -204,31 +258,35 @@ export class CockpitService {
       ? Math.floor((now.getTime() - lastEvent.occurredAt.getTime()) / DAY_MS)
       : null;
 
-    const cohortRankPct = await this.cohortRankPct(
-      memberId,
-      cohortIds,
-      cycle.id,
-      daysElapsed,
-    );
+    // Cohort rank and the engagement score are cycle-scoped by construction, so
+    // 'all' skips them rather than emitting a meaningless number. cohortIds is
+    // already [] in that mode, which also short-circuits computeCohortMedians.
+    const cohortRankPct = isAllCycles
+      ? 0
+      : await this.cohortRankPct(memberId, cohortIds, cycle.id, daysElapsed);
     const cohortRankFromBottom = Math.round(cohortRankPct * cohortIds.length);
 
     // Engagement score
-    const engagement = computeEngagementScore({
-      cohortRankFromBottom,
-      cohortSize: cohortIds.length,
-      daysActive: daysCompletedForScore,
-      daysElapsed,
-      itemsDone: completed.length,
-      itemsPlanned: plannedByMaterial.size,
-      retrosSubmitted: retros.length,
-      weeksElapsed,
-      daysSinceLastSession,
-      classesAttended: classes.filter((c) => c.scheduledAt < now && c.attendance[0]?.status === 'PRESENT').length,
-      classesHeld: classes.filter((c) => c.scheduledAt < now).length,
-      cohortMedianItemsPlanned: cohortMedians.itemsPlanned,
-    });
+    const engagement = isAllCycles
+      ? null
+      : computeEngagementScore({
+          cohortRankFromBottom,
+          cohortSize: cohortIds.length,
+          daysActive: daysCompletedForScore,
+          daysElapsed,
+          itemsDone: completed.length,
+          itemsPlanned: plannedByMaterial.size,
+          retrosSubmitted: retros.length,
+          weeksElapsed,
+          daysSinceLastSession,
+          classesAttended: classes.filter((c) => c.scheduledAt < now && c.attendance[0]?.status === 'PRESENT').length,
+          classesHeld: classes.filter((c) => c.scheduledAt < now).length,
+          cohortMedianItemsPlanned: cohortMedians.itemsPlanned,
+        });
 
-    const scoreByWeek = await this.scoreByWeek(memberId, cycle, weeksElapsed, cohortIds, now);
+    const scoreByWeek = isAllCycles
+      ? []
+      : await this.scoreByWeek(memberId, cycle, weeksElapsed, cohortIds, now);
 
     // Risk
     const completionRate =
@@ -261,12 +319,14 @@ export class CockpitService {
       },
       range,
       risk,
-      engagement: {
-        score: engagement.score,
-        cohortMedian: cohortMedians.engagement,
-        breakdown: engagement.breakdown,
-        scoreByWeek,
-      },
+      engagement: engagement
+        ? {
+            score: engagement.score,
+            cohortMedian: cohortMedians.engagement,
+            breakdown: engagement.breakdown,
+            scoreByWeek,
+          }
+        : null,
       itemsCompleted: {
         total: completed.length,
         planned: plannedByMaterial.size,
@@ -286,14 +346,18 @@ export class CockpitService {
       },
       behavior: {
         sessions: { value: sessions, cohortMedian: cohortMedians.sessions, perWeek: sessionsPerWeek },
-        daysActive: { value: daysActive, cycleDays: daysElapsed, cohortMedian: cohortMedians.daysActive, perWeek: daysActivePerWeek },
-        daysStudying: { value: daysStudying, cycleDays: daysElapsed, cohortMedian: cohortMedians.daysStudying, perWeek: daysStudyingPerWeek },
+        daysActive: { value: daysActive, cycleDays: scopeDays, cohortMedian: cohortMedians.daysActive, perWeek: daysActivePerWeek },
+        daysStudying: { value: daysStudying, cycleDays: scopeDays, cohortMedian: cohortMedians.daysStudying, perWeek: daysStudyingPerWeek },
         // expected = number of weeks whose retro window has already closed
         // (= weeksElapsed - 1). The current week's retro doesn't count: window
         // opens Friday and stays submittable until the next Monday, so until
         // the week fully ends there's no opportunity to be "behind". Same
         // divisor used by the engagement score's retro criterion.
-        retros: { submitted: retros.length, expected: Math.max(0, weeksElapsed - 1) },
+        // `submitted` follows the data scope, so `expected` must too — otherwise
+        // 'all' compares retros from every cycle against one cycle's week count
+        // and reports a nonsense surplus. Same -1 as engagement-score: the
+        // current week's retro window is still open, so it isn't yet a miss.
+        retros: { submitted: retros.length, expected: Math.max(0, bucketWeeks - 1) },
         carryOver: { value: carryOver, cohortMedian: cohortMedians.carryOver, perWeek: carryOverPerWeek },
         lastSeen: {
           occurredAt: lastEvent?.occurredAt.toISOString() ?? null,

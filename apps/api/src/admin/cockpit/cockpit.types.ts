@@ -23,12 +23,18 @@ export type CockpitResponse = {
   } | null;
   range: CockpitRange;
   risk: { status: RiskStatus; reasons: string[] };
+  /**
+   * Null when `range === 'all'`. The score and every cohort median it carries
+   * are defined inside a single cycle (cohort rank, days active vs. days
+   * elapsed, retros vs. weeks elapsed); there is no meaningful way to sum them
+   * across cycles, so the card unmounts instead of showing a fabricated number.
+   */
   engagement: {
     score: number;
     cohortMedian: number;
     breakdown: ScoreBreakdownEntry[];
     scoreByWeek: number[];
-  };
+  } | null;
   itemsCompleted: {
     total: number;
     planned: number;
