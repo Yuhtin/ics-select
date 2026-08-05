@@ -6261,6 +6261,108 @@ const ITEMS: ItemSeed[] = [
     tags: ['case-study', 'distributed-tracing', 'coupling', 'big-ball-of-mud', 'codeopinion'],
     topicOrder: { 'observability': 5 },
   },
+  {
+    title: 'Erasure Coding',
+    url: 'https://blog.bytebytego.com/p/erasure-coding',
+    description:
+      'ByteByteGo — erasure coding contra replicação tripla: 11 noves com 50% de overhead versus 6 noves com 200%.',
+    format: 'ARTICLE',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 3,
+    topicSlugs: ['cloud', 'reliability', 'replication'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'Blog — ByteByteGo',
+    tags: ['tradeoffs', 'erasure-coding', 'reed-solomon', 'durability', 'replication', 'bytebytego'],
+    topicOrder: { 'cloud': 9, 'reliability': 6, 'replication': 6 },
+  },
+  {
+    title: 'How Amazon S3 Stores 350 Trillion Objects with 11 Nines of Durability',
+    url: 'https://blog.bytebytego.com/p/how-amazon-s3-stores-350-trillion',
+    description:
+      'ByteByteGo — S3 por dentro: 350+ microserviços, indexação lexicográfica pra evitar hotspot, erasure coding Reed-Solomon, replicação multi-AZ. É de onde saem os 11 noves.',
+    format: 'ARTICLE',
+    difficulty: 'HARD',
+    estimatedMinutes: 18,
+    topicSlugs: ['cloud', 'scalability', 'reliability'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'Blog — ByteByteGo',
+    tags: ['concept', 's3', 'object-storage', 'durability', 'erasure-coding', 'multi-az', 'bytebytego'],
+    topicOrder: { 'cloud': 10, 'scalability': 10, 'reliability': 7 },
+  },
+  {
+    title: 'A Deep Dive into Amazon DynamoDB Architecture',
+    url: 'https://blog.bytebytego.com/p/a-deep-dive-into-amazon-dynamodb',
+    description:
+      'ByteByteGo — como o DynamoDB particiona, replica com multi-Paxos entre AZs, controla throughput com token bucket e lida com hot partitions.',
+    format: 'ARTICLE',
+    difficulty: 'HARD',
+    estimatedMinutes: 18,
+    topicSlugs: ['cloud', 'databases', 'sharding', 'replication'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'Blog — ByteByteGo',
+    tags: ['concept', 'dynamodb', 'partitioning', 'multi-paxos', 'token-bucket', 'hot-partition', 'bytebytego'],
+    topicOrder: { 'cloud': 11, 'databases': 20, 'sharding': 8, 'replication': 7 },
+  },
+  // Amazon Builders' Library. The aws.amazon.com URLs 301 to
+  // builder.aws.com/content/<opaque-hash>/... — we register the old ones on
+  // purpose: they redirect on their own and survive the next migration, which
+  // a hash-based URL would not.
+  {
+    title: 'Timeouts, retries and backoff with jitter',
+    url: 'https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/',
+    description:
+      "Amazon Builders' Library — por que retry sem jitter transforma uma falha pequena em retry storm, e como o backoff exponencial com jitter espalha os picos.",
+    format: 'ARTICLE',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 20,
+    topicSlugs: ['reliability', 'cloud'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: "Article — Amazon Builders' Library",
+    tags: ['concept', 'retry', 'backoff', 'jitter', 'timeout', 'retry-storm', 'aws-builders-library'],
+    topicOrder: { 'reliability': 8, 'cloud': 12 },
+  },
+  {
+    title: 'Workload isolation using shuffle-sharding',
+    url: 'https://aws.amazon.com/builders-library/workload-isolation-using-shuffle-sharding/',
+    description:
+      "Amazon Builders' Library — shuffle sharding dá a cada cliente uma combinação diferente de workers, então a falha de um não derruba todo mundo junto.",
+    format: 'ARTICLE',
+    difficulty: 'HARD',
+    estimatedMinutes: 15,
+    topicSlugs: ['sharding', 'reliability', 'cloud'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: "Article — Amazon Builders' Library",
+    tags: ['concept', 'shuffle-sharding', 'workload-isolation', 'blast-radius', 'multi-tenant', 'aws-builders-library'],
+    topicOrder: { 'sharding': 9, 'reliability': 9, 'cloud': 13 },
+  },
+  {
+    title: 'Minimizing correlated failures in distributed systems',
+    url: 'https://aws.amazon.com/builders-library/minimizing-correlated-failures-in-distributed-systems/',
+    description:
+      "Amazon Builders' Library — o que faz componentes supostamente independentes caírem ao mesmo tempo, e como quebrar essa correlação.",
+    format: 'ARTICLE',
+    difficulty: 'HARD',
+    estimatedMinutes: 20,
+    topicSlugs: ['reliability', 'scalability', 'cloud'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: "Article — Amazon Builders' Library",
+    tags: ['concept', 'correlated-failure', 'blast-radius', 'cell-based-architecture', 'aws-builders-library'],
+    topicOrder: { 'reliability': 10, 'cloud': 14 },
+  },
+  {
+    title: 'Making retries safe with idempotent APIs',
+    url: 'https://aws.amazon.com/builders-library/making-retries-safe-with-idempotent-APIs/',
+    description:
+      "Amazon Builders' Library — retry só é seguro se a API for idempotente. Como desenhar token de idempotência e o que acontece quando a mesma request chega duas vezes.",
+    format: 'ARTICLE',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 15,
+    topicSlugs: ['idempotency', 'reliability', 'cloud'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: "Article — Amazon Builders' Library",
+    tags: ['concept', 'idempotency', 'idempotency-token', 'retry', 'exactly-once', 'aws-builders-library'],
+    topicOrder: { 'idempotency': 1, 'reliability': 11, 'cloud': 15 },
+  },
 ];
 
 // -----------------------------------------------------------------------------
