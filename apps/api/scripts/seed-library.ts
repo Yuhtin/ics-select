@@ -6409,6 +6409,84 @@ const ITEMS: ItemSeed[] = [
     tags: ['practice', 'aws', 'hands-on', 'iam', 'ec2', 'tech-with-soleyman'],
     topicOrder: { 'cloud': 18 },
   },
+  // Career guides. Approved per video, never per channel (see SKILL.md): each
+  // path lives on a different niche channel and none of these enter the
+  // whitelist — the `career-oneoff` tag keeps that greppable.
+  //
+  // tracks: [] on all of them, deliberately. A career guide exists to show a
+  // member a path they had not considered; routing "solutions engineer" only
+  // to CONSULTING_TECH would hide it from exactly the person who needs to
+  // discover it.
+  {
+    title: 'What is a Back End Software Engineer?',
+    url: 'https://www.youtube.com/watch?v=U_LEBXQ2KqY',
+    description:
+      'Cadams Tech — o que um back end engineer faz de fato, em 6min: responsabilidades, stack e onde termina o front.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 6,
+    topicSlugs: ['foundations'],
+    tracks: [],
+    source: 'YouTube — Cadams Tech',
+    tags: ['career', 'career-oneoff', 'backend', 'cadams-tech'],
+    topicOrder: { 'foundations': 14 },
+  },
+  {
+    title: 'What Does A Solutions Engineer Actually Do?',
+    url: 'https://www.youtube.com/watch?v=OcfslMVcgwo',
+    description:
+      'Seraphine Young — solutions engineer é a ponte entre o time técnico e o cliente. O vídeo mostra como o papel se separa de engenharia de software.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 10,
+    topicSlugs: ['foundations'],
+    tracks: [],
+    source: 'YouTube — Seraphine Young',
+    tags: ['career', 'career-oneoff', 'solutions-engineer', 'pre-sales', 'seraphine-young'],
+    topicOrder: { 'foundations': 15 },
+  },
+  {
+    title: 'Who A Blockchain Developer REALLY Is? Revealing the Myths',
+    url: 'https://www.youtube.com/watch?v=iYFSiEDl_qg',
+    description:
+      'Jelvix — quais mitos sobre blockchain developer não se sustentam, e o que sobra do papel depois que você tira eles.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 6,
+    topicSlugs: ['foundations'],
+    tracks: [],
+    source: 'YouTube — Jelvix',
+    tags: ['career', 'career-oneoff', 'blockchain', 'web3', 'jelvix'],
+    topicOrder: { 'foundations': 16 },
+  },
+  {
+    title: 'So You Want To Be A Security Engineer',
+    url: 'https://www.youtube.com/watch?v=6cmZMpTssdo',
+    description:
+      'A Cloud Guru — por onde alguém entra em security engineering e o que a rotina do papel exige.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 9,
+    topicSlugs: ['foundations', 'security'],
+    tracks: [],
+    source: 'YouTube — A Cloud Guru',
+    tags: ['career', 'career-oneoff', 'security-engineer', 'cybersecurity', 'a-cloud-guru'],
+    topicOrder: { 'foundations': 17, 'security': 15 },
+  },
+  {
+    title: 'Red vs Blue vs Purple Team Explained for Beginners!',
+    url: 'https://www.youtube.com/watch?v=qFp1h9Etldo',
+    description:
+      'LabCyber — red, blue e purple team lado a lado: o que cada um ataca, defende ou costura entre os dois.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 7,
+    topicSlugs: ['foundations', 'security'],
+    tracks: [],
+    source: 'YouTube — LabCyber',
+    tags: ['career', 'career-oneoff', 'red-team', 'blue-team', 'purple-team', 'labcyber'],
+    topicOrder: { 'foundations': 18, 'security': 16 },
+  },
 ];
 
 // -----------------------------------------------------------------------------
