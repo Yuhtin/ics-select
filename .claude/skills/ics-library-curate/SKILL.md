@@ -147,6 +147,17 @@ All three topics' completion % will include this item. The admin finds it under 
 
 This **supersedes** the older blanket rule that career videos never enter the acervo. That rule came from filtering Renato Augusto's soft-skills output and still holds for its original target: pure motivational/soft-skills/Q&A content ("síndrome do impostor", "como ser arquiteto", vlogs) stays out. The line is whether the video explains *what the work is* — that is `career` — versus *how to feel about the work*, which is still noise.
 
+### `career` is approved PER VIDEO, never per channel
+
+Davi 2026-08-05: "eu vou precisar de uma leva nova de canais especificos pra cada video, entao nao vou aprovar canais, apenas alguns videos deles".
+
+The approved-channels whitelist **does not gate `career` items**. Each career path lives on a different niche channel, and Davi does not want those channels catalogued generously — he wants the single video. So:
+
+- **Search freely, outside the whitelist**, when hunting `career` content. A channel appearing here does NOT enter the whitelist and must NOT be used for `concept`/`tradeoffs`/`practice`/`case-study` items later.
+- **Propose every career item individually** with channel + exact duration, and let Davi approve one by one. Same shape as the KodeKloud precedent: the item is approved, the channel is not.
+- **Quality bar still applies.** No screencast/IDE-typing, no explicitly rejected channels (Michael Sambol, Gaurav Sen, Jordan has no life, Fabio Akita, IBM Technology, Tushar Roy), and the indian-educational-style heuristic still means presume-reject.
+- When appending, add the tag `career-oneoff` alongside `career` so these items stay greppable as "approved as a one-off, channel not whitelisted".
+
 After the kind tag, add free-form tags: technologies (`redis`, `postgres`, `kafka`), sources (`fireship`, `bytebytego`), concept names (`cache-aside`, `mvcc`, `mvcc`).
 
 **Example (single-topic item)**:
