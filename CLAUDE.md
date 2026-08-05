@@ -76,7 +76,9 @@ docker compose up -d postgres                 # pgvector/pgvector:pg16 on :5432
 **Env file convention:**
 
 - `apps/api/.env` → **LOCAL DEV** (Docker compose Postgres on `localhost:5432`). Safe to use as the default for `prisma migrate dev`, ad-hoc `seed:library` runs against local data, etc.
-- `apps/api/.env.production` → **PRODUCTION** (`212.38.89.33:5433`). **Never source this file or pass it to any Prisma command from your laptop without an explicit per-command go-ahead from the user.** It exists so the deploy pipeline / recovery scripts can pick it up intentionally, not so commands accidentally read prod credentials.
+- `apps/api/.env.production` → **PRODUCTION** (`100.126.22.62:5433` — the VPS's **Tailscale** address). **Never source this file or pass it to any Prisma command from your laptop without an explicit per-command go-ahead from the user.** It exists so the deploy pipeline / recovery scripts can pick it up intentionally, not so commands accidentally read prod credentials.
+
+  **Reaching it requires `tailscale up` on your side.** Since 2026-08-05 the public IP (`212.38.89.33:5433`) is dropped by a `DOCKER-USER` rule, persisted by the `pg-tailnet-only.service` systemd unit on the VPS. Two dead ends that look like outages but aren't: the hostname `shrek2.brinv.com.br` is proxied by Cloudflare, which only forwards a fixed list of HTTP/HTTPS ports and will never carry raw Postgres on *any* port; and port `8293`, which appears in old connection strings, has nothing listening on it and never did. A timeout on either means you are on the wrong path, not that the DB is down.
 
 The prod DB is **not baselined** with `_prisma_migrations`, so `prisma migrate dev` against it hits P3005 and offers to **reset the database**. Confirming that prompt drops every table. This has happened. Don't repeat it.
 
@@ -92,7 +94,7 @@ The prod DB is **not baselined** with `_prisma_migrations`, so `prisma migrate d
 
 **Hard rules for AI assistants (Claude or otherwise) operating in this repo:**
 
-1. Before running anything that touches a database, confirm which env file is being sourced (`.env` = local OK, `.env.production` = stop-and-ask). If the resolved `DATABASE_URL` points at `212.38.89.33` or any other non-localhost host, **stop and ask** — even for read-only queries, even for "small" migrations, even when retrying a failure.
+1. Before running anything that touches a database, confirm which env file is being sourced (`.env` = local OK, `.env.production` = stop-and-ask). If the resolved `DATABASE_URL` points at **any host that is not `localhost`** — today that means `100.126.22.62`, previously `212.38.89.33` — **stop and ask**. Even for read-only queries, even for "small" migrations, even when retrying a failure. The test is "not localhost", not "matches this specific IP": the prod host has already moved once and the rule must survive the next move.
 2. Never confirm an interactive `prisma migrate dev` / `migrate reset` reset prompt without the user's explicit go-ahead for that prompt. Treat any P3005 against prod as a hard stop.
 3. Subagents implementing plan tasks must inherit this rule via their prompt; pass an explicit "do not run destructive DB commands; if a step appears to require one, escalate." constraint.
 4. Production-data write operations (seed scripts, recovery imports, schema fixes) should always be shown to the user as a dry preview (or at least a one-line summary of what's about to change) **before** execution. The user OKs each one separately.
