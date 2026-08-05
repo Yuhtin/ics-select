@@ -6261,6 +6261,154 @@ const ITEMS: ItemSeed[] = [
     tags: ['case-study', 'distributed-tracing', 'coupling', 'big-ball-of-mud', 'codeopinion'],
     topicOrder: { 'observability': 5 },
   },
+  {
+    title: 'Erasure Coding',
+    url: 'https://blog.bytebytego.com/p/erasure-coding',
+    description:
+      'ByteByteGo — erasure coding contra replicação tripla: 11 noves com 50% de overhead versus 6 noves com 200%.',
+    format: 'ARTICLE',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 3,
+    topicSlugs: ['cloud', 'reliability', 'replication'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'Blog — ByteByteGo',
+    tags: ['tradeoffs', 'erasure-coding', 'reed-solomon', 'durability', 'replication', 'bytebytego'],
+    topicOrder: { 'cloud': 9, 'reliability': 6, 'replication': 6 },
+  },
+  {
+    title: 'How Amazon S3 Stores 350 Trillion Objects with 11 Nines of Durability',
+    url: 'https://blog.bytebytego.com/p/how-amazon-s3-stores-350-trillion',
+    description:
+      'ByteByteGo — S3 por dentro: 350+ microserviços, indexação lexicográfica pra evitar hotspot, erasure coding Reed-Solomon, replicação multi-AZ. É de onde saem os 11 noves.',
+    format: 'ARTICLE',
+    difficulty: 'HARD',
+    estimatedMinutes: 18,
+    topicSlugs: ['cloud', 'scalability', 'reliability'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'Blog — ByteByteGo',
+    tags: ['concept', 's3', 'object-storage', 'durability', 'erasure-coding', 'multi-az', 'bytebytego'],
+    topicOrder: { 'cloud': 10, 'scalability': 10, 'reliability': 7 },
+  },
+  {
+    title: 'A Deep Dive into Amazon DynamoDB Architecture',
+    url: 'https://blog.bytebytego.com/p/a-deep-dive-into-amazon-dynamodb',
+    description:
+      'ByteByteGo — como o DynamoDB particiona, replica com multi-Paxos entre AZs, controla throughput com token bucket e lida com hot partitions.',
+    format: 'ARTICLE',
+    difficulty: 'HARD',
+    estimatedMinutes: 18,
+    topicSlugs: ['cloud', 'databases', 'sharding', 'replication'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'Blog — ByteByteGo',
+    tags: ['concept', 'dynamodb', 'partitioning', 'multi-paxos', 'token-bucket', 'hot-partition', 'bytebytego'],
+    topicOrder: { 'cloud': 11, 'databases': 20, 'sharding': 8, 'replication': 7 },
+  },
+  // Amazon Builders' Library. The aws.amazon.com URLs 301 to
+  // builder.aws.com/content/<opaque-hash>/... — we register the old ones on
+  // purpose: they redirect on their own and survive the next migration, which
+  // a hash-based URL would not.
+  {
+    title: 'Timeouts, retries and backoff with jitter',
+    url: 'https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/',
+    description:
+      "Amazon Builders' Library — por que retry sem jitter transforma uma falha pequena em retry storm, e como o backoff exponencial com jitter espalha os picos.",
+    format: 'ARTICLE',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 20,
+    topicSlugs: ['reliability', 'cloud'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: "Article — Amazon Builders' Library",
+    tags: ['concept', 'retry', 'backoff', 'jitter', 'timeout', 'retry-storm', 'aws-builders-library'],
+    topicOrder: { 'reliability': 8, 'cloud': 12 },
+  },
+  {
+    title: 'Workload isolation using shuffle-sharding',
+    url: 'https://aws.amazon.com/builders-library/workload-isolation-using-shuffle-sharding/',
+    description:
+      "Amazon Builders' Library — shuffle sharding dá a cada cliente uma combinação diferente de workers, então a falha de um não derruba todo mundo junto.",
+    format: 'ARTICLE',
+    difficulty: 'HARD',
+    estimatedMinutes: 15,
+    topicSlugs: ['sharding', 'reliability', 'cloud'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: "Article — Amazon Builders' Library",
+    tags: ['concept', 'shuffle-sharding', 'workload-isolation', 'blast-radius', 'multi-tenant', 'aws-builders-library'],
+    topicOrder: { 'sharding': 9, 'reliability': 9, 'cloud': 13 },
+  },
+  {
+    title: 'Minimizing correlated failures in distributed systems',
+    url: 'https://aws.amazon.com/builders-library/minimizing-correlated-failures-in-distributed-systems/',
+    description:
+      "Amazon Builders' Library — o que faz componentes supostamente independentes caírem ao mesmo tempo, e como quebrar essa correlação.",
+    format: 'ARTICLE',
+    difficulty: 'HARD',
+    estimatedMinutes: 20,
+    topicSlugs: ['reliability', 'scalability', 'cloud'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: "Article — Amazon Builders' Library",
+    tags: ['concept', 'correlated-failure', 'blast-radius', 'cell-based-architecture', 'aws-builders-library'],
+    topicOrder: { 'reliability': 10, 'cloud': 14 },
+  },
+  {
+    title: 'Making retries safe with idempotent APIs',
+    url: 'https://aws.amazon.com/builders-library/making-retries-safe-with-idempotent-APIs/',
+    description:
+      "Amazon Builders' Library — retry só é seguro se a API for idempotente. Como desenhar token de idempotência e o que acontece quando a mesma request chega duas vezes.",
+    format: 'ARTICLE',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 15,
+    topicSlugs: ['idempotency', 'reliability', 'cloud'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: "Article — Amazon Builders' Library",
+    tags: ['concept', 'idempotency', 'idempotency-token', 'retry', 'exactly-once', 'aws-builders-library'],
+    topicOrder: { 'idempotency': 1, 'reliability': 11, 'cloud': 15 },
+  },
+  {
+    title: 'Cloud Computing Explained: The Most Important Concepts To Know',
+    url: 'https://www.youtube.com/watch?v=ZaA0kNm18pE',
+    description:
+      'Be A Better Dev — 46min de whiteboard cobrindo scaling, load balancing, autoscaling, serverless, event-driven, orquestração de containers, storage, availability, durability, IaC e redes.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 46,
+    // Covers stop at scalability + reliability on purpose. The video touches 11
+    // themes in 46min, so tagging container orchestration or pub/sub as covers
+    // would raise those topics' completion off ~4min of material and mislead
+    // the planner into thinking the member already studied them.
+    topicSlugs: ['cloud', 'scalability', 'reliability'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Be A Better Dev',
+    tags: ['concept', 'autoscaling', 'serverless', 'availability', 'durability', 'iac', 'whiteboard', 'be-a-better-dev'],
+    topicOrder: { 'cloud': 16, 'scalability': 11, 'reliability': 12 },
+  },
+  {
+    title: 'What Does a Cloud Engineer ACTUALLY Do?',
+    url: 'https://www.youtube.com/watch?v=kriafQfqGZE',
+    description:
+      'Tech With Soleyman — o que um cloud engineer faz no dia a dia e como o papel se separa de DevOps e solutions architect.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 12,
+    topicSlugs: ['foundations', 'cloud'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Tech With Soleyman',
+    tags: ['career', 'cloud-engineer', 'devops', 'solutions-architect', 'tech-with-soleyman'],
+    topicOrder: { 'foundations': 13, 'cloud': 17 },
+  },
+  {
+    title: 'AWS Cloud Engineer Full Course For Beginners (2026)',
+    url: 'https://www.youtube.com/watch?v=ewNuSlRdZfw',
+    description:
+      'Tech With Soleyman — curso introdutório de AWS na prática, do zero. São 72min, então não cabe em uma sessão só.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 72,
+    topicSlugs: ['cloud'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Tech With Soleyman',
+    tags: ['practice', 'aws', 'hands-on', 'iam', 'ec2', 'tech-with-soleyman'],
+    topicOrder: { 'cloud': 18 },
+  },
 ];
 
 // -----------------------------------------------------------------------------

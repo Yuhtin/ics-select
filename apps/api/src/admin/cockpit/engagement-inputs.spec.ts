@@ -109,6 +109,51 @@ describe('computeEngagementInputsForCohort', () => {
     expect(result.get('u-top')!.cohortRankFromBottom).toBe(2);
   });
 
+  it('gives tied members the same rank instead of an arbitrary spread', async () => {
+    // The state of a cycle that has not started: nobody has done anything.
+    // Sequential indices used to hand these four ranks 0/1/2/3, which is the
+    // full 0-20 cohort spread between members who did identical work.
+    const prisma = makePrisma([
+      { userId: 'u-a', daysActive: 0, itemsDone: 0, itemsPlanned: 0, retrosSubmitted: 0, daysSinceLastSession: null },
+      { userId: 'u-b', daysActive: 0, itemsDone: 0, itemsPlanned: 0, retrosSubmitted: 0, daysSinceLastSession: null },
+      { userId: 'u-c', daysActive: 0, itemsDone: 0, itemsPlanned: 0, retrosSubmitted: 0, daysSinceLastSession: null },
+      { userId: 'u-d', daysActive: 0, itemsDone: 0, itemsPlanned: 0, retrosSubmitted: 0, daysSinceLastSession: null },
+    ]);
+    const result = await computeEngagementInputsForCohort(
+      prisma as any,
+      ['u-a', 'u-b', 'u-c', 'u-d'],
+      'cycle-1',
+      CYCLE_START,
+      NOW,
+    );
+    const ranks = ['u-a', 'u-b', 'u-c', 'u-d'].map(
+      (id) => result.get(id)!.cohortRankFromBottom,
+    );
+    expect(new Set(ranks).size).toBe(1);
+  });
+
+  it('ties inside a partially-ranked cohort share a rank without shifting the others', async () => {
+    const prisma = makePrisma([
+      { userId: 'u-bottom', daysActive: 1, itemsDone: 1, itemsPlanned: 5, retrosSubmitted: 0, daysSinceLastSession: 1 },
+      { userId: 'u-tie-1',  daysActive: 1, itemsDone: 4, itemsPlanned: 5, retrosSubmitted: 0, daysSinceLastSession: 1 },
+      { userId: 'u-tie-2',  daysActive: 1, itemsDone: 4, itemsPlanned: 5, retrosSubmitted: 0, daysSinceLastSession: 1 },
+      { userId: 'u-topmost', daysActive: 1, itemsDone: 9, itemsPlanned: 9, retrosSubmitted: 0, daysSinceLastSession: 1 },
+    ]);
+    const result = await computeEngagementInputsForCohort(
+      prisma as any,
+      ['u-bottom', 'u-tie-1', 'u-tie-2', 'u-topmost'],
+      'cycle-1',
+      CYCLE_START,
+      NOW,
+    );
+    expect(result.get('u-bottom')!.cohortRankFromBottom).toBe(0);
+    // Positions 1 and 2 averaged.
+    expect(result.get('u-tie-1')!.cohortRankFromBottom).toBe(1.5);
+    expect(result.get('u-tie-2')!.cohortRankFromBottom).toBe(1.5);
+    // The top member keeps the highest rank; ties must not push it down.
+    expect(result.get('u-topmost')!.cohortRankFromBottom).toBe(3);
+  });
+
   it('computes cohortMedianItemsPlanned across cohort', async () => {
     const prisma = makePrisma([
       { userId: 'u-a', daysActive: 1, itemsDone: 1, itemsPlanned: 4, retrosSubmitted: 0, daysSinceLastSession: 1 },

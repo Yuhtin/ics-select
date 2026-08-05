@@ -79,10 +79,17 @@ export async function computeEngagementInputsForCohort(
        GROUP BY "userId"
      ) retro ON retro."userId" = u."userId"
      LEFT JOIN (
+       -- Scoped to the cycle window like every other join here. Without the
+       -- lower bound this picked up the member's last event from ANY era, so
+       -- before a cycle starts whoever merely opened the site scored the full
+       -- 12 recency points while everyone else sat at 0 — measuring curiosity,
+       -- not engagement. No rows in range yields NULL, which scores 0 for
+       -- everyone equally.
        SELECT "userId",
               FLOOR(EXTRACT(EPOCH FROM ($3 - MAX("occurredAt"))) / 86400)::int AS "daysSinceLastSession"
        FROM "UserEvent"
        WHERE "userId" = ANY($1::text[])
+         AND "occurredAt" BETWEEN $2 AND $3
        GROUP BY "userId"
      ) last_ev ON last_ev."userId" = u."userId"
      LEFT JOIN (
@@ -112,8 +119,24 @@ export async function computeEngagementInputsForCohort(
   const sortedByDone = [...rows]
     .map((r) => ({ userId: r.userId, itemsDone: Number(r.itemsDone) }))
     .sort((a, b) => a.itemsDone - b.itemsDone);
+  // Tied members share the average of the positions their group spans, instead
+  // of taking sequential indices. Sequential indices hand out the full 0–20
+  // cohort spread to people who did identical work: before a cycle starts,
+  // when every member is at itemsDone=0, that arbitrary spread IS the entire
+  // ranking. Averaging makes an all-tied cohort land on one shared score.
   const rankIndex = new Map<string, number>();
-  sortedByDone.forEach((r, idx) => rankIndex.set(r.userId, idx));
+  for (let i = 0; i < sortedByDone.length; ) {
+    let j = i;
+    while (
+      j + 1 < sortedByDone.length &&
+      sortedByDone[j + 1]!.itemsDone === sortedByDone[i]!.itemsDone
+    ) {
+      j++;
+    }
+    const sharedRank = (i + j) / 2;
+    for (let k = i; k <= j; k++) rankIndex.set(sortedByDone[k]!.userId, sharedRank);
+    i = j + 1;
+  }
 
   const plannedSorted = rows.map((r) => Number(r.itemsPlanned)).sort((a, b) => a - b);
   let cohortMedianItemsPlanned = 0;
