@@ -6363,6 +6363,52 @@ const ITEMS: ItemSeed[] = [
     tags: ['concept', 'idempotency', 'idempotency-token', 'retry', 'exactly-once', 'aws-builders-library'],
     topicOrder: { 'idempotency': 1, 'reliability': 11, 'cloud': 15 },
   },
+  {
+    title: 'Cloud Computing Explained: The Most Important Concepts To Know',
+    url: 'https://www.youtube.com/watch?v=ZaA0kNm18pE',
+    description:
+      'Be A Better Dev — 46min de whiteboard cobrindo scaling, load balancing, autoscaling, serverless, event-driven, orquestração de containers, storage, availability, durability, IaC e redes.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 46,
+    // Covers stop at scalability + reliability on purpose. The video touches 11
+    // themes in 46min, so tagging container orchestration or pub/sub as covers
+    // would raise those topics' completion off ~4min of material and mislead
+    // the planner into thinking the member already studied them.
+    topicSlugs: ['cloud', 'scalability', 'reliability'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Be A Better Dev',
+    tags: ['concept', 'autoscaling', 'serverless', 'availability', 'durability', 'iac', 'whiteboard', 'be-a-better-dev'],
+    topicOrder: { 'cloud': 16, 'scalability': 11, 'reliability': 12 },
+  },
+  {
+    title: 'What Does a Cloud Engineer ACTUALLY Do?',
+    url: 'https://www.youtube.com/watch?v=kriafQfqGZE',
+    description:
+      'Tech With Soleyman — o que um cloud engineer faz no dia a dia e como o papel se separa de DevOps e solutions architect.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 12,
+    topicSlugs: ['foundations', 'cloud'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Tech With Soleyman',
+    tags: ['career', 'cloud-engineer', 'devops', 'solutions-architect', 'tech-with-soleyman'],
+    topicOrder: { 'foundations': 13, 'cloud': 17 },
+  },
+  {
+    title: 'AWS Cloud Engineer Full Course For Beginners (2026)',
+    url: 'https://www.youtube.com/watch?v=ewNuSlRdZfw',
+    description:
+      'Tech With Soleyman — curso introdutório de AWS na prática, do zero. São 72min, então não cabe em uma sessão só.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 72,
+    topicSlugs: ['cloud'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Tech With Soleyman',
+    tags: ['practice', 'aws', 'hands-on', 'iam', 'ec2', 'tech-with-soleyman'],
+    topicOrder: { 'cloud': 18 },
+  },
 ];
 
 // -----------------------------------------------------------------------------

@@ -141,6 +141,11 @@ All three topics' completion % will include this item. The admin finds it under 
 | `tradeoffs` | Comparison content (A vs B, "when to pick") |
 | `practice` | Hands-on with a specific tool/service |
 | `case-study` | Full system design walkthrough |
+| `career` | What a role actually does, how a career path works, what to study for it |
+
+**`career` (added 2026-08-05).** Davi: "vamos criar um kind de career, acho importante ter video de guia de carreira". Career-guide content is now **in scope**, not filtered out — it just has to be tagged `career` so the admin can find it (and exclude it) as a group. Typical home is `foundations`, which the memory already defines as "panorama de carreira/why-CS", with the domain topic as a cover (e.g. a cloud-engineer guide is `['foundations', 'cloud']`). Targets Davi named: backend engineer, solutions engineer, red team / blue team, blockchain.
+
+This **supersedes** the older blanket rule that career videos never enter the acervo. That rule came from filtering Renato Augusto's soft-skills output and still holds for its original target: pure motivational/soft-skills/Q&A content ("síndrome do impostor", "como ser arquiteto", vlogs) stays out. The line is whether the video explains *what the work is* — that is `career` — versus *how to feel about the work*, which is still noise.
 
 After the kind tag, add free-form tags: technologies (`redis`, `postgres`, `kafka`), sources (`fireship`, `bytebytego`), concept names (`cache-aside`, `mvcc`, `mvcc`).
 
@@ -265,7 +270,7 @@ One sentence: `Channel — what's in it`. Optionally a second short sentence wit
 - ❌ About to write directly to the DB via Prisma client or REST API → STOP. Only the seed script inserts items.
 - ❌ About to cadastrar a whole book as one item → STOP. Break into chapters.
 - ❌ About to insert before user approves → STOP. Present the table, wait for "aprovo".
-- ❌ Item has no kind tag (one of `concept`/`tradeoffs`/`practice`/`case-study`) → STOP. Add one.
+- ❌ Item has no kind tag (one of `concept`/`tradeoffs`/`practice`/`case-study`/`career`) → STOP. Add one.
 - ❌ About to create a `<topic>-tradeoffs` or `<topic>-practice` topic → STOP. Use a tag, not a new topic. See "Tag vocabulary" section.
 - ❌ Filipe Deschamps video is mostly him typing in VSCode → STOP. Only architecture-heavy videos from him.
 - ❌ Description contains "entry point", "canônica", "essencial", "masterclass", "complementa o vídeo X", "pair natural com Y", "cross-topic: primary=...", or any other curation meta / promotional phrase → STOP. Run it through the `humanizer` skill first. See "Writing item descriptions" above.
