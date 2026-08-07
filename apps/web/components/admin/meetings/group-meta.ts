@@ -202,4 +202,28 @@ export const GROUP_META: Record<NodeGroup, GroupVisual> = {
     stripeClass: 'bg-warn',
     tintClass: 'bg-warn-soft/40',
   },
+  rpc: {
+    label: 'O nó e o protocolo',
+    eyebrow: 'RPC',
+    accentClass: 'text-warn',
+    ringClass: 'bg-warn',
+    stripeClass: 'bg-warn',
+    tintClass: 'bg-warn-soft/40',
+  },
+  live: {
+    label: 'A conexão viva',
+    eyebrow: 'WebSocket',
+    accentClass: 'text-primary',
+    ringClass: 'bg-primary',
+    stripeClass: 'bg-primary',
+    tintClass: 'bg-primary-soft/40',
+  },
+  panel: {
+    label: 'Do dado ao painel',
+    eyebrow: 'SSE',
+    accentClass: 'text-reflect',
+    ringClass: 'bg-reflect',
+    stripeClass: 'bg-reflect',
+    tintClass: 'bg-reflect-soft/40',
+  },
 };

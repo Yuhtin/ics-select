@@ -22,7 +22,10 @@ export type NodeGroup =
   | 'dispatch'
   | 'stream'
   | 'smooth'
-  | 'fanout';
+  | 'fanout'
+  | 'rpc'
+  | 'live'
+  | 'panel';
 
 export type Asker = {
   name: string;

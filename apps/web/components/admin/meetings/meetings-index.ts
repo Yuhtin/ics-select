@@ -7,6 +7,7 @@ import { minecraftEventDriven } from './lessons/minecraft-event-driven';
 import { ledgerFinanceiro } from './lessons/ledger-financeiro';
 import { motoristaMaisPerto } from './lessons/motorista-mais-perto';
 import { mapaTempoReal } from './lessons/mapa-tempo-real';
+import { websocketRpcBlockchain } from './lessons/websocket-rpc-blockchain';
 
 const LESSONS: Record<string, Lesson> = {
   [urlShortener.slug]: urlShortener,
@@ -17,6 +18,7 @@ const LESSONS: Record<string, Lesson> = {
   [ledgerFinanceiro.slug]: ledgerFinanceiro,
   [motoristaMaisPerto.slug]: motoristaMaisPerto,
   [mapaTempoReal.slug]: mapaTempoReal,
+  [websocketRpcBlockchain.slug]: websocketRpcBlockchain,
 };
 
 export function getLesson(slug: string): Lesson | undefined {
