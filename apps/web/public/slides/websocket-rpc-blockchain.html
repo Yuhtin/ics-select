@@ -3,25 +3,24 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>WebSocket e RPC: do nó ao pixel</title>
+<title>WebSocket e RPC: do node ao pixel</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com" rel="preconnect" />
 <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
 <style>
   /* ── Kraken design language (awesome-design-md/kraken) ──
-     The STRUCTURE is the thing the class teaches them to build: a live panel.
-     A persistent connection strip runs across the top (wss status + block number
-     + base fee) and it TICKS as you advance slides, so the deck chrome is itself
-     the streaming dashboard. A watchlist rail on the left holds the sections.
-     The main content sits in a framed white panel with a micro uppercase header.
-     Light system on purpose (every other ICS deck is dark, and white projects
-     better in a classroom). Kraken-Brand -> IBM Plex Sans 700 negative-tracked,
-     Kraken-Product -> IBM Plex Sans, numerals -> IBM Plex Mono.
+     The connection strip + watchlist rail open the deck (slide 1) so the
+     audience sees the panel they are about to build, then the chrome gets
+     out of the way: every content slide after that is a full-bleed framed
+     panel with a micro header carrying only kicker, section and position.
+     Light system on purpose (every other ICS deck is dark, and white
+     projects better in a classroom). Kraken-Brand -> IBM Plex Sans 700
+     negative-tracked, Kraken-Product -> IBM Plex Sans, numerals -> Mono.
      Rules honored: 12px max radius on control-shaped elements (no pills),
      whisper-level shadows only, purple is the ONLY brand accent, green is
-     semantic (live/positive), no red in the system so "errado" reads as
-     muted gray with a dashed edge. */
+     semantic (live/positive), and since the system has no red, "errado"
+     reads as muted gray with a dashed edge. */
   :root {
     --canvas: #f4f4f7;
     --panel: #ffffff;
@@ -62,6 +61,19 @@
   .cm { color: var(--faint); }
   .hl { background: var(--purple-soft); border-radius: 3px; padding: 0 3px; }
 
+  /* Desktop advances with the keyboard or these two buttons. Tapping anywhere
+     only advances on touch devices, so a mouse user can select text freely. */
+  #nav { position: fixed; right: 20px; bottom: 18px; display: flex; gap: 8px; z-index: 50; }
+  #nav button {
+    width: 34px; height: 34px; border-radius: 10px; border: 1px solid var(--line);
+    background: var(--panel); color: var(--muted); cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: var(--shadow-micro); font-size: 15px; line-height: 1; padding: 0;
+  }
+  #nav button:hover { color: var(--purple); border-color: var(--purple); }
+  #nav span { align-self: center; margin-right: 4px; color: var(--faint); font-size: 12px; }
+  @media (pointer: coarse) { #nav { display: none; } }
+
   @keyframes slideUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
   @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
@@ -81,6 +93,7 @@
     @page { size: 1600px 900px; margin: 0; }
     html, body { overflow: visible !important; height: auto !important; background: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     #deck { overflow: visible !important; height: auto !important; width: auto !important; display: block !important; }
+    #nav { display: none !important; }
     .slide { display: flex !important; width: 1600px !important; height: 900px !important; min-height: 900px !important; max-height: 900px !important; page-break-after: always !important; break-after: page !important; break-inside: avoid !important; animation: none !important; }
     .slide:last-child { page-break-after: avoid !important; break-after: avoid !important; }
     .slide *, .slide *::before, .slide *::after { animation: none !important; transition: none !important; }
@@ -90,13 +103,14 @@
 <body>
 
 <div id="deck"></div>
+<div id="nav"><span class="mono" id="navpos"></span><button id="prev" aria-label="Slide anterior">&#8592;</button><button id="next" aria-label="Próximo slide">&#8594;</button></div>
 
 <script>
 const SECTIONS = [
-  { num: '01', label: 'O nó e o protocolo', beats: [1, 2, 3] },
-  { num: '02', label: 'A conexão viva',     beats: [4, 5] },
-  { num: '03', label: 'Do dado ao painel',  beats: [6, 7, 8] },
-  { num: '04', label: 'Onde isso roda',     beats: [9, 10] },
+  { num: '01', label: 'O node e o protocolo', beats: [1, 2, 3] },
+  { num: '02', label: 'A conexão viva',       beats: [4, 5] },
+  { num: '03', label: 'Do dado ao painel',    beats: [6, 7, 8] },
+  { num: '04', label: 'O desenho completo',   beats: [9] },
 ];
 function sectionOf(beat) { return SECTIONS.find(s => s.beats.includes(beat)); }
 
@@ -105,45 +119,44 @@ const DIAG = '/diagrams/websocket-rpc-blockchain/';
 const SLIDES = [
   { type: 'cover' },
 
-  // ───────── 01 · O nó e o protocolo ─────────
-  { type: 'divider', num: '01', label: 'O nó e o protocolo', meta: '3 faixas · o número que envelhece, o nó RPC, JSON-RPC' },
+  // ───────── 01 · O node e o protocolo ─────────
+  { type: 'divider', num: '01', label: 'O node e o protocolo', meta: '3 faixas · o número que envelhece, o que é um node, e o formato JSON-RPC' },
 
   { type: 'hook', beat: 1, kicker: 'Faixa 01 · O número que envelhece',
-    title: 'Você abre a aba Fees às 15:00:00 e o número está certo. Às 15:00:13 está errado, e ninguém avisou a tela.',
-    sub: 'Diga o que mudou nesses 13 segundos, e o que o navegador teria que fazer pra descobrir sozinho.',
-    tags: ['block time', 'baseFeePerGas', 'polling'] },
-  { type: 'stat', beat: 1, kicker: 'A conta do instinto de perguntar de novo', stats: [
-      ['12 s', 'um bloco novo, relógio fixo'],
-      ['±12,5 %', 'variação máxima do base fee entre blocos'],
-      ['86.400', 'requisições por dia, por aba, com polling de 1s'],
-      ['92 %', 'das respostas são o mesmo número'],
-    ], note: 'Espelho fora de cripto: na Uber, cerca de 80% das requisições do API gateway eram polling que voltava sem novidade.' },
-  { type: 'diagram', beat: 1, kicker: 'Perguntar 12 vezes, ou ser avisado 1', src: DIAG + 'polling-vs-push.png' },
+    title: 'Você abre a aba Fees às 15:00:00 e o número está certo. Às 15:00:13 ele está errado, e ninguém avisou a tela.',
+    sub: 'O que mudou nesses 13 segundos? E o que o navegador teria que fazer pra descobrir isso sozinho?',
+    tags: ['block time', 'base fee', 'polling'] },
+  { type: 'stat', beat: 1, kicker: 'A conta de simplesmente perguntar de novo', stats: [
+      ['12 s', 'é o tempo que o Ethereum leva pra fechar um block novo. O relógio é fixo.'],
+      ['±12,5 %', 'é o quanto o base fee pode variar de um block para o seguinte.'],
+      ['86.400', 'requisições por dia, por aba aberta, se você perguntar de 1 em 1 segundo.'],
+      ['92 %', 'dessas requisições devolvem exatamente o mesmo número da anterior.'],
+    ], note: 'O mesmo problema aparece fora de cripto: a Uber mediu que cerca de 80% das requisições que chegavam no API gateway eram polling, e voltavam sem nenhuma novidade.' },
+  { type: 'diagram', beat: 1, kicker: 'Perguntar doze vezes por block, ou ser avisado uma vez', src: DIAG + 'polling-vs-push.png' },
 
-  { type: 'hook', beat: 2, kicker: 'Faixa 02 · O nó',
-    title: 'Você quer o gás atual do Ethereum e descobre que não existe api.ethereum.org.',
-    sub: 'Diga em quem exatamente seu backend vai bater, e por que aquela máquina sabe a resposta.',
-    tags: ['nó', 'estado', 'mempool', 'chave = cota'] },
-  { type: 'compare', beat: 2, kicker: 'Mesmo nó, dois endereços',
-    left: { tag: 'https', title: 'Pergunta e resposta', mono: 'https://eth-mainnet.g.alchemy.com/v2/CHAVE', points: [
-      'Você pergunta, ele responde, acabou',
-      'Serve pra buscar o passado (um bloco específico)',
-      'Cada pergunta consome cota',
-      'É o que vocês já sabem fazer' ] },
-    right: { tag: 'wss', title: 'Conexão que fica', live: true, mono: 'wss://eth-mainnet.g.alchemy.com/v2/CHAVE', points: [
-      'Abre uma vez e continua aberta',
-      'Serve pra ser avisado do presente',
-      'Uma assinatura, mensagens ilimitadas',
-      'É a faixa 04' ] },
-    projeto: 'O TAP recomenda Alchemy ou Infura. A chave vai em variável de ambiente do backend. Repositório do projeto é público sob MIT, então chave commitada é chave vazada pro mundo.' },
+  { type: 'hook', beat: 2, kicker: 'Faixa 02 · O node',
+    title: 'Você precisa do preço de gas atual do Ethereum, e descobre que não existe uma api.ethereum.org.',
+    sub: 'Qual servidor o seu backend vai chamar? E por que é esse servidor que tem a resposta?',
+    tags: ['node', 'estado', 'mempool', 'API key'] },
+  { type: 'compare', beat: 2, kicker: 'O mesmo node, em dois endereços diferentes',
+    left: { tag: 'https', title: 'Pergunta e resposta', mono: 'https://eth-mainnet.g.alchemy.com/v2/API_KEY', points: [
+      'Você faz uma requisição, o node responde, e a conexão fecha',
+      'Serve pra buscar algo que já aconteceu, como um block específico',
+      'Cada requisição consome um pedaço da sua cota',
+      'É o mesmo modelo que vocês já usam com fetch e axios' ] },
+    right: { tag: 'wss', title: 'Conexão que fica aberta', live: true, mono: 'wss://eth-mainnet.g.alchemy.com/v2/API_KEY', points: [
+      'Você abre a conexão uma vez, e ela continua aberta',
+      'Serve pra ser avisado de algo no momento em que acontece',
+      'Uma assinatura, e as mensagens chegam sem limite',
+      'Vamos abrir uma dessas ao vivo na faixa 04' ] } },
 
   { type: 'hook', beat: 3, kicker: 'Faixa 03 · JSON-RPC',
-    title: 'Rode um curl pedindo o último bloco. Agora mande o MESMO pedido por WebSocket.',
-    sub: 'Diga o que muda entre os dois, e o que fica exatamente igual.',
-    tags: ['json-rpc 2.0', 'method', 'params', 'id'] },
-  { type: 'code', beat: 3, kicker: 'O envelope é idêntico nos dois transportes', file: 'json-rpc.txt',
+    title: 'Rode um curl pedindo o último block. Agora mande exatamente o mesmo pedido por WebSocket.',
+    sub: 'O que muda de um pro outro? E o que continua idêntico nos dois?',
+    tags: ['JSON-RPC 2.0', 'method', 'params', 'id'] },
+  { type: 'code', beat: 3, kicker: 'O mesmo envelope viaja nos dois transportes', file: 'json-rpc.txt',
     code: [
-      "<span class='cm'># O ENVELOPE (JSON-RPC 2.0). Escrito uma vez.</span>",
+      "<span class='cm'># O ENVELOPE. Todo pedido pro node tem esse formato.</span>",
       "{",
       "  <span class='st'>\"jsonrpc\"</span>: <span class='st'>\"2.0\"</span>,",
       "  <span class='st'>\"method\"</span>: <span class='st'>\"eth_blockNumber\"</span>,",
@@ -151,207 +164,193 @@ const SLIDES = [
       "  <span class='st'>\"id\"</span>: 1",
       "}",
       "",
-      "<span class='cm'># CANO A: HTTP</span>",
-      "curl -X POST <span class='kw'>https</span>://...alchemy.com/v2/CHAVE -d @envelope.json",
+      "<span class='cm'># TRANSPORTE A: HTTP</span>",
+      "curl -X POST <span class='kw'>https</span>://...alchemy.com/v2/API_KEY -d @envelope.json",
       "",
-      "<span class='cm'># CANO B: WebSocket</span>",
-      "wscat -c <span class='kw'>wss</span>://...alchemy.com/v2/CHAVE",
-      "&gt; <span class='cm'>(cola o MESMO envelope)</span>",
+      "<span class='cm'># TRANSPORTE B: WebSocket</span>",
+      "wscat -c <span class='kw'>wss</span>://...alchemy.com/v2/API_KEY",
+      "&gt; <span class='cm'>(cola o mesmo envelope aqui)</span>",
       "",
-      "<span class='cm'># A resposta, idêntica nos dois</span>",
+      "<span class='cm'># E a resposta é a mesma nos dois</span>",
       "{<span class='st'>\"jsonrpc\"</span>:<span class='st'>\"2.0\"</span>,<span class='st'>\"id\"</span>:1,<span class='st'>\"result\"</span>:<span class='st'>\"0x1699a32\"</span>}",
     ],
     notes: [
-      ['O formato não é o cano', 'JSON-RPC é o que você escreve. HTTP e WebSocket são por onde você escreve. Trocar o cano não muda uma vírgula da mensagem.'],
-      ['O que muda de verdade', 'Quem tem permissão de falar primeiro. É a única diferença, e ela vale a aula inteira.'],
-      ['Tudo volta em hex', '"0x1699a32" é string. Converta antes de qualquer conta, e use BigInt pra wei porque 10^18 estoura o Number.'],
+      ['O formato e o transporte são coisas separadas', 'O JSON-RPC define o que você escreve. O HTTP e o WebSocket definem por onde essa mensagem viaja. Trocar o transporte não muda uma vírgula da mensagem.'],
+      ['Então o que muda de verdade?', 'Muda quem pode falar primeiro. Essa é a única diferença entre os dois, e é o motivo desta aula existir.'],
+      ['Os valores voltam em hexadecimal', 'O "0x1699a32" é uma string, não um número. Converta antes de fazer qualquer conta, e use BigInt para valores em wei, porque 10^18 passa do inteiro seguro do JavaScript.'],
     ] },
   { type: 'list', beat: 3, kicker: 'Os quatro métodos que vocês vão usar no projeto', items: [
-      ['eth_blockNumber', 'O número do último bloco. Barato, bom pra checar se está vivo.'],
-      ['eth_getBlockByNumber', 'O bloco inteiro: baseFeePerGas, gasUsed, timestamp. É a matéria-prima do painel.'],
-      ['eth_feeHistory', 'Percentis de gorjeta dos últimos N blocos. É daqui que saem as faixas lenta, média e rápida.'],
-      ['eth_subscribe', 'Só existe sobre WebSocket. Inverte quem fala primeiro. Próxima faixa.'],
+      ['eth_blockNumber', 'Retorna o número do último block. É a chamada mais barata que existe, boa pra verificar se a conexão com o node está funcionando.'],
+      ['eth_getBlockByNumber', 'Retorna o block inteiro, com o base fee, o gas consumido e o timestamp. É a matéria-prima do painel de vocês.'],
+      ['eth_feeHistory', 'Retorna o histórico de priority fee dos últimos N blocks, já separado por percentil. É a partir desses percentis que o painel monta as faixas lenta, média e rápida.'],
+      ['eth_subscribe', 'Só funciona sobre WebSocket. É o método que inverte quem fala primeiro, e é o assunto da próxima faixa.'],
     ] },
 
   // ───────── 02 · A conexão viva ─────────
-  { type: 'divider', num: '02', label: 'A conexão viva', meta: '2 faixas · handshake e eth_subscribe, depois a queda' },
+  { type: 'divider', num: '02', label: 'A conexão viva', meta: '2 faixas · abrir a conexão, e o que fazer quando ela cai' },
 
   { type: 'hook', beat: 4, kicker: 'Faixa 04 · WebSocket',
-    title: 'O nó precisa te avisar quando sair bloco novo. Mas ele não sabe seu endereço, e sua conexão HTTP já fechou.',
-    sub: 'Diga o que precisa acontecer ANTES pra ele conseguir falar primeiro.',
+    title: 'O node precisa te avisar quando sair um block novo. Só que ele não sabe o seu endereço, e a sua conexão HTTP já fechou.',
+    sub: 'O que precisa acontecer antes disso, pra que ele consiga falar primeiro?',
     tags: ['upgrade', '101', 'frames', 'eth_subscribe'] },
-  { type: 'diagram', beat: 4, kicker: 'Começa HTTP, vira frames, e então o nó fala sozinho', src: DIAG + 'handshake.png' },
-  { type: 'code', beat: 4, kicker: 'A inversão, mensagem por mensagem', file: 'subscribe.txt',
+  { type: 'diagram', beat: 4, kicker: 'Começa como HTTP, vira uma conexão aberta, e aí o node fala sozinho', src: DIAG + 'handshake.png' },
+  { type: 'code', beat: 4, kicker: 'A inversão acontece em três mensagens', file: 'subscribe.txt',
     code: [
-      "<span class='cm'># 1. você pede uma vez</span>",
+      "<span class='cm'># 1. Você pede, uma vez só</span>",
       "{<span class='st'>\"id\"</span>:1,<span class='st'>\"method\"</span>:<span class='st'>\"eth_subscribe\"</span>,<span class='st'>\"params\"</span>:[<span class='st'>\"newHeads\"</span>]}",
       "",
-      "<span class='cm'># 2. ele confirma, com o SEU id</span>",
+      "<span class='cm'># 2. O node confirma, devolvendo o SEU id</span>",
       "{<span class='st'>\"id\"</span>:1,<span class='st'>\"result\"</span>:<span class='st'>\"0x9ce59a13\"</span>}",
       "",
-      "<span class='cm'># 3. e a partir daqui ele manda sozinho, pra sempre</span>",
+      "<span class='cm'># 3. E a partir daqui ele manda sozinho, a cada block</span>",
       "{<span class='kw'>\"method\"</span>:<span class='st'>\"eth_subscription\"</span>,",
       " <span class='st'>\"params\"</span>:{<span class='st'>\"result\"</span>:{<span class='st'>\"number\"</span>:<span class='st'>\"0x1699a33\"</span>,",
       "   <span class='st'>\"baseFeePerGas\"</span>:<span class='st'>\"0x2540be400\"</span>, ...}}}",
     ],
     notes: [
-      ['Repare no que sumiu', 'As mensagens de push NÃO têm id. Elas têm method: eth_subscription. Faz sentido: id casa resposta com pergunta, e aqui ninguém perguntou.'],
-      ['Se seu código filtra por id', 'Os blocos chegam e são ignorados em silêncio. O discriminador certo é o campo method.'],
-      ['Outros canais', 'logs (eventos de contrato) e newPendingTransactions (mempool crua, milhares por segundo). Guarde esse último, ele é armadilha na faixa 08.'],
+      ['Repare no campo que sumiu', 'As mensagens do passo 3 não têm id. Elas têm method: "eth_subscription". E faz sentido: o id serve pra casar uma resposta com a pergunta que a originou, e aqui não houve pergunta nenhuma.'],
+      ['Se o seu código filtrar por id', 'Os blocks vão chegar e ser descartados, sem nenhum erro no console. O campo certo pra identificar essas mensagens é o method.'],
+      ['Existem outros canais além do newHeads', 'O canal logs entrega eventos emitidos por contratos. O newPendingTransactions entrega a mempool crua, e chega milhares de vezes por segundo. Guardem esse nome, ele volta como armadilha na faixa 08.'],
     ] },
-  { type: 'lab', beat: 4, kicker: 'Lab ao vivo', title: 'Abram um terminal. Vamos ver bloco chegando.',
+  { type: 'lab', beat: 4, kicker: 'Lab ao vivo', title: 'Abram um terminal. Vamos abrir uma conexão de verdade.',
     steps: [
-      ['$', 'npm i -g wscat', 'o cliente WebSocket mais simples que existe'],
-      ['$', 'wscat -c "wss://eth-mainnet.g.alchemy.com/v2/CHAVE"', 'o handshake acontece aqui, e o prompt vira >'],
-      ['&gt;', '{"id":1,"method":"eth_subscribe","params":["newHeads"]}', 'cole exatamente isso e dê enter'],
-      ['', 'agora não digitem mais nada, e contem 12 segundos', 'as mensagens chegam sozinhas'],
+      ['$', 'npm i -g wscat', 'instala o cliente WebSocket mais simples que existe'],
+      ['$', 'wscat -c "wss://eth-mainnet.g.alchemy.com/v2/API_KEY"', 'o handshake acontece aqui, e o prompt vira >'],
+      ['&gt;', '{"id":1,"method":"eth_subscribe","params":["newHeads"]}', 'colem essa linha e deem enter'],
+      ['', 'agora tirem a mão do teclado e esperem 12 segundos', 'a próxima mensagem chega sem vocês pedirem'],
     ],
-    punch: 'A partir da terceira linha, ninguém pergunta nada e as mensagens continuam chegando. Isso é a aula inteira em uma tela.' },
+    punch: 'Depois do eth_subscribe vocês não fazem mais nenhuma requisição, e mesmo assim as mensagens continuam aparecendo. É a aula inteira acontecendo dentro de um terminal.' },
 
-  { type: 'hook', beat: 5, kicker: 'Faixa 05 · A queda',
-    title: 'Seu backend fica 40 segundos sem rede. Volta, reconecta, e assina newHeads de novo.',
-    sub: 'Diga o que aconteceu com os blocos daquele intervalo, e como o painel descobre que perdeu alguma coisa.',
-    tags: ['backoff', 'jitter', 'heartbeat', 'backfill'] },
+  { type: 'hook', beat: 5, kicker: 'Faixa 05 · Quando a conexão cai',
+    title: 'A sua conexão vai cair. Um deploy, o wifi, o timeout do provedor. Ela fica 40 segundos fora e volta.',
+    sub: 'O que aconteceu com os blocks desse intervalo? E como o painel percebe que perdeu alguma coisa?',
+    tags: ['retry', 'backoff', 'heartbeat', 'backfill'] },
   { type: 'list', beat: 5, kicker: 'Quatro coisas que ninguém implementa na primeira versão', items: [
-      ['Backoff com jitter', '1s, 2s, 4s, 8s, teto em 30s, mais um aleatório. Sem jitter, todos os clientes voltam no mesmo milissegundo e derrubam o provedor de novo.'],
-      ['Heartbeat', 'Conexão morta parece viva, o TCP não avisa. Ping a cada 30s, derruba se o pong não voltar. Silêncio não é sinal de saúde.'],
-      ['Reassinar sempre', 'A assinatura vive dentro da conexão. Socket novo, assinatura zerada. Abre tudo certo e não chega bloco nenhum.'],
-      ['Preencher o buraco', 'Guarde o último bloco processado. Ao voltar, busque de lastSeen+1 até o atual POR HTTP. eth_subscribe não tem replay.'],
+      ['Retry com backoff', 'Quando cair, tente de novo em 1s, depois 2s, 4s, 8s, até um teto de 30s, e some um valor aleatório em cima. Sem esse valor aleatório, todos os clientes voltam no mesmo instante e derrubam o provedor de novo.'],
+      ['Heartbeat', 'Uma conexão morta continua parecendo viva, porque o TCP não avisa quando o outro lado some. Mande um ping a cada 30 segundos e derrube a conexão se o pong não voltar.'],
+      ['Assinar de novo, sempre', 'A assinatura existe dentro da conexão. Conexão nova significa assinatura zerada. Se você não reenviar o eth_subscribe, o socket abre normalmente e nenhum block chega.'],
+      ['Preencher o buraco (backfill)', 'Guarde o número do último block que você processou. Ao voltar, busque do próximo até o atual por HTTP. O eth_subscribe entrega do momento da assinatura em diante, ele não reenvia nada.'],
     ] },
-  { type: 'code', beat: 5, kicker: 'A regra que fecha a faixa', file: 'reconnect.js',
+  { type: 'code', beat: 5, kicker: 'O retry, e o que ele sozinho não resolve', file: 'reconnect.js',
     code: [
       "ws.on(<span class='st'>'close'</span>, () =&gt; {",
-      "  <span class='cm'>// backoff exponencial + jitter</span>",
-      "  <span class='kw'>const</span> d = Math.min(30000, 1000 * 2 ** tentativa++)",
-      "  setTimeout(conectar, d + Math.random() * 500)",
+      "  <span class='cm'>// retry com backoff exponencial e um pouco de aleatório</span>",
+      "  <span class='kw'>const</span> espera = Math.min(30000, 1000 * 2 ** tentativa++)",
+      "  setTimeout(conectar, espera + Math.random() * 500)",
       "})",
       "",
       "<span class='kw'>async function</span> aoReconectar() {",
-      "  <span class='cm'>// o stream volta do bloco ATUAL, o resto é seu problema</span>",
-      "  <span class='kw'>for</span> (<span class='kw'>let</span> n = ultimoVisto + 1; n &lt;= atual; n++)",
+      "  <span class='cm'>// o stream volta do block ATUAL.</span>",
+      "  <span class='cm'>// o que passou enquanto você estava fora é problema seu.</span>",
+      "  <span class='kw'>for</span> (<span class='kw'>let</span> n = ultimoBlock + 1; n &lt;= blockAtual; n++)",
       "    processar(<span class='kw'>await</span> httpRpc(<span class='st'>'eth_getBlockByNumber'</span>, n))",
-      "  assinar(<span class='st'>'newHeads'</span>)",
+      "",
+      "  assinar(<span class='st'>'newHeads'</span>)  <span class='cm'>// sem isso, nada chega</span>",
       "}",
     ],
     notes: [
-      ['WebSocket pro presente', 'A assinatura entrega do momento em que você assinou pra frente. Nada antes disso.'],
-      ['HTTP pro passado', 'Todo buraco (queda, primeira renderização) se preenche com request e response. Os dois transportes convivem no mesmo serviço.'],
-      ['Por que isso te pega na demo', 'Em 20 minutos de teste local o bug nunca aparece. Semana 3 do cronograma de vocês é "resolução de bugs". É esse.'],
+      ['O WebSocket entrega o presente', 'A assinatura começa a valer no momento em que você a envia. Nada do que aconteceu antes disso chega por ela.'],
+      ['O HTTP busca o passado', 'Todo buraco, seja uma queda de conexão ou a primeira vez que a tela abre, se preenche com uma requisição comum. É por isso que o mesmo serviço usa os dois transportes.'],
+      ['Esse bug não aparece testando local', 'Em vinte minutos de teste na sua máquina a conexão nunca cai. Ela cai na demo, e o gráfico fica com um buraco que ninguém sabe explicar.'],
     ] },
 
   // ───────── 03 · Do dado ao painel ─────────
-  { type: 'divider', num: '03', label: 'Do dado ao painel', meta: '3 faixas · a conta em dólar, o segundo salto, SSE' },
+  { type: 'divider', num: '03', label: 'Do dado ao painel', meta: '3 faixas · a conta em dólar, por que existe um backend, e o SSE' },
 
   { type: 'hook', beat: 6, kicker: 'Faixa 06 · Do wei ao dólar',
-    title: 'Chegou o bloco com baseFeePerGas: "0x2540be400". O investidor precisa ler "transferência simples: US$ 0,63".',
-    sub: 'Liste as conversões entre um e outro, e aponte a que não vem do nó.',
-    tags: ['wei', 'gwei', 'eip-1559', '21.000 gas'] },
-  { type: 'code', beat: 6, kicker: 'Quatro passos, e um deles não é blockchain', file: 'conversao.js',
+    title: 'O block chegou com baseFeePerGas: "0x2540be400". O investidor precisa ler "transferência simples: US$ 0,63".',
+    sub: 'Quais conversões existem entre um e outro? E qual delas não vem do node?',
+    tags: ['wei', 'gwei', 'EIP-1559', '21.000 gas'] },
+  { type: 'code', beat: 6, kicker: 'Quatro passos, e o último não vem da blockchain', file: 'conversao.js',
     code: [
-      "<span class='cm'>// 1. hex para decimal (BigInt, porque wei estoura Number)</span>",
-      "<span class='kw'>const</span> wei = BigInt(<span class='st'>'0x2540be400'</span>)      <span class='cm'>// 10000000000n</span>",
+      "<span class='cm'>// 1. hexadecimal para número</span>",
+      "<span class='cm'>//    (BigInt, porque valor em wei estoura o Number)</span>",
+      "<span class='kw'>const</span> wei = BigInt(<span class='st'>'0x2540be400'</span>)   <span class='cm'>// 10000000000n</span>",
       "",
-      "<span class='cm'>// 2. wei para gwei (a unidade em que o mundo fala de gás)</span>",
-      "<span class='kw'>const</span> gwei = Number(wei) / 1e9          <span class='cm'>// 10 gwei</span>",
+      "<span class='cm'>// 2. wei para gwei   ÷ 1e9   (1 gwei = 10^9 wei)</span>",
+      "<span class='kw'>const</span> gwei = Number(wei) / 1e9      <span class='cm'>// 10 gwei</span>",
       "",
-      "<span class='cm'>// 3. preço por unidade x unidades consumidas</span>",
-      "<span class='kw'>const</span> eth = (21000 * gwei) / 1e9        <span class='cm'>// 0.00021 ETH</span>",
+      "<span class='cm'>// 3. gwei para ETH   ÷ 1e9   (1 ETH = 10^9 gwei)</span>",
+      "<span class='cm'>//    21000 = o gas de uma transferência simples</span>",
+      "<span class='kw'>const</span> eth = (21000 * gwei) / 1e9    <span class='cm'>// 0.00021 ETH</span>",
       "",
-      "<span class='cm'>// 4. e aqui o nó não ajuda mais</span>",
-      "<span class='kw'>const</span> usd = eth * <span class='hl'>precoDoEth</span>            <span class='cm'>// US$ 0,63</span>",
+      "<span class='cm'>// 4. ETH para dólar. Esse preço o node não sabe.</span>",
+      "<span class='kw'>const</span> usd = eth * <span class='hl'>precoDoEth</span>       <span class='cm'>// US$ 0,63</span>",
     ],
     notes: [
-      ['21.000 é fixo', 'É o custo em gás de uma transferência simples de ETH, por especificação. Um swap na Uniswap passa de 150.000, então o painel precisa dizer qual operação está precificando.'],
-      ['EIP-1559', 'O base fee é queimado e sobe até 12,5% quando o bloco anterior passou de 15 milhões de gás. Ele é um termômetro de congestionamento, não uma taxa fixa.'],
-      ['O passo que não vem do nó', 'A cotação do ETH. Precisa de segunda fonte, com cache e com fallback. Se ela cair sem tratamento, o painel inteiro vira NaN.'],
+      ['Os dois "÷ 1e9" são conversões diferentes', 'O primeiro vai de wei para gwei. O segundo vai de gwei para ETH. Cada degrau dessa escala é de 10^9, então o mesmo número aparece duas vezes por coincidência.'],
+      ['O 21.000 é fixo por especificação', 'Esse é o gas de uma transferência simples de ETH. Um swap na Uniswap passa de 150.000, então o painel precisa deixar claro qual operação ele está precificando.'],
+      ['O preço do ETH vem de fora', 'O node não tem como saber quanto vale um ETH em dólar. Vocês vão precisar de uma segunda fonte, com cache, e com um valor de reserva pra quando essa fonte falhar.'],
     ] },
 
-  { type: 'hook', beat: 7, kicker: 'Faixa 07 · O segundo salto',
-    title: 'O navegador fala WebSocket nativamente. Dava pra abrir a WSS da Alchemy direto do React e apagar o backend do projeto.',
-    sub: 'Dê três motivos concretos pra não fazer isso.',
-    tags: ['chave no bundle', 'N conexões', 'divergência', 'fan-in/fan-out'] },
-  { type: 'compare', beat: 7, kicker: 'Funciona sozinho, quebra no segundo usuário',
-    left: { tag: 'react direto no nó', title: 'Quatro coisas quebram', bad: true, points: [
-      'A chave vai no bundle. DevTools, aba Network, 10 segundos',
-      '200 abas são 200 conexões upstream pelo mesmo bloco',
-      'Cada aba busca a cotação num instante diferente e mostra número diferente',
-      'Recarregou, o histórico sumiu. Nada guardado, nada pra pintar a tela ao abrir' ] },
-    right: { tag: 'backend no meio', title: 'Fan-in e fan-out', live: true, points: [
-      '1 conexão pra cima: o dado é um só, busca uma vez',
-      'N conexões pra baixo: as telas são muitas, distribui',
-      'A conta roda uma vez, então todas as telas concordam',
-      'A chave e o histórico ficam do lado que ninguém baixa' ] },
-    projeto: 'É por isso que o TAP separa "serviço de backend em Node.js" de "componente visual em React". Não é camada burocrática de trabalho acadêmico, são essas quatro razões.' },
-  { type: 'diagram', beat: 7, kicker: 'O desenho que justifica o projeto inteiro', src: DIAG + 'dois-saltos.png' },
+  { type: 'hook', beat: 7, kicker: 'Faixa 07 · Por que existe um backend',
+    title: 'O navegador fala WebSocket sozinho. Dava pra abrir a conexão com a Alchemy direto do React e apagar o backend do projeto.',
+    sub: 'Me deem três motivos concretos pra não fazer isso.',
+    tags: ['API key no bundle', 'N conexões', 'divergência', 'fan-in / fan-out'] },
+  { type: 'compare', beat: 7, kicker: 'Funciona com um usuário, e quebra com o segundo',
+    left: { tag: 'React direto no node', title: 'Quatro coisas quebram', bad: true, points: [
+      'A API key vai junto no bundle. Abra o DevTools na aba Network e ela está lá',
+      '200 abas abertas viram 200 conexões com o provedor, todas recebendo o mesmo block',
+      'Cada aba busca o preço do ETH num instante diferente, então cada tela mostra um valor diferente',
+      'Ao recarregar a página o histórico desaparece, e não sobra nada pra desenhar o gráfico' ] },
+    right: { tag: 'Com um backend no meio', title: 'Fan-in e fan-out', live: true, points: [
+      'Uma conexão pra cima: o dado é um só, então você busca uma vez',
+      'N conexões pra baixo: as telas são muitas, então você distribui',
+      'A conta acontece uma vez, então todas as telas mostram o mesmo número',
+      'A API key e o histórico ficam do lado que ninguém baixa' ] },
+    projeto: 'É por isso que o TAP separa o backend em Node.js do frontend em React. Não é uma exigência acadêmica de arquitetura em camadas, são esses quatro problemas.' },
+  { type: 'diagram', beat: 7, kicker: 'O desenho que justifica o backend existir', src: DIAG + 'dois-saltos.png' },
 
   { type: 'hook', beat: 8, kicker: 'Faixa 08 · SSE',
-    title: 'Do backend pro navegador o dado anda num sentido só: o painel recebe e nunca responde.',
-    sub: 'Escolha o transporte dessa perna e justifique pela direção, não pelo hype.',
+    title: 'Do backend até o navegador o dado anda num sentido só: o painel recebe, e nunca responde nada.',
+    sub: 'Qual transporte vocês escolhem pra essa parte, e por quê?',
     tags: ['text/event-stream', 'EventSource', 'Last-Event-ID', 'backpressure'] },
-  { type: 'code', beat: 8, kicker: 'HTTP que não termina, e três linhas do outro lado', file: 'sse.js',
+  { type: 'code', beat: 8, kicker: 'Uma resposta HTTP que você nunca fecha', file: 'sse.js',
     code: [
-      "<span class='cm'>// servidor: uma resposta que você nunca fecha</span>",
-      "res.writeHead(200, { <span class='st'>'Content-Type'</span>: <span class='st'>'text/event-stream'</span> })",
-      "res.write(<span class='st'>`id: 23481902\\ndata: {\"baseFee\":8.4}\\n\\n`</span>)",
-      "<span class='cm'>//                                          ^^^^ a linha em branco</span>",
-      "<span class='cm'>//                                          é o que fecha o evento</span>",
+      "<span class='cm'>// SERVIDOR: abre a resposta e não fecha</span>",
+      "res.writeHead(200, {",
+      "  <span class='st'>'Content-Type'</span>: <span class='st'>'text/event-stream'</span>",
+      "})",
       "",
-      "<span class='cm'>// cliente: e o resto é de graça</span>",
+      "res.write(<span class='st'>'id: 23481902\\n'</span>)",
+      "res.write(<span class='st'>'data: {\"baseFee\":8.4}\\n'</span>)",
+      "res.write(<span class='st'>'\\n'</span>)   <span class='cm'>// a linha em branco fecha o evento</span>",
+      "",
+      "<span class='cm'>// CLIENTE: e o resto vem pronto</span>",
       "<span class='kw'>const</span> es = <span class='kw'>new</span> EventSource(<span class='st'>'/api/fees/stream'</span>)",
       "es.onmessage = (e) =&gt; setFees(JSON.parse(e.data))",
     ],
     notes: [
-      ['Reconexão de graça', 'O EventSource reconecta sozinho e reenvia o cabeçalho Last-Event-ID com o último id que viu. Com WebSocket você reescreveria backoff e retomada à mão.'],
-      ['A taxa de entrada não é a de saída', 'newHeads é 1 a cada 12s. newPendingTransactions é milhares por segundo. Agregue numa janela de 1s e mande o resultado. Conclusão pronta, não matéria-prima.'],
-      ['Duas pegadinhas de ambiente', 'HTTP/1.1 limita 6 conexões por domínio e o stream ocupa uma (sirva por HTTP/2). E Nginx com buffering ligado segura tudo até o final.'],
+      ['O EventSource reconecta sozinho', 'Ele volta por conta própria e ainda manda o cabeçalho Last-Event-ID com o último id que recebeu, pro servidor saber de onde continuar. Com WebSocket, todo esse retry seria código de vocês outra vez.'],
+      ['A taxa de entrada não é a taxa de saída', 'O newHeads chega uma vez a cada 12 segundos. O newPendingTransactions chega milhares de vezes por segundo. Junte o que chegou numa janela de 1 segundo e mande só o resultado.'],
+      ['Duas armadilhas de ambiente', 'No HTTP/1.1 o navegador só abre 6 conexões por domínio, e o stream ocupa uma delas o tempo todo. E o Nginx, com buffering ligado, segura a resposta inteira até o final.'],
     ] },
-  { type: 'compare3', beat: 8, kicker: 'A escolha se faz por direção e por quem reconecta', cards: [
-      { tag: 'polling', title: 'Cliente pergunta', sub: 'os dois sentidos, um de cada vez', bad: true, points: ['Paga por toda pergunta, inclusive as vazias', 'Latência presa no intervalo', 'Nenhuma frequência conserta'] },
-      { tag: 'sse', title: 'Servidor empurra', sub: 'mão única, sobre HTTP comum', live: true, points: ['O painel só recebe, e é tudo que ele faz', 'Reconecta sozinho, com Last-Event-ID', 'Três linhas no React'] },
-      { tag: 'websocket', title: 'Os dois falam', sub: 'mão dupla, menor overhead', points: ['Você precisa MANDAR comandos (assinar, cancelar)', 'Reconexão e heartbeat por sua conta', 'É o salto de cima, contra o nó'] },
+  { type: 'compare3', beat: 8, kicker: 'A escolha se faz pela direção do dado, e por quem escreve o retry', cards: [
+      { tag: 'polling', title: 'O cliente pergunta', sub: 'e quase toda resposta se repete', bad: true, points: ['Você paga por toda pergunta, inclusive as que não trazem nada', 'A latência nunca fica menor que o intervalo entre as perguntas', 'Diminuir o intervalo só aumenta o desperdício'] },
+      { tag: 'sse', title: 'O servidor empurra', sub: 'um sentido só, sobre HTTP comum', live: true, points: ['O painel só recebe, e é tudo que ele precisa fazer', 'O retry já vem pronto, junto com o Last-Event-ID', 'São três linhas de código no React'] },
+      { tag: 'websocket', title: 'Os dois falam', sub: 'dois sentidos, no mesmo canal', points: ['Você precisa mandar comandos, como assinar e cancelar', 'O retry e o heartbeat são código seu', 'É o transporte que a gente usou entre o backend e o node'] },
     ] },
 
-  // ───────── 04 · Onde isso roda ─────────
-  { type: 'divider', num: '04', label: 'Onde isso roda', meta: '2 faixas · arquitetura completa e o que a AWS cobra por isso' },
+  // ───────── 04 · O desenho completo ─────────
+  { type: 'divider', num: '04', label: 'O desenho completo', meta: '1 faixa · os dois caminhos que toda tela ao vivo precisa ter' },
 
   { type: 'hook', beat: 9, kicker: 'Faixa 09 · Arquitetura',
-    title: 'Alguém abre a aba Fees agora, do zero. Desenhe tudo até o primeiro número aparecer. Depois, tudo que acontece quando o próximo bloco sai.',
-    sub: 'São dois caminhos diferentes, e quem esquece o primeiro entrega tela em branco.',
-    tags: ['snapshot path', 'stream path', 'estado em memória'] },
-  { type: 'diagram', beat: 9, kicker: 'Duas pernas: a que pinta e a que mantém vivo', src: DIAG + 'arquitetura.png' },
-
-  { type: 'hook', beat: 10, kicker: 'Faixa 10 · AWS',
-    title: 'Vocês vão subir isso na AWS, e o primeiro reflexo de todo mundo é Lambda.',
-    sub: 'Diga por que Lambda não serve nesse desenho, e o que serve no lugar.',
-    tags: ['fargate', 'idle timeout 60s', 'elasticache', 'ingestor único'] },
-  { type: 'diagram', beat: 10, kicker: 'Um ingestor, N entregadores, e um balanceador traiçoeiro', src: DIAG + 'aws.png' },
-  { type: 'list', beat: 10, kicker: 'Quatro armadilhas que só aparecem depois do deploy', items: [
-      ['Lambda não segura conexão', 'O modelo é invocar, responder, morrer. Entre invocações não existe onde guardar o socket. Compute que fica de pé: ECS Fargate ou EC2.'],
-      ['ALB derruba com 60s de silêncio', 'É o idle timeout padrão. SSE sem escrever nada por 60s é cortado e o cliente reconecta em loop. Mande ": ping" a cada 15s.'],
-      ['Duas réplicas, duas verdades', 'Cada uma abre a própria conexão com o nó (dobra a cota) e tem o próprio último valor (o número muda por instância). Ingestor único publicando num Redis.'],
-      ['Sticky session não conserta', 'Ela prende o usuário numa instância e esconde a divergência. Dois usuários em instâncias diferentes continuam vendo números diferentes.'],
-    ] },
+    title: 'Alguém abre a aba Fees agora, do zero.',
+    sub: 'Desenhem o que acontece até o primeiro número aparecer. Depois desenhem o que acontece quando o próximo block sai. São dois caminhos diferentes.',
+    tags: ['snapshot', 'stream', 'primeira renderização'] },
+  { type: 'diagram', beat: 9, kicker: 'Um caminho pinta a tela, o outro mantém ela viva', src: DIAG + 'arquitetura.png' },
 
   // ───────── fecho ─────────
-  { type: 'projeto', kicker: 'Do conceito pro projeto' },
+  { type: 'projeto', kicker: 'Do conceito para o projeto de vocês' },
   { type: 'closing' },
 ];
 
 const deck = document.getElementById('deck');
 const TOTAL = SLIDES.length;
 
-// ── A barra de conexão: o chrome do deck É o painel que a aula ensina a construir.
-//    Os números avançam conforme os slides, então a barra "está viva" durante a aula.
-function ticker(idx) {
-  const bloco = 23481902 + idx;
-  const base = (7.4 + ((idx * 37) % 61) / 10).toFixed(1);
-  const usd = ((21000 * parseFloat(base)) / 1e9 * 3000).toFixed(2);
-  return { bloco: bloco.toLocaleString('pt-BR'), base, usd };
-}
-
-function connbar(idx) {
-  const t = ticker(idx);
-  const pct = Math.round(((idx + 1) / TOTAL) * 100);
+// ── A barra de conexão abre o deck mostrando o painel que a aula vai construir.
+//    Só aparece no slide 1; depois disso o conteúdo fica em tela cheia.
+function connbar() {
   return `
     <header style="height:62px;flex:0 0 auto;background:var(--panel);border-bottom:1px solid var(--line)" class="flex items-center px-7 gap-7">
       <div class="flex items-center gap-3" style="flex:0 0 auto">
@@ -360,59 +359,44 @@ function connbar(idx) {
         </div>
         <span class="text-[14px] font-semibold">Alphractal <span style="color:var(--faint);font-weight:400">/ aba Fees</span></span>
       </div>
-
       <div class="flex items-center gap-2.5" style="flex:0 0 auto">
         <span class="dot-live" style="width:8px;height:8px;border-radius:50%;background:var(--green)"></span>
         <span class="mono text-[12px]" style="color:var(--green-dark);font-weight:500">wss · conectado</span>
       </div>
-
       <div class="flex items-center gap-6 mono text-[12px]" style="color:var(--muted)">
-        <span>bloco <span style="color:var(--ink);font-weight:500">#${t.bloco}</span></span>
-        <span>base fee <span style="color:var(--ink);font-weight:500">${t.base} gwei</span></span>
-        <span>transferência <span style="color:var(--ink);font-weight:500">US$ ${t.usd}</span></span>
-      </div>
-
-      <div class="flex items-center gap-3 ml-auto" style="flex:0 0 auto">
-        <div style="width:150px;height:3px;border-radius:2px;background:var(--line);position:relative">
-          <div style="position:absolute;left:0;top:0;height:100%;width:${pct}%;background:var(--purple);border-radius:2px"></div>
-        </div>
-        <span class="mono text-[12px]" style="color:var(--faint)">${String(idx + 1).padStart(2, '0')}/${TOTAL}</span>
+        <span>block <span style="color:var(--ink);font-weight:500">#23.481.902</span></span>
+        <span>base fee <span style="color:var(--ink);font-weight:500">8,4 gwei</span></span>
+        <span>transferência <span style="color:var(--ink);font-weight:500">US$ 0,53</span></span>
       </div>
     </header>`;
 }
 
-// ── O rail de seções: uma watchlist. A seção corrente ganha borda roxa e fundo tingido.
-function rail(slide) {
-  const active = typeof slide.beat === 'number' ? sectionOf(slide.beat)
-    : slide.type === 'divider' ? SECTIONS.find(s => s.num === slide.num) : null;
-  const rows = SECTIONS.map((s) => {
-    const on = s === active;
-    return `<div class="flex items-center gap-3 px-3 py-3" style="border-radius:10px;${on ? 'background:var(--purple-tint);box-shadow:inset 3px 0 0 var(--purple)' : ''}">
-        <span class="mono text-[13px]" style="color:${on ? 'var(--purple)' : 'var(--faint)'};font-weight:600;flex:0 0 auto">${s.num}</span>
+function rail() {
+  const rows = SECTIONS.map((s) => `
+      <div class="flex items-center gap-3 px-3 py-3" style="border-radius:10px">
+        <span class="mono text-[13px]" style="color:var(--faint);font-weight:600;flex:0 0 auto">${s.num}</span>
         <div style="min-width:0">
-          <div class="text-[14px] truncate" style="color:${on ? 'var(--purple-dark)' : 'var(--ink)'};font-weight:${on ? 600 : 500}">${s.label}</div>
+          <div class="text-[14px] truncate" style="color:var(--ink);font-weight:500">${s.label}</div>
           <div class="text-[12px]" style="color:var(--faint)">${s.beats.length} ${s.beats.length === 1 ? 'faixa' : 'faixas'} · ${s.beats.map(b => String(b).padStart(2, '0')).join(', ')}</div>
         </div>
-      </div>`;
-  }).join('');
+      </div>`).join('');
   return `
     <aside class="h-full flex flex-col gap-1 px-4 py-5" style="width:264px;flex:0 0 auto;background:var(--panel);border-right:1px solid var(--line)">
       <div class="micro px-3 pb-3" style="color:var(--faint)">Roteiro</div>
       <div class="flex flex-col gap-1">${rows}</div>
       <div class="mt-auto px-3 pt-4" style="border-top:1px solid var(--line)">
         <div class="text-[13px] font-semibold">WebSocket e RPC</div>
-        <div class="text-[12px] mt-0.5" style="color:var(--faint)">Inteli Blockchain · 90 min · 10 faixas</div>
+        <div class="text-[12px] mt-0.5" style="color:var(--faint)">Inteli Blockchain · 90 min · 9 faixas</div>
       </div>
     </aside>`;
 }
 
-function panelHead(slide) {
+function panelHead(slide, idx) {
   const sec = typeof slide.beat === 'number' ? sectionOf(slide.beat) : null;
-  const left = slide.kicker || (sec ? sec.label : '');
   const right = sec ? `${sec.num} · ${sec.label}` : '';
   return `<div class="flex items-center justify-between px-9 py-4" style="border-bottom:1px solid var(--line);flex:0 0 auto">
-      <span class="micro" style="color:var(--purple)">${left}</span>
-      <span class="micro" style="color:var(--faint)">${right}</span>
+      <span class="micro" style="color:var(--purple)">${slide.kicker || ''}</span>
+      <span class="micro flex items-center gap-4" style="color:var(--faint)">${right}<span class="mono" style="font-size:11px">${String(idx + 1).padStart(2, '0')}/${TOTAL}</span></span>
     </div>`;
 }
 
@@ -430,81 +414,86 @@ function projetoNote(txt) {
     </div>`;
 }
 
-function shell(slide, idx, inner, opts) {
-  const bare = opts && opts.bare;
-  const main = bare
-    ? `<main class="flex-1 h-full overflow-hidden px-16 py-12 flex flex-col">${inner}</main>`
-    : `<main class="flex-1 h-full overflow-hidden p-8 flex">
-         <div class="panel flex-1 flex flex-col overflow-hidden">
-           ${panelHead(slide)}
-           <div class="flex-1 flex flex-col justify-center px-9 py-7 overflow-hidden">${inner}</div>
-         </div>
-       </main>`;
+// Slide 1 traz o chrome inteiro (barra + roteiro). Todo o resto é tela cheia.
+function coverShell(inner) {
   return `<div class="slide">
-      ${connbar(idx)}
+      ${connbar()}
       <div class="flex" style="flex:1;min-height:0">
-        ${rail(slide)}
-        ${main}
+        ${rail()}
+        <main class="flex-1 h-full overflow-hidden px-16 py-12 flex flex-col">${inner}</main>
       </div>
+    </div>`;
+}
+function bleedShell(inner) {
+  return `<div class="slide"><main class="flex-1 h-full overflow-hidden px-24 py-16 flex flex-col">${inner}</main></div>`;
+}
+function panelShell(slide, idx, inner) {
+  return `<div class="slide">
+      <main class="flex-1 h-full overflow-hidden p-8 flex">
+        <div class="panel flex-1 flex flex-col overflow-hidden">
+          ${panelHead(slide, idx)}
+          <div class="flex-1 flex flex-col justify-center px-12 py-8 overflow-hidden">${inner}</div>
+        </div>
+      </main>
     </div>`;
 }
 
 function render(slide, idx) {
   switch (slide.type) {
     case 'cover':
-      return shell(slide, idx, `
+      return coverShell(`
         <div class="flex-1 flex flex-col justify-center">
           <div class="anim-fade flex items-center gap-2.5 mb-7">
             <span class="chip px-3 py-1 text-[12px] font-semibold" style="background:var(--purple);color:#fff">Inteli Blockchain</span>
             <span class="text-[13px]" style="color:var(--muted)">Parceria Alphractal · projeto da aba Fees</span>
           </div>
-          <h1 class="display anim" style="font-size:76px;max-width:15ch">WebSocket e RPC: do nó ao pixel.</h1>
+          <h1 class="display anim" style="font-size:76px;max-width:15ch">WebSocket e RPC: do node ao pixel.</h1>
           <p class="anim delay-1 text-[24px] mt-8" style="color:var(--muted);max-width:54ch;line-height:1.4">Por que esse painel precisa de <span style="color:var(--purple-dark);font-weight:600">duas conexões abertas</span>, e não de uma.</p>
           <div class="anim-fade delay-2 flex items-center gap-3 mt-10 text-[14px] mono" style="color:var(--faint)">
-            <span>90 min</span><span>·</span><span>10 faixas</span><span>·</span><span>1 lab ao vivo</span><span>·</span><span>Davi Duarte</span>
+            <span>90 min</span><span>·</span><span>9 faixas</span><span>·</span><span>1 lab ao vivo</span><span>·</span><span>Davi Duarte</span>
           </div>
-        </div>`, { bare: true });
+        </div>`);
 
     case 'divider':
-      return shell(slide, idx, `
+      return bleedShell(`
         <div class="flex-1 flex flex-col justify-center">
           <div class="flex items-baseline gap-5 anim">
             <span class="display mono" style="font-size:96px;color:var(--purple-soft);line-height:1">${slide.num}</span>
             <h2 class="display" style="font-size:62px;max-width:16ch">${slide.label}</h2>
           </div>
           <p class="anim delay-1 text-[19px] mt-6" style="color:var(--muted)">${slide.meta}</p>
-        </div>`, { bare: true });
+        </div>`);
 
     case 'hook':
-      return shell(slide, idx, `
+      return panelShell(slide, idx, `
         <h2 class="display anim" style="font-size:52px;max-width:31ch;letter-spacing:-0.018em">${slide.title}</h2>
         ${slide.sub ? `<p class="anim delay-1 text-[23px] mt-8" style="color:var(--muted);max-width:66ch;line-height:1.45">${slide.sub}</p>` : ''}
         ${tags(slide.tags)}`);
 
     case 'stat':
-      return shell(slide, idx, `
+      return panelShell(slide, idx, `
         <div class="grid grid-cols-4 gap-5 stagger">
           ${slide.stats.map(([n, l]) => `
             <div class="card px-6 py-7">
               <div class="display mono" style="font-size:40px;color:var(--purple)">${n}</div>
-              <div class="text-[15px] mt-3" style="color:var(--muted);line-height:1.4">${l}</div>
+              <div class="text-[15px] mt-3" style="color:var(--muted);line-height:1.42">${l}</div>
             </div>`).join('')}
         </div>
-        ${slide.note ? `<p class="anim-fade delay-2 text-[16px] mt-8" style="color:var(--muted)">${slide.note}</p>` : ''}`);
+        ${slide.note ? `<p class="anim-fade delay-2 text-[16px] mt-8" style="color:var(--muted);max-width:96ch;line-height:1.45">${slide.note}</p>` : ''}`);
 
     case 'list':
-      return shell(slide, idx, `
+      return panelShell(slide, idx, `
         <div class="stagger flex flex-col">
           ${slide.items.map(([h, b], i) => `
             <div class="flex items-start gap-6 py-4" style="${i < slide.items.length - 1 ? 'border-bottom:1px solid var(--line)' : ''}">
-              <span class="mono text-[14px]" style="color:var(--faint);width:22px;flex:0 0 auto;padding-top:3px">${String(i + 1).padStart(2, '0')}</span>
-              <div class="mono text-[18px] font-semibold" style="color:var(--purple-dark);width:262px;flex:0 0 auto">${h}</div>
+              <span class="mono text-[14px]" style="color:var(--faint);width:22px;flex:0 0 auto;padding-top:4px">${String(i + 1).padStart(2, '0')}</span>
+              <div class="mono text-[18px] font-semibold" style="color:var(--purple-dark);width:268px;flex:0 0 auto">${h}</div>
               <div class="text-[17px]" style="color:var(--muted);line-height:1.45">${b}</div>
             </div>`).join('')}
         </div>`);
 
     case 'code':
-      return shell(slide, idx, `
+      return panelShell(slide, idx, `
         <div class="grid gap-7 items-stretch" style="grid-template-columns:1.42fr 1fr">
           <div class="well anim overflow-hidden flex flex-col">
             <div class="flex items-center gap-2 px-5 py-3" style="border-bottom:1px solid var(--line)">
@@ -512,7 +501,7 @@ function render(slide, idx) {
               <span style="width:9px;height:9px;border-radius:50%;background:var(--line)"></span>
               <span class="mono text-[12px] ml-2" style="color:var(--faint)">${slide.file || 'snippet'}</span>
             </div>
-            <pre class="mono whitespace-pre-wrap px-6 py-5 flex-1" style="font-size:13.5px;line-height:1.8;color:var(--ink);margin:0">${slide.code.join('\n')}</pre>
+            <pre class="mono whitespace-pre px-6 py-5 flex-1" style="font-size:13.5px;line-height:1.8;color:var(--ink);margin:0">${slide.code.join('\n')}</pre>
           </div>
           <div class="stagger flex flex-col gap-3.5 justify-center">
             ${slide.notes.map(([h, b]) => `
@@ -524,7 +513,7 @@ function render(slide, idx) {
         </div>`);
 
     case 'compare':
-      return shell(slide, idx, `
+      return panelShell(slide, idx, `
         <div class="grid grid-cols-2 gap-6 stagger">
           ${[slide.left, slide.right].map((c) => `
             <div class="px-7 py-6" style="background:${c.live ? 'var(--green-tint)' : 'var(--panel)'};border:1px ${c.bad ? 'dashed' : 'solid'} ${c.live ? 'rgba(20,158,97,0.32)' : 'var(--line)'};border-radius:12px;box-shadow:${c.bad ? 'none' : 'var(--shadow-micro)'}">
@@ -542,13 +531,13 @@ function render(slide, idx) {
         ${projetoNote(slide.projeto)}`);
 
     case 'compare3':
-      return shell(slide, idx, `
+      return panelShell(slide, idx, `
         <div class="grid grid-cols-3 gap-5 stagger">
           ${slide.cards.map(c => `
             <div class="px-6 py-6 flex flex-col" style="background:${c.live ? 'var(--green-tint)' : 'var(--panel)'};border:1px ${c.bad ? 'dashed' : 'solid'} ${c.live ? 'rgba(20,158,97,0.32)' : 'var(--line)'};border-radius:12px;box-shadow:${c.bad ? 'none' : 'var(--shadow-micro)'}">
               <span class="chip mono self-start px-3 py-1 text-[12px] font-semibold mb-4" style="background:${c.live ? 'var(--green)' : c.bad ? 'rgba(148,151,169,0.16)' : 'var(--purple-soft)'};color:${c.live ? '#fff' : c.bad ? 'var(--muted)' : 'var(--purple-dark)'}">${c.tag}</span>
               <div class="display text-[24px]" style="color:${c.bad ? 'var(--muted)' : 'var(--ink)'}">${c.title}</div>
-              <div class="text-[14px] mt-2 mb-5 mono" style="color:var(--faint)">${c.sub}</div>
+              <div class="text-[14px] mt-2 mb-5" style="color:var(--faint)">${c.sub}</div>
               <div class="flex flex-col gap-3 mt-auto">
                 ${c.points.map(p => `<div class="flex gap-3 items-start text-[15.5px]"><span style="color:${c.live ? 'var(--green)' : c.bad ? 'var(--faint)' : 'var(--purple)'};flex:0 0 auto;margin-top:7px;width:5px;height:5px;border-radius:50%;background:currentColor"></span><span style="color:var(--muted);line-height:1.4">${p}</span></div>`).join('')}
               </div>
@@ -556,13 +545,13 @@ function render(slide, idx) {
         </div>`);
 
     case 'diagram':
-      return shell(slide, idx, `
+      return panelShell(slide, idx, `
         <div class="flex-1 flex items-center justify-center anim" style="min-height:0">
           <img src="${slide.src}" alt="${slide.kicker}" style="max-width:100%;max-height:100%;object-fit:contain" />
         </div>`);
 
     case 'lab':
-      return shell(slide, idx, `
+      return panelShell(slide, idx, `
         <h2 class="display anim" style="font-size:36px">${slide.title}</h2>
         <div class="anim delay-1 mt-6 overflow-hidden" style="background:var(--ink);border-radius:12px">
           <div class="flex items-center gap-2 px-5 py-3" style="border-bottom:1px solid #26272e">
@@ -578,37 +567,37 @@ function render(slide, idx) {
               </div>`).join('')}
           </div>
         </div>
-        <p class="anim-fade delay-2 text-[18px] mt-6" style="color:var(--ink);max-width:74ch;line-height:1.45">${slide.punch}</p>`);
+        <p class="anim-fade delay-2 text-[18px] mt-6" style="color:var(--ink);max-width:84ch;line-height:1.45">${slide.punch}</p>`);
 
     case 'projeto':
-      return shell(slide, idx, `
+      return panelShell(slide, idx, `
         <div class="stagger flex flex-col">
           ${[
-            ['Semana 1', 'Protótipo de alta fidelidade do painel', 'Já decidam o que a tela mostra: base fee, as três faixas do eth_feeHistory, e o custo em dólar de UMA operação nomeada.'],
-            ['Semana 2', 'Backend + conexão RPC via WebSocket', 'Faixas 02 a 05. Chave no .env, eth_subscribe newHeads, e já nasça com backoff e com o último bloco guardado.'],
-            ['Semana 2', 'Cálculo das taxas', 'Faixa 06. BigInt pro wei, a conta no backend, e uma fonte de ETH/USD com cache e fallback.'],
-            ['Semana 3', 'Integração front e back', 'Faixas 07 e 08. SSE pro stream, mais um GET /snapshot pra tela não abrir vazia.'],
-            ['Semana 4', 'Demo dia 05/10', 'Levem a faixa 10 num slide. O benefício que a Alphractal pediu é "validação de nova arquitetura de dados", e é essa conversa que entrega ele.'],
+            ['Semana 1', 'Protótipo do painel', 'Decidam desde já o que a tela mostra: o base fee, as três faixas do eth_feeHistory, e o custo em dólar de uma operação específica.'],
+            ['Semana 2', 'Backend e a conexão com o node', 'Faixas 02 a 05. A API key no .env, o eth_subscribe rodando, e o retry junto com o backfill já na primeira versão.'],
+            ['Semana 2', 'O cálculo em dólar', 'Faixa 06. BigInt pros valores em wei, a conta rodando no backend, e uma fonte de preço do ETH com cache.'],
+            ['Semana 3', 'Integração do front com o back', 'Faixas 07 e 08. O SSE pro stream, e um GET /snapshot pra tela não abrir vazia.'],
+            ['Semana 4', 'Demo do dia 05/10', 'O que a Alphractal pediu foi "validação de nova arquitetura de dados". Levem o diagrama da faixa 09 num slide e expliquem as decisões.'],
           ].map(([w, t, d]) => `
-            <div class="flex items-start gap-6 py-3.5" style="border-bottom:1px solid var(--line)">
-              <span class="chip mono text-[12px] font-semibold px-3 py-1" style="background:var(--purple-soft);color:var(--purple-dark);flex:0 0 auto;width:96px;text-align:center">${w}</span>
-              <div class="text-[17px] font-semibold" style="width:290px;flex:0 0 auto">${t}</div>
-              <div class="text-[16px]" style="color:var(--muted);line-height:1.4">${d}</div>
+            <div class="flex items-start gap-6 py-4" style="border-bottom:1px solid var(--line)">
+              <span class="chip mono text-[12px] font-semibold px-3 py-1" style="background:var(--purple-soft);color:var(--purple-dark);flex:0 0 auto;width:100px;text-align:center">${w}</span>
+              <div class="text-[17px] font-semibold" style="width:300px;flex:0 0 auto">${t}</div>
+              <div class="text-[16px]" style="color:var(--muted);line-height:1.42">${d}</div>
             </div>`).join('')}
         </div>`);
 
     case 'closing':
-      return shell(slide, idx, `
+      return bleedShell(`
         <div class="flex-1 flex flex-col justify-center">
           <div class="micro anim mb-6" style="color:var(--purple)">Síntese</div>
-          <h2 class="display anim delay-1" style="font-size:52px;max-width:21ch">Dois ritmos, e um amortecedor no meio.</h2>
-          <p class="anim delay-2 text-[21px] mt-8" style="color:var(--muted);max-width:68ch;line-height:1.5">A rede produz um evento a cada 12 segundos, em hexadecimal, sem avisar, e às vezes a conexão cai. A tela precisa de um número em dólar no primeiro frame, igual pra todo mundo. O backend existe pra ser o amortecedor entre esses dois ritmos.</p>
+          <h2 class="display anim delay-1" style="font-size:54px;max-width:22ch">A pergunta não é qual protocolo usar. É quem fala primeiro.</h2>
+          <p class="anim delay-2 text-[21px] mt-8" style="color:var(--muted);max-width:70ch;line-height:1.5">Em cada perna do desenho, alguém precisa começar a conversa. Se é o cliente que pergunta, você tem polling e todo o desperdício que vem junto. Se é o servidor que avisa, você precisa de uma conexão aberta, e escolhe o transporte pela direção: WebSocket quando os dois lados falam, SSE quando só um fala.</p>
           <div class="anim-fade delay-2 flex flex-wrap items-center gap-2.5 mt-10">
-            ${['1 conexão pra cima', 'N pra baixo', 'WebSocket pro presente', 'HTTP pro passado', 'agregue antes de repassar'].map((t, i, a) =>
+            ${['1 conexão pra cima', 'N pra baixo', 'WebSocket pro presente', 'HTTP pro passado', 'junte antes de repassar'].map((t, i, a) =>
               `<span class="chip px-3.5 py-1.5 text-[14px]" style="background:var(--purple-soft);color:var(--purple-dark);font-weight:500">${t}</span>${i < a.length - 1 ? '<span style="color:var(--faint)">›</span>' : ''}`).join('')}
           </div>
-          <p class="anim-fade delay-2 text-[17px] mt-9" style="color:var(--muted);max-width:70ch">Troque o nó Ethereum por cotação de ação, ônibus no GPS ou sensor de temperatura. O desenho não muda uma caixa.</p>
-        </div>`, { bare: true });
+          <p class="anim-fade delay-2 text-[17px] mt-9" style="color:var(--muted);max-width:78ch;line-height:1.5">Esse mesmo desenho aparece em qualquer tela que mostra dado ao vivo: preço de ação, ônibus no mapa, sensor de fábrica. O que muda é a fonte no começo da linha. O resto continua igual.</p>
+        </div>`);
 
     default:
       return `<div class="slide"><div class="p-14">slide?</div></div>`;
@@ -617,11 +606,13 @@ function render(slide, idx) {
 
 deck.innerHTML = SLIDES.map((s, i) => render(s, i)).join('');
 const slides = [...document.querySelectorAll('.slide')];
+const navpos = document.getElementById('navpos');
 
 let cur = 0;
 function show(i) {
   cur = Math.max(0, Math.min(slides.length - 1, i));
   slides.forEach((el, idx) => el.classList.toggle('active', idx === cur));
+  navpos.textContent = `${String(cur + 1).padStart(2, '0')}/${TOTAL}`;
 }
 function next() { show(cur + 1); }
 function prev() { show(cur - 1); }
@@ -632,9 +623,16 @@ document.addEventListener('keydown', (e) => {
   else if (e.key === 'Home') show(0);
   else if (e.key === 'End') show(slides.length - 1);
 });
-deck.addEventListener('click', (e) => {
-  if (e.clientX < window.innerWidth * 0.28) prev(); else next();
-});
+document.getElementById('next').addEventListener('click', next);
+document.getElementById('prev').addEventListener('click', prev);
+
+// Tocar na tela só avança em dispositivo de toque. No desktop o texto fica
+// selecionável e a navegação é pelo teclado ou pelos botões do canto.
+if (window.matchMedia('(pointer: coarse)').matches) {
+  deck.addEventListener('click', (e) => {
+    if (e.clientX < window.innerWidth * 0.28) prev(); else next();
+  });
+}
 
 if (new URLSearchParams(location.search).get('print') === '1') {
   setTimeout(() => window.print(), 600);
