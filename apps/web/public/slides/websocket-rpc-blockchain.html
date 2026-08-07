@@ -172,6 +172,9 @@ const SECTIONS = [
 function sectionOf(beat) { return SECTIONS.find(s => s.beats.includes(beat)); }
 
 const DIAG = '/diagrams/websocket-rpc-blockchain/';
+// Arte oficial do clube. Ver /brand/inteli-blockchain/README.md.
+// O guia proíbe reconstruir a marca à mão, então nada aqui é desenhado.
+const BRAND = '/brand/inteli-blockchain/';
 
 const SLIDES = [
   { type: 'cover' },
@@ -405,18 +408,11 @@ const SLIDES = [
 const deck = document.getElementById('deck');
 const TOTAL = SLIDES.length;
 
-// Padrão geométrico da marca: losango, hexágono e triângulo em contorno fino,
-// a 6% de opacidade, sempre à direita e nunca atrás de texto corrido (§5.4).
+// Padrão geométrico da marca, arquivo oficial. A 6% de opacidade, sempre à
+// direita e nunca atrás de texto corrido (§5.4).
 function pattern() {
-  return `<svg aria-hidden="true" style="position:absolute;right:-80px;top:50%;transform:translateY(-50%);width:640px;height:640px;opacity:0.06;pointer-events:none" viewBox="0 0 400 400" fill="none" stroke="${'#e8f1f2'}" stroke-width="1.5">
-      <polygon points="200,40 300,100 300,220 200,280 100,220 100,100"/>
-      <polygon points="200,90 260,125 260,195 200,230 140,195 140,125"/>
-      <rect x="150" y="270" width="90" height="90" transform="rotate(45 195 315)"/>
-      <polygon points="60,300 110,380 10,380"/>
-      <polygon points="330,250 375,330 285,330"/>
-      <circle cx="200" cy="160" r="26"/>
-      <path d="M100 100 L200 160 L300 100 M200 160 L200 280"/>
-    </svg>`;
+  return `<img src="${BRAND}padrao-geometrico.png" alt="" aria-hidden="true"
+      style="position:absolute;right:-60px;top:50%;transform:translateY(-50%);height:118%;width:auto;opacity:0.06;pointer-events:none;user-select:none" />`;
 }
 
 // A barra de conexão abre o deck mostrando o painel que a aula vai construir.
@@ -424,10 +420,9 @@ function pattern() {
 function connbar() {
   return `
     <header style="height:66px;flex:0 0 auto;background:var(--surface-raised);border-bottom:var(--bw-hairline) solid var(--border)" class="flex items-center px-8 gap-8">
-      <div class="flex items-center gap-3" style="flex:0 0 auto">
-        <div style="width:32px;height:32px;border-radius:var(--radius-lg);background:linear-gradient(135deg,var(--ibc-gradient-start),var(--ibc-gradient-end));display:flex;align-items:center;justify-content:center">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#081119" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 15l4-6 4 4 4-8 6 10"/></svg>
-        </div>
+      <div class="flex items-center gap-4" style="flex:0 0 auto">
+        <img src="${BRAND}simbolo-branco.png" alt="Inteli Blockchain" style="height:30px;width:auto" />
+        <span style="width:1px;height:22px;background:var(--border)"></span>
         <span class="head text-[15px] font-bold">Alphractal <span style="color:var(--text-subtle);font-weight:400">/ aba Fees</span></span>
       </div>
       <div class="flex items-center gap-2.5" style="flex:0 0 auto">
@@ -524,9 +519,10 @@ function render(slide, idx) {
     case 'cover':
       return coverShell(`
         <div class="flex-1 flex flex-col justify-center">
-          <div class="anim-fade flex items-center gap-3 mb-8">
-            <span class="badge micro px-4 py-1.5" style="background:var(--accent);color:var(--accent-fg)">Inteli Blockchain</span>
-            <span class="text-[14px]" style="color:var(--text-muted)">Parceria Alphractal · projeto da aba Fees</span>
+          <div class="anim-fade flex items-center gap-6 mb-10">
+            <img src="${BRAND}lockup-gradiente-fundo-escuro.png" alt="Inteli Blockchain" style="width:184px;height:auto" />
+            <span style="width:1px;height:40px;background:var(--border)"></span>
+            <span class="text-[15px]" style="color:var(--text-muted)">Parceria Alphractal<br/>projeto da aba Fees</span>
           </div>
           <h1 class="display anim" style="font-size:70px;max-width:15ch">WebSocket e RPC: do node ao pixel.</h1>
           <p class="anim delay-1 text-[24px] mt-8" style="color:var(--text-muted);max-width:54ch;line-height:1.5">Por que esse painel precisa de <span class="head" style="color:var(--accent);font-weight:700">duas conexões abertas</span>, e não de uma.</p>
@@ -672,7 +668,7 @@ function render(slide, idx) {
 
     case 'closing':
       return bleedShell(`
-        <div class="flex-1 flex flex-col justify-center">
+        <div class="flex-1 flex flex-col justify-center" style="max-width:57%">
           <div class="micro anim mb-7" style="color:var(--accent)">Síntese</div>
           <h2 class="display anim delay-1" style="font-size:56px;max-width:22ch">A pergunta não é qual protocolo usar. É quem fala primeiro.</h2>
           <p class="anim delay-2 text-[20px] mt-9" style="color:var(--text-muted);max-width:72ch;line-height:1.65">Em cada perna do desenho, alguém precisa começar a conversa. Se é o cliente que pergunta, você tem polling e todo o desperdício que vem junto. Se é o servidor que avisa, você precisa de uma conexão aberta, e escolhe o transporte pela direção: WebSocket quando os dois lados falam, SSE quando só um fala.</p>
@@ -681,7 +677,9 @@ function render(slide, idx) {
               `<span class="mono text-[14px] px-4 py-2" style="border-radius:var(--radius-full);background:var(--surface-raised);border:var(--bw-hairline) solid var(--border-interactive);color:var(--text-muted)">${t}</span>${i < a.length - 1 ? '<span style="color:var(--text-subtle)">›</span>' : ''}`).join('')}
           </div>
           <p class="anim-fade delay-2 text-[17px] mt-10" style="color:var(--text-subtle);max-width:72ch;line-height:1.65">Esse mesmo desenho aparece em qualquer tela que mostra dado ao vivo: preço de ação, ônibus no mapa, sensor de fábrica. O que muda é a fonte no começo da linha. O resto continua igual.</p>
-        </div>`, true);
+        </div>
+        <img src="${BRAND}mascote.png" alt="" aria-hidden="true" class="anim-fade delay-2"
+          style="position:absolute;right:96px;bottom:0;height:74%;width:auto;pointer-events:none;user-select:none" />`, false);
 
     default:
       return `<div class="slide"><div class="p-14">slide?</div></div>`;
