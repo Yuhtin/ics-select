@@ -7,72 +7,125 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com" rel="preconnect" />
 <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Open+Sans:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
 <style>
-  /* ── Kraken design language (awesome-design-md/kraken) ──
-     The connection strip + watchlist rail open the deck (slide 1) so the
-     audience sees the panel they are about to build, then the chrome gets
-     out of the way: every content slide after that is a full-bleed framed
-     panel with a micro header carrying only kicker, section and position.
-     Light system on purpose (every other ICS deck is dark, and white
-     projects better in a classroom). Kraken-Brand -> IBM Plex Sans 700
-     negative-tracked, Kraken-Product -> IBM Plex Sans, numerals -> Mono.
-     Rules honored: 12px max radius on control-shaped elements (no pills),
-     whisper-level shadows only, purple is the ONLY brand accent, green is
-     semantic (live/positive), and since the system has no red, "errado"
-     reads as muted gray with a dashed edge. */
+  /* ─────────────────────────────────────────────────────────────────────
+     Design System · Inteli Blockchain
+     Deriva do Guia de Estilos Blockchain 2026 (Giovanna Neves) + extensões
+     documentadas em projetos/gestao_pessoas/docs/DESIGN_SYSTEM.md
+
+     Regras canônicas seguidas aqui:
+       - tema escuro é o padrão (surface #081119 / raised #13293d)
+       - Montserrat em título, rótulo e botão · Open Sans em corpo
+       - raio 0 ou 20, mais o pill de badge. Nada de 8px, nada de 12px
+       - borda 3px onde é decisão de design, 1px onde só separa conteúdo
+       - ZERO sombra difusa. A única sombra é a moldura sólida deslocada
+       - texto sobre o accent #1b98e0 é ESCURO (#081119), nunca branco
+       - magenta #9f0e5d só como fundo sólido, com #e8f1f2 por cima
+       - caixa alta só em rótulo curto, nunca em frase
+       - padrão geométrico abaixo de 8% e nunca atrás de texto corrido
+
+     Extensão local, fora do guia:
+       - JetBrains Mono para código e numeral. O guia não define mono e a
+         pendência 4 do DESIGN_SYSTEM registra essa lacuna. Uma aula de
+         protocolo é feita de JSON e de comando de terminal, então aqui a
+         decisão foi tomada. Vale revisar com a Marketing.
+       - escala de tipo estendida um degrau acima do --text-4xl (56px) para
+         o título de capa, na mesma razão 1.25. Deck projetado é outro meio
+         que interface de tela.
+     ───────────────────────────────────────────────────────────────────── */
+
   :root {
-    --canvas: #f4f4f7;
-    --panel: #ffffff;
-    --well: #f7f7f9;
-    --ink: #101114;
-    --muted: #686b82;
-    --faint: #9497a9;
-    --line: #dedee5;
-    --purple: #7132f5;
-    --purple-dark: #5741d8;
-    --purple-tint: #f4f0ff;
-    --purple-soft: rgba(133, 91, 251, 0.16);
-    --green: #149e61;
-    --green-dark: #026b3f;
-    --green-tint: #e8f5ef;
-    --shadow: rgba(0, 0, 0, 0.03) 0px 4px 24px;
-    --shadow-micro: rgba(16, 24, 40, 0.04) 0px 1px 4px;
+    /* primitivas canônicas */
+    --ibc-navy-950: #081119;
+    --ibc-navy-900: #13293d;
+    --ibc-teal-600: #247ba0;
+    --ibc-blue-700: #006494;
+    --ibc-blue-500: #1b98e0;
+    --ibc-ice-50:   #e8f1f2;
+    --ibc-magenta-600: #9f0e5d;
+    --ibc-plum-900: #380f2e;
+    --ibc-gradient-start: #63b4c4;
+    --ibc-gradient-end:   #8c4ca9;
+    /* primitivas de extensão */
+    --ibc-slate-400: #8fa3b8;
+    --ibc-slate-500: #6b8299;
+    --ibc-slate-600: #456a85;
+    --ibc-slate-800: #2a4a63;
+    --ibc-green-400: #34d399;
+    --ibc-amber-400: #fbbf24;
+    --ibc-magenta-400: #f0559b;
+
+    /* semântica (escuro é o padrão) */
+    --surface: var(--ibc-navy-950);
+    --surface-raised: var(--ibc-navy-900);
+    --surface-sunken: #050b11;
+    --text: var(--ibc-ice-50);
+    --text-muted: var(--ibc-slate-400);
+    --text-subtle: var(--ibc-slate-500);
+    --border: var(--ibc-slate-800);
+    --border-interactive: var(--ibc-slate-600);
+    --accent: var(--ibc-blue-500);
+    --accent-hover: var(--ibc-teal-600);
+    --accent-fg: var(--ibc-navy-950);
+    --focus-ring: var(--ibc-blue-500);
+    --success: var(--ibc-green-400);
+    --warning: var(--ibc-amber-400);
+    --danger: var(--ibc-magenta-400);
+    --danger-surface: var(--ibc-magenta-600);
+    --educational: var(--ibc-plum-900);
+
+    /* forma */
+    --radius-none: 0px;
+    --radius-lg: 20px;
+    --radius-full: 9999px;
+    --bw-strong: 3px;
+    --bw-hairline: 1px;
   }
+
   * { box-sizing: border-box; }
   html, body {
-    background: var(--canvas); color: var(--ink);
-    font-family: 'IBM Plex Sans', system-ui, sans-serif;
+    background: var(--surface); color: var(--text);
+    font-family: 'Open Sans', ui-sans-serif, system-ui, sans-serif;
     overflow: hidden; height: 100vh; margin: 0;
     -webkit-font-smoothing: antialiased;
   }
-  .display { font-weight: 700; letter-spacing: -0.02em; line-height: 1.14; }
-  .mono { font-family: 'IBM Plex Mono', monospace; font-variant-numeric: tabular-nums; }
-  .slide { display: none; height: 100vh; width: 100vw; flex-direction: column; }
+  .head { font-family: 'Montserrat', ui-sans-serif, system-ui, sans-serif; }
+  .display { font-family: 'Montserrat', sans-serif; font-weight: 900; letter-spacing: -0.02em; line-height: 1.08; }
+  .mono { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
+
+  .slide { display: none; height: 100vh; width: 100vw; flex-direction: column; position: relative; }
   .slide.active { display: flex; }
-  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); }
-  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow-micro); }
-  .well { background: var(--well); border: 1px solid var(--line); border-radius: 12px; }
-  .chip { border-radius: 8px; }
-  .micro { font-size: 11px; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; }
 
-  .kw { color: var(--purple-dark); font-weight: 600; }
-  .st { color: var(--green-dark); }
-  .cm { color: var(--faint); }
-  .hl { background: var(--purple-soft); border-radius: 3px; padding: 0 3px; }
+  .panel { background: var(--surface-raised); border: var(--bw-strong) solid var(--border); border-radius: var(--radius-lg); }
+  .card  { background: var(--surface); border: var(--bw-strong) solid var(--border); border-radius: var(--radius-lg); }
+  .well  { background: var(--surface-sunken); border: var(--bw-hairline) solid var(--border); border-radius: var(--radius-lg); }
+  /* Moldura: a assinatura da marca. Sombra SÓLIDA deslocada, sem blur.
+     Só em imagem de destaque, nunca em elemento repetido de lista. */
+  .moldura { border: var(--bw-strong) solid var(--text); border-radius: var(--radius-lg); box-shadow: 8px 8px 0 0 var(--ibc-gradient-start); }
+  .badge { border-radius: var(--radius-full); font-family: 'Montserrat', sans-serif; font-weight: 700; }
 
-  /* Desktop advances with the keyboard or these two buttons. Tapping anywhere
-     only advances on touch devices, so a mouse user can select text freely. */
-  #nav { position: fixed; right: 20px; bottom: 18px; display: flex; gap: 8px; z-index: 50; }
+  .micro { font-family: 'Montserrat', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
+
+  /* sintaxe: accent para palavra-chave, success para string, subtle para comentário */
+  .kw { color: var(--accent); font-weight: 500; }
+  .st { color: var(--success); }
+  .cm { color: var(--text-subtle); }
+  .hl { background: var(--danger-surface); color: var(--text); border-radius: 3px; padding: 0 4px; }
+
+  /* No desktop navega por teclado ou por estes botões, então o texto do
+     slide continua selecionável. Alvo de 44px conforme o guia. */
+  #nav { position: fixed; right: 24px; bottom: 20px; display: flex; gap: 8px; align-items: center; z-index: 50; }
   #nav button {
-    width: 34px; height: 34px; border-radius: 10px; border: 1px solid var(--line);
-    background: var(--panel); color: var(--muted); cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    box-shadow: var(--shadow-micro); font-size: 15px; line-height: 1; padding: 0;
+    width: 44px; height: 44px; border-radius: var(--radius-lg);
+    border: var(--bw-strong) solid var(--border-interactive);
+    background: var(--surface-raised); color: var(--text-muted);
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    font-size: 17px; line-height: 1; padding: 0;
   }
-  #nav button:hover { color: var(--purple); border-color: var(--purple); }
-  #nav span { align-self: center; margin-right: 4px; color: var(--faint); font-size: 12px; }
-  @media (pointer: coarse) { #nav { display: none; } }
+  #nav button:hover { color: var(--accent); border-color: var(--accent); }
+  #nav button:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+  #navpos { color: var(--text-subtle); font-size: 12px; margin-right: 8px; }
 
   @keyframes slideUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -89,9 +142,13 @@
   .slide.active .delay-2 { animation-delay: 0.22s; }
   .dot-live { animation: pulse 1.8s ease-in-out infinite; }
 
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
+
   @media print {
     @page { size: 1600px 900px; margin: 0; }
-    html, body { overflow: visible !important; height: auto !important; background: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    html, body { overflow: visible !important; height: auto !important; background: var(--surface) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     #deck { overflow: visible !important; height: auto !important; width: auto !important; display: block !important; }
     #nav { display: none !important; }
     .slide { display: flex !important; width: 1600px !important; height: 900px !important; min-height: 900px !important; max-height: 900px !important; page-break-after: always !important; break-after: page !important; break-inside: avoid !important; animation: none !important; }
@@ -122,7 +179,7 @@ const SLIDES = [
   // ───────── 01 · O node e o protocolo ─────────
   { type: 'divider', num: '01', label: 'O node e o protocolo', meta: '3 faixas · o número que envelhece, o que é um node, e o formato JSON-RPC' },
 
-  { type: 'hook', beat: 1, kicker: 'Faixa 01 · O número que envelhece',
+  { type: 'hook', beat: 1, kicker: 'O número que envelhece',
     title: 'Você abre a aba Fees às 15:00:00 e o número está certo. Às 15:00:13 ele está errado, e ninguém avisou a tela.',
     sub: 'O que mudou nesses 13 segundos? E o que o navegador teria que fazer pra descobrir isso sozinho?',
     tags: ['block time', 'base fee', 'polling'] },
@@ -134,7 +191,7 @@ const SLIDES = [
     ], note: 'O mesmo problema aparece fora de cripto: a Uber mediu que cerca de 80% das requisições que chegavam no API gateway eram polling, e voltavam sem nenhuma novidade.' },
   { type: 'diagram', beat: 1, kicker: 'Perguntar doze vezes por block, ou ser avisado uma vez', src: DIAG + 'polling-vs-push.png' },
 
-  { type: 'hook', beat: 2, kicker: 'Faixa 02 · O node',
+  { type: 'hook', beat: 2, kicker: 'O node',
     title: 'Você precisa do preço de gas atual do Ethereum, e descobre que não existe uma api.ethereum.org.',
     sub: 'Qual servidor o seu backend vai chamar? E por que é esse servidor que tem a resposta?',
     tags: ['node', 'estado', 'mempool', 'API key'] },
@@ -150,7 +207,7 @@ const SLIDES = [
       'Uma assinatura, e as mensagens chegam sem limite',
       'Vamos abrir uma dessas ao vivo na faixa 04' ] } },
 
-  { type: 'hook', beat: 3, kicker: 'Faixa 03 · JSON-RPC',
+  { type: 'hook', beat: 3, kicker: 'JSON-RPC',
     title: 'Rode um curl pedindo o último block. Agora mande exatamente o mesmo pedido por WebSocket.',
     sub: 'O que muda de um pro outro? E o que continua idêntico nos dois?',
     tags: ['JSON-RPC 2.0', 'method', 'params', 'id'] },
@@ -189,7 +246,7 @@ const SLIDES = [
   // ───────── 02 · A conexão viva ─────────
   { type: 'divider', num: '02', label: 'A conexão viva', meta: '2 faixas · abrir a conexão, e o que fazer quando ela cai' },
 
-  { type: 'hook', beat: 4, kicker: 'Faixa 04 · WebSocket',
+  { type: 'hook', beat: 4, kicker: 'WebSocket',
     title: 'O node precisa te avisar quando sair um block novo. Só que ele não sabe o seu endereço, e a sua conexão HTTP já fechou.',
     sub: 'O que precisa acontecer antes disso, pra que ele consiga falar primeiro?',
     tags: ['upgrade', '101', 'frames', 'eth_subscribe'] },
@@ -221,7 +278,7 @@ const SLIDES = [
     ],
     punch: 'Depois do eth_subscribe vocês não fazem mais nenhuma requisição, e mesmo assim as mensagens continuam aparecendo. É a aula inteira acontecendo dentro de um terminal.' },
 
-  { type: 'hook', beat: 5, kicker: 'Faixa 05 · Quando a conexão cai',
+  { type: 'hook', beat: 5, kicker: 'Quando a conexão cai',
     title: 'A sua conexão vai cair. Um deploy, o wifi, o timeout do provedor. Ela fica 40 segundos fora e volta.',
     sub: 'O que aconteceu com os blocks desse intervalo? E como o painel percebe que perdeu alguma coisa?',
     tags: ['retry', 'backoff', 'heartbeat', 'backfill'] },
@@ -257,7 +314,7 @@ const SLIDES = [
   // ───────── 03 · Do dado ao painel ─────────
   { type: 'divider', num: '03', label: 'Do dado ao painel', meta: '3 faixas · a conta em dólar, por que existe um backend, e o SSE' },
 
-  { type: 'hook', beat: 6, kicker: 'Faixa 06 · Do wei ao dólar',
+  { type: 'hook', beat: 6, kicker: 'Do wei ao dólar',
     title: 'O block chegou com baseFeePerGas: "0x2540be400". O investidor precisa ler "transferência simples: US$ 0,63".',
     sub: 'Quais conversões existem entre um e outro? E qual delas não vem do node?',
     tags: ['wei', 'gwei', 'EIP-1559', '21.000 gas'] },
@@ -283,7 +340,7 @@ const SLIDES = [
       ['O preço do ETH vem de fora', 'O node não tem como saber quanto vale um ETH em dólar. Vocês vão precisar de uma segunda fonte, com cache, e com um valor de reserva pra quando essa fonte falhar.'],
     ] },
 
-  { type: 'hook', beat: 7, kicker: 'Faixa 07 · Por que existe um backend',
+  { type: 'hook', beat: 7, kicker: 'Por que existe um backend',
     title: 'O navegador fala WebSocket sozinho. Dava pra abrir a conexão com a Alchemy direto do React e apagar o backend do projeto.',
     sub: 'Me deem três motivos concretos pra não fazer isso.',
     tags: ['API key no bundle', 'N conexões', 'divergência', 'fan-in / fan-out'] },
@@ -301,7 +358,7 @@ const SLIDES = [
     projeto: 'É por isso que o TAP separa o backend em Node.js do frontend em React. Não é uma exigência acadêmica de arquitetura em camadas, são esses quatro problemas.' },
   { type: 'diagram', beat: 7, kicker: 'O desenho que justifica o backend existir', src: DIAG + 'dois-saltos.png' },
 
-  { type: 'hook', beat: 8, kicker: 'Faixa 08 · SSE',
+  { type: 'hook', beat: 8, kicker: 'SSE',
     title: 'Do backend até o navegador o dado anda num sentido só: o painel recebe, e nunca responde nada.',
     sub: 'Qual transporte vocês escolhem pra essa parte, e por quê?',
     tags: ['text/event-stream', 'EventSource', 'Last-Event-ID', 'backpressure'] },
@@ -334,7 +391,7 @@ const SLIDES = [
   // ───────── 04 · O desenho completo ─────────
   { type: 'divider', num: '04', label: 'O desenho completo', meta: '1 faixa · os dois caminhos que toda tela ao vivo precisa ter' },
 
-  { type: 'hook', beat: 9, kicker: 'Faixa 09 · Arquitetura',
+  { type: 'hook', beat: 9, kicker: 'Arquitetura',
     title: 'Alguém abre a aba Fees agora, do zero.',
     sub: 'Desenhem o que acontece até o primeiro número aparecer. Depois desenhem o que acontece quando o próximo block sai. São dois caminhos diferentes.',
     tags: ['snapshot', 'stream', 'primeira renderização'] },
@@ -348,84 +405,108 @@ const SLIDES = [
 const deck = document.getElementById('deck');
 const TOTAL = SLIDES.length;
 
-// ── A barra de conexão abre o deck mostrando o painel que a aula vai construir.
-//    Só aparece no slide 1; depois disso o conteúdo fica em tela cheia.
+// Padrão geométrico da marca: losango, hexágono e triângulo em contorno fino,
+// a 6% de opacidade, sempre à direita e nunca atrás de texto corrido (§5.4).
+function pattern() {
+  return `<svg aria-hidden="true" style="position:absolute;right:-80px;top:50%;transform:translateY(-50%);width:640px;height:640px;opacity:0.06;pointer-events:none" viewBox="0 0 400 400" fill="none" stroke="${'#e8f1f2'}" stroke-width="1.5">
+      <polygon points="200,40 300,100 300,220 200,280 100,220 100,100"/>
+      <polygon points="200,90 260,125 260,195 200,230 140,195 140,125"/>
+      <rect x="150" y="270" width="90" height="90" transform="rotate(45 195 315)"/>
+      <polygon points="60,300 110,380 10,380"/>
+      <polygon points="330,250 375,330 285,330"/>
+      <circle cx="200" cy="160" r="26"/>
+      <path d="M100 100 L200 160 L300 100 M200 160 L200 280"/>
+    </svg>`;
+}
+
+// A barra de conexão abre o deck mostrando o painel que a aula vai construir.
+// Só no slide 1; depois o conteúdo ocupa a tela inteira.
 function connbar() {
   return `
-    <header style="height:62px;flex:0 0 auto;background:var(--panel);border-bottom:1px solid var(--line)" class="flex items-center px-7 gap-7">
+    <header style="height:66px;flex:0 0 auto;background:var(--surface-raised);border-bottom:var(--bw-hairline) solid var(--border)" class="flex items-center px-8 gap-8">
       <div class="flex items-center gap-3" style="flex:0 0 auto">
-        <div style="width:30px;height:30px;border-radius:8px;background:var(--purple);display:flex;align-items:center;justify-content:center">
-          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 15l4-6 4 4 4-8 6 10"/></svg>
+        <div style="width:32px;height:32px;border-radius:var(--radius-lg);background:linear-gradient(135deg,var(--ibc-gradient-start),var(--ibc-gradient-end));display:flex;align-items:center;justify-content:center">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#081119" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 15l4-6 4 4 4-8 6 10"/></svg>
         </div>
-        <span class="text-[14px] font-semibold">Alphractal <span style="color:var(--faint);font-weight:400">/ aba Fees</span></span>
+        <span class="head text-[15px] font-bold">Alphractal <span style="color:var(--text-subtle);font-weight:400">/ aba Fees</span></span>
       </div>
       <div class="flex items-center gap-2.5" style="flex:0 0 auto">
-        <span class="dot-live" style="width:8px;height:8px;border-radius:50%;background:var(--green)"></span>
-        <span class="mono text-[12px]" style="color:var(--green-dark);font-weight:500">wss · conectado</span>
+        <span class="dot-live" style="width:8px;height:8px;border-radius:var(--radius-full);background:var(--success)"></span>
+        <span class="mono text-[13px]" style="color:var(--success)">wss · conectado</span>
       </div>
-      <div class="flex items-center gap-6 mono text-[12px]" style="color:var(--muted)">
-        <span>block <span style="color:var(--ink);font-weight:500">#23.481.902</span></span>
-        <span>base fee <span style="color:var(--ink);font-weight:500">8,4 gwei</span></span>
-        <span>transferência <span style="color:var(--ink);font-weight:500">US$ 0,53</span></span>
+      <div class="flex items-center gap-8 mono text-[13px]" style="color:var(--text-muted)">
+        <span>block <span style="color:var(--text)">#23.481.902</span></span>
+        <span>base fee <span style="color:var(--text)">8,4 gwei</span></span>
+        <span>transferência <span style="color:var(--text)">US$ 0,53</span></span>
       </div>
     </header>`;
 }
 
 function rail() {
   const rows = SECTIONS.map((s) => `
-      <div class="flex items-center gap-3 px-3 py-3" style="border-radius:10px">
-        <span class="mono text-[13px]" style="color:var(--faint);font-weight:600;flex:0 0 auto">${s.num}</span>
+      <div class="flex items-center gap-3 px-3 py-3">
+        <span class="mono text-[14px]" style="color:var(--accent);flex:0 0 auto">${s.num}</span>
         <div style="min-width:0">
-          <div class="text-[14px] truncate" style="color:var(--ink);font-weight:500">${s.label}</div>
-          <div class="text-[12px]" style="color:var(--faint)">${s.beats.length} ${s.beats.length === 1 ? 'faixa' : 'faixas'} · ${s.beats.map(b => String(b).padStart(2, '0')).join(', ')}</div>
+          <div class="head text-[15px] font-bold truncate" style="color:var(--text)">${s.label}</div>
+          <div class="text-[13px]" style="color:var(--text-subtle)">${s.beats.length} ${s.beats.length === 1 ? 'faixa' : 'faixas'} · ${s.beats.map(b => String(b).padStart(2, '0')).join(', ')}</div>
         </div>
       </div>`).join('');
   return `
-    <aside class="h-full flex flex-col gap-1 px-4 py-5" style="width:264px;flex:0 0 auto;background:var(--panel);border-right:1px solid var(--line)">
-      <div class="micro px-3 pb-3" style="color:var(--faint)">Roteiro</div>
+    <aside class="h-full flex flex-col gap-1 px-4 py-6" style="width:280px;flex:0 0 auto;background:var(--surface-raised);border-right:var(--bw-hairline) solid var(--border)">
+      <div class="micro px-3 pb-3" style="color:var(--text-subtle)">Roteiro</div>
       <div class="flex flex-col gap-1">${rows}</div>
-      <div class="mt-auto px-3 pt-4" style="border-top:1px solid var(--line)">
-        <div class="text-[13px] font-semibold">WebSocket e RPC</div>
-        <div class="text-[12px] mt-0.5" style="color:var(--faint)">Inteli Blockchain · 90 min · 9 faixas</div>
+      <div class="mt-auto px-3 pt-4" style="border-top:var(--bw-hairline) solid var(--border)">
+        <div class="head text-[14px] font-bold">WebSocket e RPC</div>
+        <div class="text-[13px] mt-1" style="color:var(--text-subtle)">Inteli Blockchain · 90 min · 9 faixas</div>
       </div>
     </aside>`;
 }
 
 function panelHead(slide, idx) {
   const sec = typeof slide.beat === 'number' ? sectionOf(slide.beat) : null;
-  const right = sec ? `${sec.num} · ${sec.label}` : '';
-  return `<div class="flex items-center justify-between px-9 py-4" style="border-bottom:1px solid var(--line);flex:0 0 auto">
-      <span class="micro" style="color:var(--purple)">${slide.kicker || ''}</span>
-      <span class="micro flex items-center gap-4" style="color:var(--faint)">${right}<span class="mono" style="font-size:11px">${String(idx + 1).padStart(2, '0')}/${TOTAL}</span></span>
+  const faixa = typeof slide.beat === 'number' ? `Faixa ${String(slide.beat).padStart(2, '0')}` : '';
+  return `<div class="flex items-center justify-between px-10 py-5" style="border-bottom:var(--bw-hairline) solid var(--border);flex:0 0 auto">
+      <div class="flex items-center gap-4" style="min-width:0">
+        ${faixa ? `<span class="badge micro px-3 py-1" style="background:var(--accent);color:var(--accent-fg);flex:0 0 auto">${faixa}</span>` : ''}
+        <span class="head text-[15px] font-bold truncate" style="color:var(--text)">${slide.kicker || ''}</span>
+      </div>
+      <span class="flex items-center gap-5" style="flex:0 0 auto">
+        ${sec ? `<span class="micro" style="color:var(--text-subtle)">${sec.num} · ${sec.label}</span>` : ''}
+        <span class="mono text-[13px]" style="color:var(--text-subtle)">${String(idx + 1).padStart(2, '0')}/${TOTAL}</span>
+      </span>
     </div>`;
 }
 
 function tags(arr) {
   if (!arr || !arr.length) return '';
-  return `<div class="flex flex-wrap gap-2 mt-9 stagger">${arr.map(t =>
-    `<span class="chip mono px-3 py-1.5 text-[13px]" style="background:var(--purple-soft);color:var(--purple-dark);font-weight:500">${t}</span>`).join('')}</div>`;
+  return `<div class="flex flex-wrap gap-3 mt-10 stagger">${arr.map(t =>
+    `<span class="mono text-[14px] px-4 py-2" style="border-radius:var(--radius-full);background:var(--surface);border:var(--bw-hairline) solid var(--border-interactive);color:var(--text-muted)">${t}</span>`).join('')}</div>`;
 }
 
 function projetoNote(txt) {
   if (!txt) return '';
-  return `<div class="anim-fade delay-2 flex gap-3.5 mt-8 px-5 py-4" style="background:var(--green-tint);border:1px solid rgba(20,158,97,0.28);border-radius:12px">
-      <span class="micro mt-0.5" style="color:var(--green-dark);flex:0 0 auto">No projeto</span>
-      <span class="text-[15px]" style="color:var(--ink);line-height:1.45">${txt}</span>
+  return `<div class="anim-fade delay-2 flex gap-5 mt-8 px-6 py-5" style="background:var(--surface);border:var(--bw-strong) solid var(--accent);border-radius:var(--radius-lg)">
+      <span class="micro" style="color:var(--accent);flex:0 0 auto;padding-top:3px">No projeto</span>
+      <span class="text-[16px]" style="color:var(--text);line-height:1.6;max-width:72ch">${txt}</span>
     </div>`;
 }
 
-// Slide 1 traz o chrome inteiro (barra + roteiro). Todo o resto é tela cheia.
 function coverShell(inner) {
   return `<div class="slide">
       ${connbar()}
       <div class="flex" style="flex:1;min-height:0">
         ${rail()}
-        <main class="flex-1 h-full overflow-hidden px-16 py-12 flex flex-col">${inner}</main>
+        <main class="flex-1 h-full overflow-hidden px-16 py-12 flex flex-col" style="position:relative">${pattern()}<div style="position:relative;z-index:1;flex:1;display:flex;flex-direction:column">${inner}</div></main>
       </div>
     </div>`;
 }
-function bleedShell(inner) {
-  return `<div class="slide"><main class="flex-1 h-full overflow-hidden px-24 py-16 flex flex-col">${inner}</main></div>`;
+function bleedShell(inner, withPattern) {
+  return `<div class="slide">
+      <main class="flex-1 h-full overflow-hidden px-24 py-16 flex flex-col" style="position:relative">
+        ${withPattern ? pattern() : ''}
+        <div style="position:relative;z-index:1;flex:1;display:flex;flex-direction:column">${inner}</div>
+      </main>
+    </div>`;
 }
 function panelShell(slide, idx, inner) {
   return `<div class="slide">
@@ -443,13 +524,13 @@ function render(slide, idx) {
     case 'cover':
       return coverShell(`
         <div class="flex-1 flex flex-col justify-center">
-          <div class="anim-fade flex items-center gap-2.5 mb-7">
-            <span class="chip px-3 py-1 text-[12px] font-semibold" style="background:var(--purple);color:#fff">Inteli Blockchain</span>
-            <span class="text-[13px]" style="color:var(--muted)">Parceria Alphractal · projeto da aba Fees</span>
+          <div class="anim-fade flex items-center gap-3 mb-8">
+            <span class="badge micro px-4 py-1.5" style="background:var(--accent);color:var(--accent-fg)">Inteli Blockchain</span>
+            <span class="text-[14px]" style="color:var(--text-muted)">Parceria Alphractal · projeto da aba Fees</span>
           </div>
-          <h1 class="display anim" style="font-size:76px;max-width:15ch">WebSocket e RPC: do node ao pixel.</h1>
-          <p class="anim delay-1 text-[24px] mt-8" style="color:var(--muted);max-width:54ch;line-height:1.4">Por que esse painel precisa de <span style="color:var(--purple-dark);font-weight:600">duas conexões abertas</span>, e não de uma.</p>
-          <div class="anim-fade delay-2 flex items-center gap-3 mt-10 text-[14px] mono" style="color:var(--faint)">
+          <h1 class="display anim" style="font-size:70px;max-width:15ch">WebSocket e RPC: do node ao pixel.</h1>
+          <p class="anim delay-1 text-[24px] mt-8" style="color:var(--text-muted);max-width:54ch;line-height:1.5">Por que esse painel precisa de <span class="head" style="color:var(--accent);font-weight:700">duas conexões abertas</span>, e não de uma.</p>
+          <div class="anim-fade delay-2 flex items-center gap-4 mt-12 mono text-[14px]" style="color:var(--text-subtle)">
             <span>90 min</span><span>·</span><span>9 faixas</span><span>·</span><span>1 lab ao vivo</span><span>·</span><span>Davi Duarte</span>
           </div>
         </div>`);
@@ -457,74 +538,74 @@ function render(slide, idx) {
     case 'divider':
       return bleedShell(`
         <div class="flex-1 flex flex-col justify-center">
-          <div class="flex items-baseline gap-5 anim">
-            <span class="display mono" style="font-size:96px;color:var(--purple-soft);line-height:1">${slide.num}</span>
-            <h2 class="display" style="font-size:62px;max-width:16ch">${slide.label}</h2>
+          <div class="flex items-baseline gap-6 anim">
+            <span class="display mono" style="font-size:56px;color:var(--accent);line-height:1">${slide.num}</span>
+            <h2 class="display" style="font-size:56px;max-width:16ch">${slide.label}</h2>
           </div>
-          <p class="anim delay-1 text-[19px] mt-6" style="color:var(--muted)">${slide.meta}</p>
-        </div>`);
+          <p class="anim delay-1 text-[20px] mt-8" style="color:var(--text-muted);max-width:72ch;line-height:1.6">${slide.meta}</p>
+        </div>`, true);
 
     case 'hook':
       return panelShell(slide, idx, `
-        <h2 class="display anim" style="font-size:52px;max-width:31ch;letter-spacing:-0.018em">${slide.title}</h2>
-        ${slide.sub ? `<p class="anim delay-1 text-[23px] mt-8" style="color:var(--muted);max-width:66ch;line-height:1.45">${slide.sub}</p>` : ''}
+        <h2 class="display anim" style="font-size:56px;max-width:29ch;font-weight:700">${slide.title}</h2>
+        ${slide.sub ? `<p class="anim delay-1 text-[24px] mt-9" style="color:var(--text-muted);max-width:66ch;line-height:1.5">${slide.sub}</p>` : ''}
         ${tags(slide.tags)}`);
 
     case 'stat':
       return panelShell(slide, idx, `
-        <div class="grid grid-cols-4 gap-5 stagger">
+        <div class="grid grid-cols-4 gap-6 stagger">
           ${slide.stats.map(([n, l]) => `
-            <div class="card px-6 py-7">
-              <div class="display mono" style="font-size:40px;color:var(--purple)">${n}</div>
-              <div class="text-[15px] mt-3" style="color:var(--muted);line-height:1.42">${l}</div>
+            <div class="card px-7 py-8">
+              <div class="display mono" style="font-size:40px;color:var(--accent)">${n}</div>
+              <div class="text-[16px] mt-4" style="color:var(--text-muted);line-height:1.5">${l}</div>
             </div>`).join('')}
         </div>
-        ${slide.note ? `<p class="anim-fade delay-2 text-[16px] mt-8" style="color:var(--muted);max-width:96ch;line-height:1.45">${slide.note}</p>` : ''}`);
+        ${slide.note ? `<p class="anim-fade delay-2 text-[16px] mt-10" style="color:var(--text-muted);max-width:100ch;line-height:1.6">${slide.note}</p>` : ''}`);
 
     case 'list':
       return panelShell(slide, idx, `
         <div class="stagger flex flex-col">
           ${slide.items.map(([h, b], i) => `
-            <div class="flex items-start gap-6 py-4" style="${i < slide.items.length - 1 ? 'border-bottom:1px solid var(--line)' : ''}">
-              <span class="mono text-[14px]" style="color:var(--faint);width:22px;flex:0 0 auto;padding-top:4px">${String(i + 1).padStart(2, '0')}</span>
-              <div class="mono text-[18px] font-semibold" style="color:var(--purple-dark);width:268px;flex:0 0 auto">${h}</div>
-              <div class="text-[17px]" style="color:var(--muted);line-height:1.45">${b}</div>
+            <div class="flex items-start gap-8 py-5" style="${i < slide.items.length - 1 ? 'border-bottom:var(--bw-hairline) solid var(--border)' : ''}">
+              <span class="mono text-[15px]" style="color:var(--text-subtle);width:26px;flex:0 0 auto;padding-top:4px">${String(i + 1).padStart(2, '0')}</span>
+              <div class="mono text-[20px]" style="color:var(--accent);width:280px;flex:0 0 auto;font-weight:500">${h}</div>
+              <div class="text-[16px]" style="color:var(--text-muted);line-height:1.6;max-width:72ch">${b}</div>
             </div>`).join('')}
         </div>`);
 
     case 'code':
       return panelShell(slide, idx, `
-        <div class="grid gap-7 items-stretch" style="grid-template-columns:1.42fr 1fr">
+        <div class="grid gap-8 items-stretch" style="grid-template-columns:1.42fr 1fr">
           <div class="well anim overflow-hidden flex flex-col">
-            <div class="flex items-center gap-2 px-5 py-3" style="border-bottom:1px solid var(--line)">
-              <span style="width:9px;height:9px;border-radius:50%;background:var(--line)"></span>
-              <span style="width:9px;height:9px;border-radius:50%;background:var(--line)"></span>
-              <span class="mono text-[12px] ml-2" style="color:var(--faint)">${slide.file || 'snippet'}</span>
+            <div class="flex items-center gap-3 px-6 py-3" style="border-bottom:var(--bw-hairline) solid var(--border)">
+              <span style="width:9px;height:9px;border-radius:var(--radius-full);background:var(--border-interactive)"></span>
+              <span style="width:9px;height:9px;border-radius:var(--radius-full);background:var(--border-interactive)"></span>
+              <span class="mono text-[13px] ml-2" style="color:var(--text-subtle)">${slide.file || 'snippet'}</span>
             </div>
-            <pre class="mono whitespace-pre px-6 py-5 flex-1" style="font-size:13.5px;line-height:1.8;color:var(--ink);margin:0">${slide.code.join('\n')}</pre>
+            <pre class="mono whitespace-pre px-7 py-6 flex-1" style="font-size:14px;line-height:1.85;color:var(--text);margin:0">${slide.code.join('\n')}</pre>
           </div>
-          <div class="stagger flex flex-col gap-3.5 justify-center">
+          <div class="stagger flex flex-col gap-4 justify-center">
             ${slide.notes.map(([h, b]) => `
-              <div class="card px-6 py-5">
-                <div class="text-[17px] font-semibold">${h}</div>
-                <div class="text-[15.5px] mt-1.5" style="color:var(--muted);line-height:1.45">${b}</div>
+              <div class="card px-7 py-6">
+                <div class="head text-[20px] font-bold">${h}</div>
+                <div class="text-[16px] mt-2" style="color:var(--text-muted);line-height:1.55">${b}</div>
               </div>`).join('')}
           </div>
         </div>`);
 
     case 'compare':
       return panelShell(slide, idx, `
-        <div class="grid grid-cols-2 gap-6 stagger">
+        <div class="grid grid-cols-2 gap-7 stagger">
           ${[slide.left, slide.right].map((c) => `
-            <div class="px-7 py-6" style="background:${c.live ? 'var(--green-tint)' : 'var(--panel)'};border:1px ${c.bad ? 'dashed' : 'solid'} ${c.live ? 'rgba(20,158,97,0.32)' : 'var(--line)'};border-radius:12px;box-shadow:${c.bad ? 'none' : 'var(--shadow-micro)'}">
-              <div class="flex items-center gap-2.5 mb-4">
-                <span class="chip mono px-3 py-1 text-[12px] font-semibold" style="background:${c.live ? 'var(--green)' : c.bad ? 'rgba(148,151,169,0.16)' : 'var(--purple-soft)'};color:${c.live ? '#fff' : c.bad ? 'var(--muted)' : 'var(--purple-dark)'}">${c.tag}</span>
-                ${c.live ? '<span class="dot-live" style="width:8px;height:8px;border-radius:50%;background:var(--green)"></span>' : ''}
+            <div class="px-8 py-7" style="background:var(--surface);border:var(--bw-strong) solid ${c.live ? 'var(--success)' : 'var(--border)'};border-radius:var(--radius-lg)">
+              <div class="flex items-center gap-3 mb-5">
+                <span class="badge micro px-4 py-1.5" style="background:${c.live ? 'var(--success)' : c.bad ? 'var(--danger-surface)' : 'var(--border)'};color:${c.live ? 'var(--accent-fg)' : 'var(--text)'}">${c.tag}</span>
+                ${c.live ? '<span class="dot-live" style="width:8px;height:8px;border-radius:var(--radius-full);background:var(--success)"></span>' : ''}
               </div>
-              <div class="display text-[27px]" style="color:${c.bad ? 'var(--muted)' : 'var(--ink)'}">${c.title}</div>
-              ${c.mono ? `<div class="mono text-[13px] mt-3 px-3 py-2" style="background:var(--well);border:1px solid var(--line);border-radius:8px;color:var(--muted);word-break:break-all">${c.mono}</div>` : ''}
-              <div class="flex flex-col gap-3 mt-5">
-                ${c.points.map(p => `<div class="flex gap-3 items-start text-[16.5px]"><span style="color:${c.live ? 'var(--green)' : c.bad ? 'var(--faint)' : 'var(--purple)'};flex:0 0 auto;margin-top:8px;width:5px;height:5px;border-radius:50%;background:currentColor"></span><span style="color:var(--muted);line-height:1.4">${p}</span></div>`).join('')}
+              <div class="head text-[24px] font-bold" style="color:${c.bad ? 'var(--text-muted)' : 'var(--text)'}">${c.title}</div>
+              ${c.mono ? `<div class="mono text-[14px] mt-4 px-4 py-3" style="background:var(--surface-sunken);border:var(--bw-hairline) solid var(--border);color:var(--text-muted);word-break:break-all">${c.mono}</div>` : ''}
+              <div class="flex flex-col gap-4 mt-6">
+                ${c.points.map(p => `<div class="flex gap-4 items-start text-[16px]"><span style="color:${c.live ? 'var(--success)' : 'var(--text-subtle)'};flex:0 0 auto;margin-top:9px;width:6px;height:6px;border-radius:var(--radius-full);background:currentColor"></span><span style="color:var(--text-muted);line-height:1.5">${p}</span></div>`).join('')}
               </div>
             </div>`).join('')}
         </div>
@@ -532,42 +613,45 @@ function render(slide, idx) {
 
     case 'compare3':
       return panelShell(slide, idx, `
-        <div class="grid grid-cols-3 gap-5 stagger">
+        <div class="grid grid-cols-3 gap-6 stagger">
           ${slide.cards.map(c => `
-            <div class="px-6 py-6 flex flex-col" style="background:${c.live ? 'var(--green-tint)' : 'var(--panel)'};border:1px ${c.bad ? 'dashed' : 'solid'} ${c.live ? 'rgba(20,158,97,0.32)' : 'var(--line)'};border-radius:12px;box-shadow:${c.bad ? 'none' : 'var(--shadow-micro)'}">
-              <span class="chip mono self-start px-3 py-1 text-[12px] font-semibold mb-4" style="background:${c.live ? 'var(--green)' : c.bad ? 'rgba(148,151,169,0.16)' : 'var(--purple-soft)'};color:${c.live ? '#fff' : c.bad ? 'var(--muted)' : 'var(--purple-dark)'}">${c.tag}</span>
-              <div class="display text-[24px]" style="color:${c.bad ? 'var(--muted)' : 'var(--ink)'}">${c.title}</div>
-              <div class="text-[14px] mt-2 mb-5" style="color:var(--faint)">${c.sub}</div>
-              <div class="flex flex-col gap-3 mt-auto">
-                ${c.points.map(p => `<div class="flex gap-3 items-start text-[15.5px]"><span style="color:${c.live ? 'var(--green)' : c.bad ? 'var(--faint)' : 'var(--purple)'};flex:0 0 auto;margin-top:7px;width:5px;height:5px;border-radius:50%;background:currentColor"></span><span style="color:var(--muted);line-height:1.4">${p}</span></div>`).join('')}
+            <div class="px-7 py-7 flex flex-col" style="background:var(--surface);border:var(--bw-strong) solid ${c.live ? 'var(--success)' : 'var(--border)'};border-radius:var(--radius-lg)">
+              <span class="badge micro self-start px-4 py-1.5 mb-5" style="background:${c.live ? 'var(--success)' : c.bad ? 'var(--danger-surface)' : 'var(--border)'};color:${c.live ? 'var(--accent-fg)' : 'var(--text)'}">${c.tag}</span>
+              <div class="head text-[22px] font-bold" style="color:${c.bad ? 'var(--text-muted)' : 'var(--text)'}">${c.title}</div>
+              <div class="text-[15px] mt-2 mb-6" style="color:var(--text-subtle)">${c.sub}</div>
+              <div class="flex flex-col gap-4 mt-auto">
+                ${c.points.map(p => `<div class="flex gap-4 items-start text-[15px]"><span style="color:${c.live ? 'var(--success)' : 'var(--text-subtle)'};flex:0 0 auto;margin-top:8px;width:6px;height:6px;border-radius:var(--radius-full);background:currentColor"></span><span style="color:var(--text-muted);line-height:1.5">${p}</span></div>`).join('')}
               </div>
             </div>`).join('')}
         </div>`);
 
     case 'diagram':
+      // Moldura: a assinatura da marca. Imagem de destaque merece.
       return panelShell(slide, idx, `
-        <div class="flex-1 flex items-center justify-center anim" style="min-height:0">
-          <img src="${slide.src}" alt="${slide.kicker}" style="max-width:100%;max-height:100%;object-fit:contain" />
+        <div class="flex-1 flex items-center justify-center anim" style="min-height:0;padding:0 8px 8px 0">
+          <div class="moldura overflow-hidden" style="display:inline-block;line-height:0;max-width:100%;max-height:100%">
+            <img src="${slide.src}" alt="${slide.kicker}" style="display:block;max-width:100%;max-height:100%;width:auto;height:auto" />
+          </div>
         </div>`);
 
     case 'lab':
       return panelShell(slide, idx, `
-        <h2 class="display anim" style="font-size:36px">${slide.title}</h2>
-        <div class="anim delay-1 mt-6 overflow-hidden" style="background:var(--ink);border-radius:12px">
-          <div class="flex items-center gap-2 px-5 py-3" style="border-bottom:1px solid #26272e">
-            <span class="dot-live" style="width:8px;height:8px;border-radius:50%;background:var(--green)"></span>
-            <span class="mono text-[12px]" style="color:#9497a9">terminal · ao vivo</span>
+        <h2 class="display anim" style="font-size:32px;font-weight:700">${slide.title}</h2>
+        <div class="anim delay-1 mt-7 overflow-hidden" style="background:var(--surface-sunken);border:var(--bw-strong) solid var(--success);border-radius:var(--radius-lg)">
+          <div class="flex items-center gap-3 px-6 py-3.5" style="border-bottom:var(--bw-hairline) solid var(--border)">
+            <span class="dot-live" style="width:8px;height:8px;border-radius:var(--radius-full);background:var(--success)"></span>
+            <span class="mono text-[13px]" style="color:var(--text-subtle)">terminal · ao vivo</span>
           </div>
-          <div class="px-6 py-5 flex flex-col gap-3.5 stagger">
+          <div class="px-7 py-6 flex flex-col gap-4 stagger">
             ${slide.steps.map(([prompt, cmd, note]) => `
-              <div class="flex items-baseline gap-4">
-                <span class="mono text-[15px]" style="color:var(--green);flex:0 0 auto;width:12px">${prompt}</span>
-                <span class="mono text-[15px]" style="color:${prompt ? '#f2f2f5' : '#9497a9'};word-break:break-all">${cmd}</span>
-                <span class="text-[14px] ml-auto" style="color:#686b82;flex:0 0 auto">${note}</span>
+              <div class="flex items-baseline gap-5">
+                <span class="mono text-[16px]" style="color:var(--success);flex:0 0 auto;width:14px">${prompt}</span>
+                <span class="mono text-[16px]" style="color:${prompt ? 'var(--text)' : 'var(--text-muted)'};word-break:break-all">${cmd}</span>
+                <span class="text-[14px] ml-auto" style="color:var(--text-subtle);flex:0 0 auto">${note}</span>
               </div>`).join('')}
           </div>
         </div>
-        <p class="anim-fade delay-2 text-[18px] mt-6" style="color:var(--ink);max-width:84ch;line-height:1.45">${slide.punch}</p>`);
+        <p class="anim-fade delay-2 text-[18px] mt-7" style="color:var(--text);max-width:84ch;line-height:1.6">${slide.punch}</p>`);
 
     case 'projeto':
       return panelShell(slide, idx, `
@@ -579,25 +663,25 @@ function render(slide, idx) {
             ['Semana 3', 'Integração do front com o back', 'Faixas 07 e 08. O SSE pro stream, e um GET /snapshot pra tela não abrir vazia.'],
             ['Semana 4', 'Demo do dia 05/10', 'O que a Alphractal pediu foi "validação de nova arquitetura de dados". Levem o diagrama da faixa 09 num slide e expliquem as decisões.'],
           ].map(([w, t, d]) => `
-            <div class="flex items-start gap-6 py-4" style="border-bottom:1px solid var(--line)">
-              <span class="chip mono text-[12px] font-semibold px-3 py-1" style="background:var(--purple-soft);color:var(--purple-dark);flex:0 0 auto;width:100px;text-align:center">${w}</span>
-              <div class="text-[17px] font-semibold" style="width:300px;flex:0 0 auto">${t}</div>
-              <div class="text-[16px]" style="color:var(--muted);line-height:1.42">${d}</div>
+            <div class="flex items-start gap-7 py-5" style="border-bottom:var(--bw-hairline) solid var(--border)">
+              <span class="badge micro px-4 py-1.5" style="background:var(--accent);color:var(--accent-fg);flex:0 0 auto;width:112px;text-align:center">${w}</span>
+              <div class="head text-[18px] font-bold" style="width:310px;flex:0 0 auto">${t}</div>
+              <div class="text-[16px]" style="color:var(--text-muted);line-height:1.55;max-width:72ch">${d}</div>
             </div>`).join('')}
         </div>`);
 
     case 'closing':
       return bleedShell(`
         <div class="flex-1 flex flex-col justify-center">
-          <div class="micro anim mb-6" style="color:var(--purple)">Síntese</div>
-          <h2 class="display anim delay-1" style="font-size:54px;max-width:22ch">A pergunta não é qual protocolo usar. É quem fala primeiro.</h2>
-          <p class="anim delay-2 text-[21px] mt-8" style="color:var(--muted);max-width:70ch;line-height:1.5">Em cada perna do desenho, alguém precisa começar a conversa. Se é o cliente que pergunta, você tem polling e todo o desperdício que vem junto. Se é o servidor que avisa, você precisa de uma conexão aberta, e escolhe o transporte pela direção: WebSocket quando os dois lados falam, SSE quando só um fala.</p>
-          <div class="anim-fade delay-2 flex flex-wrap items-center gap-2.5 mt-10">
+          <div class="micro anim mb-7" style="color:var(--accent)">Síntese</div>
+          <h2 class="display anim delay-1" style="font-size:56px;max-width:22ch">A pergunta não é qual protocolo usar. É quem fala primeiro.</h2>
+          <p class="anim delay-2 text-[20px] mt-9" style="color:var(--text-muted);max-width:72ch;line-height:1.65">Em cada perna do desenho, alguém precisa começar a conversa. Se é o cliente que pergunta, você tem polling e todo o desperdício que vem junto. Se é o servidor que avisa, você precisa de uma conexão aberta, e escolhe o transporte pela direção: WebSocket quando os dois lados falam, SSE quando só um fala.</p>
+          <div class="anim-fade delay-2 flex flex-wrap items-center gap-3 mt-10">
             ${['1 conexão pra cima', 'N pra baixo', 'WebSocket pro presente', 'HTTP pro passado', 'junte antes de repassar'].map((t, i, a) =>
-              `<span class="chip px-3.5 py-1.5 text-[14px]" style="background:var(--purple-soft);color:var(--purple-dark);font-weight:500">${t}</span>${i < a.length - 1 ? '<span style="color:var(--faint)">›</span>' : ''}`).join('')}
+              `<span class="mono text-[14px] px-4 py-2" style="border-radius:var(--radius-full);background:var(--surface-raised);border:var(--bw-hairline) solid var(--border-interactive);color:var(--text-muted)">${t}</span>${i < a.length - 1 ? '<span style="color:var(--text-subtle)">›</span>' : ''}`).join('')}
           </div>
-          <p class="anim-fade delay-2 text-[17px] mt-9" style="color:var(--muted);max-width:78ch;line-height:1.5">Esse mesmo desenho aparece em qualquer tela que mostra dado ao vivo: preço de ação, ônibus no mapa, sensor de fábrica. O que muda é a fonte no começo da linha. O resto continua igual.</p>
-        </div>`);
+          <p class="anim-fade delay-2 text-[17px] mt-10" style="color:var(--text-subtle);max-width:72ch;line-height:1.65">Esse mesmo desenho aparece em qualquer tela que mostra dado ao vivo: preço de ação, ônibus no mapa, sensor de fábrica. O que muda é a fonte no começo da linha. O resto continua igual.</p>
+        </div>`, true);
 
     default:
       return `<div class="slide"><div class="p-14">slide?</div></div>`;
