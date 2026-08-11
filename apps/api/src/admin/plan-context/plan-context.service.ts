@@ -202,16 +202,16 @@ type LastWeekPlan = {
   items: LastWeekItem[];
 };
 
-type CyclePlanItem = {
+type MemberPlanItem = {
   libraryItemId: string;
   outcome: Outcome;
   completedAt: Date | null;
   libraryItem: { topics: Array<{ topicId: string }> };
 };
 
-type CyclePlan = {
+type MemberPlan = {
   id: string;
-  items: CyclePlanItem[];
+  items: MemberPlanItem[];
 };
 
 type AvailabilityRow = typeof DEFAULT_AVAILABILITY & { userId?: string };
@@ -271,7 +271,7 @@ export class PlanContextService {
 
     const [
       lastWeekPlan,
-      thisCyclePlans,
+      allPlans,
       retro,
       availabilityRow,
       topics,
@@ -303,7 +303,9 @@ export class PlanContextService {
         },
       }) as Promise<LastWeekPlan | null>,
       this.prisma.weeklyPlan.findMany({
-        where: { cycleId: cycle.id, userId: input.memberId },
+        // All-time, not cycle-scoped: topic coverage answers "what has this
+        // member ever studied", so a member on their 2nd cycle keeps credit.
+        where: { userId: input.memberId },
         select: {
           id: true,
           items: {
@@ -319,7 +321,7 @@ export class PlanContextService {
             },
           },
         },
-      }) as Promise<CyclePlan[]>,
+      }) as Promise<MemberPlan[]>,
       this.prisma.weeklyRetro.findFirst({
         where: { userId: input.memberId, weekStart: lastWeekStart },
         select: {
@@ -378,7 +380,7 @@ export class PlanContextService {
 
     const lastWeek = this.buildLastWeek(lastWeekPlan);
     const carryOverCandidates = this.buildCarryOver(lastWeekPlan, topicById);
-    const topicCoverage = this.computeTopicCoverage(topics, thisCyclePlans);
+    const topicCoverage = this.computeTopicCoverage(topics, allPlans);
     const remaining = await this.computeRemainingCapacity({
       userId: input.memberId,
       weekStart: input.weekStart,
@@ -523,7 +525,7 @@ export class PlanContextService {
 
   private computeTopicCoverage(
     topics: TopicRow[],
-    plans: CyclePlan[],
+    plans: MemberPlan[],
   ): PlanContextResponse['topicCoverage'] {
     // Dedup carried completions: a material re-planned/completed across weeks
     // counts once per topic it covers.

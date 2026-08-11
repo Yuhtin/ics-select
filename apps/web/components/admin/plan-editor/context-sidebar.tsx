@@ -100,7 +100,7 @@ export function ContextSidebar({
       </section>
 
       <section className="border-t border-rule pt-6">
-        <SectionLabel>Topic coverage · this cycle</SectionLabel>
+        <SectionLabel>Topic coverage · all time</SectionLabel>
         <div className="mt-3">
           <TopicCoverageHeatmap
             topics={coverageTopics}
