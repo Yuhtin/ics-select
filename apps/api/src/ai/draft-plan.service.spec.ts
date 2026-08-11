@@ -5,6 +5,7 @@ import {
   renderLadderBlock,
 } from './draft-plan.service';
 import { searchLibraryTool } from './library-tool';
+import { DRAFT_MODEL } from '../common/openai/openai-chat.provider';
 
 function makePrisma(overrides: Partial<Record<string, any>> = {}) {
   const base = {
@@ -138,7 +139,15 @@ describe('DraftPlanService', () => {
       system: string;
       messages: Array<{ role: string; content: string }>;
       tools: Array<{ name: string }>;
+      model: string;
+      reasoningEffort: string;
+      maxTokens: number;
     };
+    // The draft is the one reasoning call in the app. maxTokens has to leave
+    // room for the reasoning tokens on top of the JSON answer.
+    expect(callArg.model).toBe(DRAFT_MODEL);
+    expect(callArg.reasoningEffort).toBe('xhigh');
+    expect(callArg.maxTokens).toBeGreaterThanOrEqual(16000);
     const prompt = callArg.messages[0]!.content;
     expect(prompt).toMatch(/MEMBRO/);
     expect(prompt).toMatch(/track: Big Tech/);

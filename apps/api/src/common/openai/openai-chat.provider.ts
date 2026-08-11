@@ -4,14 +4,30 @@ import type { ToolDefinition, ToolExecutor, ToolCall } from './tool-calling.js';
 
 export const MODEL = 'gpt-5.4-mini';
 
-// Pricing per 1M tokens — adjust if OpenAI changes prices or the chosen model is swapped.
-const INPUT_COST_PER_MTOK = 0.15;
-const OUTPUT_COST_PER_MTOK = 0.6;
+/**
+ * The weekly-plan draft is the one call worth paying reasoning for: it picks
+ * and sequences a member's whole week. Everything else (brief, diagnose, chat)
+ * stays on MODEL.
+ */
+export const DRAFT_MODEL = 'gpt-5.6-luna';
+
+// Pricing per 1M tokens, per model. Luna's rates are the ones after OpenAI's
+// 2026-07-30 cut ($1/$6 before it) — recheck if the bill looks off. The >272k
+// input tier is ignored: our prompts are nowhere near it.
+const DEFAULT_PRICE = { input: 0.15, output: 0.6 };
+const PRICING: Record<string, { input: number; output: number }> = {
+  'gpt-5.4-mini': DEFAULT_PRICE,
+  'gpt-5.6-luna': { input: 0.2, output: 1.2 },
+};
+
+export type ReasoningEffort = 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh';
 
 export type CallInput = {
   system: string;
   messages: Array<{ role: 'user' | 'assistant'; content: string }>;
   maxTokens?: number;
+  model?: string;
+  reasoningEffort?: ReasoningEffort;
 };
 
 export type Usage = { inputTokens: number; outputTokens: number; costUsd: number };
@@ -21,9 +37,11 @@ export class OpenAiChatProvider {
   constructor(private readonly client: OpenAI) {}
 
   async callJson<T>(input: CallInput): Promise<{ data: T; usage: Usage }> {
+    const model = input.model ?? MODEL;
     const response = await this.client.chat.completions.create({
-      model: MODEL,
+      model,
       max_completion_tokens: input.maxTokens ?? 2048,
+      ...(input.reasoningEffort ? { reasoning_effort: input.reasoningEffort } : {}),
       messages: [
         { role: 'system', content: input.system },
         ...input.messages,
@@ -33,7 +51,7 @@ export class OpenAiChatProvider {
     const content = response.choices[0]?.message?.content;
     if (!content) throw new Error('No text content in response');
     const data = JSON.parse(content) as T;
-    return { data, usage: toUsage(response.usage) };
+    return { data, usage: toUsage(response.usage, model) };
   }
 
   async callJsonWithTools<T>(input: {
@@ -43,8 +61,11 @@ export class OpenAiChatProvider {
     executeTool: ToolExecutor;
     maxIterations?: number;
     maxTokens?: number;
+    model?: string;
+    reasoningEffort?: ReasoningEffort;
   }): Promise<{ data: T; usage: Usage; toolCalls: ToolCall[] }> {
     const maxIter = input.maxIterations ?? 5;
+    const model = input.model ?? MODEL;
     const openaiMessages: any[] = [
       { role: 'system', content: input.system },
       ...input.messages,
@@ -64,8 +85,9 @@ export class OpenAiChatProvider {
     for (let iter = 0; iter < maxIter; iter += 1) {
       const isFinalIter = iter === maxIter - 1;
       const response = await this.client.chat.completions.create({
-        model: MODEL,
+        model,
         max_completion_tokens: input.maxTokens ?? 2048,
+        ...(input.reasoningEffort ? { reasoning_effort: input.reasoningEffort } : {}),
         messages: openaiMessages,
         // On the last iteration, force JSON object output and drop tools
         // so the model must answer rather than attempting another tool call.
@@ -74,7 +96,7 @@ export class OpenAiChatProvider {
           : { tools: openaiTools }),
       });
 
-      const usage = toUsage(response.usage);
+      const usage = toUsage(response.usage, model);
       totalUsage.inputTokens += usage.inputTokens;
       totalUsage.outputTokens += usage.outputTokens;
       totalUsage.costUsd += usage.costUsd;
@@ -120,9 +142,11 @@ export class OpenAiChatProvider {
   }
 
   async callText(input: CallInput): Promise<{ text: string; usage: Usage }> {
+    const model = input.model ?? MODEL;
     const response = await this.client.chat.completions.create({
-      model: MODEL,
+      model,
       max_completion_tokens: input.maxTokens ?? 2048,
+      ...(input.reasoningEffort ? { reasoning_effort: input.reasoningEffort } : {}),
       messages: [
         { role: 'system', content: input.system },
         ...input.messages,
@@ -130,13 +154,14 @@ export class OpenAiChatProvider {
     });
     const content = response.choices[0]?.message?.content;
     if (!content) throw new Error('No text content in response');
-    return { text: content, usage: toUsage(response.usage) };
+    return { text: content, usage: toUsage(response.usage, model) };
   }
 
   async *stream(input: CallInput): AsyncGenerator<string, void> {
     const stream = await this.client.chat.completions.create({
-      model: MODEL,
+      model: input.model ?? MODEL,
       max_completion_tokens: input.maxTokens ?? 2048,
+      ...(input.reasoningEffort ? { reasoning_effort: input.reasoningEffort } : {}),
       messages: [
         { role: 'system', content: input.system },
         ...input.messages,
@@ -152,11 +177,15 @@ export class OpenAiChatProvider {
 
 function toUsage(
   raw: { prompt_tokens?: number; completion_tokens?: number } | undefined,
+  model: string = MODEL,
 ): Usage {
   const inputTokens = raw?.prompt_tokens ?? 0;
+  // completion_tokens already includes reasoning tokens, so a reasoning model
+  // bills correctly here without extra accounting.
   const outputTokens = raw?.completion_tokens ?? 0;
+  const price = PRICING[model] ?? DEFAULT_PRICE;
   const costUsd =
-    (inputTokens / 1_000_000) * INPUT_COST_PER_MTOK +
-    (outputTokens / 1_000_000) * OUTPUT_COST_PER_MTOK;
+    (inputTokens / 1_000_000) * price.input +
+    (outputTokens / 1_000_000) * price.output;
   return { inputTokens, outputTokens, costUsd };
 }

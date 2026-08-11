@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { OpenAiChatProvider, MODEL } from '../common/openai/openai-chat.provider.js';
+import { OpenAiChatProvider, DRAFT_MODEL } from '../common/openai/openai-chat.provider.js';
 import { LibraryService } from '../library/library.service.js';
 import { PrismaService } from '../common/prisma/prisma.service.js';
 import { resolveActiveMembership } from '../common/cycle/active-cycle.js';
@@ -575,7 +575,12 @@ Outras regras:
       tools: [searchLibraryTool],
       executeTool: executor,
       maxIterations: 5,
-      maxTokens: 2500,
+      // Reasoning tokens are billed against max_completion_tokens, so the old
+      // 2500 ceiling would burn the whole budget thinking and come back with
+      // empty content ("No text content in response").
+      maxTokens: 16000,
+      model: DRAFT_MODEL,
+      reasoningEffort: 'xhigh',
     });
 
     const draft: Draft = {
@@ -588,7 +593,7 @@ Outras regras:
     await this.usage.log({
       userId: input.memberId,
       purpose: 'draft_plan',
-      model: MODEL,
+      model: DRAFT_MODEL,
       usage: result.usage,
       metadata: {
         weekStart: input.weekStart.toISOString(),
