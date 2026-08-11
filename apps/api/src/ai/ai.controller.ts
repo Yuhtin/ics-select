@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Param, Post, Res, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpException,
+  Param,
+  Post,
+  Res,
+  Query,
+} from '@nestjs/common';
 import type { Response } from 'express';
 import { z } from 'zod';
 import { Roles } from '../auth/decorators/roles.decorator.js';
@@ -33,6 +42,29 @@ const ChatInputSchema = z.object({
   ),
 });
 
+/**
+ * Anything OpenAI throws (model not found, quota, truncated response) reaches
+ * the global filter as a bare Error and comes out as a masked 500 — the admin
+ * then has to go read container logs to learn which of those it was. These
+ * routes are ADMIN-only, so keep the upstream message in the envelope.
+ */
+async function withUpstreamDetail<T>(run: () => Promise<T>): Promise<T> {
+  try {
+    return await run();
+  } catch (err) {
+    if (err instanceof HttpException) throw err;
+    throw new HttpException(
+      {
+        error: {
+          code: 'AI_UPSTREAM',
+          message: (err as Error)?.message ?? 'unknown upstream failure',
+        },
+      },
+      502,
+    );
+  }
+}
+
 @Roles('ADMIN')
 @Controller()
 export class AiController {
@@ -47,18 +79,18 @@ export class AiController {
   @Post('ai/draft-plan')
   runDraft(@Body() body: unknown) {
     const parsed = DraftInputSchema.parse(body);
-    return this.draft.run(parsed);
+    return withUpstreamDetail(() => this.draft.run(parsed));
   }
 
   @Post('ai/brief-plan')
   runBrief(@Body() body: unknown) {
     const parsed = BriefInputSchema.parse(body);
-    return this.brief.run(parsed);
+    return withUpstreamDetail(() => this.brief.run(parsed));
   }
 
   @Get('members/:id/diagnose')
   runDiagnose(@Param('id') id: string) {
-    return this.diagnose.run(id);
+    return withUpstreamDetail(() => this.diagnose.run(id));
   }
 
   @Post('members/:memberId/chat')

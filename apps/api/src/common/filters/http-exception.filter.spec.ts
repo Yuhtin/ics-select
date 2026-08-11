@@ -1,4 +1,9 @@
-import { ArgumentsHost, BadRequestException, InternalServerErrorException } from '@nestjs/common';
+import {
+  ArgumentsHost,
+  BadRequestException,
+  HttpException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
 import { z } from 'zod';
 import { HttpExceptionFilter } from './http-exception.filter';
@@ -85,6 +90,21 @@ describe('HttpExceptionFilter', () => {
     filter.catch(new Error('db password is hunter2'), host);
     expect(captured.status).toBe(500);
     expect((captured.body as { error: { message: string } }).error.message).not.toContain('hunter2');
+  });
+
+  it('keeps a handler-built envelope at 5xx instead of masking it', () => {
+    const { host, captured } = mockHost();
+    filter.catch(
+      new HttpException(
+        { error: { code: 'AI_UPSTREAM', message: 'model gpt-x does not exist' } },
+        502,
+      ),
+      host,
+    );
+    expect(captured.status).toBe(502);
+    const body = captured.body as { error: { code: string; message: string } };
+    expect(body.error.code).toBe('AI_UPSTREAM');
+    expect(body.error.message).toContain('gpt-x');
   });
 
   it('redirects OAuth TokenError on /auth/google/callback to /login?error=auth_retry', () => {

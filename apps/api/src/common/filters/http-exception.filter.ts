@@ -132,6 +132,20 @@ export class HttpExceptionFilter implements ExceptionFilter {
     }
     if (exception instanceof HttpException) {
       const status = exception.getStatus();
+      // A handler that built its own envelope keeps it, even at 5xx: the
+      // generic mask below hides the only detail worth having (see the AI
+      // routes, where the upstream message is the whole diagnosis).
+      // `error` must be our envelope object — Nest's own 5xx responses carry
+      // `error: 'Internal Server Error'` as a string plus the raw message,
+      // and those stay masked.
+      const res = exception.getResponse();
+      if (
+        typeof res === 'object' &&
+        res !== null &&
+        typeof (res as Record<string, unknown>).error === 'object'
+      ) {
+        return { status, payload: res as ErrorPayload };
+      }
       return {
         status,
         payload: {
