@@ -203,7 +203,7 @@ export const GROUP_META: Record<NodeGroup, GroupVisual> = {
     tintClass: 'bg-warn-soft/40',
   },
   rpc: {
-    label: 'O nó e o protocolo',
+    label: 'De onde vem o dado',
     eyebrow: 'RPC',
     accentClass: 'text-warn',
     ringClass: 'bg-warn',
@@ -211,7 +211,7 @@ export const GROUP_META: Record<NodeGroup, GroupVisual> = {
     tintClass: 'bg-warn-soft/40',
   },
   live: {
-    label: 'A conexão viva',
+    label: 'Abrir e manter a conexão',
     eyebrow: 'WebSocket',
     accentClass: 'text-primary',
     ringClass: 'bg-primary',

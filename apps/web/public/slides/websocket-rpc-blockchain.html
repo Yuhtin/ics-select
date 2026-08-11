@@ -164,10 +164,10 @@
 
 <script>
 const SECTIONS = [
-  { num: '01', label: 'O node e o protocolo', beats: [1, 2, 3] },
-  { num: '02', label: 'A conexão viva',       beats: [4, 5] },
+  { num: '01', label: 'De onde vem o dado',      beats: [1, 2, 3] },
+  { num: '02', label: 'Abrir e manter a conexão', beats: [4, 5] },
   { num: '03', label: 'Do dado ao painel',    beats: [6, 7, 8] },
-  { num: '04', label: 'O desenho completo',   beats: [9] },
+  { num: '04', label: 'Os dois caminhos',      beats: [9] },
 ];
 function sectionOf(beat) { return SECTIONS.find(s => s.beats.includes(beat)); }
 
@@ -179,8 +179,8 @@ const BRAND = '/brand/inteli-blockchain/';
 const SLIDES = [
   { type: 'cover' },
 
-  // ───────── 01 · O node e o protocolo ─────────
-  { type: 'divider', num: '01', label: 'O node e o protocolo', meta: '3 faixas · o número que envelhece, o que é um node, e o formato JSON-RPC' },
+  // ───────── 01 · De onde vem o dado ─────────
+  { type: 'divider', num: '01', label: 'De onde vem o dado', meta: '3 faixas · o número que envelhece, o que é um node, e o formato JSON-RPC' },
 
   { type: 'hook', beat: 1, kicker: 'O número que envelhece',
     title: 'Você abre a aba Fees às 15:00:00 e o número está certo. Às 15:00:13 ele está errado, e ninguém avisou a tela.',
@@ -246,8 +246,8 @@ const SLIDES = [
       ['eth_subscribe', 'Só funciona sobre WebSocket. É o método que inverte quem fala primeiro, e é o assunto da próxima faixa.'],
     ] },
 
-  // ───────── 02 · A conexão viva ─────────
-  { type: 'divider', num: '02', label: 'A conexão viva', meta: '2 faixas · abrir a conexão, e o que fazer quando ela cai' },
+  // ───────── 02 · Abrir e manter a conexão ─────────
+  { type: 'divider', num: '02', label: 'Abrir e manter a conexão', meta: '2 faixas · o handshake que inverte quem fala primeiro, e o retry que sozinho ainda deixa buraco' },
 
   { type: 'hook', beat: 4, kicker: 'WebSocket',
     title: 'O node precisa te avisar quando sair um block novo. Só que ele não sabe o seu endereço, e a sua conexão HTTP já fechou.',
@@ -399,8 +399,8 @@ const SLIDES = [
       { tag: 'websocket', title: 'Os dois falam', sub: 'dois sentidos, no mesmo canal', points: ['Você precisa mandar comandos, como assinar e cancelar', 'O retry e o heartbeat são código seu', 'É o transporte que a gente usou entre o backend e o node'] },
     ] },
 
-  // ───────── 04 · O desenho completo ─────────
-  { type: 'divider', num: '04', label: 'O desenho completo', meta: '1 faixa · os dois caminhos que toda tela ao vivo precisa ter' },
+  // ───────── 04 · Os dois caminhos ─────────
+  { type: 'divider', num: '04', label: 'Os dois caminhos', meta: '1 faixa · o que pinta a tela quando ela abre, e o que mantém ela viva depois' },
 
   { type: 'hook', beat: 9, kicker: 'Arquitetura',
     title: 'Alguém abre a aba Fees agora, do zero.',
@@ -450,7 +450,7 @@ function rail() {
       <div class="flex items-center gap-3 px-3 py-3">
         <span class="mono text-[14px]" style="color:var(--accent);flex:0 0 auto">${s.num}</span>
         <div style="min-width:0">
-          <div class="head text-[15px] font-bold truncate" style="color:var(--text)">${s.label}</div>
+          <div class="head text-[15px] font-bold" style="color:var(--text);line-height:1.3">${s.label}</div>
           <div class="text-[13px]" style="color:var(--text-subtle)">${s.beats.length} ${s.beats.length === 1 ? 'faixa' : 'faixas'} · ${s.beats.map(b => String(b).padStart(2, '0')).join(', ')}</div>
         </div>
       </div>`).join('');
