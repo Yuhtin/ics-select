@@ -63,7 +63,14 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const { status, payload } = this.map(exception);
 
     if (status >= 500) {
-      this.logger.error(exception);
+      // HttpException stringifies to a useless "Http Exception" — log the
+      // mapped envelope so the container log stands on its own instead of
+      // sending whoever reads it to the browser's Network tab.
+      this.logger.error(
+        exception instanceof HttpException
+          ? `${payload.error.code}: ${payload.error.message}`
+          : exception,
+      );
     }
 
     response.status(status).json(payload);

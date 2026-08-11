@@ -3,6 +3,7 @@ import {
   BadRequestException,
   HttpException,
   InternalServerErrorException,
+  Logger,
 } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
 import { z } from 'zod';
@@ -105,6 +106,24 @@ describe('HttpExceptionFilter', () => {
     const body = captured.body as { error: { code: string; message: string } };
     expect(body.error.code).toBe('AI_UPSTREAM');
     expect(body.error.message).toContain('gpt-x');
+  });
+
+  it('logs the envelope message on 5xx, not just "Http Exception"', () => {
+    const { host } = mockHost();
+    const spy = jest
+      .spyOn(Logger.prototype, 'error')
+      .mockImplementation(() => undefined);
+    filter.catch(
+      new HttpException(
+        { error: { code: 'AI_UPSTREAM', message: 'model gpt-x does not exist' } },
+        502,
+      ),
+      host,
+    );
+    expect(spy).toHaveBeenCalledWith(
+      expect.stringContaining('model gpt-x does not exist'),
+    );
+    spy.mockRestore();
   });
 
   it('redirects OAuth TokenError on /auth/google/callback to /login?error=auth_retry', () => {
