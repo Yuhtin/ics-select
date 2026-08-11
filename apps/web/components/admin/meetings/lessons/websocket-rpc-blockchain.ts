@@ -15,7 +15,7 @@ export const websocketRpcBlockchain: Lesson = {
   title: 'WebSocket e RPC: do node ao pixel',
   subtitle: 'Por que um painel de gas em tempo real precisa de duas conexões abertas, e não de uma.',
   blurb:
-    'A aula que destrava o projeto da parceria com a Alphractal. O time vai construir um painel que mostra o custo de gas do Ethereum ao vivo, e o TAP já entrega a stack decidida: WebSocket contra o node, SSE contra o painel. O que ninguém explicou foi o porquê. A gente parte do número que envelhece em 12 segundos, faz a conta do desperdício do polling, descobre o que é um node RPC e que o JSON-RPC é o formato da mensagem e não o transporte dela, abre uma conexão de verdade ao vivo com wscat contra a Alchemy e vê block chegando na tela, quebra essa conexão de propósito para achar o buraco que o retry sozinho não preenche, converte wei em dólar, e chega no beat que justifica o projeto inteiro: por que não plugar o React direto no node. Fecha com o desenho completo, que tem dois caminhos e não um. A regra que sai daqui: quem começa a conversa define o transporte, e o backend existe porque as duas pontas trabalham em ritmos diferentes.',
+    'A aula que destrava o projeto da parceria com a Alphractal. O time vai construir um painel que mostra o custo de gas do Ethereum ao vivo, e o TAP já entrega a stack decidida: WebSocket contra o node, SSE contra o painel. O que ninguém explicou foi o porquê. A gente parte do número que envelhece em 12 segundos, faz a conta do desperdício do polling, descobre o que é um node RPC e que o JSON-RPC é o formato da mensagem e não o transporte dela, abre uma conexão de verdade ao vivo com wscat contra a Alchemy e vê block chegando na tela, quebra essa conexão de propósito para achar o buraco que o retry sozinho não preenche, converte wei em dólar, e chega no beat que justifica o projeto inteiro (por que não plugar o React direto no node) e no que responde a objeção natural dele (o Next.js já é esse backend, e o que ele resolve e o que não resolve). Fecha com o desenho completo, que tem dois caminhos e não um. A regra que sai daqui: quem começa a conversa define o transporte, e o backend existe porque as duas pontas trabalham em ritmos diferentes.',
   durationMin: 90,
   audience: 'Inteli Blockchain · 1º e 2º ano · projeto Alphractal',
   slidesUrl: '/slides/websocket-rpc-blockchain.html',
@@ -280,7 +280,7 @@ export const websocketRpcBlockchain: Lesson = {
       pass1:
         'O WebSocket resolve exatamente o problema do beat 1: ele deixa o servidor falar primeiro. E o truque é elegante. Ele **começa** como uma requisição HTTP comum, com um cabeçalho pedindo `Upgrade: websocket`. O servidor responde `101 Switching Protocols`, e aquele mesmo socket TCP para de falar HTTP e passa a trocar frames nos dois sentidos. É por isso que o WebSocket atravessa firewall e proxy corporativo: na porta de entrada, ele parecia HTTP.',
       pass2:
-        '**O handshake**: o cliente manda um `GET` com `Upgrade: websocket`, `Connection: Upgrade` e uma `Sec-WebSocket-Key` aleatória. O servidor responde `101` com a `Sec-WebSocket-Accept` derivada dessa chave. Isso acontece uma vez só, no começo. Depois disso ninguém manda cabeçalho HTTP nunca mais, só frames.\n\n**A inversão acontece aqui**: você manda `{"jsonrpc":"2.0","id":1,"method":"eth_subscribe","params":["newHeads"]}` e recebe de volta um id de assinatura. A partir desse instante, a cada block novo, o node manda a mensagem sozinho. Você não pergunta mais nada.\n\n**Repare no campo que sumiu**: as mensagens que o node envia **não têm `id`**. Elas chegam com `"method":"eth_subscription"` e o payload dentro de `params.result`. E faz todo sentido: o `id` serve para casar uma resposta com a pergunta que a originou, e aqui não houve pergunta nenhuma.\n\n**Existem outros canais além do newHeads**: o canal `logs` entrega eventos emitidos por contratos, e dá para filtrar por endereço e por tópico. O `newPendingTransactions` entrega a mempool crua, transação por transação. Guardem o nome desse último, porque ele volta como armadilha no beat 8.\n\n**No projeto**: isso aqui é o salto 1 inteiro. Quando o TAP escreve "conexão blockchain: WebSockets via provedores RPC", ele está falando exatamente desse `eth_subscribe`. A semana 2 do cronograma de vocês é fazer essa linha funcionar.',
+        '**O handshake**: o cliente manda um `GET` com `Upgrade: websocket`, `Connection: Upgrade` e uma `Sec-WebSocket-Key` aleatória. O servidor responde `101` com a `Sec-WebSocket-Accept` derivada dessa chave. Isso acontece uma vez só, no começo. Depois disso ninguém manda cabeçalho HTTP nunca mais, só frames.\n\n**A inversão acontece aqui**: você manda `{"jsonrpc":"2.0","id":1,"method":"eth_subscribe","params":["newHeads"]}` e recebe de volta um id de assinatura. A partir desse instante, a cada block novo, o node manda a mensagem sozinho. Você não pergunta mais nada.\n\n**Repare no campo que sumiu**: as mensagens que o node envia **não têm `id`**. Elas chegam com `"method":"eth_subscription"` e o payload dentro de `params.result`. E faz todo sentido: o `id` serve para casar uma resposta com a pergunta que a originou, e aqui não houve pergunta nenhuma.\n\n**Existem outros canais além do newHeads**: o canal `logs` entrega eventos emitidos por contratos, e dá para filtrar por endereço e por tópico. O `newPendingTransactions` entrega a mempool crua, transação por transação. Guardem o nome desse último, porque ele volta como armadilha no beat 9.\n\n**No projeto**: isso aqui é o salto 1 inteiro. Quando o TAP escreve "conexão blockchain: WebSockets via provedores RPC", ele está falando exatamente desse `eth_subscribe`. A semana 2 do cronograma de vocês é fazer essa linha funcionar.',
       pass3: [
         {
           gotcha: 'Achar que o WebSocket é um protocolo separado desde o começo',
@@ -521,7 +521,7 @@ export const websocketRpcBlockchain: Lesson = {
         },
         {
           gotcha: 'Confundir fan-out com repassar tudo',
-          note: 'Fan-out é o backend decidir o que cada tela precisa e mandar pronto. Repassar o stream cru para todo mundo é o que trava a aba, e é o assunto do beat 8.',
+          note: 'Fan-out é o backend decidir o que cada tela precisa e mandar pronto. Repassar o stream cru para todo mundo é o que trava a aba, e é o assunto do beat 9.',
         },
       ],
       anchor:
@@ -541,7 +541,7 @@ export const websocketRpcBlockchain: Lesson = {
         },
       ],
       followup:
-        'Fechado, o backend fica no meio. Agora ele tem o número pronto e precisa entregar para 200 navegadores. Que transporte ele usa nessa perna?',
+        'Fechado, existe um backend. Só que vocês já vão escrever um frontend em React, e o Next.js roda servidor no mesmo projeto. Precisa mesmo de um serviço separado?',
       gotcha:
         'Se alguém disser "coloca a chave no .env do Vite", abra o DevTools na hora e mostre a chave dentro do bundle. Um minuto e o argumento acaba.',
       scenarios: {
@@ -569,10 +569,86 @@ export const websocketRpcBlockchain: Lesson = {
       diagramUrl: '/diagrams/websocket-rpc-blockchain/dois-saltos.png',
     },
     {
+      id: 'next-vercel',
+      label: 'Onde esse backend mora',
+      group: 'panel',
+      beat: 8,
+      teachFromZero: true,
+      tags: ['Next.js', 'route handler', 'serverless', 'maxDuration', 'Vercel'],
+      oneLine:
+        'O beat anterior fechou que precisa de um backend. O Next.js já é esse backend, no mesmo projeto do frontend. Ele resolve três dos quatro problemas, e o quarto vira outra coisa.',
+      pass1:
+        'A objeção natural do beat 7 é esta: se a gente já vai escrever React, e o Next.js roda código de servidor no mesmo projeto, precisa mesmo de um serviço separado? A resposta curta é não, e vale entender por quê, porque isso muda o desenho do projeto de vocês e o esforço de deploy.',
+      pass2:
+        '**O que é um route handler**: um arquivo em `app/api/fees/snapshot/route.ts` que exporta uma função `GET` responde em `/api/fees/snapshot`. O caminho da pasta é a URL, sem router para configurar e sem segundo projeto. Esse arquivo é compilado só para o servidor e nunca é enviado ao navegador, então o `process.env.ALCHEMY_KEY` existe ali dentro com segurança. E como o front e a API saem do mesmo domínio, o CORS deixa de ser assunto.\n\n**O prefixo que decide quem enxerga**: variável de ambiente sem `NEXT_PUBLIC_` fica no servidor. Com o prefixo, ela vai para o bundle e é pública. É a mesma armadilha do beat 7 com nome novo, e é o erro mais comum de quem começa em Next.\n\n**Três dos quatro problemas somem**: a chave fica no servidor, a conta roda uma vez e o histórico tem onde morar. O que não some é a contagem de conexões, e o motivo é o modelo de execução: **uma função serverless não é um processo**. Ela é invocada, responde e morre, sem ficar de pé esperando. O teto de duração hoje é de 300 segundos em todos os planos com Fluid Compute, e de 800 no Pro. Quando a invocação acaba, a conexão que ela mantinha com o node cai junto. E como não existe afinidade de instância, também não existe memória compartilhada, então o último valor precisa de um lugar externo como um Redis.\n\n**O ciclo que salva, e o que ainda morde**: a função morre, o `EventSource` do navegador reconecta sozinho, e a invocação nova assina de novo e roda o backfill. As duas coisas que vocês escrevem nos beats 5 e 9 são exatamente o que faz o teto de 300 segundos ser sobrevivível. O que ainda morde é que, se cada aba abrir a própria invocação com a própria assinatura, voltam as N conexões do beat 7, agora escondidas dentro do serverless. A saída é separar quem ingere de quem entrega, com o valor passando por um Redis no meio.\n\n**No projeto**: o deploy fica trivial. Conecta o repositório do GitHub e a Vercel publica a cada push, com domínio, HTTPS e CDN inclusos, e o plano Hobby é gratuito e cobre o protótipo do TAP com folga. O TAP recomenda "backend em Node.js" e "frontend em React", e o Next entrega os dois num projeto só, sem contrariar nada. Se forem por esse caminho, levem essa decisão para a demo do dia 05/10, porque é justamente o tipo de coisa que a Alphractal pediu para validar.',
+      pass3: [
+        {
+          gotcha: 'Achar que NEXT_PUBLIC_ esconde a chave',
+          note: 'É o contrário. O prefixo é o que manda a variável para o bundle. A chave da Alchemy vai numa variável SEM prefixo, e aí ela só existe dentro do route handler.',
+        },
+        {
+          gotcha: 'Achar que serverless fica de pé',
+          note: 'Não fica. Cada invocação é curta e isolada, e o teto atual é de 300 segundos. Nada que precise viver por horas sobrevive ali sem um ciclo de reconexão.',
+        },
+        {
+          gotcha: 'Guardar o último valor numa variável de módulo',
+          note: 'Funciona no seu teste local, onde o processo é um só, e falha em produção, porque a próxima requisição pode cair em outra instância. O estado compartilhado tem que ser externo.',
+        },
+        {
+          gotcha: 'Achar que precisa do runtime Edge para fazer streaming',
+          note: 'Não precisa, e é engano comum. SSE funciona no runtime Node.js padrão, e o Edge não traz vantagem nenhuma aqui, só tira o acesso às APIs completas do Node.',
+        },
+        {
+          gotcha: 'Deixar cada aba abrir a própria assinatura',
+          note: 'É o problema das N conexões do beat 7 voltando disfarçado. Com poucos usuários no protótipo isso funciona, e vale saber nomear o que quebra quando escala.',
+        },
+      ],
+      anchor:
+        'Peraí. Vocês já vão escrever um frontend em React, e o Next.js roda servidor no mesmo projeto. Precisa mesmo de um serviço separado? Digam quais dos quatro problemas do beat anterior o Next resolve sozinho, e qual deles continua de pé.',
+      askWho: [
+        {
+          name: 'quem já usou Next.js',
+          why: 'Provavelmente já criou um route handler sem pensar que aquilo era o backend. O ganho é fazer a ficha cair de que já era.',
+        },
+        {
+          name: 'quem já fez deploy na Vercel',
+          why: 'Consegue descrever o fluxo de conectar o repositório e publicar a cada push, que é o argumento de esforço zero.',
+        },
+        {
+          name: 'quem vai cuidar do deploy no projeto',
+          why: 'É essa pessoa que economiza uma semana se a decisão for tomada agora, e não na véspera da demo.',
+        },
+      ],
+      followup:
+        'O backend existe e mora no Next. Agora ele tem o número pronto e precisa entregar para 200 navegadores. Que transporte ele usa nessa perna?',
+      gotcha:
+        'Se alguém disser "então é só usar Next e acabou", devolva: "200 pessoas abrem o painel, e cada aba dispara a própria invocação. Quantas conexões chegam na Alchemy?"',
+      scenarios: {
+        right: {
+          shape:
+            'Percebe que a chave, a conta única e o histórico ficam resolvidos porque o route handler roda no servidor, e que a contagem de conexões não se resolve sozinha. É um bônus se já desconfia que a função não fica de pé.',
+          redirect:
+            'Confirme e nomeie o motivo: "e por que a conexão continua sendo problema? O que uma função serverless faz depois de responder?"',
+        },
+        close: {
+          shape:
+            'Vê que o Next resolve a chave e o CORS, mas trata a função como se fosse um servidor de pé, sem perceber que ela morre depois de responder.',
+          redirect:
+            'Aterre no modelo: "a função responde a requisição. No segundo seguinte, o que está rodando? E o socket que ela tinha aberto com o node?"',
+        },
+        wayOff: {
+          shape:
+            'Conclui que o Next dispensa o backend inteiro e que dá para chamar a Alchemy do componente React, ou acha que basta pôr a chave numa variável NEXT_PUBLIC_.',
+          redirect:
+            'Volte ao beat 7 com uma pergunta: "esse componente roda onde? E se ele roda no navegador, quem consegue ler a chave que ele usa?"',
+        },
+      },
+    },
+    {
       id: 'sse',
       label: 'SSE: o caminho de volta',
       group: 'panel',
-      beat: 8,
+      beat: 9,
       teachFromZero: true,
       tags: ['text/event-stream', 'EventSource', 'Last-Event-ID', 'backpressure', 'throttle'],
       oneLine:
@@ -646,7 +722,7 @@ export const websocketRpcBlockchain: Lesson = {
       id: 'arquitetura',
       label: 'Arquitetura: os dois caminhos',
       group: 'panel',
-      beat: 9,
+      beat: 10,
       tags: ['snapshot', 'stream', 'estado em memória', 'primeira renderização'],
       oneLine:
         'São dois caminhos, e não um: o que pinta a tela quando ela abre, e o que mantém ela viva depois. Quem esquece o primeiro entrega uma tela em branco.',

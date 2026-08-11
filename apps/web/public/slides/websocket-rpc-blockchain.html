@@ -166,8 +166,8 @@
 const SECTIONS = [
   { num: '01', label: 'De onde vem o dado',      beats: [1, 2, 3] },
   { num: '02', label: 'Abrir e manter a conexão', beats: [4, 5] },
-  { num: '03', label: 'Do dado ao painel',    beats: [6, 7, 8] },
-  { num: '04', label: 'Os dois caminhos',      beats: [9] },
+  { num: '03', label: 'Do dado ao painel',    beats: [6, 7, 8, 9] },
+  { num: '04', label: 'Os dois caminhos',      beats: [10] },
 ];
 function sectionOf(beat) { return SECTIONS.find(s => s.beats.includes(beat)); }
 
@@ -270,7 +270,7 @@ const SLIDES = [
     notes: [
       ['Repare no campo que sumiu', 'As mensagens do passo 3 não têm id. Elas têm method: "eth_subscription". E faz sentido: o id serve pra casar uma resposta com a pergunta que a originou, e aqui não houve pergunta nenhuma.'],
       ['Se o seu código filtrar por id', 'Os blocks vão chegar e ser descartados, sem nenhum erro no console. O campo certo pra identificar essas mensagens é o method.'],
-      ['Existem outros canais além do newHeads', 'O canal logs entrega eventos emitidos por contratos. O newPendingTransactions entrega a mempool crua, e chega milhares de vezes por segundo. Guardem esse nome, ele volta como armadilha na faixa 08.'],
+      ['Existem outros canais além do newHeads', 'O canal logs entrega eventos emitidos por contratos. O newPendingTransactions entrega a mempool crua, e chega milhares de vezes por segundo. Guardem esse nome, ele volta como armadilha na faixa 09.'],
     ] },
   { type: 'lab', beat: 4, kicker: 'Lab ao vivo', title: 'Abram um terminal. Vamos abrir uma conexão de verdade.',
     steps: [
@@ -323,7 +323,7 @@ const SLIDES = [
     ] },
 
   // ───────── 03 · Do dado ao painel ─────────
-  { type: 'divider', num: '03', label: 'Do dado ao painel', meta: '3 faixas · a conta em dólar, por que existe um backend, e o SSE' },
+  { type: 'divider', num: '03', label: 'Do dado ao painel', meta: '4 faixas · a conta em dólar, por que existe um backend, onde ele mora, e o SSE' },
 
   { type: 'hook', beat: 6, kicker: 'Do wei ao dólar',
     title: 'O block chegou com baseFeePerGas: "0x2540be400". O investidor precisa ler "transferência simples: US$ 0,63".',
@@ -369,11 +369,51 @@ const SLIDES = [
     projeto: 'É por isso que o TAP separa o backend em Node.js do frontend em React. Não é uma exigência acadêmica de arquitetura em camadas, são esses quatro problemas.' },
   { type: 'diagram', beat: 7, kicker: 'O desenho que justifica o backend existir', src: DIAG + 'dois-saltos.png' },
 
-  { type: 'hook', beat: 8, kicker: 'SSE',
+  { type: 'hook', beat: 8, kicker: 'Onde esse backend mora',
+    title: 'Peraí. A gente já vai escrever React, e o Next.js roda servidor no mesmo projeto. Precisa mesmo de um serviço separado?',
+    sub: 'Digam quais dos quatro problemas da faixa anterior o Next resolve sozinho, e qual deles continua de pé.',
+    tags: ['route handler', 'serverless', 'maxDuration', 'Vercel'] },
+  { type: 'code', beat: 8, kicker: 'Um arquivo numa pasta vira um endpoint', file: 'next.txt',
+    code: [
+      "<span class='cm'>// app/api/fees/snapshot/route.ts</span>",
+      "<span class='cm'>// vira GET /api/fees/snapshot. Roda no SERVIDOR.</span>",
+      "<span class='kw'>export async function</span> GET() {",
+      "  <span class='cm'>// process.env.ALCHEMY_KEY existe aqui.</span>",
+      "  <span class='cm'>// este arquivo nunca é enviado pro browser.</span>",
+      "  <span class='kw'>const</span> dados = <span class='kw'>await</span> lerUltimoValor()",
+      "  <span class='kw'>return</span> Response.json(dados)",
+      "}",
+      "",
+      "<span class='cm'>// app/fees/page.tsx  ->  ISSO vai pro browser</span>",
+      "<span class='kw'>const</span> r = <span class='kw'>await</span> fetch(<span class='st'>'/api/fees/snapshot'</span>)",
+      "",
+      "<span class='cm'># .env.local</span>",
+      "ALCHEMY_KEY=alch_xxx        <span class='cm'># fica no servidor</span>",
+      "<span class='hl'>NEXT_PUBLIC_</span>QUALQUER=xxx   <span class='cm'># vai junto no bundle</span>",
+    ],
+    notes: [
+      ['O caminho da pasta é a URL', 'Não tem router pra configurar, nem app.get, nem segundo projeto. O arquivo em app/api/fees/snapshot/route.ts responde em /api/fees/snapshot, e ele é compilado só pro servidor.'],
+      ['O prefixo decide quem enxerga', 'Variável sem NEXT_PUBLIC_ fica no servidor. Com o prefixo, vai pro bundle. É a mesma armadilha da faixa 07 com nome novo, e é o erro mais comum de quem começa em Next.'],
+      ['Mesma origem, sem CORS', 'O front e a API saem do mesmo domínio, então some aquela configuração de CORS que costuma comer meia tarde de quem separa os dois projetos.'],
+    ] },
+  { type: 'compare', beat: 8, kicker: 'O que muda, e o que continua sendo problema de vocês',
+    left: { tag: 'o Next resolve', title: 'Três dos quatro', live: true, points: [
+      'A API key fica no servidor: o route handler nunca é enviado pro browser',
+      'A conta roda uma vez, no servidor, então todas as telas concordam',
+      'O histórico tem onde morar, e o snapshot sai de lá',
+      'Um repositório, um deploy. E o plano Hobby da Vercel é gratuito, com domínio, HTTPS e CDN' ] },
+    right: { tag: 'continua com vocês', title: 'Serverless não é um processo', bad: true, points: [
+      'A função é invocada, responde e morre. O teto é 300s em todos os planos, 800s no Pro',
+      'Quando ela morre, a conexão com o node cai junto',
+      'Não existe memória compartilhada entre invocações: o último valor precisa de um Redis',
+      'Se cada aba abrir a própria invocação, voltam as N conexões da faixa 07' ] },
+    projeto: 'Reparem no que salva esse desenho: a função morre, o EventSource reconecta sozinho, e a invocação nova roda o backfill da faixa 05. As duas coisas que vocês vão escrever nas faixas 05 e 09 são exatamente o que faz o teto de 300 segundos ser sobrevivível.' },
+
+  { type: 'hook', beat: 9, kicker: 'SSE',
     title: 'Do backend até o navegador o dado anda num sentido só: o painel recebe, e nunca responde nada.',
     sub: 'Qual transporte vocês escolhem pra essa parte, e por quê?',
     tags: ['text/event-stream', 'EventSource', 'Last-Event-ID', 'backpressure'] },
-  { type: 'code', beat: 8, kicker: 'Uma resposta HTTP que você nunca fecha', file: 'sse.js',
+  { type: 'code', beat: 9, kicker: 'Uma resposta HTTP que você nunca fecha', file: 'sse.js',
     code: [
       "<span class='cm'>// SERVIDOR: abre a resposta e não fecha</span>",
       "res.writeHead(200, {",
@@ -393,7 +433,7 @@ const SLIDES = [
       ['A taxa de entrada não é a taxa de saída', 'O newHeads chega uma vez a cada 12 segundos. O newPendingTransactions chega milhares de vezes por segundo. Junte o que chegou numa janela de 1 segundo e mande só o resultado.'],
       ['Duas armadilhas de ambiente', 'No HTTP/1.1 o navegador só abre 6 conexões por domínio, e o stream ocupa uma delas o tempo todo. E o Nginx, com buffering ligado, segura a resposta inteira até o final.'],
     ] },
-  { type: 'compare3', beat: 8, kicker: 'A escolha se faz pela direção do dado, e por quem escreve o retry', cards: [
+  { type: 'compare3', beat: 9, kicker: 'A escolha se faz pela direção do dado, e por quem escreve o retry', cards: [
       { tag: 'polling', title: 'O cliente pergunta', sub: 'e quase toda resposta se repete', bad: true, points: ['Você paga por toda pergunta, inclusive as que não trazem nada', 'A latência nunca fica menor que o intervalo entre as perguntas', 'Diminuir o intervalo só aumenta o desperdício'] },
       { tag: 'sse', title: 'O servidor envia', sub: 'um sentido só, sobre HTTP comum', live: true, points: ['O painel só recebe, e é tudo que ele precisa fazer', 'O retry já vem pronto, junto com o Last-Event-ID', 'São três linhas de código no React'] },
       { tag: 'websocket', title: 'Os dois falam', sub: 'dois sentidos, no mesmo canal', points: ['Você precisa mandar comandos, como assinar e cancelar', 'O retry e o heartbeat são código seu', 'É o transporte que a gente usou entre o backend e o node'] },
@@ -402,11 +442,11 @@ const SLIDES = [
   // ───────── 04 · Os dois caminhos ─────────
   { type: 'divider', num: '04', label: 'Os dois caminhos', meta: '1 faixa · o que pinta a tela quando ela abre, e o que mantém ela viva depois' },
 
-  { type: 'hook', beat: 9, kicker: 'Arquitetura',
+  { type: 'hook', beat: 10, kicker: 'Arquitetura',
     title: 'Alguém abre a aba Fees agora, do zero.',
     sub: 'Desenhem o que acontece até o primeiro número aparecer. Depois desenhem o que acontece quando o próximo block sai. São dois caminhos diferentes.',
     tags: ['snapshot', 'stream', 'primeira renderização'] },
-  { type: 'diagram', beat: 9, kicker: 'Um caminho pinta a tela, o outro mantém ela viva', src: DIAG + 'arquitetura.png' },
+  { type: 'diagram', beat: 10, kicker: 'Um caminho pinta a tela, o outro mantém ela viva', src: DIAG + 'arquitetura.png' },
 
   // ───────── fecho ─────────
   { type: 'projeto', kicker: 'Do conceito para o projeto de vocês' },
@@ -460,7 +500,7 @@ function rail() {
       <div class="flex flex-col gap-1">${rows}</div>
       <div class="mt-auto px-3 pt-4" style="border-top:var(--bw-hairline) solid var(--border)">
         <div class="head text-[14px] font-bold">WebSocket e RPC</div>
-        <div class="text-[13px] mt-1" style="color:var(--text-subtle)">Inteli Blockchain · 90 min · 9 faixas</div>
+        <div class="text-[13px] mt-1" style="color:var(--text-subtle)">Inteli Blockchain · 90 min · 10 faixas</div>
       </div>
     </aside>`;
 }
@@ -535,7 +575,7 @@ function render(slide, idx) {
           <h1 class="display anim" style="font-size:70px;max-width:15ch">WebSocket e RPC: do node ao pixel.</h1>
           <p class="anim delay-1 text-[24px] mt-8" style="color:var(--text-muted);max-width:54ch;line-height:1.5">Por que esse painel precisa de <span class="head" style="color:var(--accent);font-weight:700">duas conexões abertas</span>, e não de uma.</p>
           <div class="anim-fade delay-2 flex items-center gap-4 mt-12 mono text-[14px]" style="color:var(--text-subtle)">
-            <span>90 min</span><span>·</span><span>9 faixas</span><span>·</span><span>1 lab ao vivo</span><span>·</span><span>Davi Duarte</span>
+            <span>90 min</span><span>·</span><span>10 faixas</span><span>·</span><span>1 lab ao vivo</span><span>·</span><span>Davi Duarte</span>
           </div>
         </div>`);
 
@@ -663,8 +703,8 @@ function render(slide, idx) {
             ['Semana 1', 'Protótipo do painel', 'Decidam desde já o que a tela mostra: o base fee, as três faixas do eth_feeHistory, e o custo em dólar de uma operação específica.'],
             ['Semana 2', 'Backend e a conexão com o node', 'Faixas 02 a 05. A API key no .env, o eth_subscribe rodando, e o retry junto com o backfill já na primeira versão.'],
             ['Semana 2', 'O cálculo em dólar', 'Faixa 06. BigInt pros valores em wei, a conta rodando no backend, e uma fonte de preço do ETH com cache.'],
-            ['Semana 3', 'Integração do front com o back', 'Faixas 07 e 08. O SSE pro stream, e um GET /snapshot pra tela não abrir vazia.'],
-            ['Semana 4', 'Demo do dia 05/10', 'O que a Alphractal pediu foi "validação de nova arquitetura de dados". Levem o diagrama da faixa 09 num slide e expliquem as decisões.'],
+            ['Semana 3', 'Integração do front com o back', 'Faixas 07 a 09. O backend no Next, o SSE pro stream, e um GET /snapshot pra tela não abrir vazia.'],
+            ['Semana 4', 'Demo do dia 05/10', 'O que a Alphractal pediu foi "validação de nova arquitetura de dados". Levem o diagrama da faixa 10 num slide e expliquem as decisões.'],
           ].map(([w, t, d]) => `
             <div class="flex items-start gap-7 py-5" style="border-bottom:var(--bw-hairline) solid var(--border)">
               <span class="badge micro px-4 py-1.5" style="background:var(--accent);color:var(--accent-fg);flex:0 0 auto;width:112px;text-align:center">${w}</span>
