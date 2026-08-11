@@ -214,6 +214,15 @@ const SLIDES = [
     title: 'Rode um curl pedindo o último block. Agora mande exatamente o mesmo pedido por WebSocket.',
     sub: 'O que muda de um pro outro? E o que continua idêntico nos dois?',
     tags: ['JSON-RPC 2.0', 'method', 'params', 'id'] },
+  { type: 'def', beat: 3, kicker: 'O que RPC quer dizer', term: 'RPC',
+    spec: 'Remote Procedure Call<br/>Chamada de Procedimento Remoto',
+    def: 'Chamar uma função que roda em outra máquina como se ela fosse local.',
+    rows: [
+      ['Você manda', 'o nome do método que quer executar e a lista de argumentos'],
+      ['A outra máquina', 'executa esse método e devolve o retorno, ou um erro'],
+      ['A rede some', 'o que sobra pra quem escreve o código parece uma chamada de função comum'],
+      ['JSON-RPC', 'é uma das formas de escrever esse pedido. gRPC e XML-RPC são outras. O "JSON" ali é só o formato do texto'],
+    ] },
   { type: 'code', beat: 3, kicker: 'O mesmo envelope viaja nos dois transportes', file: 'json-rpc.txt',
     code: [
       "<span class='cm'># O ENVELOPE. Todo pedido pro node tem esse formato.</span>",
@@ -253,6 +262,15 @@ const SLIDES = [
     title: 'O node precisa te avisar quando sair um block novo. Só que ele não sabe o seu endereço, e a sua conexão HTTP já fechou.',
     sub: 'O que precisa acontecer antes disso, pra que ele consiga falar primeiro?',
     tags: ['upgrade', '101', 'frames', 'eth_subscribe'] },
+  { type: 'def', beat: 4, kicker: 'O que WebSocket é, tecnicamente', term: 'WebSocket',
+    spec: 'RFC 6455 (2011)<br/>protocolo, não biblioteca',
+    def: 'Um canal de comunicação bidirecional e persistente entre dois pontos, sobre uma única conexão TCP.',
+    rows: [
+      ['Bidirecional', 'os dois lados mandam mensagem quando quiserem, sem precisar de convite. É a diferença que resolve o problema da faixa 01'],
+      ['Persistente', 'abre uma vez e continua aberto. Não é uma conexão nova por mensagem, como no HTTP'],
+      ['Uma conexão TCP', 'o mesmo socket que fez o handshake HTTP continua sendo usado. Não abre porta nova'],
+      ['Nasce como HTTP', 'começa numa requisição comum e troca de protocolo no meio. É por isso que atravessa firewall e proxy'],
+    ] },
   { type: 'diagram', beat: 4, kicker: 'Começa como HTTP, vira uma conexão aberta, e aí o node fala sozinho', src: DIAG + 'handshake.png' },
   { type: 'code', beat: 4, kicker: 'A inversão acontece em três mensagens', file: 'subscribe.txt',
     code: [
@@ -594,6 +612,28 @@ function render(slide, idx) {
         <h2 class="display anim" style="font-size:56px;max-width:29ch;font-weight:700">${slide.title}</h2>
         ${slide.sub ? `<p class="anim delay-1 text-[24px] mt-9" style="color:var(--text-muted);max-width:66ch;line-height:1.5">${slide.sub}</p>` : ''}
         ${tags(slide.tags)}`);
+
+    case 'def':
+      return panelShell(slide, idx, `
+        <div class="flex items-start gap-14">
+          <div style="flex:0 0 auto;width:330px">
+            <div class="micro anim mb-4" style="color:var(--accent)">Definição</div>
+            <div class="display anim delay-1" style="font-size:${slide.term.length <= 4 ? 62 : 42}px;white-space:nowrap">${slide.term}</div>
+            <div class="mono anim delay-1 text-[15px] mt-4" style="color:var(--text-subtle);line-height:1.6">${slide.spec}</div>
+          </div>
+          <div class="flex-1" style="min-width:0">
+            <div class="anim delay-1 px-8 py-7" style="background:var(--surface);border:var(--bw-strong) solid var(--accent);border-radius:var(--radius-lg)">
+              <div class="text-[25px]" style="color:var(--text);line-height:1.45;max-width:60ch">${slide.def}</div>
+            </div>
+            <div class="stagger flex flex-col mt-6">
+              ${slide.rows.map(([k, v], i) => `
+                <div class="flex items-start gap-7 py-4" style="${i < slide.rows.length - 1 ? 'border-bottom:var(--bw-hairline) solid var(--border)' : ''}">
+                  <span class="micro" style="color:var(--accent);width:186px;flex:0 0 auto;padding-top:4px">${k}</span>
+                  <span class="text-[17px]" style="color:var(--text-muted);line-height:1.5;max-width:72ch">${v}</span>
+                </div>`).join('')}
+            </div>
+          </div>
+        </div>`);
 
     case 'stat':
       return panelShell(slide, idx, `
