@@ -12,6 +12,7 @@ type PrismaMock = {
   memberAvailability: { findUnique: jest.Mock };
   topic: { findMany: jest.Mock };
   availabilitySlot: { findMany: jest.Mock };
+  libraryItemTopic: { findMany: jest.Mock };
 };
 
 function makePrisma(overrides: Partial<any> = {}): PrismaMock {
@@ -27,6 +28,7 @@ function makePrisma(overrides: Partial<any> = {}): PrismaMock {
     memberAvailability: { findUnique: jest.fn(async () => null) },
     topic: { findMany: jest.fn(async () => []) },
     availabilitySlot: { findMany: jest.fn(async () => []) },
+    libraryItemTopic: { findMany: jest.fn(async () => []) },
   };
   for (const key of Object.keys(overrides) as (keyof PrismaMock)[]) {
     base[key] = { ...base[key], ...(overrides[key] as any) };
@@ -326,6 +328,12 @@ describe('PlanContextService', () => {
         findMany: jest.fn(async () => cyclePlans),
       },
       topic: { findMany: jest.fn(async () => [topicA, topicB]) },
+      libraryItemTopic: {
+        // 9 rows for topic-a → 9 materials available in the acervo.
+        findMany: jest.fn(async () =>
+          Array.from({ length: 9 }, () => ({ topicId: 'topic-a' })),
+        ),
+      },
     });
     const service = makeService(prisma);
     const result = await service.getContext(
@@ -340,11 +348,15 @@ describe('PlanContextService', () => {
     expect(arrays.coveragePct).toBe(50);
     expect(arrays.topicSlug).toBe('arrays');
     expect(arrays.topicLabel).toBe('Arrays');
+    // Denominator for the sidebar heatmap: the whole acervo, not just what
+    // was assigned. A topic with no library rows reports 0.
+    expect(arrays.itemsAvailable).toBe(9);
 
     const dp = result.topicCoverage.find((t) => t.topicId === 'topic-b')!;
     expect(dp.itemsPlanned).toBe(2);
     expect(dp.itemsDone).toBe(1);
     expect(dp.coveragePct).toBe(50);
+    expect(dp.itemsAvailable).toBe(0);
   });
 
   it('availability.weeklyBudgetMinutes sums 7 day fields; defaults when missing', async () => {

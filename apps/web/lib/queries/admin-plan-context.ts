@@ -49,6 +49,8 @@ export type PlanContextResponse = {
     itemsPlanned: number;
     itemsDone: number;
     coveragePct: number;
+    /** Materials in the library for this topic — the coverage denominator. */
+    itemsAvailable: number;
   }>;
   availability: {
     mondayMinutes: number;

@@ -37,6 +37,7 @@ export function ContextSidebar({
     order: t.order,
     itemsPlanned: t.itemsPlanned,
     itemsDone: t.itemsDone,
+    itemsAvailable: t.itemsAvailable,
   }));
 
   return (

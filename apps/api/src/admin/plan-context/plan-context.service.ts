@@ -151,6 +151,13 @@ export type PlanContextResponse = {
     itemsPlanned: number;
     itemsDone: number;
     coveragePct: number;
+    /**
+     * Total materials in the library covering this topic — the honest
+     * denominator for "how much of this topic is left". itemsPlanned only
+     * counts what the admin already assigned, so done === planned reads as
+     * "finished the topic" even when the acervo has new items.
+     */
+    itemsAvailable: number;
   }>;
   availability: {
     mondayMinutes: number;
@@ -277,6 +284,7 @@ export class PlanContextService {
       topics,
       memberItemsRaw,
       slotRows,
+      libraryTopicRows,
     ] = await Promise.all([
       this.prisma.weeklyPlan.findFirst({
         where: {
@@ -364,6 +372,12 @@ export class PlanContextService {
         where: { userId: input.memberId },
         select: { dayOfWeek: true, startMinute: true, endMinute: true },
       }) as Promise<AvailabilitySlotInput[]>,
+      // Counted in JS instead of groupBy: the acervo is a few hundred join
+      // rows, and Prisma's groupBy generics fight the `as Promise<...>` casts
+      // used everywhere else in this Promise.all.
+      this.prisma.libraryItemTopic.findMany({
+        select: { topicId: true },
+      }) as Promise<Array<{ topicId: string }>>,
     ]);
 
     const topicById = new Map(topics.map((t) => [t.id, t]));
@@ -380,7 +394,11 @@ export class PlanContextService {
 
     const lastWeek = this.buildLastWeek(lastWeekPlan);
     const carryOverCandidates = this.buildCarryOver(lastWeekPlan, topicById);
-    const topicCoverage = this.computeTopicCoverage(topics, allPlans);
+    const availableByTopic = new Map<string, number>();
+    for (const row of libraryTopicRows) {
+      availableByTopic.set(row.topicId, (availableByTopic.get(row.topicId) ?? 0) + 1);
+    }
+    const topicCoverage = this.computeTopicCoverage(topics, allPlans, availableByTopic);
     const remaining = await this.computeRemainingCapacity({
       userId: input.memberId,
       weekStart: input.weekStart,
@@ -526,6 +544,7 @@ export class PlanContextService {
   private computeTopicCoverage(
     topics: TopicRow[],
     plans: MemberPlan[],
+    availableByTopic: Map<string, number>,
   ): PlanContextResponse['topicCoverage'] {
     // Dedup carried completions: a material re-planned/completed across weeks
     // counts once per topic it covers.
@@ -564,6 +583,7 @@ export class PlanContextService {
         itemsPlanned,
         itemsDone,
         coveragePct,
+        itemsAvailable: availableByTopic.get(topic.id) ?? 0,
       };
     });
   }

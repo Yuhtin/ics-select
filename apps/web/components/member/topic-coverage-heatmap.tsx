@@ -11,7 +11,17 @@ export type CoverageTopic = {
   order: number;
   itemsPlanned: number;
   itemsDone: number;
+  /**
+   * Materials in the library for this topic. When given it replaces
+   * itemsPlanned as the denominator, so "done everything assigned" stops
+   * looking like "done the whole topic" once the acervo grows.
+   */
+  itemsAvailable?: number;
 };
+
+function denominatorOf(t: CoverageTopic): number {
+  return t.itemsAvailable ?? t.itemsPlanned;
+}
 
 type MasteryTier = 'none' | 'started' | 'on-track' | 'complete';
 
@@ -67,7 +77,7 @@ export function TopicCoverageHeatmap({
       <div className="space-y-3">
         {grouped.map((phase) => {
           const phasePlanned = phase.topics.reduce(
-            (s, t) => s + t.itemsPlanned,
+            (s, t) => s + denominatorOf(t),
             0,
           );
           const phaseDone = phase.topics.reduce((s, t) => s + t.itemsDone, 0);
@@ -89,7 +99,7 @@ export function TopicCoverageHeatmap({
               </div>
               <div className="flex flex-wrap gap-[3px]">
                 {phase.topics.map((t) => {
-                  const tier = tierOf(t.itemsPlanned, t.itemsDone);
+                  const tier = tierOf(denominatorOf(t), t.itemsDone);
                   const isSelected = selectedId === t.topicId;
                   return (
                     <div
@@ -100,7 +110,7 @@ export function TopicCoverageHeatmap({
                       onMouseLeave={
                         onSelect ? () => onSelect(null) : undefined
                       }
-                      title={`${t.label} — ${t.itemsDone}/${t.itemsPlanned}`}
+                      title={`${t.label} — ${t.itemsDone}/${denominatorOf(t)}`}
                       style={dim}
                       className={clsx(
                         'rounded-[3px] border transition-all',
