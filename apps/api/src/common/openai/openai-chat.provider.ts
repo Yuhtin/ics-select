@@ -66,69 +66,97 @@ export class OpenAiChatProvider {
   }): Promise<{ data: T; usage: Usage; toolCalls: ToolCall[] }> {
     const maxIter = input.maxIterations ?? 5;
     const model = input.model ?? MODEL;
-    const openaiMessages: any[] = [
-      { role: 'system', content: input.system },
-      ...input.messages,
-    ];
+    // Responses API, not chat completions: OpenAI rejects function tools +
+    // reasoning_effort on /v1/chat/completions ("use /v1/responses or set
+    // reasoning_effort to 'none'"). The other methods here have no tools, so
+    // they stay on chat completions.
     const openaiTools = input.tools.map((t) => ({
       type: 'function' as const,
-      function: {
-        name: t.name,
-        description: t.description,
-        parameters: t.parameters,
-      },
+      name: t.name,
+      description: t.description,
+      parameters: t.parameters,
+      // Our tool schemas aren't strict-mode compliant (optional properties, no
+      // additionalProperties: false) and strict defaults to true here.
+      strict: false,
     }));
 
     const toolCalls: ToolCall[] = [];
     const totalUsage: Usage = { inputTokens: 0, outputTokens: 0, costUsd: 0 };
+    // Turn history lives server-side via previous_response_id (store defaults
+    // to true), so each turn only sends what's new. If storage is ever off,
+    // the stateless variant is to append every response.output item into a
+    // growing input array instead.
+    let previousResponseId: string | undefined;
+    let nextInput: any[] = input.messages.map((m) => ({
+      role: m.role,
+      content: m.content,
+    }));
 
     for (let iter = 0; iter < maxIter; iter += 1) {
       const isFinalIter = iter === maxIter - 1;
-      const response = await this.client.chat.completions.create({
+      const response = await this.client.responses.create({
         model,
-        max_completion_tokens: input.maxTokens ?? 2048,
-        ...(input.reasoningEffort ? { reasoning_effort: input.reasoningEffort } : {}),
-        messages: openaiMessages,
+        // Not carried by previous_response_id — has to be re-sent every turn.
+        instructions: input.system,
+        input: nextInput,
+        ...(previousResponseId ? { previous_response_id: previousResponseId } : {}),
+        ...(input.reasoningEffort ? { reasoning: { effort: input.reasoningEffort } } : {}),
+        max_output_tokens: input.maxTokens ?? 2048,
         // On the last iteration, force JSON object output and drop tools
         // so the model must answer rather than attempting another tool call.
         ...(isFinalIter
-          ? { response_format: { type: 'json_object' as const } }
+          ? { text: { format: { type: 'json_object' as const } } }
           : { tools: openaiTools }),
       });
 
-      const usage = toUsage(response.usage, model);
+      const usage = toUsage(
+        {
+          prompt_tokens: response.usage?.input_tokens,
+          completion_tokens: response.usage?.output_tokens,
+        },
+        model,
+      );
       totalUsage.inputTokens += usage.inputTokens;
       totalUsage.outputTokens += usage.outputTokens;
       totalUsage.costUsd += usage.costUsd;
 
-      const message = response.choices[0]?.message;
-      if (!message) throw new Error('OpenAI returned no message');
+      if (response.status === 'incomplete') {
+        // Almost always max_output_tokens: reasoning tokens come out of the
+        // same budget. Say so instead of failing on empty content.
+        throw new Error(
+          `OpenAI response incomplete (${response.incomplete_details?.reason ?? 'unknown reason'}) — max_output_tokens=${input.maxTokens ?? 2048}`,
+        );
+      }
 
-      if (message.tool_calls && message.tool_calls.length > 0 && !isFinalIter) {
-        // Echo the assistant message (with tool_calls) back into history
-        openaiMessages.push(message);
-        for (const call of message.tool_calls as any[]) {
-          const name = call.function.name as string;
-          const argString = (call.function.arguments ?? '{}') as string;
+      previousResponseId = response.id;
+      const calls = (response.output ?? []).filter(
+        (item: any) => item.type === 'function_call',
+      ) as any[];
+
+      if (calls.length > 0 && !isFinalIter) {
+        nextInput = [];
+        for (const call of calls) {
+          const name = call.name as string;
+          const argString = (call.arguments ?? '{}') as string;
           let parsedArgs: unknown;
           try {
             parsedArgs = JSON.parse(argString);
           } catch {
             parsedArgs = {};
           }
-          toolCalls.push({ id: call.id, name, args: parsedArgs });
+          toolCalls.push({ id: call.call_id, name, args: parsedArgs });
           const result = await input.executeTool(name, parsedArgs);
-          openaiMessages.push({
-            role: 'tool',
-            tool_call_id: call.id,
-            content: JSON.stringify(result ?? null),
+          nextInput.push({
+            type: 'function_call_output',
+            call_id: call.call_id,
+            output: JSON.stringify(result ?? null),
           });
         }
         continue;
       }
 
       // Model returned final content (or last iteration reached)
-      const content = message.content;
+      const content = response.output_text;
       if (!content) {
         throw new Error(
           `OpenAI returned no content after iteration ${iter + 1}`,
