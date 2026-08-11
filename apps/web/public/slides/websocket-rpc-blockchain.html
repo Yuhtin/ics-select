@@ -372,7 +372,7 @@ const SLIDES = [
   { type: 'hook', beat: 8, kicker: 'Onde esse backend mora',
     title: 'Peraí. A gente já vai escrever React, e o Next.js roda servidor no mesmo projeto. Precisa mesmo de um serviço separado?',
     sub: 'Digam quais dos quatro problemas da faixa anterior o Next resolve sozinho, e qual deles continua de pé.',
-    tags: ['route handler', 'serverless', 'maxDuration', 'Vercel'] },
+    tags: ['route handler', 'NEXT_PUBLIC_', '300 segundos', 'Vercel'] },
   { type: 'code', beat: 8, kicker: 'Um arquivo numa pasta vira um endpoint', file: 'next.txt',
     code: [
       "<span class='cm'>// app/api/fees/snapshot/route.ts</span>",
@@ -402,12 +402,12 @@ const SLIDES = [
       'A conta roda uma vez, no servidor, então todas as telas concordam',
       'O histórico tem onde morar, e o snapshot sai de lá',
       'Um repositório, um deploy. E o plano Hobby da Vercel é gratuito, com domínio, HTTPS e CDN' ] },
-    right: { tag: 'continua com vocês', title: 'Serverless não é um processo', bad: true, points: [
-      'A função é invocada, responde e morre. O teto é 300s em todos os planos, 800s no Pro',
-      'Quando ela morre, a conexão com o node cai junto',
-      'Não existe memória compartilhada entre invocações: o último valor precisa de um Redis',
-      'Se cada aba abrir a própria invocação, voltam as N conexões da faixa 07' ] },
-    projeto: 'Reparem no que salva esse desenho: a função morre, o EventSource reconecta sozinho, e a invocação nova roda o backfill da faixa 05. As duas coisas que vocês vão escrever nas faixas 05 e 09 são exatamente o que faz o teto de 300 segundos ser sobrevivível.' },
+    right: { tag: 'continua com vocês', title: 'Toda chamada tem prazo', bad: true, points: [
+      'Uma chamada de API na Vercel roda por no máximo 300 segundos, e depois é encerrada',
+      'Quando ela é encerrada, o WebSocket que ela mantinha com o node cai junto',
+      'Duas chamadas não enxergam a memória uma da outra: o último valor precisa de um Redis',
+      'Se cada aba disparar a própria chamada, voltam as N conexões da faixa 07' ] },
+    projeto: 'Reparem no que salva esse desenho: a chamada é encerrada, o EventSource reconecta sozinho, e a chamada nova roda o backfill da faixa 05. As duas coisas que vocês vão escrever nas faixas 05 e 09 são exatamente o que faz o teto de 300 segundos ser sobrevivível.' },
 
   { type: 'hook', beat: 9, kicker: 'SSE',
     title: 'Do backend até o navegador o dado anda num sentido só: o painel recebe, e nunca responde nada.',

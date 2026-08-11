@@ -574,25 +574,25 @@ export const websocketRpcBlockchain: Lesson = {
       group: 'panel',
       beat: 8,
       teachFromZero: true,
-      tags: ['Next.js', 'route handler', 'serverless', 'maxDuration', 'Vercel'],
+      tags: ['Next.js', 'route handler', 'NEXT_PUBLIC_', '300 segundos', 'Vercel'],
       oneLine:
         'O beat anterior fechou que precisa de um backend. O Next.js já é esse backend, no mesmo projeto do frontend. Ele resolve três dos quatro problemas, e o quarto vira outra coisa.',
       pass1:
         'A objeção natural do beat 7 é esta: se a gente já vai escrever React, e o Next.js roda código de servidor no mesmo projeto, precisa mesmo de um serviço separado? A resposta curta é não, e vale entender por quê, porque isso muda o desenho do projeto de vocês e o esforço de deploy.',
       pass2:
-        '**O que é um route handler**: um arquivo em `app/api/fees/snapshot/route.ts` que exporta uma função `GET` responde em `/api/fees/snapshot`. O caminho da pasta é a URL, sem router para configurar e sem segundo projeto. Esse arquivo é compilado só para o servidor e nunca é enviado ao navegador, então o `process.env.ALCHEMY_KEY` existe ali dentro com segurança. E como o front e a API saem do mesmo domínio, o CORS deixa de ser assunto.\n\n**O prefixo que decide quem enxerga**: variável de ambiente sem `NEXT_PUBLIC_` fica no servidor. Com o prefixo, ela vai para o bundle e é pública. É a mesma armadilha do beat 7 com nome novo, e é o erro mais comum de quem começa em Next.\n\n**Três dos quatro problemas somem**: a chave fica no servidor, a conta roda uma vez e o histórico tem onde morar. O que não some é a contagem de conexões, e o motivo é o modelo de execução: **uma função serverless não é um processo**. Ela é invocada, responde e morre, sem ficar de pé esperando. O teto de duração hoje é de 300 segundos em todos os planos com Fluid Compute, e de 800 no Pro. Quando a invocação acaba, a conexão que ela mantinha com o node cai junto. E como não existe afinidade de instância, também não existe memória compartilhada, então o último valor precisa de um lugar externo como um Redis.\n\n**O ciclo que salva, e o que ainda morde**: a função morre, o `EventSource` do navegador reconecta sozinho, e a invocação nova assina de novo e roda o backfill. As duas coisas que vocês escrevem nos beats 5 e 9 são exatamente o que faz o teto de 300 segundos ser sobrevivível. O que ainda morde é que, se cada aba abrir a própria invocação com a própria assinatura, voltam as N conexões do beat 7, agora escondidas dentro do serverless. A saída é separar quem ingere de quem entrega, com o valor passando por um Redis no meio.\n\n**No projeto**: o deploy fica trivial. Conecta o repositório do GitHub e a Vercel publica a cada push, com domínio, HTTPS e CDN inclusos, e o plano Hobby é gratuito e cobre o protótipo do TAP com folga. O TAP recomenda "backend em Node.js" e "frontend em React", e o Next entrega os dois num projeto só, sem contrariar nada. Se forem por esse caminho, levem essa decisão para a demo do dia 05/10, porque é justamente o tipo de coisa que a Alphractal pediu para validar.',
+        '**O que é um route handler**: um arquivo em `app/api/fees/snapshot/route.ts` que exporta uma função `GET` responde em `/api/fees/snapshot`. O caminho da pasta é a URL, sem router para configurar e sem segundo projeto. Esse arquivo é compilado só para o servidor e nunca é enviado ao navegador, então o `process.env.ALCHEMY_KEY` existe ali dentro com segurança. E como o front e a API saem do mesmo domínio, o CORS deixa de ser assunto.\n\n**O prefixo que decide quem enxerga**: variável de ambiente sem `NEXT_PUBLIC_` fica no servidor. Com o prefixo, ela vai para o bundle e é pública. É a mesma armadilha do beat 7 com nome novo, e é o erro mais comum de quem começa em Next.\n\n**Três dos quatro problemas somem**: a chave fica no servidor, a conta roda uma vez e o histórico tem onde morar. O que não some é a contagem de conexões, e o motivo é um fato simples da Vercel: **toda chamada de API roda por no máximo 300 segundos** (800 no plano Pro) e depois é encerrada. Ela não fica de pé esperando. Quando ela é encerrada, o WebSocket que ela mantinha aberto com o node cai junto. E duas chamadas diferentes não enxergam a memória uma da outra, então o último valor não pode viver numa variável do processo, precisa de um lugar externo como um Redis.\n\n**O ciclo que salva, e o que ainda morde**: a chamada é encerrada, o `EventSource` do navegador reconecta sozinho, e a chamada nova assina de novo e roda o backfill. As duas coisas que vocês escrevem nos beats 5 e 9 são exatamente o que faz o teto de 300 segundos ser sobrevivível. O que ainda morde é que, se cada aba disparar a própria chamada com a própria assinatura, voltam as N conexões do beat 7, agora escondidas atrás da Vercel. A saída é separar quem busca do node de quem entrega para as telas, com o valor passando por um Redis no meio.\n\n**No projeto**: o deploy fica trivial. Conecta o repositório do GitHub e a Vercel publica a cada push, com domínio, HTTPS e CDN inclusos, e o plano Hobby é gratuito e cobre o protótipo do TAP com folga. O TAP recomenda "backend em Node.js" e "frontend em React", e o Next entrega os dois num projeto só, sem contrariar nada. Se forem por esse caminho, levem essa decisão para a demo do dia 05/10, porque é justamente o tipo de coisa que a Alphractal pediu para validar.',
       pass3: [
         {
           gotcha: 'Achar que NEXT_PUBLIC_ esconde a chave',
           note: 'É o contrário. O prefixo é o que manda a variável para o bundle. A chave da Alchemy vai numa variável SEM prefixo, e aí ela só existe dentro do route handler.',
         },
         {
-          gotcha: 'Achar que serverless fica de pé',
-          note: 'Não fica. Cada invocação é curta e isolada, e o teto atual é de 300 segundos. Nada que precise viver por horas sobrevive ali sem um ciclo de reconexão.',
+          gotcha: 'Achar que a chamada fica de pé esperando',
+          note: 'Não fica. Toda chamada de API na Vercel tem 300 segundos de teto e depois é encerrada. Nada que precise viver por horas sobrevive ali sem um ciclo de reconexão.',
         },
         {
           gotcha: 'Guardar o último valor numa variável de módulo',
-          note: 'Funciona no seu teste local, onde o processo é um só, e falha em produção, porque a próxima requisição pode cair em outra instância. O estado compartilhado tem que ser externo.',
+          note: 'Funciona no seu teste local, onde o processo é um só, e falha em produção, porque a próxima chamada pode cair em outra máquina. O estado compartilhado tem que ser externo.',
         },
         {
           gotcha: 'Achar que precisa do runtime Edge para fazer streaming',
@@ -622,19 +622,19 @@ export const websocketRpcBlockchain: Lesson = {
       followup:
         'O backend existe e mora no Next. Agora ele tem o número pronto e precisa entregar para 200 navegadores. Que transporte ele usa nessa perna?',
       gotcha:
-        'Se alguém disser "então é só usar Next e acabou", devolva: "200 pessoas abrem o painel, e cada aba dispara a própria invocação. Quantas conexões chegam na Alchemy?"',
+        'Se alguém disser "então é só usar Next e acabou", devolva: "200 pessoas abrem o painel, e cada aba dispara a própria chamada. Quantas conexões chegam na Alchemy?"',
       scenarios: {
         right: {
           shape:
-            'Percebe que a chave, a conta única e o histórico ficam resolvidos porque o route handler roda no servidor, e que a contagem de conexões não se resolve sozinha. É um bônus se já desconfia que a função não fica de pé.',
+            'Percebe que a chave, a conta única e o histórico ficam resolvidos porque o route handler roda no servidor, e que a contagem de conexões não se resolve sozinha. É um bônus se já desconfia que a chamada não fica de pé.',
           redirect:
-            'Confirme e nomeie o motivo: "e por que a conexão continua sendo problema? O que uma função serverless faz depois de responder?"',
+            'Confirme e nomeie o motivo: "e por que a conexão continua sendo problema? O que acontece com a chamada depois que ela responde?"',
         },
         close: {
           shape:
-            'Vê que o Next resolve a chave e o CORS, mas trata a função como se fosse um servidor de pé, sem perceber que ela morre depois de responder.',
+            'Vê que o Next resolve a chave e o CORS, mas trata a chamada como se fosse um servidor de pé, sem perceber que ela é encerrada depois de responder.',
           redirect:
-            'Aterre no modelo: "a função responde a requisição. No segundo seguinte, o que está rodando? E o socket que ela tinha aberto com o node?"',
+            'Aterre no concreto: "a chamada responde. Passaram 300 segundos. O que ainda está rodando? E o socket que ela tinha aberto com o node?"',
         },
         wayOff: {
           shape:
