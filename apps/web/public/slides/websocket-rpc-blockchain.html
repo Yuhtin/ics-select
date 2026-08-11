@@ -341,6 +341,7 @@ const SLIDES = [
       ['Os dois "÷ 1e9" são conversões diferentes', 'O primeiro vai de wei para gwei. O segundo vai de gwei para ETH. Cada degrau dessa escala é de 10^9, então o mesmo número aparece duas vezes por coincidência.'],
       ['O 21.000 é fixo por especificação', 'Esse é o gas de uma transferência simples de ETH. Um swap na Uniswap passa de 150.000, então o painel precisa deixar claro qual operação ele está precificando.'],
       ['O preço do ETH vem de fora', 'O node não tem como saber quanto vale um ETH em dólar. Vocês vão precisar de uma segunda fonte, com cache, e com um valor de reserva pra quando essa fonte falhar.'],
+      ['Os 10 gwei aqui são só um número redondo', 'Com a rede calma o base fee fica perto de 0,06 gwei e a mesma transferência custa menos de um centavo. Num congestionamento ele passa de 50 gwei e a conta vai a uns 3 dólares. É essa variação que o painel de vocês existe pra mostrar.'],
     ] },
 
   { type: 'hook', beat: 7, kicker: 'Por que existe um backend',
@@ -571,7 +572,7 @@ function render(slide, idx) {
 
     case 'code':
       return panelShell(slide, idx, `
-        <div class="grid gap-8 items-stretch" style="grid-template-columns:1.42fr 1fr">
+        <div class="grid gap-8 items-center" style="grid-template-columns:1.42fr 1fr">
           <div class="well anim overflow-hidden flex flex-col">
             <div class="flex items-center gap-3 px-6 py-3" style="border-bottom:var(--bw-hairline) solid var(--border)">
               <span style="width:9px;height:9px;border-radius:var(--radius-full);background:var(--border-interactive)"></span>
