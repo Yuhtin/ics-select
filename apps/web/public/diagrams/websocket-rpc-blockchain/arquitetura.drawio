@@ -1,0 +1,88 @@
+<mxGraphModel dx="1480" dy="620" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" background="#13293d" math="0" shadow="0">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+
+    <mxCell id="lblStream" value="1 &#183; STREAM: contínuo, o node envia" style="text;html=1;align=left;verticalAlign=middle;fontSize=17;fontStyle=1;fontColor=#34d399;fontFamily=Montserrat" vertex="1" parent="1">
+      <mxGeometry x="80" y="92" width="460" height="26" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="nodeBox" value="Node Ethereum" style="rounded=1;arcSize=14;whiteSpace=wrap;html=1;fillColor=#081119;strokeColor=#1b98e0;strokeWidth=3;fontSize=20;fontColor=#e8f1f2;fontFamily=Montserrat;fontStyle=1;verticalAlign=bottom;spacingBottom=44" vertex="1" parent="1">
+      <mxGeometry x="80" y="140" width="250" height="160" as="geometry"/>
+    </mxCell>
+    <mxCell id="nodeSub" value="Alchemy / Infura" style="text;html=1;align=center;verticalAlign=middle;fontSize=15;fontColor=#8fa3b8;fontFamily=Open Sans" vertex="1" parent="1">
+      <mxGeometry x="80" y="256" width="250" height="22" as="geometry"/>
+    </mxCell>
+    <mxCell id="nodeIcon" value="" style="shape=cylinder3;boundedLbl=1;backgroundOutline=1;size=13;html=1;fillColor=#13293d;strokeColor=#1b98e0;strokeWidth=3" vertex="1" parent="1">
+      <mxGeometry x="172" y="172" width="66" height="60" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="beBox" value="Backend Node.js" style="rounded=1;arcSize=14;whiteSpace=wrap;html=1;fillColor=#081119;strokeColor=#34d399;strokeWidth=3;fontSize=20;fontColor=#e8f1f2;fontFamily=Montserrat;fontStyle=1;verticalAlign=bottom;spacingBottom=44" vertex="1" parent="1">
+      <mxGeometry x="615" y="140" width="290" height="160" as="geometry"/>
+    </mxCell>
+    <mxCell id="beSub" value="converte, calcula, guarda o último valor" style="text;html=1;align=center;verticalAlign=middle;fontSize=15;fontColor=#8fa3b8;fontFamily=Open Sans" vertex="1" parent="1">
+      <mxGeometry x="615" y="256" width="290" height="22" as="geometry"/>
+    </mxCell>
+    <mxCell id="beIcon1" value="" style="rounded=1;arcSize=40;html=1;fillColor=#13293d;strokeColor=#34d399;strokeWidth=2" vertex="1" parent="1">
+      <mxGeometry x="726" y="156" width="68" height="19" as="geometry"/>
+    </mxCell>
+    <mxCell id="beIcon2" value="" style="rounded=1;arcSize=40;html=1;fillColor=#13293d;strokeColor=#34d399;strokeWidth=2" vertex="1" parent="1">
+      <mxGeometry x="726" y="179" width="68" height="19" as="geometry"/>
+    </mxCell>
+    <mxCell id="beIcon3" value="" style="rounded=1;arcSize=40;html=1;fillColor=#34d399;strokeColor=#34d399;strokeWidth=2" vertex="1" parent="1">
+      <mxGeometry x="726" y="202" width="68" height="19" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="brBox" value="React &#183; aba Fees" style="rounded=1;arcSize=14;whiteSpace=wrap;html=1;fillColor=#081119;strokeColor=#1b98e0;strokeWidth=3;fontSize=20;fontColor=#e8f1f2;fontFamily=Montserrat;fontStyle=1;verticalAlign=bottom;spacingBottom=44" vertex="1" parent="1">
+      <mxGeometry x="1190" y="140" width="250" height="160" as="geometry"/>
+    </mxCell>
+    <mxCell id="brSub" value="a tela do investidor" style="text;html=1;align=center;verticalAlign=middle;fontSize=15;fontColor=#8fa3b8;fontFamily=Open Sans" vertex="1" parent="1">
+      <mxGeometry x="1190" y="256" width="250" height="22" as="geometry"/>
+    </mxCell>
+    <mxCell id="brIcon" value="" style="rounded=1;arcSize=16;html=1;fillColor=#13293d;strokeColor=#1b98e0;strokeWidth=3" vertex="1" parent="1">
+      <mxGeometry x="1272" y="170" width="86" height="62" as="geometry"/>
+    </mxCell>
+    <mxCell id="brIconBar" value="" style="rounded=0;html=1;fillColor=#1b98e0;strokeColor=none;opacity=30" vertex="1" parent="1">
+      <mxGeometry x="1275" y="173" width="80" height="13" as="geometry"/>
+    </mxCell>
+    <mxCell id="brIconLine" value="" style="line;strokeWidth=3;html=1;strokeColor=#1b98e0" vertex="1" parent="1">
+      <mxGeometry x="1272" y="185" width="86" height="2" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#34d399;strokeWidth=3;endArrow=blockThin;endFill=1;fontFamily=Open Sans" edge="1" parent="1" source="nodeBox" target="beBox">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e1lbl" value="wss &#183; eth_subscribe(&quot;newHeads&quot;)" style="text;html=1;align=center;verticalAlign=middle;fontSize=16;fontColor=#e8f1f2;fontFamily=Montserrat;fontStyle=1" vertex="1" parent="1">
+      <mxGeometry x="330" y="184" width="285" height="24" as="geometry"/>
+    </mxCell>
+    <mxCell id="e1sub" value="1 conexão, aberta pra sempre" style="text;html=1;align=center;verticalAlign=middle;fontSize=14;fontColor=#8fa3b8;fontFamily=Open Sans" vertex="1" parent="1">
+      <mxGeometry x="330" y="240" width="285" height="22" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#34d399;strokeWidth=3;endArrow=blockThin;endFill=1;fontFamily=Open Sans" edge="1" parent="1" source="beBox" target="brBox">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e2lbl" value="SSE &#183; text/event-stream" style="text;html=1;align=center;verticalAlign=middle;fontSize=16;fontColor=#e8f1f2;fontFamily=Montserrat;fontStyle=1" vertex="1" parent="1">
+      <mxGeometry x="905" y="184" width="285" height="24" as="geometry"/>
+    </mxCell>
+    <mxCell id="e2sub" value="N conexões, uma por aba" style="text;html=1;align=center;verticalAlign=middle;fontSize=14;fontColor=#8fa3b8;fontFamily=Open Sans" vertex="1" parent="1">
+      <mxGeometry x="905" y="240" width="285" height="22" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="lblOpen" value="2 &#183; ABERTURA: uma vez, quando a tela carrega" style="text;html=1;align=left;verticalAlign=middle;fontSize=17;fontStyle=1;fontColor=#1b98e0;fontFamily=Montserrat" vertex="1" parent="1">
+      <mxGeometry x="80" y="418" width="500" height="26" as="geometry"/>
+    </mxCell>
+    <mxCell id="e3" value="GET /api/fees/snapshot" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#1b98e0;strokeWidth=3;dashed=1;dashPattern=8 6;endArrow=blockThin;endFill=1;fontSize=16;fontColor=#e8f1f2;fontFamily=Montserrat;fontStyle=1;labelBackgroundColor=#13293d;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0" edge="1" parent="1" source="brBox" target="beBox">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="1315" y="440"/>
+          <mxPoint x="760" y="440"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e3sub" value="sem isso, a tela fica em branco por até 12 segundos" style="text;html=1;align=center;verticalAlign=middle;fontSize=14;fontColor=#8fa3b8;fontFamily=Open Sans" vertex="1" parent="1">
+      <mxGeometry x="800" y="452" width="475" height="22" as="geometry"/>
+    </mxCell>
+
+  </root>
+</mxGraphModel>
