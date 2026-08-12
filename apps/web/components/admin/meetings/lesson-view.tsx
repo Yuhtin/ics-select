@@ -9,12 +9,16 @@ import { Eyebrow } from '../../ui/eyebrow';
 import { StudyMode } from './study-mode';
 import { LiveMode } from './live-mode';
 import { PrintView } from './print-view';
+import { GlossaryPanel, GlossaryTabButton } from './glossary-panel';
 
 type Mode = 'study' | 'live';
 
 export function LessonView({ lesson }: { lesson: Lesson }) {
   const [mode, setMode] = useState<Mode>('study');
+  const [glossaryOpen, setGlossaryOpen] = useState(false);
   const beats = lesson.nodes.filter((n) => typeof n.beat === 'number').length;
+  const glossaryCount =
+    lesson.glossary?.reduce((n, g) => n + g.terms.length, 0) ?? 0;
 
   return (
     <>
@@ -40,12 +44,25 @@ export function LessonView({ lesson }: { lesson: Lesson }) {
             </p>
           </div>
 
-          <div className="flex items-stretch gap-2">
+          <div className="flex flex-wrap items-stretch gap-2">
             <ModeToggle mode={mode} onChange={setMode} />
+            {glossaryCount > 0 && (
+              <GlossaryTabButton
+                active={glossaryOpen}
+                onClick={() => setGlossaryOpen((o) => !o)}
+                count={glossaryCount}
+              />
+            )}
             {lesson.slidesUrl && <SlidesButton url={lesson.slidesUrl} />}
             <ExportMenu lesson={lesson} />
           </div>
         </header>
+
+        {glossaryOpen && glossaryCount > 0 && (
+          <div className="border-t border-border-token pt-8">
+            <GlossaryPanel lesson={lesson} />
+          </div>
+        )}
 
         <div className="border-t border-border-token pt-8">
           {mode === 'study' ? (

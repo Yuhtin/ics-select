@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { clsx } from 'clsx';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AlertTriangle, ArrowRight, Users } from 'lucide-react';
+import { AlertTriangle, ArrowRight, PenLine, Users } from 'lucide-react';
 import type { Lesson, LessonNode } from './lesson-types';
 import { GROUP_META } from './group-meta';
 import { Eyebrow } from '../../ui/eyebrow';
@@ -327,7 +327,74 @@ function DeepPass({ node, seen }: { node: LessonNode; seen: Set<string> }) {
           <AskerCard node={node} seen={seen} />
         </aside>
       </div>
+      <BoardVisuals node={node} />
       <DiagramMedia node={node} />
+    </div>
+  );
+}
+
+function BoardVisuals({ node }: { node: LessonNode }) {
+  if (!node.visuals?.length) return null;
+  return (
+    <div className="space-y-5">
+      {node.visuals.map((v, i) => (
+        <figure
+          key={i}
+          className="overflow-hidden rounded-card border border-border-token bg-surface"
+        >
+          <figcaption className="flex items-center gap-2 border-b border-border-token bg-bg-subtle px-4 py-2.5">
+            <PenLine className="h-3.5 w-3.5 shrink-0 text-fg-mute" strokeWidth={1.8} />
+            <span className="font-sans text-sm font-semibold text-fg">{v.title}</span>
+          </figcaption>
+
+          {v.kind === 'ascii' ? (
+            <pre className="overflow-x-auto px-4 py-4 font-mono text-[12.5px] leading-[1.55] text-fg">
+              {v.art}
+            </pre>
+          ) : (
+            <div className="px-4 py-4">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={v.src}
+                alt={v.alt}
+                className="mx-auto block max-h-[320px] w-auto max-w-full"
+              />
+            </div>
+          )}
+
+          {(v.caption || v.board || v.kind === 'image') && (
+            <div className="space-y-2 border-t border-border-token px-4 py-3">
+              {v.caption && (
+                <p className="text-sm leading-snug text-fg-soft">{v.caption}</p>
+              )}
+              {v.board && (
+                <p className="flex gap-2 text-sm leading-snug text-fg-soft">
+                  <span className="shrink-0 font-mono text-[10px] uppercase tracking-eyebrow text-fg-faint">
+                    no quadro
+                  </span>
+                  <span>{v.board}</span>
+                </p>
+              )}
+              {v.kind === 'image' && (
+                <p className="font-mono text-[10px] uppercase tracking-eyebrow text-fg-faint">
+                  {v.creditUrl ? (
+                    <a
+                      href={v.creditUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:text-fg-mute"
+                    >
+                      {v.credit}
+                    </a>
+                  ) : (
+                    v.credit
+                  )}
+                </p>
+              )}
+            </div>
+          )}
+        </figure>
+      ))}
     </div>
   );
 }

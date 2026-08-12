@@ -148,13 +148,6 @@
   .bad { color: var(--magenta); font-weight: 500; }
   .ok  { color: var(--code-mint); font-weight: 500; }
 
-  /* Glossário: termo e definição na mesma linha, como no markdown. O termo
-     leva um filete indigo à esquerda pra a coluna ser varrida com o olho. */
-  .gl   { border-left: 2px solid var(--primary-subdued); padding-left: 16px; }
-  .gl-t { font-weight: 600; font-size: 17px; color: var(--ink); letter-spacing: -0.1px; }
-  .gl-t::after { content: ' · '; color: var(--ink-faint, #a8b3c4); font-weight: 400; }
-  .gl-d { font-weight: 400; font-size: 16px; line-height: 1.5; color: var(--ink-2); }
-
   /* Mockup de produto: o componente mais reconhecível da marca. */
   .mock { background: var(--canvas); border: 1px solid var(--hairline); border-radius: var(--r-xl); overflow: hidden; }
   .mock-bar { background: var(--canvas-soft); border-bottom: 1px solid var(--hairline); padding: 14px 24px; display: flex; align-items: center; gap: 10px; }
@@ -449,79 +442,6 @@ const SLIDES = [
 
   { type: 'closing' },
 
-  // ═══════════ GLOSSÁRIO ═══════════
-  // Fica depois da síntese porque é material de consulta, não de projeção.
-  // Sai no PDF do Exportar, que é o que o aluno leva pra casa.
-  { type: 'glossary', n: 1, title: 'Como o número é guardado', terms: [
-    ['float', 'Número com vírgula guardado em base 2, no padrão IEEE 754. Todo processador faz igual, então trocar de linguagem não resolve nada.'],
-    ['IEEE 754', 'O padrão que define esse formato. É ele que faz 0.1 + 0.2 devolver 0.30000000000000004 em qualquer lugar.'],
-    ['dízima binária', 'Em base 2, o número 0.1 não termina nunca. O computador corta a dízima e guarda o valor mais próximo que consegue, que não é 0.1.'],
-    ['inteiro de centavos', 'Guardar R$ 19,90 como o inteiro 1990. Soma de inteiro é exata, e a vírgula entra só na hora de exibir.'],
-    ['DECIMAL', 'Tipo de base 10 com precisão arbitrária. DECIMAL no Postgres, BigDecimal no Java. A saída quando você precisa de fração menor que o centavo.'],
-    ['BIGINT', 'Inteiro de 64 bits. É o tipo da coluna quando você escolhe guardar centavos, e aguenta valor muito além de qualquer saldo real.'],
-  ] },
-
-  { type: 'glossary', n: 2, title: 'Quando o modelo ingênuo quebra', terms: [
-    ['lost update', 'Duas transações leem o mesmo valor e a segunda escrita passa por cima da primeira. O dinheiro que a primeira tirou volta a existir.'],
-    ['race condition', 'O resultado depende de quem chegou primeiro. Aqui ele aparece como R$ 50 saindo do nada.'],
-    ['atomicidade', 'O débito e o crédito acontecem juntos ou nenhum dos dois acontece. É o A de ACID.'],
-    ['durabilidade', 'O que foi confirmado sobrevive à queda do servidor. É o D de ACID.'],
-    ['ACID', 'As quatro garantias de uma transação de banco: atomicidade, consistência, isolamento e durabilidade.'],
-    ['audit trail', 'O rastro que permite responder o que aconteceu e quando. Um UPDATE apaga esse rastro, porque sobrescreve o valor anterior.'],
-  ] },
-
-  { type: 'glossary', n: 3, title: 'O ledger', terms: [
-    ['ledger', 'O livro onde cada movimento vira uma linha nova. Nada é editado, e o saldo sai da soma das linhas.'],
-    ['double-entry', 'Todo movimento grava dois lados, um que sai e um que entra. Foi escrito em 1494 e continua sendo o modelo.'],
-    ['entry', 'Uma linha do ledger: conta, valor e sinal. É a unidade que o sistema realmente grava.'],
-    ['transação', 'O grupo de entries que representa um movimento. A transferência da Ana para o Beto é uma transação com dois entries.'],
-    ['débito e crédito', 'Os dois lados de uma transação. Os nomes vêm da contabilidade e não do sentido do dinheiro na sua conta.'],
-    ['soma zero', 'Os entries de uma transação somam zero, e a soma de todos os entries do sistema também. Quando não dá zero, existe bug.'],
-    ['saldo derivado', 'O saldo não é uma coluna, é a soma dos entries. Como ninguém escreve nele, duas transações não têm o que disputar.'],
-    ['estorno', 'O entry oposto que corrige um erro. O erro continua no ledger, e a correção fica registrada logo abaixo dele.'],
-  ] },
-
-  { type: 'glossary', n: 4, title: 'Append-only', terms: [
-    ['append-only', 'Você só adiciona linhas, nunca edita nem apaga. É a escrita mais barata do banco e a única que preserva o passado.'],
-    ['event sourcing', 'Guardar o log de eventos e derivar o estado a partir dele. O ledger é a versão disso para dinheiro.'],
-    ['fold', 'Percorrer o log somando até chegar no estado. O saldo de terça é o mesmo fold, parando na terça.'],
-    ['snapshot', 'O saldo salvo num instante, para a leitura não somar 10 milhões de entries. O saldo atual é o snapshot mais o que entrou depois dele.'],
-    ['selagem por hash', 'Fechar um intervalo antigo do log e guardar o hash dele. Se alguém alterar um entry velho, a conta do hash não fecha mais.'],
-    ['imutabilidade', 'A linha gravada não muda mais. É o que transforma o log numa prova, e não só num registro.'],
-  ] },
-
-  { type: 'glossary', n: 5, title: 'Idempotência', terms: [
-    ['idempotência', 'A propriedade de uma operação que pode ser repetida sem mudar o resultado. Apertar pagar duas vezes cobra uma vez só.'],
-    ['idempotency key', 'A chave que o cliente gera e repete em toda tentativa. Ela representa a intenção, e a intenção não mudou entre um retry e outro.'],
-    ['retry', 'Reenviar a requisição quando a resposta não chegou. O cliente não sabe se o servidor processou ou se só a resposta se perdeu.'],
-    ['at-least-once', 'A garantia de que a mensagem chega, podendo chegar mais de uma vez. É o que a rede te entrega de fato.'],
-    ['exactly-once', 'A garantia de que ela chega uma vez só. Não existe na rede: você constrói com at-least-once mais dedup.'],
-    ['dedup', 'Descartar a repetição. Aqui, reconhecendo a idempotency key que já foi vista antes.'],
-    ['UNIQUE', 'A constraint que recusa a chave repetida. Como a checagem acontece dentro da própria escrita, não sobra janela entre checar e gravar.'],
-    ['ON CONFLICT', 'A cláusula do Postgres que trata essa recusa sem estourar erro. Com DO NOTHING, o segundo INSERT simplesmente não grava.'],
-  ] },
-
-  { type: 'glossary', n: 6, title: 'Como isso vira arquitetura', terms: [
-    ['write path', 'O caminho da escrita. Precisa ser exato e durável, e é o lado caro do sistema.'],
-    ['read path', 'O caminho da leitura. Tolera atraso, e é onde o volume de verdade está.'],
-    ['two-phase commit', 'O protocolo que sincroniza uma escrita em mais de um lugar. É o que sustenta o índice forte, e é o que o torna caro.'],
-    ['strongly consistent', 'Uma leitura enxerga a escrita que acabou de acontecer. A autorização de cartão depende disso.'],
-    ['eventually consistent', 'A leitura converge para o valor certo, com atraso. "Eventually" aqui quer dizer que chega, e não que acontece de vez em quando.'],
-    ['materialized view', 'Uma projeção do log mantida à parte e atualizada de forma assíncrona. É o que serve o histórico e o saldo.'],
-    ['hot/cold tiering', 'Dado novo no armazenamento rápido, dado velho no barato. Mesmo log, com custo por idade do dado.'],
-    ['partição por tempo', 'O log cortado por timestamp. O auditor pede março e a consulta lê só as partições de março.'],
-  ] },
-
-  { type: 'glossary', n: 7, title: 'Os nomes próprios', terms: [
-    ['LedgerStore', 'O ledger da Uber. Mais de 1 trilhão de entries e 5 bilhões de eventos por dia.'],
-    ['Docstore', 'O armazenamento rápido da Uber, onde os entries recentes ficam.'],
-    ['TerraBlob', 'O armazenamento barato da Uber, para onde os entries antigos descem.'],
-    ['DynamoDB', 'Banco de chave-valor da AWS. Foi onde a Uber começou em 2017, e de onde saiu por custo na escala do trilhão.'],
-    ['conditional write', 'A escrita que só acontece se a condição valer. No DynamoDB é ela que faz o papel da constraint UNIQUE.'],
-    ['Aurora PostgreSQL', 'O Postgres gerenciado da AWS. Hoje é onde o padrão ledger costuma morar.'],
-    ['CHECK constraint', 'A regra declarada no banco. É onde a soma zero precisa viver para valer até para um script rodando por fora da aplicação.'],
-    ['QLDB', 'O banco de ledger dedicado da AWS, com append-only e verificação criptográfica. Descontinuação anunciada em 2024, e o padrão sobreviveu sem ele.'],
-  ] },
 ];
 
 // ── Mesh de gradiente ──
@@ -569,7 +489,7 @@ function render(s) {
       return wrap(`
         ${mesh('hero')}
         <div class="content pad flex flex-col justify-between h-full py-20">
-          <div class="anim-fade eyebrow">ICS Select &nbsp;·&nbsp; Hot Stuff 2026.2 &nbsp;·&nbsp; Big Tech</div>
+          <div class="anim-fade eyebrow">ICS Select &nbsp;·&nbsp; Hopes and Dreams 2026.3 &nbsp;·&nbsp; Big Tech</div>
           <div>
             <div class="anim eyebrow mb-7" style="color:var(--primary-deep)">Estudo de caso &nbsp;·&nbsp; Uber LedgerStore</div>
             <h1 class="d-xxl anim delay-1" style="max-width:17ch">Modelando dinheiro: o ledger.</h1>
@@ -722,22 +642,6 @@ function render(s) {
               </div>`).join('')}
           </div>
         </div>`);
-
-    // Lista de definição em duas colunas, no formato termo + frase, que é
-    // como o glossário é lido depois da aula.
-    case 'glossary':
-      return wrap(`
-        <div class="content pad flex flex-col justify-center h-full">
-          <div class="anim eyebrow mb-3">Glossário &nbsp;·&nbsp; ${s.n} de 7</div>
-          <h2 class="d-md anim delay-1 mb-10">${s.title}</h2>
-          <div class="grid grid-cols-2 gap-x-16 gap-y-7 stagger">
-            ${s.terms.map(([t, d]) => `
-              <div class="gl">
-                <span class="gl-t">${t}</span>
-                <span class="gl-d">${d}</span>
-              </div>`).join('')}
-          </div>
-        </div>`, 'background:var(--canvas-soft)');
 
     case 'closing':
       return wrap(`

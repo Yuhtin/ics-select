@@ -37,6 +37,34 @@ export type Pegadinha = {
   note: string;
 };
 
+/**
+ * Visual do pass de deep dive. Existe para o facilitador REDESENHAR no quadro,
+ * então `ascii` é o formato principal: monoespaçado, sem cor, copiável a mão.
+ * `image` é para a figura canônica que não compensa redesenhar (o layout do
+ * IEEE 754, por exemplo). Toda imagem é externa e precisa de `credit`.
+ */
+export type BoardVisual =
+  | {
+      kind: 'ascii';
+      title: string;
+      /** Arte monoespaçada. Máximo ~72 colunas para caber no painel sem scroll. */
+      art: string;
+      caption?: string;
+      /** O que o facilitador diz enquanto desenha isso no quadro. */
+      board?: string;
+    }
+  | {
+      kind: 'image';
+      title: string;
+      src: string;
+      alt: string;
+      caption?: string;
+      /** Fonte da imagem. Obrigatório: nada entra sem crédito. */
+      credit: string;
+      creditUrl?: string;
+      board?: string;
+    };
+
 export type Scenario = {
   shape: string;
   redirect: string;
@@ -69,6 +97,19 @@ export type LessonNode = {
   diagramUrl?: string;
   /** Terms introduced in this beat — shown as chips in the section header */
   tags?: string[];
+  /** Visuais do pass de deep dive, renderizados abaixo da prosa. */
+  visuals?: BoardVisual[];
+};
+
+export type GlossaryTerm = {
+  term: string;
+  definition: string;
+};
+
+/** Um bloco do glossário da aula. O título agrupa por momento da aula, não por assunto solto. */
+export type GlossaryGroup = {
+  title: string;
+  terms: GlossaryTerm[];
 };
 
 export type Lesson = {
@@ -81,6 +122,12 @@ export type Lesson = {
   nodes: LessonNode[];
   /** Path to a static slide deck HTML (relative to /public). Set when /public/slides/{slug}.html exists. */
   slidesUrl?: string;
+  /**
+   * Glossário da aula, pra mandar pros alunos depois. Diferente do GLOSSARY
+   * global de `glossary.ts`, que é um dicionário compartilhado usado nos
+   * popovers do texto: este é por aula, agrupado e feito pra ser copiado.
+   */
+  glossary?: GlossaryGroup[];
 };
 
 export type MeetingSummary = {
