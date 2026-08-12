@@ -148,6 +148,22 @@
   .bad { color: var(--magenta); font-weight: 500; }
   .ok  { color: var(--code-mint); font-weight: 500; }
 
+  /* Calculadora: input no padrão de formulário da marca, raio 6 e hairline
+     mais fria que a do card. O anel de foco é o único indigo da tela. */
+  .calc-input { width: 100%; background: var(--canvas); color: var(--ink);
+                border: 1px solid #a8c3de; border-radius: 6px; padding: 14px 16px;
+                font-family: 'JetBrains Mono', monospace; font-size: 22px;
+                font-variant-numeric: tabular-nums; outline: none; }
+  .calc-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(83,58,253,0.16); }
+  .calc-chip { background: var(--canvas); border: 1px solid var(--hairline); color: var(--ink-2);
+               border-radius: var(--r-pill); padding: 7px 14px; font-size: 14px; cursor: pointer;
+               font-family: 'Inter', sans-serif; }
+  .calc-chip:hover { border-color: var(--primary); color: var(--primary-deep); }
+  /* As três cores do painel são o split de 1 / 11 / 52 bits. */
+  .bit-s { color: var(--lemon); }
+  .bit-e { color: var(--primary-subdued); }
+  .bit-m { color: var(--cream); }
+
   /* Mockup de produto: o componente mais reconhecível da marca. */
   .mock { background: var(--canvas); border: 1px solid var(--hairline); border-radius: var(--r-xl); overflow: hidden; }
   .mock-bar { background: var(--canvas-soft); border-bottom: 1px solid var(--hairline); padding: 14px 24px; display: flex; align-items: center; gap: 10px; }
@@ -213,6 +229,11 @@
 <div id="nav"><span id="navpos" class="mono"></span><button id="prev" aria-label="Slide anterior">&#8592;</button><button id="next" aria-label="Próximo slide">&#8594;</button></div>
 
 <script>
+// Figuras do post "How LedgerStore Supports Trillions of Indexes" (Uber
+// Engineering). Baixadas para /public em vez de hotlink, porque link de CDN
+// de terceiro quebra e a aula nao pode depender disso.
+const FIG = '/diagrams/ledger-financeiro/uber/';
+
 const SLIDES = [
   { type: 'cover' },
 
@@ -239,6 +260,9 @@ const SLIDES = [
       ['0.1 não existe em binário', 'Em base 2, o número 0.1 é uma dízima infinita. O computador corta essa dízima em algum ponto e guarda o valor mais próximo que consegue representar, que não é 0.1.'],
       ['O resto acumula', 'Cada operação carrega um resto minúsculo. Some R$ 0,10 um bilhão de vezes em float e o total vai estar errado em alguns reais. Esses reais aparecem no fechamento contábil, e alguém vai perguntar de onde eles saíram.'],
     ] },
+
+  { type: 'sum', kicker: 'A conta que a máquina faz de verdade' },
+  { type: 'calc', kicker: 'Calculadora ao vivo', title: 'Digite qualquer número e veja o que a máquina guarda' },
 
   { type: 'list', kicker: 'A regra número um', title: 'Dinheiro nunca mora num float',
     items: [
@@ -362,7 +386,7 @@ const SLIDES = [
 
   // ═══════════ 03 · ARQUITETURA NA UBER ═══════════
   { type: 'divider', num: '03', label: 'Arquitetura na Uber',
-    intro: 'Agora as quatro peças entram no mesmo desenho. O LedgerStore da Uber processa 5 bilhões de eventos por dia sobre mais de 1 trilhão de entries.' },
+    intro: 'Agora as quatro peças entram no mesmo desenho. O LedgerStore da Uber sustenta mais de 2 trilhões de índices únicos sobre um log imutável.' },
 
   { type: 'hook', beat: 6, kicker: 'Beat 6 · O fluxo completo',
     title: 'A corrida acabou e o motorista abre o app para ver quanto entrou. Desenhe cada camada que o dado atravessa.',
@@ -389,12 +413,30 @@ const SLIDES = [
       ['Hot/cold tiering', 'Os entries recentes ficam no store rápido, que na Uber é o Docstore, e os antigos descem para o armazenamento barato, que é o TerraBlob. É o mesmo log, com custo diferente por idade do dado.'],
     ] },
 
-  { type: 'stat', kicker: 'A migração do DynamoDB para o LedgerStore', stats: [
-      ['1,2 PB', 'de dados comprimidos foram movidos ao longo da migração.'],
-      ['1 trilhão', 'de entries migrados sem uma única inconsistência em seis meses.'],
-      ['5 bilhões', 'de eventos processados por dia no sistema em produção.'],
-      ['US$ 6 mi', 'economizados por ano em relação ao custo que o DynamoDB tinha.'],
+  { type: 'figure', kicker: 'O exemplo que explica o índice caro',
+    title: 'Por que a autorização de cartão precisa ler o que acabou de gravar',
+    src: FIG + 'fig01.png',
+    alt: 'Diagrama de sequência da Uber: Start Trip autoriza o pagamento e salva um hold no LedgerStore; End Trip procura esse hold; se não encontrar, cria uma cobrança nova.',
+    note: 'No início da corrida o Payment Service salva um <b>hold</b> no LedgerStore. No fim, ele procura esse hold para capturar. Se a busca não encontrar, o fluxo cria uma cobrança nova, e o passageiro paga duas vezes. É esse caminho, e só ele, que justifica o índice strongly consistent.' },
+
+  { type: 'figure', kicker: 'Como o índice forte é mantido',
+    title: 'Two-phase commit: grava a intenção, grava o registro, confirma depois',
+    src: FIG + 'fig02.png',
+    alt: 'Diagrama de sequência do two-phase commit: write intent nos índices A e B, depois write record na tabela, depois commit dos índices.',
+    note: 'A intenção do índice é gravada <b>antes</b> do registro. Se ela falhar, a operação inteira falha, e é isso que preserva a garantia. Se o registro for gravado, os commits dos índices acontecem de forma assíncrona. Uma leitura que encontre um índice ainda em intent vai ao registro para decidir se confirma ou desfaz.' },
+
+  { type: 'stat', kicker: 'O que esse desenho sustenta em produção', stats: [
+      ['2 trilhões', 'de índices únicos construídos no LedgerStore.'],
+      ['6+ meses', 'em produção sem uma inconsistência de dado detectada.'],
+      ['zero', 'incidentes de produção durante o backfill dos índices.'],
+      ['US$ 6 mi', 'economizados por ano com a saída do DynamoDB.'],
     ] },
+
+  { type: 'figure', kicker: 'O terceiro índice, e o que ele destrava',
+    title: 'Índice por intervalo de tempo é o que permite separar quente de frio',
+    src: FIG + 'fig05.png',
+    alt: 'Diagrama da Uber mostrando o LedgerStore lendo de um Hot Storage com menos de 3 meses e escrevendo em um Cold Storage com mais de 1 ano.',
+    note: 'Consultar por faixa de tempo é o que torna possível decidir o que desce para o armazenamento barato. Na Uber o corte é concreto: <b>hot storage guarda menos de 3 meses</b>, e o que passa de <b>1 ano vai para o cold storage</b>. É o mesmo log, com preço diferente por idade do dado.' },
 
   // ═══════════ 04 · AWS POR CAMADA ═══════════
   { type: 'divider', num: '04', label: 'AWS por camada',
@@ -629,6 +671,24 @@ function render(s) {
           <p class="body anim delay-2 mt-8" style="max-width:88ch">${s.caption}</p>
         </div>`);
 
+    // Figura de fonte externa. O crédito é obrigatório e fica na própria
+    // slide, não numa lista de referências no fim que ninguém lê.
+    case 'figure':
+      return wrap(`
+        <div class="content pad flex flex-col justify-center h-full">
+          <div class="anim eyebrow mb-3">${s.kicker}</div>
+          <h2 class="d-sm anim delay-1 mb-6" style="max-width:70ch">${s.title}</h2>
+          <div class="card anim delay-1 lift p-5 flex items-center justify-center" style="height:58vh">
+            <!-- as figuras tem 1024px de largura nativa. nao passar disso,
+                 senao a imagem sobe de escala e sai borrada no projetor. -->
+            <img src="${s.src}" alt="${s.alt}" style="display:block;max-height:100%;max-width:min(100%,1024px);object-fit:contain" />
+          </div>
+          <div class="flex items-start justify-between gap-10 mt-6">
+            <p class="body anim delay-2" style="max-width:88ch">${s.note}</p>
+            <span class="eyebrow shrink-0" style="white-space:nowrap">Uber Engineering</span>
+          </div>
+        </div>`, 'background:var(--canvas-soft)');
+
     case 'stat':
       return wrap(`
         ${mesh('band')}
@@ -640,6 +700,57 @@ function render(s) {
                 <div class="d-md tnum" style="color:var(--primary-deep)">${n}</div>
                 <p class="body-sm mt-4">${l}</p>
               </div>`).join('')}
+          </div>
+        </div>`);
+
+    // A conta exata, estática. Existe separada da calculadora porque ela
+    // precisa funcionar no PDF e sem JavaScript nenhum.
+    case 'sum':
+      return wrap(`
+        ${mesh('whisper')}
+        <div class="content pad flex flex-col justify-center h-full">
+          <div class="anim eyebrow mb-8">${s.kicker}</div>
+          <div class="codepanel anim delay-1 lift" style="max-width:1180px">
+            <pre>${[
+              "<span class='cm'>// o que o hardware guarda de verdade</span>",
+              "",
+              "  0.1        <span class='st'>0.100000000000000005551115123125782</span>",
+              "  0.2        <span class='st'>0.200000000000000011102230246251565</span>",
+              "           + <span class='cm'>───────────────────────────────────</span>",
+              "  soma       0.300000000000000016653345369377348",
+              "             <span class='cm'>↓ arredonda pro double mais próximo</span>",
+              "  0.1 + 0.2  <span class='bad'>0.300000000000000044408920985006261</span>",
+              "",
+              "  0.3        <span class='ok'>0.299999999999999988897769753748434</span>",
+              "             <span class='cm'>↑ outro número. por isso === devolve false</span>",
+            ].join('\n')}</pre>
+          </div>
+          <p class="body anim delay-2 mt-8" style="max-width:92ch">Nenhuma das três constantes existe exata na máquina. O erro não nasce na soma, ele já estava dentro de cada parcela antes de somar.</p>
+        </div>`);
+
+    case 'calc':
+      return wrap(`
+        ${mesh('whisper')}
+        <div class="content pad flex flex-col justify-center h-full">
+          <div class="anim eyebrow mb-3">${s.kicker}</div>
+          <h2 class="d-md anim delay-1 mb-9">${s.title}</h2>
+          <div class="grid gap-12 anim delay-2" style="grid-template-columns: 340px 1fr">
+            <div class="flex flex-col gap-5">
+              <label class="flex flex-col gap-2">
+                <span class="eyebrow">valor A</span>
+                <input id="calc-a" class="calc-input" value="0.1" inputmode="decimal" />
+              </label>
+              <label class="flex flex-col gap-2">
+                <span class="eyebrow">valor B</span>
+                <input id="calc-b" class="calc-input" value="0.2" inputmode="decimal" />
+              </label>
+              <div class="flex flex-wrap gap-2 mt-1" id="calc-presets">
+                ${[['0.1', '0.2'], ['0.25', '0.25'], ['0.3', '0.7'], ['1.5', '2.5']]
+                  .map(([a, b]) => `<button class="calc-chip" data-a="${a}" data-b="${b}">${a} + ${b}</button>`)
+                  .join('')}
+              </div>
+            </div>
+            <div class="codepanel lift"><pre id="calc-out">carregando…</pre></div>
           </div>
         </div>`);
 
@@ -668,6 +779,107 @@ function fit() {
 }
 fit();
 window.addEventListener('resize', fit);
+
+// ── Calculadora IEEE 754 ──
+// O valor exato sai de BigInt, não de toFixed: um double é M x 2^E, e para
+// E negativo o exato é (M x 5^k) com a vírgula k casas da direita, k = -E.
+// Conferido contra o Decimal do Python em 0.1, 0.2, 0.3, 0.25, 1.5 e 100.5.
+(function calculator() {
+  const out = document.getElementById('calc-out');
+  if (!out) return;
+  const A = document.getElementById('calc-a');
+  const B = document.getElementById('calc-b');
+
+  function fields(x) {
+    const dv = new DataView(new ArrayBuffer(8));
+    dv.setFloat64(0, x);
+    let bits = '', hex = '';
+    for (let i = 0; i < 8; i++) {
+      bits += dv.getUint8(i).toString(2).padStart(8, '0');
+      hex += dv.getUint8(i).toString(16).padStart(2, '0');
+    }
+    return { s: bits[0], e: bits.slice(1, 12), m: bits.slice(12), hex: hex.toUpperCase() };
+  }
+
+  function exact(x) {
+    if (!isFinite(x)) return String(x);
+    const { s, e, m } = fields(x);
+    const eNum = parseInt(e, 2);
+    const M = eNum === 0 ? BigInt('0b0' + m) : BigInt('0b1' + m);
+    const E = eNum === 0 ? -1074 : eNum - 1023 - 52;
+    let v;
+    if (E >= 0) v = (M << BigInt(E)).toString();
+    else {
+      const k = -E;
+      const d = (M * 5n ** BigInt(k)).toString().padStart(k + 1, '0');
+      v = (d.slice(0, d.length - k) + '.' + d.slice(d.length - k))
+        .replace(/0+$/, '').replace(/\.$/, '');
+    }
+    return (s === '1' ? '-' : '') + v;
+  }
+
+  // soma dois decimais exatos sem passar por float
+  function addExact(p, q) {
+    const split = (t) => {
+      const neg = t.startsWith('-');
+      const [i, f = ''] = t.replace('-', '').split('.');
+      return { n: BigInt((neg ? '-' : '') + i + f), k: f.length };
+    };
+    const a = split(p), b = split(q);
+    const k = Math.max(a.k, b.k);
+    const n = a.n * 10n ** BigInt(k - a.k) + b.n * 10n ** BigInt(k - b.k);
+    if (k === 0) return n.toString();
+    const neg = n < 0n;
+    const d = (neg ? -n : n).toString().padStart(k + 1, '0');
+    const v = (d.slice(0, d.length - k) + '.' + d.slice(d.length - k))
+      .replace(/0+$/, '').replace(/\.$/, '');
+    return (neg ? '-' : '') + v;
+  }
+
+  const cut = (t, n = 40) => (t.length > n ? t.slice(0, n) + '…' : t);
+  const esc = (t) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+
+  function render() {
+    const a = Number(A.value), b = Number(B.value);
+    if (!isFinite(a) || !isFinite(b)) { out.textContent = 'número inválido'; return; }
+    const f = fields(a);
+    const soma = a + b;
+    const esperado = addExact(exact(a), exact(b));
+    const bateu = exact(soma) === esperado;
+
+    out.innerHTML = [
+      `<span class='cm'>// os 64 bits de ${esc(String(a))}</span>`,
+      `<span class="bit-s">${f.s}</span> <span class="bit-e">${f.e}</span> <span class="bit-m">${f.m.slice(0, 26)}</span>`,
+      // 14 espaços: 1 do sinal + 1 + 11 do expoente + 1, pra a continuação
+      // da mantissa cair exatamente embaixo do começo dela.
+      `${' '.repeat(14)}<span class="bit-m">${f.m.slice(26)}</span>`,
+      `<span class='cm'>sinal(1)  expoente(11)  mantissa(52)</span>`,
+      '',
+      `expoente   ${parseInt(f.e, 2)} - 1023 = <span class='kw'>${parseInt(f.e, 2) - 1023}</span>`,
+      `hex        ${f.hex}`,
+      '',
+      `<span class='cm'>// o que cada valor guarda, exato</span>`,
+      `A          <span class='st'>${cut(exact(a))}</span>`,
+      `B          <span class='st'>${cut(exact(b))}</span>`,
+      `soma real  ${cut(esperado)}`,
+      `A + B      <span class='${bateu ? 'ok' : 'bad'}'>${cut(exact(soma))}</span>`,
+      '',
+      bateu
+        ? `<span class='ok'>a soma coube. nada foi arredondado.</span>`
+        : `<span class='bad'>não coube: o resultado foi arredondado pro double mais próximo.</span>`,
+    ].join('\n');
+  }
+
+  [A, B].forEach((el) => el.addEventListener('input', render));
+  document.querySelectorAll('#calc-presets .calc-chip').forEach((c) =>
+    c.addEventListener('click', () => {
+      A.value = c.dataset.a; B.value = c.dataset.b; render();
+    }));
+  // o clique no slide avança; dentro da calculadora ele não pode fazer isso
+  document.querySelectorAll('.calc-input, .calc-chip').forEach((el) =>
+    el.addEventListener('click', (e) => e.stopPropagation()));
+  render();
+})();
 
 let cur = 0;
 function show(i) {
