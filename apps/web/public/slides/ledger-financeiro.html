@@ -1,97 +1,240 @@
 <!DOCTYPE html>
-<html lang="pt-BR" class="light">
+<html lang="pt-BR">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Modelando Dinheiro: o Ledger</title>
-<script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+<title>Modelando dinheiro: o ledger</title>
+<script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com" rel="preconnect" />
 <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
 <style>
-  /* ── Uber design tokens (awesome-design-md/uber) ──
-     Pure black/white duet, NO secondary accent. Pill = signature shape.
-     UberMove → Inter 700 tight as substitute. */
+  /* ─────────────────────────────────────────────────────────────────────
+     Design System · Stripe
+     Derivado de awesome-design-md/design-md/stripe/DESIGN.md
+
+     Por que Stripe numa aula sobre a Uber: a marca do estudo de caso é a
+     Uber, mas o assunto da aula é modelagem de dinheiro, e a documentação
+     da Stripe é onde a idempotency key (beat 5) virou padrão de mercado.
+     A estética é o oposto do deck anterior, que era Uber preto e branco.
+
+     Regras canônicas seguidas aqui:
+       - tinta é navy #0d253d, nunca preto puro
+       - indigo #533afd só em CTA, link e âncora de gradiente. Nunca em
+         texto corrido, nunca como cor de corpo
+       - display sempre em peso 300 com tracking negativo. Subir pra 400
+         mata o ar editorial da marca, que é a assinatura tipográfica
+       - o mesh de gradiente É o sistema de profundidade. Sombra literal
+         só no mockup de produto, e sempre sutil
+       - tnum em toda célula de dinheiro, contagem ou valor numérico
+       - raio 12 em card, 9999 em pill. Nada de pill em card
+       - paleta fechada nos stops do mesh: creme, sherbet, lavanda,
+         indigo, ruby, magenta. Nenhum accent novo
+
+     Extensões locais, fora do guia, e por quê:
+       - Sohne é proprietária. O próprio guia manda substituir por Inter
+         em 300 com ss01 e tracking negativo, e é o que está aqui.
+       - CORPO EM 400, NÃO EM 300. O guia pede 300 em tudo, mas ele
+         descreve página de marketing lida a 50 cm. Isso aqui é deck
+         projetado numa sala, lido a 6 metros, e 300 some no projetor. O
+         display fica em 300 (é a assinatura), corpo e nota sobem pra 400.
+       - JetBrains Mono em código e numeral. O guia não define mono, e uma
+         aula sobre ledger é feita de bloco de código e de tabela.
+       - mint #6ee7b7 no painel de código, e só ali, pra marcar resultado
+         correto. A paleta da marca não tem verde, mas certo/errado em
+         código precisa de contraste de cor pra ser lido de longe.
+       - o mesh aqui é radial-gradient com blur em vez de SVG, porque o
+         deck é um arquivo único sem asset externo.
+     ───────────────────────────────────────────────────────────────────── */
+
   :root {
-    --ink: #000000;
-    --on-ink: #ffffff;
-    --canvas: #ffffff;
-    --soft: #efefef;
-    --softer: #f3f3f3;
-    --body: #5e5e5e;
-    --mute: #afafaf;
-    --pressed: #e2e2e2;
-    --hairline: #e2e2e2;
-    --link: #0000ee;
+    /* marca e accent */
+    --primary:        #533afd;
+    --primary-deep:   #4434d4;
+    --primary-soft:   #665efd;
+    --primary-subdued:#b9b9f9;
+    --brand-dark:     #1c1e54;
+    --ruby:           #ea2261;
+    --magenta:        #f96bee;
+    --lemon:          #f0b884;
+    --cream:          #f5e9d4;
+
+    /* superfície */
+    --canvas:      #ffffff;
+    --canvas-soft: #f6f9fc;
+    --hairline:    #e3e8ee;
+
+    /* texto */
+    --ink:        #0d253d;
+    --ink-2:      #273951;
+    --ink-mute:   #64748d;
+    --on-primary: #ffffff;
+
+    /* extensão local: código */
+    --code-bg:  #1c1e54;
+    --code-mint:#6ee7b7;
+
+    --r-md: 8px;
+    --r-lg: 12px;
+    --r-xl: 16px;
+    --r-pill: 9999px;
   }
-  html, body { background: var(--canvas); color: var(--ink); font-family: 'Inter', system-ui, 'Helvetica Neue', Arial, sans-serif; overflow: hidden; height: 100vh; margin: 0; }
-  .display { font-weight: 700; letter-spacing: -0.03em; line-height: 1.05; }
-  .mono { font-family: 'JetBrains Mono', monospace; }
-  .pill { border-radius: 999px; }
-  .slide { display: none; height: 100vh; width: 100vw; position: relative; }
+
+  * { box-sizing: border-box; }
+  html, body {
+    background: var(--canvas); color: var(--ink);
+    font-family: 'Inter', 'SF Pro Display', system-ui, sans-serif;
+    font-feature-settings: "ss01";
+    overflow: hidden; height: 100vh; margin: 0;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Assinatura tipográfica: peso 300 + tracking negativo proporcional. */
+  .d-xxl { font-weight: 300; font-size: 86px; line-height: 1.03; letter-spacing: -2.4px; }
+  .d-xl  { font-weight: 300; font-size: 62px; line-height: 1.08; letter-spacing: -1.6px; }
+  .d-lg  { font-weight: 300; font-size: 44px; line-height: 1.1;  letter-spacing: -1.1px; }
+  .d-md  { font-weight: 300; font-size: 32px; line-height: 1.12; letter-spacing: -0.64px; }
+  .d-sm  { font-weight: 300; font-size: 26px; line-height: 1.15; letter-spacing: -0.4px; }
+  .lead  { font-weight: 400; font-size: 25px; line-height: 1.45; letter-spacing: -0.2px; color: var(--ink-2); }
+  .body  { font-weight: 400; font-size: 18px; line-height: 1.5; color: var(--ink-2); }
+  .body-sm { font-weight: 400; font-size: 16px; line-height: 1.5; color: var(--ink-2); }
+  .eyebrow { font-weight: 500; font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-mute); }
+  /* Ligadura desligada de propósito: o JetBrains Mono transforma === num
+     glifo de três barras, e numa aula que compara == com === isso mente. */
+  .mono  { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums;
+           font-variant-ligatures: none; }
+  .tnum  { font-variant-numeric: tabular-nums; letter-spacing: -0.42px; }
+
+  /* Palco fixo de 1600x900 escalado pra caber na janela. Sem isso o slide
+     acompanha a proporção da janela, e o que é largo (a tabela do ledger,
+     o grid de 4) vaza pra fora da tela em qualquer proporção que não seja
+     16:9. Agora o que eu vejo revisando é o que aparece no projetor. */
+  .slide { display: none; height: 100vh; width: 100vw; position: relative; overflow: hidden;
+           align-items: center; justify-content: center; background: var(--ink); }
   .slide.active { display: flex; }
-  .ink-band { background: var(--ink); color: var(--on-ink); }
+  /* O fundo real do slide vive no frame, e o que sobra vira moldura navy.
+     Em janela fora de 16:9 a faixa aparece, e em navy ela lê como moldura
+     de projeção. Branca, ela cortava o mesh numa borda dura que parecia bug. */
+  .frame { width: 1600px; height: 900px; position: relative; flex: none; overflow: hidden;
+           background: var(--canvas);
+           transform: scale(var(--scale, 1)); transform-origin: center center; }
+  .pad { padding: 0 96px; }
 
-  /* Entrance animations */
-  @keyframes slideUp { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: translateY(0); } }
+  /* Mesh: o sistema de profundidade da marca. Blob orgânico com blur.
+     O ::after devolve o canvas branco a partir do terço superior, que é
+     onde o guia manda o mesh parar. Sem ele a cor sobe até o rodapé e o
+     texto passa a ser lido por cima de gradiente, que no projetor some. */
+  .mesh { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
+  .blob { position: absolute; border-radius: 50%; filter: blur(90px); opacity: 0.85; }
+  .mesh::after { content: ''; position: absolute; inset: 0;
+    background: linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,0) 16%, var(--canvas) 54%); }
+  .content { position: relative; z-index: 1; width: 100%; }
+
+  .card { background: var(--canvas); border: 1px solid var(--hairline); border-radius: var(--r-lg); }
+  .card-soft { background: var(--canvas-soft); border: 1px solid var(--hairline); border-radius: var(--r-lg); }
+  .lift { box-shadow: rgba(0,55,112,0.08) 0 8px 24px, rgba(0,55,112,0.04) 0 2px 6px; }
+  .pill { border-radius: var(--r-pill); padding: 8px 16px; font-weight: 400; font-size: 15px; }
+  .tag { background: var(--primary-subdued); color: var(--primary-deep); border-radius: var(--r-pill);
+         padding: 5px 12px; font-size: 13px; font-weight: 500; letter-spacing: 0.02em; }
+
+  /* Painel de código: o layout de documentação da Stripe. Navy sólido. */
+  .codepanel { background: var(--code-bg); border-radius: var(--r-lg); padding: 34px 36px; }
+  .codepanel pre { font-family: 'JetBrains Mono', monospace; font-size: 18px; line-height: 1.85;
+                   color: #dfe3f5; margin: 0; white-space: pre-wrap; font-variant-numeric: tabular-nums;
+                   font-variant-ligatures: none; font-feature-settings: "liga" 0, "calt" 0; }
+  .kw  { color: var(--primary-subdued); font-weight: 500; }
+  .st  { color: var(--cream); }
+  .cm  { color: #8b90c4; }
+  .bad { color: var(--magenta); font-weight: 500; }
+  .ok  { color: var(--code-mint); font-weight: 500; }
+
+  /* Glossário: termo e definição na mesma linha, como no markdown. O termo
+     leva um filete indigo à esquerda pra a coluna ser varrida com o olho. */
+  .gl   { border-left: 2px solid var(--primary-subdued); padding-left: 16px; }
+  .gl-t { font-weight: 600; font-size: 17px; color: var(--ink); letter-spacing: -0.1px; }
+  .gl-t::after { content: ' · '; color: var(--ink-faint, #a8b3c4); font-weight: 400; }
+  .gl-d { font-weight: 400; font-size: 16px; line-height: 1.5; color: var(--ink-2); }
+
+  /* Mockup de produto: o componente mais reconhecível da marca. */
+  .mock { background: var(--canvas); border: 1px solid var(--hairline); border-radius: var(--r-xl); overflow: hidden; }
+  .mock-bar { background: var(--canvas-soft); border-bottom: 1px solid var(--hairline); padding: 14px 24px; display: flex; align-items: center; gap: 10px; }
+  .mock-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .mock table { width: 100%; border-collapse: collapse; }
+  .mock th { font-size: 12px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase;
+             color: var(--ink-mute); text-align: left; padding: 14px 24px; border-bottom: 1px solid var(--hairline); }
+  .mock td { font-size: 17px; font-weight: 400; padding: 15px 24px; border-bottom: 1px solid var(--hairline);
+             font-variant-numeric: tabular-nums; letter-spacing: -0.42px; color: var(--ink-2); }
+  .mock tr:last-child td { border-bottom: none; }
+  .mock .num { text-align: right; }
+  .row-flag { background: #fff5f8; }
+  .row-fix  { background: #f4f2ff; }
+
+  @keyframes rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-  .slide.active .anim { animation: slideUp 0.6s cubic-bezier(0.16,1,0.3,1) backwards; }
-  .slide.active .anim-fade { animation: fadeIn 0.7s cubic-bezier(0.16,1,0.3,1) backwards; }
-  .slide.active .stagger > * { animation: slideUp 0.5s cubic-bezier(0.16,1,0.3,1) backwards; }
+  .slide.active .anim { animation: rise 0.5s cubic-bezier(0.16,1,0.3,1) backwards; }
+  .slide.active .anim-fade { animation: fadeIn 0.7s ease backwards; }
+  .slide.active .stagger > * { animation: rise 0.45s cubic-bezier(0.16,1,0.3,1) backwards; }
   .slide.active .stagger > *:nth-child(1) { animation-delay: 0.05s; }
-  .slide.active .stagger > *:nth-child(2) { animation-delay: 0.13s; }
-  .slide.active .stagger > *:nth-child(3) { animation-delay: 0.21s; }
-  .slide.active .stagger > *:nth-child(4) { animation-delay: 0.29s; }
-  .slide.active .stagger > *:nth-child(5) { animation-delay: 0.37s; }
-  .slide.active .delay-1 { animation-delay: 0.15s; }
-  .slide.active .delay-2 { animation-delay: 0.3s; }
+  .slide.active .stagger > *:nth-child(2) { animation-delay: 0.12s; }
+  .slide.active .stagger > *:nth-child(3) { animation-delay: 0.19s; }
+  .slide.active .stagger > *:nth-child(4) { animation-delay: 0.26s; }
+  .slide.active .stagger > *:nth-child(5) { animation-delay: 0.33s; }
+  .slide.active .stagger > *:nth-child(6) { animation-delay: 0.40s; }
+  .slide.active .delay-1 { animation-delay: 0.12s; }
+  .slide.active .delay-2 { animation-delay: 0.24s; }
 
-  .card { background: var(--canvas); border: 1px solid var(--hairline); border-radius: 16px; }
-  .card-soft { background: var(--soft); border-radius: 16px; }
-  .chip { background: var(--soft); color: var(--ink); border-radius: 999px; font-weight: 500; }
-  .code { font-family: 'JetBrains Mono', monospace; font-size: 19px; line-height: 1.75; background: var(--softer); border: 1px solid var(--hairline); border-radius: 12px; padding: 28px 32px; color: var(--ink); }
-  .code .kw { color: #000; font-weight: 700; }
-  .code .ok { color: #0a7d28; font-weight: 700; }
-  .code .bad { color: #c1121f; font-weight: 700; }
-  .code .com { color: var(--mute); }
-  .code .num { color: #000; }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; } }
 
-  /* Print: one slide per page */
+  /* Pílula própria porque o nav flutua ora sobre o slide, ora sobre a
+     moldura navy, e sem fundo o contador some numa das duas. */
+  #nav { position: fixed; right: 28px; bottom: 22px; display: flex; gap: 8px; align-items: center; z-index: 50;
+         background: rgba(255,255,255,0.94); border-radius: var(--r-pill); padding: 6px 6px 6px 18px;
+         box-shadow: rgba(0,55,112,0.10) 0 2px 10px; }
+  #nav button { width: 44px; height: 44px; border-radius: var(--r-pill); border: 1px solid var(--hairline);
+                background: var(--canvas); color: var(--ink-mute); cursor: pointer; font-size: 16px;
+                display: flex; align-items: center; justify-content: center; padding: 0; }
+  #nav button:hover { color: var(--primary); border-color: var(--primary); }
+  #nav button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+  #navpos { font-size: 13px; color: var(--ink-mute); margin-right: 10px; font-variant-numeric: tabular-nums; }
+
   @media print {
     @page { size: 1600px 900px; margin: 0; }
-    html, body { overflow: visible !important; height: auto !important; background: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    #deck { overflow: visible !important; height: auto !important; width: auto !important; display: block !important; position: static !important; }
-    .slide { display: flex !important; width: 1600px !important; height: 900px !important; min-height: 900px !important; max-height: 900px !important; page-break-after: always !important; break-after: page !important; break-inside: avoid !important; animation: none !important; }
+    html, body { overflow: visible !important; height: auto !important;
+                 -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    #deck { overflow: visible !important; height: auto !important; width: auto !important; display: block !important; }
+    #nav { display: none !important; }
+    .slide { display: flex !important; width: 1600px !important; height: 900px !important;
+             min-height: 900px !important; max-height: 900px !important;
+             page-break-after: always !important; break-after: page !important;
+             break-inside: avoid !important; animation: none !important; }
     .slide:last-child { page-break-after: avoid !important; break-after: avoid !important; }
     .slide *, .slide *::before, .slide *::after { animation: none !important; transition: none !important; }
-    body > div.fixed { display: none !important; }
+    /* A página do PDF já é 1600x900, então o palco vai em escala 1. */
+    .frame { transform: none !important; }
   }
 </style>
 </head>
 <body>
 
-<div id="deck" class="relative w-screen h-screen overflow-hidden"></div>
-
-<div class="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 mono text-[11px] tracking-[0.18em]" style="color: var(--mute)">
-  <span id="slide-num">01</span><span style="color: var(--pressed)">/</span><span id="slide-total">??</span>
-</div>
+<div id="deck"></div>
+<div id="nav"><span id="navpos" class="mono"></span><button id="prev" aria-label="Slide anterior">&#8592;</button><button id="next" aria-label="Próximo slide">&#8594;</button></div>
 
 <script>
-// ── Slide data. Uber style: sections are black bands, content is white. No rainbow accents.
 const SLIDES = [
-  // ─────────── COVER ───────────
   { type: 'cover' },
 
-  // ═══════════ SEÇÃO 01 · POR QUE DINHEIRO É DIFÍCIL ═══════════
-  { type: 'divider', num: '01', label: 'Por que dinheiro é difícil', intro: 'Uma curiosidade boba do console que assombra qualquer sistema financeiro.' },
+  // ═══════════ 01 · POR QUE DINHEIRO É DIFÍCIL ═══════════
+  { type: 'divider', num: '01', label: 'Por que dinheiro é difícil',
+    intro: 'Tudo começa com uma curiosidade boba do console. Ela assombra qualquer sistema que move dinheiro, e quase ninguém sabe explicar por quê.' },
 
   { type: 'hook', beat: 1, kicker: 'Beat 1 · O bug de um trilhão de dólares',
-    title: 'Abra o console e digite 0.1 + 0.2.',
-    sub: 'Por que isso é aterrorizante pra quem move dinheiro, e o que você usaria no lugar de um float?',
-    tags: ['ieee-754', 'floating-point', 'centavos inteiros'] },
-  { type: 'codeNote', kicker: 'O susto, ao vivo',
+    title: 'Abra o console do navegador e digite 0.1 + 0.2.',
+    sub: 'Por que esse resultado é aterrorizante para quem move dinheiro, e o que você usaria no lugar de um float?',
+    tags: ['IEEE 754', 'floating point', 'inteiro de centavos'] },
+
+  { type: 'docs', kicker: 'O susto ao vivo',
     code: [
-      "<span class='com'>// qualquer linguagem, mesmo resultado</span>",
+      "<span class='cm'>// qualquer linguagem, o mesmo resultado</span>",
       "<span class='kw'>></span> 0.1 + 0.2",
       "<span class='bad'>0.30000000000000004</span>",
       "",
@@ -99,245 +242,401 @@ const SLIDES = [
       "<span class='bad'>false</span>",
     ],
     notes: [
-      ['Não é bug do JS', 'Python, Java, Go, C: todos dão o mesmo. É o hardware seguindo o IEEE 754.'],
-      ['0.1 é dízima binária', 'Em base 2, 0.1 = 0.0001100110011... infinito. O computador corta e guarda o mais perto.'],
-      ['O lixo acumula', 'Some R$ 0,10 um bilhão de vezes em float e sobram reais do nada. Auditor na porta.'],
+      ['O problema não é do JavaScript', 'Python, Java, Go e C devolvem exatamente o mesmo resultado, porque todos seguem o IEEE 754. O erro está na forma como o hardware guarda o número, e não na linguagem que você escolheu.'],
+      ['0.1 não existe em binário', 'Em base 2, o número 0.1 é uma dízima infinita. O computador corta essa dízima em algum ponto e guarda o valor mais próximo que consegue representar, que não é 0.1.'],
+      ['O resto acumula', 'Cada operação carrega um resto minúsculo. Some R$ 0,10 um bilhão de vezes em float e o total vai estar errado em alguns reais. Esses reais aparecem no fechamento contábil, e alguém vai perguntar de onde eles saíram.'],
     ] },
+
   { type: 'list', kicker: 'A regra número um', title: 'Dinheiro nunca mora num float',
     items: [
-      ['Inteiro de centavos', 'R$ 19,90 vira o inteiro 1990. Soma de inteiro é exata. Sem dízima, sem lixo.'],
-      ['Ou tipo decimal', 'DECIMAL no Postgres, BigDecimal no Java. Precisão arbitrária pra quem precisa de fração.'],
-      ['Nunca FLOAT na coluna', 'Coluna money como FLOAT carrega o mesmo bug pro banco. BIGINT de centavos ou DECIMAL.'],
-      ['Erro com corpo', 'Patriot 1991: erro de float no relógio errou um míssil, 28 mortos. Representação tem consequência.'],
+      ['Inteiro de centavos', 'Você guarda R$ 19,90 como o inteiro 1990 e coloca a vírgula só na hora de exibir. Soma de inteiro é exata, então não sobra resto nenhum para acumular.'],
+      ['Ou um tipo decimal', 'DECIMAL no Postgres e BigDecimal no Java guardam o número em base 10, com a precisão que você pedir. É a escolha quando você precisa de fração menor que o centavo, como juros e câmbio.'],
+      ['Nunca FLOAT na coluna', 'Se a coluna do banco é FLOAT, o bug entra junto com o dado e nenhuma correção na aplicação resolve. Use BIGINT de centavos ou DECIMAL, e deixe FLOAT para medida física.'],
+      ['O erro já matou gente', 'Em 1991, uma bateria Patriot acumulou erro de float no relógio interno ao longo de 100 horas ligada e errou a interceptação de um míssil. Morreram 28 pessoas. Representação numérica tem consequência.'],
     ] },
 
   { type: 'hook', beat: 2, kicker: 'Beat 2 · A coluna balance que mente',
-    title: 'Duas transferências de R$ 50 saem da mesma conta de R$ 100 no mesmo milissegundo.',
-    sub: 'Desenhe o que cada uma lê e grava. Com quanto a conta termina?',
+    title: 'Duas transferências de R$ 50 saem da mesma conta de R$ 100, no mesmo milissegundo.',
+    sub: 'Desenhe o que cada uma lê e o que cada uma grava. Com quanto a conta termina?',
     tags: ['lost update', 'atomicidade', 'auditoria'] },
-  { type: 'codeNote', kicker: 'O modelo ingênuo se quebra',
+
+  { type: 'docs', kicker: 'O modelo ingênuo se quebra',
     code: [
-      "<span class='com'>// as duas leem ANTES de qualquer uma gravar</span>",
-      "T1: lê saldo = <span class='num'>100</span>   T2: lê saldo = <span class='num'>100</span>",
-      "T1: grava 100-50 = <span class='num'>50</span>",
-      "T2: grava 100-50 = <span class='num'>50</span>",
+      "<span class='cm'>// as duas leem ANTES de qualquer uma gravar</span>",
+      "T1: lê saldo = 100      T2: lê saldo = 100",
+      "T1: grava 100 - 50 = 50",
+      "T2: grava 100 - 50 = 50",
       "",
-      "saldo final = <span class='bad'>50</span>   <span class='com'>// deveria ser 0</span>",
-      "<span class='bad'>R$ 50 criados do nada.</span>",
+      "saldo final = <span class='bad'>50</span>   <span class='cm'>// deveria ser 0</span>",
+      "<span class='bad'>R$ 50 apareceram do nada.</span>",
     ],
     notes: [
-      ['Concorrência', 'Lost update: leram o mesmo 100, gravaram o mesmo 50. Dinheiro inventado.'],
-      ['Durabilidade', 'Servidor cai entre o débito da Ana e o crédito do Beto. Dinheiro evapora.'],
-      ['Auditoria', 'O UPDATE apaga o valor antigo. "Por que mudou no dia 14?" Resposta: não sei.'],
+      ['Concorrência', 'As duas transações leram o mesmo 100 e gravaram o mesmo 50. Isso se chama lost update: a segunda escrita passa por cima da primeira, e o dinheiro que a primeira tirou volta a existir.'],
+      ['Durabilidade', 'Agora imagine que o servidor cai entre o débito da Ana e o crédito do Beto. O dinheiro saiu de uma conta e não entrou em nenhuma outra, então ele simplesmente evapora.'],
+      ['Auditoria', 'O UPDATE apaga o valor anterior. Quando o auditor perguntar por que o saldo mudou no dia 14, a resposta honesta é que ninguém sabe, porque o banco só guarda o número de agora.'],
     ] },
 
-  // ═══════════ SEÇÃO 02 · LEDGER / DOUBLE-ENTRY ═══════════
-  { type: 'divider', num: '02', label: 'Ledger / Double-entry', intro: 'A solução não é trocar o tipo da coluna. É trocar o modelo. E ela tem 500 anos.' },
+  // ═══════════ 02 · O LEDGER ═══════════
+  { type: 'divider', num: '02', label: 'O ledger',
+    intro: 'A solução não é trocar o tipo da coluna. É trocar o modelo inteiro. E ele foi escrito por um frade italiano em 1494.' },
 
   { type: 'hook', beat: 3, kicker: 'Beat 3 · Double-entry',
-    title: 'Modele a transferência como LANÇAMENTOS, não como UPDATEs.',
-    sub: 'Quantas linhas você grava, e quanto elas somam?',
-    tags: ['débito/crédito', 'soma zero', 'saldo derivado'] },
-  { type: 'codeNote', kicker: 'Todo dinheiro vem de algum lugar',
+    title: 'Modele a transferência como entries num ledger, e não como um UPDATE no saldo.',
+    sub: 'Quantas linhas você grava por transferência, e quanto elas somam?',
+    tags: ['débito e crédito', 'soma zero', 'saldo derivado'] },
+
+  { type: 'docs', kicker: 'Todo dinheiro vem de algum lugar',
     code: [
-      "<span class='kw'>lançamento #8841</span>  (R$ 50, Ana → Beto)",
-      "  débito   conta:ana    <span class='num'>-50</span>",
-      "  crédito  conta:beto   <span class='num'>+50</span>",
-      "  ──────────────────────────",
-      "  soma = <span class='ok'>0  ✓</span>",
+      "transação <span class='kw'>#8841</span>   R$ 50, da Ana para o Beto",
+      "",
+      "  entry  conta:ana    débito    <span class='bad'>-50</span>",
+      "  entry  conta:beto   crédito   <span class='ok'>+50</span>",
+      "  ────────────────────────────────",
+      "  soma dos entries = <span class='ok'>0</span>",
     ],
     notes: [
-      ['Dois lados que se cancelam', 'Dinheiro não aparece nem some. Só muda de lugar. As pernas somam zero.'],
-      ['Soma global = zero', 'A soma de TODOS os saldos é sempre zero. Se um dia não der, tem bug. Verificação grátis.'],
-      ['Saldo virou cálculo', 'Não existe coluna saldo. O saldo da Ana é a soma das entries dela. Esse é o pulo.'],
+      ['Os dois lados se cancelam', 'Uma transferência grava sempre duas linhas, uma para cada conta envolvida. Dinheiro não aparece nem some, ele só muda de lugar, e é por isso que as duas linhas somam zero.'],
+      ['A soma global também é zero', 'Se você somar os entries de todas as contas do sistema, o resultado tem que ser zero. Quando não der zero, existe um bug em algum lugar. Você acabou de ganhar um teste de integridade que roda sobre o banco inteiro.'],
+      ['O saldo virou um cálculo', 'Não existe mais uma coluna de saldo para duas transações disputarem. O saldo da Ana é a soma dos entries dela, e somar linhas que já foram gravadas não tem corrida.'],
     ] },
 
+  { type: 'mock', kicker: 'O mesmo dado, do jeito que o produto mostra',
+    title: 'ledger · conta:ana',
+    rows: [
+      ['06 ago · 14:02', '#8712', 'Repasse da corrida 4f2a', '+48,00', '48,00', ''],
+      ['07 ago · 09:31', '#8790', 'Taxa de serviço da semana', '−12,00', '36,00', ''],
+      ['07 ago · 18:15', '#8841', 'Transferência enviada para o Beto', '−50,00', '−14,00', ''],
+      ['08 ago · 07:20', '#8877', 'Repasse da corrida 91c7', '+62,00', '48,00', ''],
+    ],
+    caption: 'A coluna da direita não está guardada em lugar nenhum do banco. Ela é a soma acumulada da coluna de valor, calculada no momento em que a tela é montada.' },
+
   { type: 'hook', beat: 4, kicker: 'Beat 4 · Append-only',
-    title: 'Uma cobrança de R$ 30 entrou errada ontem. Você NÃO pode dar UPDATE nem DELETE.',
-    sub: 'O que você grava pra deixar a conta certa?',
-    tags: ['imutabilidade', 'estorno', 'saldo como fold', 'event sourcing'] },
+    title: 'Uma cobrança de R$ 30 entrou errada ontem, e você não pode dar UPDATE nem DELETE na linha.',
+    sub: 'O que você grava para deixar a conta certa?',
+    tags: ['imutabilidade', 'estorno', 'append-only', 'event sourcing'] },
+
   { type: 'compare', kicker: 'Você nunca edita, só adiciona o oposto',
-    left: { tag: 'O instinto errado', title: 'UPDATE / DELETE', points: [
-      'Apaga a cobrança errada ou zera o valor',
-      'Passado reescrito: auditoria morre',
-      '"Qual era o saldo no dia 14?" sem resposta',
-      'Uma exceção e a prova de integridade cai' ] },
-    right: { tag: 'O ledger', title: 'Lançamento de estorno', points: [
-      'Adiciona o oposto exato: estorna +30 → -30',
-      'O erro FICA visível, a correção do lado',
-      'Saldo se ajusta pela soma, sem tocar no passado',
-      'A tabela só cresce. Append é a escrita mais rápida que existe' ] } },
-  { type: 'list', kicker: 'O que "saldo" virou', title: 'Saldo é um fold sobre o log',
+    left: { tag: 'O instinto errado', title: 'UPDATE ou DELETE', points: [
+      'Você apaga a linha da cobrança errada, ou zera o valor dela.',
+      'O passado foi reescrito, e a auditoria perdeu a única prova que tinha.',
+      'A pergunta "qual era o saldo no dia 14?" fica sem resposta possível.',
+      'Basta uma exceção dessas para a prova de integridade do sistema inteiro cair.' ] },
+    right: { tag: 'O ledger', title: 'Um entry de estorno', points: [
+      'Você adiciona o oposto exato: a cobrança de −30 ganha um estorno de +30.',
+      'O erro continua visível, e a correção fica registrada logo abaixo dele.',
+      'O saldo se ajusta sozinho, porque ele é a soma, e ninguém tocou no passado.',
+      'A tabela só cresce, e o banco nunca precisa localizar a linha antiga para reescrever.' ] } },
+
+  { type: 'mock', kicker: 'O erro e a correção convivem na mesma tabela',
+    title: 'ledger · conta:ana',
+    rows: [
+      ['08 ago · 07:20', '#8877', 'Repasse da corrida 91c7', '+62,00', '48,00', ''],
+      ['08 ago · 11:47', '#8902', 'Cobrança de assinatura', '−30,00', '18,00', 'flag'],
+      ['08 ago · 11:52', '#8903', 'Estorno da transação #8902', '+30,00', '48,00', 'fix'],
+    ],
+    caption: 'A transação #8902 está errada e vai continuar aí para sempre. Quem quiser saber o que aconteceu no dia 8 consegue reconstruir a história inteira, inclusive o erro e o minuto em que ele foi corrigido.' },
+
+  { type: 'list', kicker: 'O que o saldo virou', title: 'O saldo é uma soma sobre o log',
     items: [
-      ['Estado = soma do log', 'Saldo de hoje é a soma das entries até hoje. Saldo de terça é a soma até terça.'],
-      ['Máquina do tempo', 'O mesmo log responde qualquer pergunta temporal, porque nunca perdeu nada.'],
-      ['É event sourcing', 'Estado atual como redução de um log imutável de eventos. Ledger é a versão do dinheiro.'],
-      ['A Uber sela o passado', 'Intervalos antigos selados com verificação por hash. Append-only com prova criptográfica.'],
+      ['O estado é a soma do log', 'O saldo de hoje é a soma de todos os entries até hoje. O saldo de terça-feira é a mesma soma, parando na terça. A pergunta muda, e o dado embaixo dela continua o mesmo.'],
+      ['Você ganhou uma máquina do tempo', 'Qualquer pergunta sobre o passado tem resposta, porque o sistema nunca jogou nada fora. É exatamente isso que um auditor chama de audit trail.'],
+      ['Isso se chama event sourcing', 'Guardar o log de eventos e derivar o estado atual a partir dele é um padrão com nome próprio e uso muito além de dinheiro. O ledger é a versão dele para o mundo financeiro.'],
+      ['A Uber sela o passado', 'No LedgerStore, intervalos antigos do log são fechados e ganham uma verificação por hash. Se alguém alterar um entry velho, a conta do hash não fecha mais e o sistema percebe.'],
     ] },
 
   { type: 'hook', beat: 5, kicker: 'Beat 5 · Idempotência',
-    title: 'O app manda pagar R$ 30. A rede cai antes da resposta. O app tenta de novo.',
-    sub: 'Como você garante, no servidor, que ele paga UMA vez e não duas?',
-    tags: ['chave de idempotência', 'dedup', 'exactly-once'] },
-  { type: 'codeNote', kicker: 'A rede vai te trair',
+    title: 'O app manda pagar R$ 30, a rede cai antes da resposta chegar, e o app tenta de novo.',
+    sub: 'Como o servidor garante que essa cobrança acontece uma vez só?',
+    tags: ['idempotency key', 'dedup', 'at-least-once'] },
+
+  { type: 'docs', kicker: 'A rede vai te trair',
     code: [
-      "<span class='com'>// cliente gera a chave, MESMA em todo retry</span>",
-      "POST /pay  { valor: 3000, key: <span class='kw'>\"a1b2-c3d4\"</span> }",
+      "<span class='cm'>// o cliente gera a chave e repete a MESMA</span>",
+      "<span class='cm'>// em toda tentativa</span>",
+      "POST /payments",
+      "{ <span class='st'>\"amount\"</span>: 3000,",
+      "  <span class='st'>\"idempotency_key\"</span>: <span class='st'>\"a1b2-c3d4\"</span> }",
       "",
-      "<span class='com'>// no banco: a chave é UNIQUE</span>",
-      "INSERT ... ON CONFLICT (key) <span class='kw'>DO NOTHING</span>",
-      "<span class='com'>// 2º insert falha → \"já processei\", devolve o mesmo</span>",
+      "<span class='cm'>// no banco, a chave tem constraint UNIQUE</span>",
+      "INSERT INTO payments (...) VALUES (...)",
+      "  ON CONFLICT (idempotency_key) <span class='kw'>DO NOTHING</span>;",
     ],
     notes: [
-      ['Chave nasce no cliente', 'Se o servidor gera, cada retry é "novo" e cobra de novo. A intenção é a mesma, a chave é a mesma.'],
-      ['Checar e gravar = atômico', 'SELECT depois INSERT abre corrida. A UNIQUE constraint É a checagem.'],
-      ['Exactly-once na real', 'At-least-once do cliente + dedup pela chave. Ninguém entrega exactly-once na rede de verdade.'],
+      ['A chave nasce no cliente', 'Se o servidor gerar a chave, cada nova tentativa chega como um pagamento diferente e o usuário é cobrado duas vezes. A chave representa a intenção de quem apertou o botão, e essa intenção não mudou entre uma tentativa e outra.'],
+      ['Checar e gravar precisam ser a mesma operação', 'Fazer um SELECT para ver se já existe e depois um INSERT abre uma janela em que as duas tentativas passam pela checagem antes de qualquer uma gravar. A constraint UNIQUE fecha essa janela, porque a checagem acontece dentro da própria escrita.'],
+      ['Exactly-once não existe na rede', 'O que existe é o cliente reenviando até ter certeza, que é at-least-once, somado ao servidor descartando a repetição pela chave. A combinação das duas coisas é o que o usuário percebe como exactly-once.'],
     ] },
 
-  // ═══════════ SEÇÃO 03 · ARQUITETURA NA UBER ═══════════
-  { type: 'divider', num: '03', label: 'Arquitetura na Uber', intro: 'Junta as quatro peças. LedgerStore: 5 bilhões de eventos por dia sobre 1 trilhão de entries.' },
+  // ═══════════ 03 · ARQUITETURA NA UBER ═══════════
+  { type: 'divider', num: '03', label: 'Arquitetura na Uber',
+    intro: 'Agora as quatro peças entram no mesmo desenho. O LedgerStore da Uber processa 5 bilhões de eventos por dia sobre mais de 1 trilhão de entries.' },
 
   { type: 'hook', beat: 6, kicker: 'Beat 6 · O fluxo completo',
-    title: 'A corrida acabou. Desenhe cada camada até o motorista ver o saldo.',
-    sub: 'Separe explicitamente o caminho de escrita do de leitura. Eles têm requisitos opostos.',
-    tags: ['write path', 'read path', 'tiering quente/frio'] },
+    title: 'A corrida acabou e o motorista abre o app para ver quanto entrou. Desenhe cada camada que o dado atravessa.',
+    sub: 'Separe o write path do read path. Eles têm requisitos opostos, e é essa diferença que decide o desenho.',
+    tags: ['write path', 'read path', 'hot/cold tiering'] },
+
   { type: 'compare', kicker: 'Dois caminhos, garantias opostas',
     left: { tag: 'Write path', title: 'Exato e durável', points: [
-      'Chega com a chave de idempotência',
-      'Lançamento double-entry, append-only',
-      'Índice FORTEMENTE consistente (2-phase commit)',
-      'Autorização de cartão exige read-your-write na hora' ] },
+      'A requisição chega trazendo a idempotency key, e ela é a primeira coisa verificada.',
+      'A transação grava os entries de débito e de crédito juntos, sempre em append-only.',
+      'O índice usado aqui é strongly consistent, e custa um two-phase commit para manter.',
+      'A autorização de um cartão precisa ler o que acabou de gravar, então ela não tem como esperar.' ] },
     right: { tag: 'Read path', title: 'Tolera atraso', points: [
-      'Histórico do motorista: ver 200ms depois tá ok',
-      'Índices EVENTUALMENTE consistentes (materialized views)',
-      'Saldo = snapshot periódico + delta recente',
-      'Nunca soma 10 milhões de entries por GET' ] } },
-  { type: 'list', kicker: 'Três tipos de índice', title: 'Cada pergunta, um índice',
+      'O histórico do motorista pode aparecer 200 ms depois sem que ninguém perceba.',
+      'Os índices aqui são eventually consistent, montados como materialized view assíncrona.',
+      'O saldo sai de um snapshot periódico somado aos entries que chegaram depois dele.',
+      'Nenhuma leitura soma 10 milhões de entries na hora em que o GET chega.' ] } },
+
+  { type: 'list', kicker: 'Camadas de leitura sobre o mesmo log', title: 'Cada pergunta pede um índice diferente',
     items: [
-      ['Fortemente consistente', 'Two-phase commit. Read-your-write pra autorização de cartão. Caro, usado onde precisa.'],
-      ['Eventualmente consistente', 'Materialized view assíncrona. Histórico e saldo. Barato, atraso tolerável.'],
-      ['Por intervalo de tempo', 'Particiona por timestamp. "Todas as transações de março" pro auditor, sem varrer tudo.'],
-      ['Tiering quente/frio', 'Novo no store rápido (Docstore), antigo desce pro barato (TerraBlob). Mesmo log, custo por temperatura.'],
-    ] },
-  { type: 'stat', kicker: 'A migração DynamoDB → LedgerStore', stats: [
-      ['1.2 PB', 'dados comprimidos movidos'],
-      ['1 trilhão+', 'entries, sem inconsistência em 6 meses'],
-      ['5 bi/dia', 'eventos processados'],
-      ['US$ 6 mi/ano', 'economizados vs DynamoDB'],
+      ['Strongly consistent', 'Mantido com two-phase commit para garantir que uma leitura enxergue a escrita que acabou de acontecer. A autorização de cartão depende dele, e ele é o índice mais caro do sistema.'],
+      ['Eventually consistent', 'Uma materialized view atualizada de forma assíncrona. Ela serve o histórico e o saldo, onde alguns milissegundos de atraso não mudam nada para o usuário. Em português esse termo vira falso cognato: aqui "eventually" quer dizer que a consistência CHEGA, não que ela acontece de vez em quando.'],
+      ['Por intervalo de tempo', 'O log é particionado por timestamp. Quando o auditor pede todas as transações de março, a consulta lê só as partições de março em vez de varrer o log inteiro.'],
+      ['Hot/cold tiering', 'Os entries recentes ficam no store rápido, que na Uber é o Docstore, e os antigos descem para o armazenamento barato, que é o TerraBlob. É o mesmo log, com custo diferente por idade do dado.'],
     ] },
 
-  // ═══════════ SEÇÃO 04 · AWS POR CAMADA ═══════════
-  { type: 'divider', num: '04', label: 'AWS por camada', intro: 'O perfil de carga da caixa manda na escolha do serviço. Não a sua familiaridade.' },
+  { type: 'stat', kicker: 'A migração do DynamoDB para o LedgerStore', stats: [
+      ['1,2 PB', 'de dados comprimidos foram movidos ao longo da migração.'],
+      ['1 trilhão', 'de entries migrados sem uma única inconsistência em seis meses.'],
+      ['5 bilhões', 'de eventos processados por dia no sistema em produção.'],
+      ['US$ 6 mi', 'economizados por ano em relação ao custo que o DynamoDB tinha.'],
+    ] },
+
+  // ═══════════ 04 · AWS POR CAMADA ═══════════
+  { type: 'divider', num: '04', label: 'AWS por camada',
+    intro: 'Cada caixa do desenho vira um serviço gerenciado. O que decide a escolha é o perfil de carga da caixa, e não a sua familiaridade com o serviço.' },
 
   { type: 'hook', beat: 7, kicker: 'Beat 7 · Managed services',
-    title: 'Pra cada caixa do ledger, qual serviço da AWS?',
-    sub: 'E qual perfil de carga justifica a escolha?',
-    tags: ['dynamodb', 'qldb', 'aurora', 'glacier', 'kinesis'] },
-  { type: 'compare3', kicker: 'Caixa a serviço, pelo perfil',
+    title: 'Você vai subir esse ledger na AWS. Para cada caixa do desenho, escolha o serviço.',
+    sub: 'E diga qual característica da carga justifica cada escolha.',
+    tags: ['DynamoDB', 'Aurora', 'QLDB', 'S3 Glacier', 'Kinesis'] },
+
+  { type: 'compare3', kicker: 'Cada caixa, um serviço, pelo perfil de carga',
     cards: [
-      { tag: 'Escrita quente', title: 'DynamoDB', sub: 'append-only idempotente, alto throughput', points: ['Conditional write = chave UNIQUE', 'Onde a Uber começou em 2017', 'Saíram por custo em escala de trilhão'] },
-      { tag: 'Invariante forte', title: 'Aurora PostgreSQL', sub: 'soma-zero garantida pelo banco', points: ['Transação ACID pras duas pernas', 'Constraint recusa lançamento != 0', 'Hoje é o destino do padrão ledger'] },
-      { tag: 'Arquivo frio', title: 'S3 + Glacier', sub: 'compliance, quase nunca lido', points: ['Equivalente ao TerraBlob da Uber', 'Centavos por GB', 'Kinesis/MSK carregam o stream de eventos'] },
+      { tag: 'Escrita quente', title: 'DynamoDB', sub: 'append-only com throughput alto', points: [
+        'O conditional write cumpre o papel da constraint UNIQUE sobre a idempotency key.',
+        'Foi onde a Uber começou o LedgerStore, em 2017.',
+        'Eles saíram por custo quando o volume chegou na casa do trilhão de entries.' ] },
+      { tag: 'Invariante forte', title: 'Aurora PostgreSQL', sub: 'a soma zero garantida pelo próprio banco', points: [
+        'Uma transação ACID grava os dois entries ou não grava nenhum dos dois.',
+        'Uma CHECK constraint recusa qualquer transação cujos entries não somem zero.',
+        'É para onde o padrão ledger migrou depois que a AWS aposentou o serviço dedicado.' ] },
+      { tag: 'Cold storage', title: 'S3 e Glacier', sub: 'compliance, lido quase nunca', points: [
+        'Cumpre o mesmo papel do TerraBlob da Uber dentro do hot/cold tiering.',
+        'Custa centavos por GB por mês, porque a leitura é rara e pode demorar horas.',
+        'O Kinesis ou o MSK carregam o stream de eventos até esse arquivo.' ] },
     ] },
-  { type: 'codeNote', kicker: 'A curiosidade que ensina', code: [
-      "<span class='com'>// a AWS TEVE o serviço perfeito pra isso:</span>",
-      "<span class='kw'>Amazon QLDB</span>  (Quantum Ledger Database)",
-      "  append-only, imutável,",
+
+  { type: 'docs', kicker: 'A curiosidade que ensina',
+    code: [
+      "<span class='cm'>// a AWS teve o serviço perfeito para isso:</span>",
+      "<span class='kw'>Amazon QLDB</span>   Quantum Ledger Database",
+      "",
+      "  append-only por construção",
+      "  imutável",
       "  verificação criptográfica embutida",
       "",
-      "<span class='bad'>// descontinuado em 2024.</span>",
-      "<span class='com'>// o PRODUTO morre. o PADRÃO (double-entry,</span>",
-      "<span class='com'>// append-only) sobrevive sobre Aurora.</span>",
+      "<span class='bad'>// descontinuação anunciada em 2024.</span>",
+      "<span class='cm'>// o produto morreu. o padrão continua de pé,</span>",
+      "<span class='cm'>// hoje rodando sobre o Aurora.</span>",
     ],
     notes: [
-      ['Managed não é sempre barato', 'A Uber saiu do DynamoDB porque, no volume deles, o gerenciado custou mais que o in-house.'],
-      ['Serviço gerenciado morre', 'QLDB era a resposta de catálogo. A AWS aposentou. O padrão continua de pé.'],
-      ['Constraint no banco', 'A invariante "débitos = créditos" não pode morar só no código. Force no banco.'],
+      ['Serviço gerenciado nem sempre é mais barato', 'A Uber saiu do DynamoDB porque, no volume dela, o gerenciado passou a custar mais do que manter o sistema em casa. Abaixo de uma certa escala, o gerenciado ganha quase sempre, e vale saber onde fica essa fronteira.'],
+      ['Produto de catálogo morre, padrão não', 'O QLDB era a resposta pronta para essa aula, e a AWS aposentou o serviço. Quem tinha aprendido o padrão só trocou de banco embaixo. Quem tinha aprendido o produto teve que estudar tudo de novo.'],
+      ['A invariante mora no banco', 'A regra de que débitos e créditos somam zero não pode existir só no código da aplicação. Qualquer script de correção rodando por fora passa por cima dela. Declarada no banco, ela vale para todo mundo que escrever ali.'],
     ] },
 
-  // ─────────── CLOSING ───────────
   { type: 'closing' },
+
+  // ═══════════ GLOSSÁRIO ═══════════
+  // Fica depois da síntese porque é material de consulta, não de projeção.
+  // Sai no PDF do Exportar, que é o que o aluno leva pra casa.
+  { type: 'glossary', n: 1, title: 'Como o número é guardado', terms: [
+    ['float', 'Número com vírgula guardado em base 2, no padrão IEEE 754. Todo processador faz igual, então trocar de linguagem não resolve nada.'],
+    ['IEEE 754', 'O padrão que define esse formato. É ele que faz 0.1 + 0.2 devolver 0.30000000000000004 em qualquer lugar.'],
+    ['dízima binária', 'Em base 2, o número 0.1 não termina nunca. O computador corta a dízima e guarda o valor mais próximo que consegue, que não é 0.1.'],
+    ['inteiro de centavos', 'Guardar R$ 19,90 como o inteiro 1990. Soma de inteiro é exata, e a vírgula entra só na hora de exibir.'],
+    ['DECIMAL', 'Tipo de base 10 com precisão arbitrária. DECIMAL no Postgres, BigDecimal no Java. A saída quando você precisa de fração menor que o centavo.'],
+    ['BIGINT', 'Inteiro de 64 bits. É o tipo da coluna quando você escolhe guardar centavos, e aguenta valor muito além de qualquer saldo real.'],
+  ] },
+
+  { type: 'glossary', n: 2, title: 'Quando o modelo ingênuo quebra', terms: [
+    ['lost update', 'Duas transações leem o mesmo valor e a segunda escrita passa por cima da primeira. O dinheiro que a primeira tirou volta a existir.'],
+    ['race condition', 'O resultado depende de quem chegou primeiro. Aqui ele aparece como R$ 50 saindo do nada.'],
+    ['atomicidade', 'O débito e o crédito acontecem juntos ou nenhum dos dois acontece. É o A de ACID.'],
+    ['durabilidade', 'O que foi confirmado sobrevive à queda do servidor. É o D de ACID.'],
+    ['ACID', 'As quatro garantias de uma transação de banco: atomicidade, consistência, isolamento e durabilidade.'],
+    ['audit trail', 'O rastro que permite responder o que aconteceu e quando. Um UPDATE apaga esse rastro, porque sobrescreve o valor anterior.'],
+  ] },
+
+  { type: 'glossary', n: 3, title: 'O ledger', terms: [
+    ['ledger', 'O livro onde cada movimento vira uma linha nova. Nada é editado, e o saldo sai da soma das linhas.'],
+    ['double-entry', 'Todo movimento grava dois lados, um que sai e um que entra. Foi escrito em 1494 e continua sendo o modelo.'],
+    ['entry', 'Uma linha do ledger: conta, valor e sinal. É a unidade que o sistema realmente grava.'],
+    ['transação', 'O grupo de entries que representa um movimento. A transferência da Ana para o Beto é uma transação com dois entries.'],
+    ['débito e crédito', 'Os dois lados de uma transação. Os nomes vêm da contabilidade e não do sentido do dinheiro na sua conta.'],
+    ['soma zero', 'Os entries de uma transação somam zero, e a soma de todos os entries do sistema também. Quando não dá zero, existe bug.'],
+    ['saldo derivado', 'O saldo não é uma coluna, é a soma dos entries. Como ninguém escreve nele, duas transações não têm o que disputar.'],
+    ['estorno', 'O entry oposto que corrige um erro. O erro continua no ledger, e a correção fica registrada logo abaixo dele.'],
+  ] },
+
+  { type: 'glossary', n: 4, title: 'Append-only', terms: [
+    ['append-only', 'Você só adiciona linhas, nunca edita nem apaga. É a escrita mais barata do banco e a única que preserva o passado.'],
+    ['event sourcing', 'Guardar o log de eventos e derivar o estado a partir dele. O ledger é a versão disso para dinheiro.'],
+    ['fold', 'Percorrer o log somando até chegar no estado. O saldo de terça é o mesmo fold, parando na terça.'],
+    ['snapshot', 'O saldo salvo num instante, para a leitura não somar 10 milhões de entries. O saldo atual é o snapshot mais o que entrou depois dele.'],
+    ['selagem por hash', 'Fechar um intervalo antigo do log e guardar o hash dele. Se alguém alterar um entry velho, a conta do hash não fecha mais.'],
+    ['imutabilidade', 'A linha gravada não muda mais. É o que transforma o log numa prova, e não só num registro.'],
+  ] },
+
+  { type: 'glossary', n: 5, title: 'Idempotência', terms: [
+    ['idempotência', 'A propriedade de uma operação que pode ser repetida sem mudar o resultado. Apertar pagar duas vezes cobra uma vez só.'],
+    ['idempotency key', 'A chave que o cliente gera e repete em toda tentativa. Ela representa a intenção, e a intenção não mudou entre um retry e outro.'],
+    ['retry', 'Reenviar a requisição quando a resposta não chegou. O cliente não sabe se o servidor processou ou se só a resposta se perdeu.'],
+    ['at-least-once', 'A garantia de que a mensagem chega, podendo chegar mais de uma vez. É o que a rede te entrega de fato.'],
+    ['exactly-once', 'A garantia de que ela chega uma vez só. Não existe na rede: você constrói com at-least-once mais dedup.'],
+    ['dedup', 'Descartar a repetição. Aqui, reconhecendo a idempotency key que já foi vista antes.'],
+    ['UNIQUE', 'A constraint que recusa a chave repetida. Como a checagem acontece dentro da própria escrita, não sobra janela entre checar e gravar.'],
+    ['ON CONFLICT', 'A cláusula do Postgres que trata essa recusa sem estourar erro. Com DO NOTHING, o segundo INSERT simplesmente não grava.'],
+  ] },
+
+  { type: 'glossary', n: 6, title: 'Como isso vira arquitetura', terms: [
+    ['write path', 'O caminho da escrita. Precisa ser exato e durável, e é o lado caro do sistema.'],
+    ['read path', 'O caminho da leitura. Tolera atraso, e é onde o volume de verdade está.'],
+    ['two-phase commit', 'O protocolo que sincroniza uma escrita em mais de um lugar. É o que sustenta o índice forte, e é o que o torna caro.'],
+    ['strongly consistent', 'Uma leitura enxerga a escrita que acabou de acontecer. A autorização de cartão depende disso.'],
+    ['eventually consistent', 'A leitura converge para o valor certo, com atraso. "Eventually" aqui quer dizer que chega, e não que acontece de vez em quando.'],
+    ['materialized view', 'Uma projeção do log mantida à parte e atualizada de forma assíncrona. É o que serve o histórico e o saldo.'],
+    ['hot/cold tiering', 'Dado novo no armazenamento rápido, dado velho no barato. Mesmo log, com custo por idade do dado.'],
+    ['partição por tempo', 'O log cortado por timestamp. O auditor pede março e a consulta lê só as partições de março.'],
+  ] },
+
+  { type: 'glossary', n: 7, title: 'Os nomes próprios', terms: [
+    ['LedgerStore', 'O ledger da Uber. Mais de 1 trilhão de entries e 5 bilhões de eventos por dia.'],
+    ['Docstore', 'O armazenamento rápido da Uber, onde os entries recentes ficam.'],
+    ['TerraBlob', 'O armazenamento barato da Uber, para onde os entries antigos descem.'],
+    ['DynamoDB', 'Banco de chave-valor da AWS. Foi onde a Uber começou em 2017, e de onde saiu por custo na escala do trilhão.'],
+    ['conditional write', 'A escrita que só acontece se a condição valer. No DynamoDB é ela que faz o papel da constraint UNIQUE.'],
+    ['Aurora PostgreSQL', 'O Postgres gerenciado da AWS. Hoje é onde o padrão ledger costuma morar.'],
+    ['CHECK constraint', 'A regra declarada no banco. É onde a soma zero precisa viver para valer até para um script rodando por fora da aplicação.'],
+    ['QLDB', 'O banco de ledger dedicado da AWS, com append-only e verificação criptográfica. Descontinuação anunciada em 2024, e o padrão sobreviveu sem ele.'],
+  ] },
 ];
 
-// ── Render engine ──
-const deck = document.getElementById('deck');
+// ── Mesh de gradiente ──
+// Blob orgânico com blur, nos stops documentados: creme, sherbet, lavanda,
+// indigo, ruby, magenta. `strength` controla quanto do slide ele ocupa.
+function mesh(strength) {
+  const s = strength || 'hero';
+  if (s === 'none') return '';
+  const sets = {
+    hero: [
+      ['-12%', '-22%', '58%', '78%', 'var(--cream)', 0.9],
+      ['18%',  '-30%', '46%', '80%', 'var(--lemon)', 0.75],
+      ['44%',  '-34%', '48%', '84%', 'var(--primary-subdued)', 0.9],
+      ['64%',  '-28%', '44%', '76%', 'var(--primary)', 0.55],
+      ['82%',  '-20%', '40%', '70%', 'var(--ruby)', 0.5],
+      ['92%',  '-8%',  '34%', '58%', 'var(--magenta)', 0.45],
+    ],
+    band: [
+      ['-8%',  '-46%', '46%', '74%', 'var(--cream)', 0.7],
+      ['26%',  '-52%', '42%', '76%', 'var(--primary-subdued)', 0.7],
+      ['58%',  '-50%', '40%', '72%', 'var(--primary)', 0.4],
+      ['82%',  '-44%', '36%', '66%', 'var(--ruby)', 0.34],
+    ],
+    whisper: [
+      ['-10%', '-62%', '44%', '72%', 'var(--primary-subdued)', 0.42],
+      ['62%',  '-66%', '46%', '74%', 'var(--cream)', 0.5],
+      ['86%',  '-60%', '32%', '62%', 'var(--ruby)', 0.2],
+    ],
+  };
+  return `<div class="mesh" aria-hidden="true">${sets[s].map(([l, t, w, h, c, o]) =>
+    `<div class="blob" style="left:${l};top:${t};width:${w};height:${h};background:${c};opacity:${o}"></div>`).join('')}</div>`;
+}
 
-function chips(tags) {
-  if (!tags || !tags.length) return '';
-  return `<div class="flex flex-wrap gap-2 mt-8 stagger">${tags.map(t =>
-    `<span class="chip px-4 py-2 text-[15px]">${t}</span>`).join('')}</div>`;
+function tags(list) {
+  if (!list || !list.length) return '';
+  return `<div class="flex flex-wrap gap-2.5 mt-10 stagger">${list.map(t => `<span class="tag">${t}</span>`).join('')}</div>`;
 }
 
 function render(s) {
-  const wrap = (inner, cls = '') => `<div class="slide ${cls}">${inner}</div>`;
+  const wrap = (inner, extra = '') => `<div class="slide"><div class="frame" style="${extra}">${inner}</div></div>`;
 
   switch (s.type) {
+
     case 'cover':
       return wrap(`
-        <div class="ink-band w-full h-full flex flex-col justify-between px-24 py-20">
-          <div class="anim-fade flex items-center gap-3 mono text-[13px] tracking-[0.2em] uppercase" style="color:var(--mute)">
-            <span>ICS Select</span><span style="color:#3a3a3a">/</span><span>Hot Stuff 2026.2 · Big Tech</span>
-          </div>
+        ${mesh('hero')}
+        <div class="content pad flex flex-col justify-between h-full py-20">
+          <div class="anim-fade eyebrow">ICS Select &nbsp;·&nbsp; Hot Stuff 2026.2 &nbsp;·&nbsp; Big Tech</div>
           <div>
-            <div class="anim mono text-[15px] tracking-[0.18em] uppercase mb-6" style="color:var(--mute)">Estudo de caso · Uber LedgerStore</div>
-            <h1 class="display anim text-[92px] max-w-[16ch]">Modelando dinheiro: o ledger.</h1>
-            <p class="anim anim delay-1 text-[26px] mt-8 max-w-[44ch]" style="color:#cfcfcf">Por que 0.1 + 0.2 quebra um banco, e como a Uber resolve com double-entry imutável.</p>
+            <div class="anim eyebrow mb-7" style="color:var(--primary-deep)">Estudo de caso &nbsp;·&nbsp; Uber LedgerStore</div>
+            <h1 class="d-xxl anim delay-1" style="max-width:17ch">Modelando dinheiro: o ledger.</h1>
+            <p class="lead anim delay-2 mt-9" style="max-width:52ch">Por que 0.1 + 0.2 quebra um sistema financeiro, e como a Uber resolve o problema com double-entry imutável.</p>
           </div>
-          <div class="anim-fade delay-2 flex gap-2">
-            <span class="pill px-5 py-2.5 text-[14px] font-medium" style="background:#1c1c1c;color:#fff">60 min</span>
-            <span class="pill px-5 py-2.5 text-[14px] font-medium" style="background:#1c1c1c;color:#fff">7 beats</span>
-            <span class="pill px-5 py-2.5 text-[14px] font-medium" style="background:#1c1c1c;color:#fff">Curiosidade → System Design</span>
+          <div class="anim-fade delay-2 flex gap-3">
+            <span class="pill" style="background:var(--primary);color:var(--on-primary)">60 minutos</span>
+            <span class="pill card">7 beats</span>
+            <span class="pill card">Do console ao system design</span>
           </div>
         </div>`);
 
+    // Abertura de seção. Usa o mesh cheio e o maior corpo de display do
+    // deck, pra ela funcionar como marco e não como mais um slide de texto.
     case 'divider':
       return wrap(`
-        <div class="ink-band w-full h-full flex flex-col justify-center px-24">
-          <div class="anim mono text-[150px] font-bold leading-none" style="color:#2a2a2a">${s.num}</div>
-          <h2 class="display anim delay-1 text-[68px] mt-4 max-w-[20ch]">${s.label}</h2>
-          <p class="anim anim delay-2 text-[24px] mt-8 max-w-[52ch]" style="color:#cfcfcf">${s.intro}</p>
+        ${mesh('hero')}
+        <div class="content pad flex flex-col justify-center h-full">
+          <div class="anim flex items-center gap-4">
+            <span class="mono" style="font-size:16px;color:var(--primary)">${s.num}</span>
+            <span style="width:56px;height:1px;background:var(--primary-subdued)"></span>
+            <span class="eyebrow" style="color:var(--primary-deep)">Seção</span>
+          </div>
+          <h2 class="d-xxl anim delay-1 mt-7" style="max-width:18ch">${s.label}</h2>
+          <p class="lead anim delay-2 mt-9" style="max-width:60ch">${s.intro}</p>
         </div>`);
 
     case 'hook':
       return wrap(`
-        <div class="w-full h-full flex flex-col justify-center px-24">
-          <div class="anim mono text-[15px] tracking-[0.18em] uppercase mb-8" style="color:var(--mute)">${s.kicker}</div>
-          <h2 class="display anim delay-1 text-[60px] max-w-[26ch]">${s.title}</h2>
-          ${s.sub ? `<p class="anim anim delay-2 text-[26px] mt-8 max-w-[58ch]" style="color:var(--body)">${s.sub}</p>` : ''}
-          ${chips(s.tags)}
+        ${mesh('whisper')}
+        <div class="content pad flex flex-col justify-center h-full">
+          <div class="anim eyebrow mb-8" style="color:var(--primary-deep)">${s.kicker}</div>
+          <h2 class="d-lg anim delay-1" style="max-width:36ch">${s.title}</h2>
+          ${s.sub ? `<p class="lead anim delay-2 mt-8" style="max-width:62ch">${s.sub}</p>` : ''}
+          ${tags(s.tags)}
         </div>`);
 
-    case 'codeNote':
+    // O layout de documentação da Stripe: prosa à esquerda, código à direita.
+    case 'docs':
       return wrap(`
-        <div class="w-full h-full flex flex-col justify-center px-24">
-          <div class="anim mono text-[15px] tracking-[0.18em] uppercase mb-8" style="color:var(--mute)">${s.kicker}</div>
-          <div class="grid grid-cols-2 gap-12 items-center">
-            <pre class="code anim whitespace-pre-wrap">${s.code.join('\n')}</pre>
-            <div class="stagger flex flex-col gap-5">
+        <div class="content pad flex flex-col justify-center h-full">
+          <div class="anim eyebrow mb-9">${s.kicker}</div>
+          <div class="grid gap-16 items-center" style="grid-template-columns: 1fr 1fr">
+            <div class="stagger flex flex-col gap-7">
               ${s.notes.map(([h, b]) => `
-                <div class="flex gap-4 items-start">
-                  <span class="mono text-[15px] mt-1" style="color:var(--mute)">→</span>
-                  <div>
-                    <div class="text-[19px] font-semibold">${h}</div>
-                    <div class="text-[17px] mt-1" style="color:var(--body)">${b}</div>
-                  </div>
+                <div>
+                  <div class="d-sm" style="font-size:22px;letter-spacing:-0.3px">${h}</div>
+                  <p class="body-sm mt-2">${b}</p>
                 </div>`).join('')}
             </div>
+            <div class="codepanel anim delay-1 lift"><pre>${s.code.join('\n')}</pre></div>
           </div>
-        </div>`);
+        </div>`, 'background:var(--canvas-soft)');
 
     case 'list':
       return wrap(`
-        <div class="w-full h-full flex flex-col justify-center px-24">
-          <div class="anim mono text-[15px] tracking-[0.18em] uppercase mb-3" style="color:var(--mute)">${s.kicker}</div>
-          <h2 class="display anim delay-1 text-[44px] mb-10">${s.title}</h2>
+        ${mesh('whisper')}
+        <div class="content pad flex flex-col justify-center h-full">
+          <div class="anim eyebrow mb-3">${s.kicker}</div>
+          <h2 class="d-md anim delay-1 mb-11">${s.title}</h2>
           <div class="grid grid-cols-2 gap-6 stagger">
             ${s.items.map(([h, b], i) => `
-              <div class="card p-7 flex gap-5">
-                <span class="mono text-[22px] font-bold" style="color:var(--ink)">${String(i + 1).padStart(2, '0')}</span>
+              <div class="card p-8 flex gap-6">
+                <span class="mono" style="font-size:15px;color:var(--primary);padding-top:5px">${String(i + 1).padStart(2, '0')}</span>
                 <div>
-                  <div class="text-[22px] font-semibold">${h}</div>
-                  <div class="text-[18px] mt-2" style="color:var(--body)">${b}</div>
+                  <div class="d-sm" style="font-size:23px;letter-spacing:-0.32px">${h}</div>
+                  <p class="body-sm mt-2.5">${b}</p>
                 </div>
               </div>`).join('')}
           </div>
@@ -345,89 +644,153 @@ function render(s) {
 
     case 'compare':
       return wrap(`
-        <div class="w-full h-full flex flex-col justify-center px-24">
-          <div class="anim mono text-[15px] tracking-[0.18em] uppercase mb-10" style="color:var(--mute)">${s.kicker}</div>
-          <div class="grid grid-cols-2 gap-8 stagger">
-            ${[[s.left, false], [s.right, true]].map(([c, dark]) => `
-              <div class="${dark ? 'ink-band' : 'card-soft'} p-9 rounded-[16px]">
-                <div class="mono text-[14px] tracking-[0.14em] uppercase mb-3" style="color:${dark ? '#9a9a9a' : 'var(--mute)'}">${c.tag}</div>
-                <div class="display text-[34px] mb-6">${c.title}</div>
-                <div class="flex flex-col gap-3.5">
-                  ${c.points.map(p => `<div class="flex gap-3 items-start text-[18px]"><span class="mono mt-0.5" style="color:${dark ? '#7a7a7a' : 'var(--mute)'}">·</span><span style="color:${dark ? '#dcdcdc' : 'var(--body)'}">${p}</span></div>`).join('')}
+        <div class="content pad flex flex-col justify-center h-full">
+          <div class="anim eyebrow mb-10">${s.kicker}</div>
+          <div class="grid grid-cols-2 gap-7 stagger">
+            ${[[s.left, false], [s.right, true]].map(([c, hi]) => `
+              <div class="${hi ? '' : 'card-soft'} p-10" style="${hi ? 'background:var(--brand-dark);border-radius:var(--r-lg)' : ''}">
+                <div class="eyebrow mb-4" style="color:${hi ? 'var(--primary-subdued)' : 'var(--ink-mute)'}">${c.tag}</div>
+                <div class="d-md mb-8" style="color:${hi ? 'var(--on-primary)' : 'var(--ink)'}">${c.title}</div>
+                <div class="flex flex-col gap-5">
+                  ${c.points.map(p => `<p class="body" style="color:${hi ? '#c9cee8' : 'var(--ink-2)'}">${p}</p>`).join('')}
                 </div>
               </div>`).join('')}
           </div>
-        </div>`);
+        </div>`, 'background:var(--canvas-soft)');
 
     case 'compare3':
       return wrap(`
-        <div class="w-full h-full flex flex-col justify-center px-24">
-          <div class="anim mono text-[15px] tracking-[0.18em] uppercase mb-10" style="color:var(--mute)">${s.kicker}</div>
+        <div class="content pad flex flex-col justify-center h-full">
+          <div class="anim eyebrow mb-10">${s.kicker}</div>
           <div class="grid grid-cols-3 gap-6 stagger">
             ${s.cards.map(c => `
-              <div class="card p-8 rounded-[16px] flex flex-col">
-                <div class="chip self-start px-4 py-1.5 text-[13px] mb-4">${c.tag}</div>
-                <div class="display text-[30px]">${c.title}</div>
-                <div class="text-[15px] mt-2 mb-6" style="color:var(--body)">${c.sub}</div>
-                <div class="flex flex-col gap-3 mt-auto">
-                  ${c.points.map(p => `<div class="flex gap-3 items-start text-[16px]"><span class="mono mt-0.5" style="color:var(--mute)">·</span><span style="color:var(--ink)">${p}</span></div>`).join('')}
+              <div class="card p-8 flex flex-col">
+                <span class="tag self-start mb-5">${c.tag}</span>
+                <div class="d-sm">${c.title}</div>
+                <div class="body-sm mt-2 mb-7" style="color:var(--ink-mute)">${c.sub}</div>
+                <div class="flex flex-col gap-4 mt-auto">
+                  ${c.points.map(p => `<p class="body-sm">${p}</p>`).join('')}
                 </div>
               </div>`).join('')}
           </div>
+        </div>`, 'background:var(--canvas-soft)');
+
+    // Mockup de produto: a assinatura visual da marca, aqui carregando o
+    // modelo de dado da aula em vez de ser decoração.
+    case 'mock':
+      return wrap(`
+        ${mesh('whisper')}
+        <div class="content pad flex flex-col justify-center h-full">
+          <div class="anim eyebrow mb-7">${s.kicker}</div>
+          <div class="mock lift anim delay-1">
+            <div class="mock-bar">
+              <span class="mock-dot" style="background:var(--ruby)"></span>
+              <span class="mock-dot" style="background:var(--lemon)"></span>
+              <span class="mock-dot" style="background:var(--primary-subdued)"></span>
+              <span class="ml-3 mono" style="font-size:14px;color:var(--ink-mute)">${s.title}</span>
+            </div>
+            <table>
+              <thead><tr>
+                <th>Data</th><th>Transação</th><th>Descrição</th>
+                <th class="num">Valor</th><th class="num">Saldo</th>
+              </tr></thead>
+              <tbody>
+                ${s.rows.map(([d, t, desc, v, sal, flag]) => `
+                  <tr class="${flag === 'flag' ? 'row-flag' : flag === 'fix' ? 'row-fix' : ''}">
+                    <td style="color:var(--ink-mute)">${d}</td>
+                    <td class="mono" style="font-size:15px">${t}</td>
+                    <td>${desc}</td>
+                    <td class="num" style="color:${v.startsWith('+') ? 'var(--ink)' : 'var(--ruby)'}">${v}</td>
+                    <td class="num" style="font-weight:500;color:var(--ink)">${sal}</td>
+                  </tr>`).join('')}
+              </tbody>
+            </table>
+          </div>
+          <p class="body anim delay-2 mt-8" style="max-width:88ch">${s.caption}</p>
         </div>`);
 
     case 'stat':
       return wrap(`
-        <div class="w-full h-full flex flex-col justify-center px-24">
-          <div class="anim mono text-[15px] tracking-[0.18em] uppercase mb-12" style="color:var(--mute)">${s.kicker}</div>
+        ${mesh('band')}
+        <div class="content pad flex flex-col justify-center h-full">
+          <div class="anim eyebrow mb-12">${s.kicker}</div>
           <div class="grid grid-cols-4 gap-6 stagger">
             ${s.stats.map(([n, l]) => `
-              <div class="card-soft p-8 rounded-[16px]">
-                <div class="display text-[52px]">${n}</div>
-                <div class="text-[17px] mt-3" style="color:var(--body)">${l}</div>
+              <div class="card p-8">
+                <div class="d-md tnum" style="color:var(--primary-deep)">${n}</div>
+                <p class="body-sm mt-4">${l}</p>
               </div>`).join('')}
           </div>
         </div>`);
 
+    // Lista de definição em duas colunas, no formato termo + frase, que é
+    // como o glossário é lido depois da aula.
+    case 'glossary':
+      return wrap(`
+        <div class="content pad flex flex-col justify-center h-full">
+          <div class="anim eyebrow mb-3">Glossário &nbsp;·&nbsp; ${s.n} de 7</div>
+          <h2 class="d-md anim delay-1 mb-10">${s.title}</h2>
+          <div class="grid grid-cols-2 gap-x-16 gap-y-7 stagger">
+            ${s.terms.map(([t, d]) => `
+              <div class="gl">
+                <span class="gl-t">${t}</span>
+                <span class="gl-d">${d}</span>
+              </div>`).join('')}
+          </div>
+        </div>`, 'background:var(--canvas-soft)');
+
     case 'closing':
       return wrap(`
-        <div class="ink-band w-full h-full flex flex-col justify-center px-24">
-          <div class="anim mono text-[15px] tracking-[0.18em] uppercase mb-8" style="color:var(--mute)">Síntese</div>
-          <h2 class="display anim delay-1 text-[72px] max-w-[20ch]">Dinheiro é um log, não um número.</h2>
-          <p class="anim anim delay-2 text-[26px] mt-10 max-w-[60ch]" style="color:#cfcfcf">Saldo não é um dado que você guarda. É um fold sobre um log que você nunca apaga. Auditoria de graça, correção por estorno, invariante que se verifica sozinha. O custo migra pra leitura, e você paga com snapshot e idempotência.</p>
-          <div class="anim-fade delay-2 mt-12 mono text-[16px]" style="color:var(--mute)">float → centavos → double-entry → append-only → idempotência → LedgerStore</div>
+        ${mesh('hero')}
+        <div class="content pad flex flex-col justify-center h-full">
+          <div class="anim eyebrow mb-8" style="color:var(--primary-deep)">Síntese</div>
+          <h2 class="d-xl anim delay-1" style="max-width:22ch">Dinheiro é um log, não um número.</h2>
+          <p class="lead anim delay-2 mt-10" style="max-width:66ch">O saldo não é um dado que você guarda, ele é a soma de um log que você nunca apaga. Auditoria sai de graça, correção vira um entry de estorno por cima, e a invariante de soma zero se verifica sozinha. O custo migra da escrita para a leitura, e você paga esse custo com snapshot e idempotency key.</p>
+          <div class="anim-fade delay-2 mt-14 mono" style="font-size:16px;color:var(--ink-mute)">float &nbsp;→&nbsp; inteiro de centavos &nbsp;→&nbsp; double-entry &nbsp;→&nbsp; append-only &nbsp;→&nbsp; idempotency key &nbsp;→&nbsp; LedgerStore</div>
         </div>`);
 
     default:
-      return wrap(`<div class="px-24 flex items-center">slide?</div>`);
+      return wrap(`<div class="pad flex items-center">slide?</div>`);
   }
 }
 
+const deck = document.getElementById('deck');
 deck.innerHTML = SLIDES.map(render).join('');
 const slides = [...document.querySelectorAll('.slide')];
-document.getElementById('slide-total').textContent = String(slides.length).padStart(2, '0');
+
+function fit() {
+  document.documentElement.style.setProperty('--scale',
+    String(Math.min(window.innerWidth / 1600, window.innerHeight / 900)));
+}
+fit();
+window.addEventListener('resize', fit);
 
 let cur = 0;
 function show(i) {
   cur = Math.max(0, Math.min(slides.length - 1, i));
   slides.forEach((el, idx) => el.classList.toggle('active', idx === cur));
-  document.getElementById('slide-num').textContent = String(cur + 1).padStart(2, '0');
+  document.getElementById('navpos').textContent =
+    String(cur + 1).padStart(2, '0') + ' / ' + String(slides.length).padStart(2, '0');
 }
-function next() { show(cur + 1); }
-function prev() { show(cur - 1); }
+const next = () => show(cur + 1);
+const prev = () => show(cur - 1);
 
+document.getElementById('next').addEventListener('click', next);
+document.getElementById('prev').addEventListener('click', prev);
 document.addEventListener('keydown', (e) => {
   if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); next(); }
   else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); prev(); }
   else if (e.key === 'Home') show(0);
   else if (e.key === 'End') show(slides.length - 1);
 });
-deck.addEventListener('click', (e) => { if (e.clientX < window.innerWidth * 0.3) prev(); else next(); });
+deck.addEventListener('click', (e) => {
+  if (e.target.closest('#nav')) return;
+  if (e.clientX < window.innerWidth * 0.3) prev(); else next();
+});
 
-// Print mode: ?print=1 shows all slides and triggers print
 if (new URLSearchParams(location.search).get('print') === '1') {
-  document.body.classList.add('printing');
-  setTimeout(() => window.print(), 600);
+  slides.forEach(el => el.classList.add('active'));
+  setTimeout(() => window.print(), 700);
 } else {
   show(0);
 }
