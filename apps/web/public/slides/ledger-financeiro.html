@@ -393,42 +393,39 @@ const SLIDES = [
     sub: 'Separe o write path do read path. Eles têm requisitos opostos, e é essa diferença que decide o desenho.',
     tags: ['write path', 'read path', 'hot/cold tiering'] },
 
-  { type: 'compare', kicker: 'Dois caminhos, garantias opostas',
-    left: { tag: 'Write path', title: 'Exato e durável', points: [
+  { type: 'compare', kicker: 'Dois caminhos, exigências opostas',
+    left: { tag: 'O caminho da escrita', title: 'Precisa estar certo agora', points: [
       'A requisição chega trazendo a idempotency key, e ela é a primeira coisa verificada.',
-      'A transação grava os entries de débito e de crédito juntos, sempre em append-only.',
-      'O índice usado aqui é strongly consistent, e custa um two-phase commit para manter.',
-      'A autorização de um cartão precisa ler o que acabou de gravar, então ela não tem como esperar.' ] },
-    right: { tag: 'Read path', title: 'Tolera atraso', points: [
-      'O histórico do motorista pode aparecer 200 ms depois sem que ninguém perceba.',
-      'Os índices aqui são eventually consistent, montados como materialized view assíncrona.',
-      'O saldo sai de um snapshot periódico somado aos entries que chegaram depois dele.',
-      'Nenhuma leitura soma 10 milhões de entries na hora em que o GET chega.' ] } },
+      'A transação grava os dois entries juntos, débito e crédito, sempre append-only.',
+      'Quem grava aqui precisa conseguir LER de volta na hora seguinte o que acabou de gravar.',
+      'Essa exigência tem nome: <b>strongly consistent</b>. É a parte mais cara do sistema.' ] },
+    right: { tag: 'O caminho da leitura', title: 'Pode chegar atrasado', points: [
+      'O motorista ver um lançamento alguns segundos depois não muda decisão nenhuma.',
+      'Então o dado da tela é uma CÓPIA, montada em segundo plano fora do caminho de escrita.',
+      'Essa cópia tem nome: <b>materialized view</b>. Ela sempre chega, e às vezes chega atrasada.',
+      'Uma leitura que sempre chega, mas pode atrasar, é <b>eventually consistent</b>.' ] } },
 
-  { type: 'list', kicker: 'Camadas de leitura sobre o mesmo log', title: 'Cada pergunta pede um índice diferente',
-    items: [
-      ['Strongly consistent', 'Mantido com two-phase commit para garantir que uma leitura enxergue a escrita que acabou de acontecer. A autorização de cartão depende dele, e ele é o índice mais caro do sistema.'],
-      ['Eventually consistent', 'Uma materialized view atualizada de forma assíncrona. Ela serve o histórico e o saldo, onde alguns milissegundos de atraso não mudam nada para o usuário. Em português esse termo vira falso cognato: aqui "eventually" quer dizer que a consistência CHEGA, não que ela acontece de vez em quando.'],
-      ['Por intervalo de tempo', 'O log é particionado por timestamp. Quando o auditor pede todas as transações de março, a consulta lê só as partições de março em vez de varrer o log inteiro.'],
-      ['Hot/cold tiering', 'Os entries recentes ficam no store rápido, que na Uber é o Docstore, e os antigos descem para o armazenamento barato, que é o TerraBlob. É o mesmo log, com custo diferente por idade do dado.'],
-    ] },
+  { type: 'hook', kicker: 'O falso cognato que derruba gente em entrevista',
+    title: '"Eventually consistent" não quer dizer "de vez em quando".',
+    sub: 'Quer dizer que a consistência CHEGA, só não na mesma hora. Em português a palavra "eventualmente" significa o oposto disso, e é o erro mais comum quando alguém traduz o termo.',
+    tags: ['strongly consistent', 'eventually consistent'] },
 
   { type: 'figure', kicker: 'O exemplo que explica o índice caro',
     title: 'Por que a autorização de cartão precisa ler o que acabou de gravar',
     src: FIG + 'fig01.png',
     alt: 'Diagrama de sequência da Uber: Start Trip autoriza o pagamento e salva um hold no LedgerStore; End Trip procura esse hold; se não encontrar, cria uma cobrança nova.',
-    note: 'No início da corrida o Payment Service salva um <b>hold</b> no LedgerStore. No fim, ele procura esse hold para capturar. Se a busca não encontrar, o fluxo cria uma cobrança nova, e o passageiro paga duas vezes. É esse caminho, e só ele, que justifica o índice strongly consistent.' },
+    note: 'No início da corrida o Payment Service salva um <b>hold</b> no LedgerStore. No fim, ele procura esse hold para capturar. Se a busca não encontrar, o fluxo cria uma cobrança nova, e o passageiro paga duas vezes. É por isso que essa busca não pode aceitar atraso, e é o único ponto da aula que exige a garantia cara.' },
 
   { type: 'figure', kicker: 'Como o índice forte é mantido',
-    title: 'Two-phase commit: grava a intenção, grava o registro, confirma depois',
+    title: 'Como se grava em dois passos, para a leitura nunca ver pela metade',
     src: FIG + 'fig02.png',
     alt: 'Diagrama de sequência do two-phase commit: write intent nos índices A e B, depois write record na tabela, depois commit dos índices.',
-    note: 'A intenção do índice é gravada <b>antes</b> do registro. Se ela falhar, a operação inteira falha, e é isso que preserva a garantia. Se o registro for gravado, os commits dos índices acontecem de forma assíncrona. Uma leitura que encontre um índice ainda em intent vai ao registro para decidir se confirma ou desfaz.' },
+    note: 'Primeiro grava a <b>intenção</b> (vou gravar isso), depois o registro de verdade, e só então confirma a intenção. Se a intenção falhar, a operação inteira falha, e é isso que segura a garantia. Se alguém ler no meio e achar uma intenção ainda não confirmada, vai olhar o registro para decidir: existe, confirma; não existe, desfaz. Esse jeito de gravar em duas fases tem nome, <b>two-phase commit</b>.' },
 
   { type: 'stat', kicker: 'O que esse desenho sustenta em produção', stats: [
-      ['2 trilhões', 'de índices únicos construídos no LedgerStore.'],
+      ['2 trilhões', 'de índices únicos construídos sobre o log do LedgerStore.'],
       ['6+ meses', 'em produção sem uma inconsistência de dado detectada.'],
-      ['zero', 'incidentes de produção durante o backfill dos índices.'],
+      ['zero', 'incidentes de produção durante a reconstrução dos índices históricos.'],
       ['US$ 6 mi', 'economizados por ano com a saída do DynamoDB.'],
     ] },
 
@@ -436,7 +433,7 @@ const SLIDES = [
     title: 'Índice por intervalo de tempo é o que permite separar quente de frio',
     src: FIG + 'fig05.png',
     alt: 'Diagrama da Uber mostrando o LedgerStore lendo de um Hot Storage com menos de 3 meses e escrevendo em um Cold Storage com mais de 1 ano.',
-    note: 'Consultar por faixa de tempo é o que torna possível decidir o que desce para o armazenamento barato. Na Uber o corte é concreto: <b>hot storage guarda menos de 3 meses</b>, e o que passa de <b>1 ano vai para o cold storage</b>. É o mesmo log, com preço diferente por idade do dado.' },
+    note: 'Consultar por faixa de tempo é o que torna possível decidir o que desce para o armazenamento barato. Na Uber o corte é concreto: <b>hot storage guarda menos de 3 meses</b>, e o que passa de <b>1 ano vai para o cold storage</b>. É o mesmo log, com preço diferente por idade do dado. Guardar o dado novo no caro e o velho no barato tem nome: <b>hot/cold tiering</b>.' },
 
   // ═══════════ 04 · AWS POR CAMADA ═══════════
   { type: 'divider', num: '04', label: 'AWS por camada',
@@ -454,8 +451,8 @@ const SLIDES = [
         'Foi onde a Uber começou o LedgerStore, em 2017.',
         'Eles saíram por custo quando o volume chegou na casa do trilhão de entries.' ] },
       { tag: 'Invariante forte', title: 'Aurora PostgreSQL', sub: 'a soma zero garantida pelo próprio banco', points: [
-        'Uma transação ACID grava os dois entries ou não grava nenhum dos dois.',
-        'Uma CHECK constraint recusa qualquer transação cujos entries não somem zero.',
+        'Uma transação de banco grava os dois entries ou não grava nenhum dos dois.',
+        'Uma regra declarada no próprio banco recusa qualquer transação cujos entries não somem zero.',
         'É para onde o padrão ledger migrou depois que a AWS aposentou o serviço dedicado.' ] },
       { tag: 'Cold storage', title: 'S3 e Glacier', sub: 'compliance, lido quase nunca', points: [
         'Cumpre o mesmo papel do TerraBlob da Uber dentro do hot/cold tiering.',

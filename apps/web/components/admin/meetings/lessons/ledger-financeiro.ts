@@ -226,7 +226,7 @@ regra: o valor VIVE como inteiro. a virgula so aparece na tela.`,
           art: `defeito            remendo                    o que fica de pe
 -----------------  -------------------------  ------------------
 concorrencia       SELECT ... FOR UPDATE      conta virou gargalo
-durabilidade       transacao ACID             (resolvido)
+durabilidade       transacao de banco         (resolvido)
 auditoria          tabela de log paralela     duas fontes de
                                               verdade sem criterio
                                               de desempate
@@ -677,30 +677,32 @@ CERTO: uma operacao so
           art: `WRITE PATH                      READ PATH
 (fim da corrida)                (motorista abre o app)
 
-  requisicao + idempotency key      GET saldo / historico
+  requisicao + idempotency key      abre o app e ve o historico
             |                                 |
             v                                 v
-  1. key ja existe?  -- sim -->   materialized view
-     |                            (eventually consistent,
-     nao                           atualizada em background)
+  1. essa key ja veio antes?      le de uma COPIA do dado,
+     |                            preparada pra leitura e
+     nao                          atualizada em 2o plano
+     |                            (materialized view)
+     v                                        |
+  2. monta a transacao                        v
+     debito + credito = 0          saldo = snapshot + delta
      |                                        |
      v                                        v
-  2. monta transacao              saldo = snapshot + delta
-     debito + credito = 0                     |
-     |                                        v
-     v                                     resposta
-  3. append-only no ledger
+  3. grava append-only                     resposta
      |
      v
-  4. indice strongly consistent
+  4. confirma de um jeito que a
+     proxima leitura enxergue
      (two-phase commit)
-     so a autorizacao de cartao
+     so a cobranca do cartao
      precisa disso
      |
      v
    confirmado
 
-garantia: exata e duravel      garantia: pode atrasar 200ms`,
+precisa estar certo AGORA       pode chegar atrasado
+= strongly consistent           = eventually consistent`,
           caption:
             'Os dois caminhos leem e escrevem o mesmo log. O que muda é a garantia que cada um precisa, e é a garantia que define o custo.',
           board:
@@ -714,20 +716,21 @@ garantia: exata e duravel      garantia: pode atrasar 200ms`,
                             |
         +-------------------+-------------------+
         |                   |                   |
-  strongly           eventually            por intervalo
-  consistent         consistent            de tempo
-  (2PC)              (materialized view)   (particao por
-        |                   |               timestamp)
+  precisa estar       pode chegar          consulta por
+  certo AGORA         atrasado             faixa de tempo
+  = strongly          = eventually         (quebra o log
+    consistent          consistent          por data)
+        |                   |                   |
         v                   v                   v
-  autorizacao         app do motorista     auditor pede
-  de cartao           historico e saldo    "marco inteiro"
+  cobranca do         app do motorista     auditor pede
+  cartao              historico e saldo    "marco inteiro"
 
 
-armazenamento por idade do dado:
+armazenamento por idade do dado (hot/cold tiering):
 
-  entries recentes ---> store rapido   (Docstore)
-  entries antigos  ---> store barato   (TerraBlob)
-                        mesmo log, custo diferente`,
+  menos de 3 meses  ---> armazenamento rapido e caro
+  mais de 1 ano     ---> armazenamento lento e barato
+                         mesmo log, preco por idade`,
           caption:
             'Os três índices são derivados do log e podem ser reconstruídos a partir dele. Se um índice corrompe, ele é refeito, e o ledger não é tocado.',
           board:
@@ -739,11 +742,11 @@ armazenamento por idade do dado:
       pass1:
         'Hora de juntar as quatro peças num desenho. O passageiro encerra a corrida e, a partir dali, o dinheiro atravessa uma sequência de camadas até virar um par de entries imutáveis e depois aparecer como saldo para o motorista. A decisão que organiza todo o resto é separar o **write path**, que grava o pagamento e precisa ser exato e durável, do **read path**, que mostra histórico e saldo e tolera atraso. Os dois têm requisitos opostos, então recebem soluções diferentes. O sistema que faz isso na Uber é o LedgerStore, com mais de 2 trilhões de índices únicos sobre um log imutável.',
       pass2:
-        'O desenho completo está no primeiro visual abaixo. O que vale explicar em voz alta é por que os dois caminhos divergem.\n\n**O exemplo que justifica o índice caro.** No começo da corrida, o Payment Service da Uber salva um **hold** no LedgerStore, que é a reserva no cartão. No fim da corrida ele procura esse hold para capturar o valor. Se a busca não encontrar, o fluxo cria uma cobrança nova, e o passageiro paga duas vezes. Ler de volta o que acabou de gravar se chama **read-your-write**, e esse caminho é o único da aula que exige um índice **strongly consistent**, mantido com **two-phase commit**.\n\n**Como o two-phase commit funciona ali.** A intenção do índice é gravada antes do registro. Se essa gravação falhar, a operação inteira falha, e é isso que preserva a garantia. Gravado o registro, os commits dos índices acontecem de forma assíncrona. Uma leitura que encontre um índice ainda em estado de intent vai até o registro para decidir: se o registro existe, confirma o índice; se não existe, desfaz.\n\n**Por que a leitura é barata.** O motorista ver um lançamento alguns segundos depois não muda decisão nenhuma. Os índices do read path são **eventually consistent**, construídos com o recurso de Materialized Views do Docstore, rodando fora do caminho de escrita para não somar latência nem risco de indisponibilidade a ele.\n\n**Por que existe um terceiro índice.** A consulta por faixa de tempo (`WHERE LedgerTime BETWEEN t1 AND t2`) não é leitura de app nem escrita. No Docstore ela usa uma tabela particionada por timestamp, lida com prefix scan e depois scatter-gather com sort-merge entre shards. É esse índice que torna possível decidir o que desce para o armazenamento barato: na Uber, hot storage guarda menos de 3 meses e o que passa de 1 ano vai para o cold storage.\n\n**A escala que isso sustenta.** Mais de 2 trilhões de índices únicos construídos, seis meses em produção sem uma inconsistência de dado detectada, zero incidente durante o backfill, e cerca de US$ 6 milhões por ano economizados com a saída do DynamoDB.\n\n**O que o desenho não faz.** Não elimina o custo de ler saldo, apenas o desloca para o snapshot. Não dispensa a idempotency key na borda, porque nenhuma camada de baixo distingue reenvio de pagamento novo. E não sobrevive a alguém escrever no store por fora do serviço, que é exatamente por que a soma zero precisa estar declarada no banco.',
+        'Este beat introduz três termos e nenhum deles pode ser dito antes de a ideia estar de pé. A ordem é sempre a mesma: primeiro o problema em português, depois o nome em inglês colado nele.\n\n**Ideia 1: escrever e ler pedem coisas diferentes.** No começo da corrida o Payment Service salva um **hold** no ledger, que é a reserva no cartão. No fim da corrida ele procura esse hold para cobrar de verdade. Se a busca não achar, o fluxo cria uma cobrança nova e o passageiro paga duas vezes. Então essa leitura precisa enxergar, na hora, o que a escrita acabou de gravar. Do outro lado, o motorista abrindo o app para ver o histórico pode esperar alguns segundos sem que nada quebre. Mesma base de dados, duas exigências opostas.\n\n**Ideia 2: o que precisa estar certo agora é caro.** Uma leitura que enxerga na hora o que acabou de ser escrito é o tipo caro de garantia, e o nome disso é **strongly consistent**. Vale dizer o nome só depois da sala ter entendido o caso do hold.\n\n**Ideia 3: o que pode atrasar fica barato copiando.** O histórico não sai do mesmo lugar onde a escrita acontece. Ele sai de uma cópia do dado, preparada para leitura e atualizada em segundo plano, fora do caminho da escrita. Essa cópia tem nome, **materialized view**, e a garantia dela é que o dado sempre chega, só nem sempre na mesma hora. Isso é **eventually consistent**.\n\n**O falso cognato, e vale gastar trinta segundos nele.** "Eventually" em inglês quer dizer que chega. "Eventualmente" em português quer dizer de vez em quando. É o oposto, e é erro comum de quem traduz o termo em entrevista.\n\n**Como se garante o strongly consistent.** A figura 2 do post da Uber mostra: grava primeiro a intenção (vou gravar isso), depois o registro, e só então confirma a intenção. Se a intenção falhar, a operação inteira falha. Se alguém ler no meio e achar uma intenção não confirmada, vai ao registro decidir: existe, confirma; não existe, desfaz. Esse jeito de gravar em duas fases tem nome, **two-phase commit**, e é ele que torna esse caminho o mais caro do sistema.\n\n**Guardar tudo no rápido é caro demais.** Consulta por faixa de tempo (`WHERE LedgerTime BETWEEN t1 AND t2`) é o que permite decidir o que sai do armazenamento caro. Na Uber o corte é concreto: menos de 3 meses fica no rápido, mais de 1 ano vai para o barato. Guardar o dado novo no caro e o velho no barato tem nome, **hot/cold tiering**.\n\n**A escala.** Mais de 2 trilhões de índices únicos, seis meses em produção sem uma inconsistência detectada, e cerca de US$ 6 milhões por ano economizados com a saída do DynamoDB.\n\n**O que esse desenho não faz.** Não elimina o custo de ler saldo, só o empurra para o snapshot. Não dispensa a idempotency key na borda, porque nenhuma camada de baixo distingue reenvio de pagamento novo. E não sobrevive a alguém escrever no banco por fora do serviço, que é exatamente por que a soma zero precisa estar declarada lá dentro.',
       pass3: [
         {
           gotcha: 'Usar consistência forte no caminho inteiro',
-          note: 'Só a autorização de cartão precisa de read-your-write. Estender o two-phase commit à leitura de histórico paga latência e custo onde nada exigia.',
+          note: 'Só a cobrança do cartão precisa enxergar na hora o que acabou de ser gravado. Estender essa garantia à leitura de histórico paga latência e custo onde nada exigia.',
         },
         {
           gotcha: 'Somar o saldo desde o início no read path',
