@@ -1,5 +1,9 @@
 export type NodeGroup =
   | 'foundations'
+  | 'fundamentos'
+  | 'ferramentas'
+  | 'avancado'
+  | 'fechamento'
   | 'url'
   | 'pivot'
   | 'chat'
