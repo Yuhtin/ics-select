@@ -29,7 +29,55 @@ export function PrintView({ lesson }: { lesson: Lesson }) {
       <PrintChapter lesson={lesson} pass="overview" />
       <PrintChapter lesson={lesson} pass="deep" />
       <PrintChapter lesson={lesson} pass="mastery" />
+      <GlossaryChapter lesson={lesson} />
     </div>
+  );
+}
+
+/**
+ * O glossário da aula no PDF de material. É o artefato que o aluno leva pra
+ * revisar antes de entrevista, então cada definição cabe numa linha falada.
+ * Só renderiza quando a aula declara `glossary`.
+ */
+function GlossaryChapter({ lesson }: { lesson: Lesson }) {
+  const groups = lesson.glossary ?? [];
+  if (groups.length === 0) return null;
+  const total = groups.reduce((n, g) => n + g.terms.length, 0);
+  return (
+    <section className="print-chapter">
+      <header className="print-chapter-cover">
+        <p className="font-mono text-[10px] uppercase tracking-eyebrow text-fg-mute">
+          Glossário · {total} termos
+        </p>
+        <h2 className="mt-3 font-serif text-4xl font-semibold leading-tight tracking-tight text-fg">
+          O vocabulário da aula
+        </h2>
+        <p className="mt-3 max-w-[52ch] text-[13px] leading-relaxed text-fg-soft">
+          Uma definição por termo, escrita pra ser dita em voz alta numa entrevista.
+        </p>
+      </header>
+      <div className="space-y-6">
+        {groups.map((group) => (
+          <div key={group.title} className="print-node break-inside-avoid">
+            <p className="font-mono text-[10px] uppercase tracking-eyebrow text-fg-mute">
+              {group.title}
+            </p>
+            <dl className="mt-3 space-y-2">
+              {group.terms.map((t) => (
+                <div key={t.term} className="flex gap-3 break-inside-avoid">
+                  <dt className="w-[150px] shrink-0 font-mono text-[11px] font-semibold text-fg">
+                    {t.term}
+                  </dt>
+                  <dd className="flex-1 text-[12px] leading-relaxed text-fg-soft">
+                    {t.definition}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 
