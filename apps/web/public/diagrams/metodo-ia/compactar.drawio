@@ -1,0 +1,83 @@
+<mxGraphModel dx="1400" dy="700" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" background="#FAFAF8" math="0" shadow="0" adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+
+    <mxCell id="c1" value="" style="rounded=1;arcSize=6;html=1;fillColor=#FFFFFF;strokeColor=#B4ABA0;strokeWidth=2;" vertex="1" parent="1">
+      <mxGeometry x="70" y="60" width="230" height="340" as="geometry"/>
+    </mxCell>
+    <mxCell id="f1" value="" style="rounded=0;html=1;fillColor=#E6E1D9;strokeColor=none;" vertex="1" parent="1">
+      <mxGeometry x="72" y="264" width="226" height="134" as="geometry"/>
+    </mxCell>
+    <mxCell id="p1" value="40%" style="text;html=1;align=center;verticalAlign=middle;fontFamily=Helvetica;fontSize=30;fontStyle=1;fontColor=#8B837A;" vertex="1" parent="1">
+      <mxGeometry x="70" y="300" width="230" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="t1" value="segue trabalhando" style="text;html=1;align=center;verticalAlign=middle;fontFamily=Helvetica;fontSize=17;fontStyle=1;fontColor=#26221E;" vertex="1" parent="1">
+      <mxGeometry x="60" y="416" width="250" height="24" as="geometry"/>
+    </mxCell>
+    <mxCell id="d1" value="nada a fazer. Compactar aqui&lt;br&gt;joga fora detalhe que ainda serve." style="text;html=1;align=center;verticalAlign=top;fontFamily=Helvetica;fontSize=15;fontColor=#8B837A;" vertex="1" parent="1">
+      <mxGeometry x="55" y="442" width="260" height="50" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="c2" value="" style="rounded=1;arcSize=6;html=1;fillColor=#FFFFFF;strokeColor=#C4643F;strokeWidth=3;" vertex="1" parent="1">
+      <mxGeometry x="400" y="60" width="230" height="340" as="geometry"/>
+    </mxCell>
+    <mxCell id="f2" value="" style="rounded=0;html=1;fillColor=#F6E7DF;strokeColor=none;" vertex="1" parent="1">
+      <mxGeometry x="403" y="163" width="224" height="234" as="geometry"/>
+    </mxCell>
+    <mxCell id="p2" value="70%" style="text;html=1;align=center;verticalAlign=middle;fontFamily=Helvetica;fontSize=30;fontStyle=1;fontColor=#C4643F;" vertex="1" parent="1">
+      <mxGeometry x="400" y="250" width="230" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="line2" value="" style="endArrow=none;html=1;strokeColor=#C4643F;strokeWidth=2.5;dashed=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="382" y="163" as="sourcePoint"/>
+        <mxPoint x="648" y="163" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="lbl2" value="compacte aqui" style="text;html=1;align=center;verticalAlign=middle;fontFamily=Helvetica;fontSize=15;fontStyle=1;fontColor=#C4643F;" vertex="1" parent="1">
+      <mxGeometry x="400" y="128" width="230" height="24" as="geometry"/>
+    </mxCell>
+    <mxCell id="t2" value="você escolhe o que fica" style="text;html=1;align=center;verticalAlign=middle;fontFamily=Helvetica;fontSize=17;fontStyle=1;fontColor=#C4643F;" vertex="1" parent="1">
+      <mxGeometry x="390" y="416" width="250" height="24" as="geometry"/>
+    </mxCell>
+    <mxCell id="d2" value="ainda sobra espaço, então dá pra&lt;br&gt;dizer o que guardar antes de resumir." style="text;html=1;align=center;verticalAlign=top;fontFamily=Helvetica;fontSize=15;fontColor=#26221E;" vertex="1" parent="1">
+      <mxGeometry x="385" y="442" width="260" height="50" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="c3" value="" style="rounded=1;arcSize=6;html=1;fillColor=#FFFFFF;strokeColor=#B4ABA0;strokeWidth=2;" vertex="1" parent="1">
+      <mxGeometry x="730" y="60" width="230" height="340" as="geometry"/>
+    </mxCell>
+    <mxCell id="f3" value="" style="rounded=0;html=1;fillColor=#E6E1D9;strokeColor=none;" vertex="1" parent="1">
+      <mxGeometry x="733" y="80" width="224" height="317" as="geometry"/>
+    </mxCell>
+    <mxCell id="p3" value="95%" style="text;html=1;align=center;verticalAlign=middle;fontFamily=Helvetica;fontSize=30;fontStyle=1;fontColor=#26221E;" vertex="1" parent="1">
+      <mxGeometry x="730" y="210" width="230" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="t3" value="ele compacta sozinho" style="text;html=1;align=center;verticalAlign=middle;fontFamily=Helvetica;fontSize=17;fontStyle=1;fontColor=#26221E;" vertex="1" parent="1">
+      <mxGeometry x="720" y="416" width="250" height="24" as="geometry"/>
+    </mxCell>
+    <mxCell id="d3" value="sob pressão, e quem escolhe o que&lt;br&gt;cai é ele. Costuma cair o começo." style="text;html=1;align=center;verticalAlign=top;fontFamily=Helvetica;fontSize=15;fontColor=#8B837A;" vertex="1" parent="1">
+      <mxGeometry x="715" y="442" width="260" height="50" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="seta1" value="" style="endArrow=block;endFill=1;html=1;strokeColor=#B4ABA0;strokeWidth=2;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="316" y="230" as="sourcePoint"/>
+        <mxPoint x="384" y="230" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="seta2" value="" style="endArrow=block;endFill=1;html=1;strokeColor=#B4ABA0;strokeWidth=2;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="646" y="230" as="sourcePoint"/>
+        <mxPoint x="714" y="230" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+
+    <mxCell id="notabar" value="" style="rounded=0;html=1;fillColor=#C4643F;strokeColor=none;" vertex="1" parent="1">
+      <mxGeometry x="64" y="530" width="3" height="52" as="geometry"/>
+    </mxCell>
+    <mxCell id="nota" value="A compactação vai acontecer de um jeito ou de outro. A diferença é se quem decide o que sobrevive&lt;br&gt;é você, com espaço de sobra, ou ele, com o contexto no talo." style="text;html=1;align=left;verticalAlign=middle;fontFamily=Helvetica;fontSize=16;fontColor=#26221E;" vertex="1" parent="1">
+      <mxGeometry x="74" y="530" width="1000" height="52" as="geometry"/>
+    </mxCell>
+  </root>
+</mxGraphModel>

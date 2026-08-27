@@ -1,0 +1,74 @@
+<mxGraphModel dx="1400" dy="700" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" background="#FAFAF8" math="0" shadow="0" adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+
+    <mxCell id="labA" value="sem entrevista antes" style="text;html=1;align=left;verticalAlign=middle;fontFamily=Helvetica;fontSize=16;fontStyle=1;fontColor=#8B837A;" vertex="1" parent="1">
+      <mxGeometry x="40" y="24" width="200" height="24" as="geometry"/>
+    </mxCell>
+    <mxCell id="a1" value="você descreve&lt;br&gt;&lt;font color=&quot;#8B837A&quot;&gt;2 linhas&lt;/font&gt;" style="rounded=1;arcSize=10;html=1;fillColor=#FFFFFF;strokeColor=#B4ABA0;strokeWidth=1.4;fontFamily=Helvetica;fontSize=15;fontColor=#26221E;" vertex="1" parent="1">
+      <mxGeometry x="40" y="56" width="190" height="72" as="geometry"/>
+    </mxCell>
+    <mxCell id="a2" value="ele trabalha&lt;br&gt;&lt;font color=&quot;#8B837A&quot;&gt;40 minutos&lt;/font&gt;" style="rounded=1;arcSize=10;html=1;fillColor=#FFFFFF;strokeColor=#B4ABA0;strokeWidth=1.4;fontFamily=Helvetica;fontSize=15;fontColor=#26221E;" vertex="1" parent="1">
+      <mxGeometry x="272" y="56" width="190" height="72" as="geometry"/>
+    </mxCell>
+    <mxCell id="a3" value="você lê&lt;br&gt;&lt;font color=&quot;#8B837A&quot;&gt;o resultado&lt;/font&gt;" style="rounded=1;arcSize=10;html=1;fillColor=#FFFFFF;strokeColor=#B4ABA0;strokeWidth=1.4;fontFamily=Helvetica;fontSize=15;fontColor=#26221E;" vertex="1" parent="1">
+      <mxGeometry x="504" y="56" width="190" height="72" as="geometry"/>
+    </mxCell>
+    <mxCell id="a4" value="&lt;b&gt;descobre aqui&lt;/b&gt;&lt;br&gt;&lt;font color=&quot;#8B837A&quot;&gt;entendeu outra coisa&lt;/font&gt;" style="rounded=1;arcSize=10;html=1;fillColor=#F6E7DF;strokeColor=#C4643F;strokeWidth=2;fontFamily=Helvetica;fontSize=15;fontColor=#26221E;" vertex="1" parent="1">
+      <mxGeometry x="736" y="56" width="210" height="72" as="geometry"/>
+    </mxCell>
+    <mxCell id="a5" value="&lt;b&gt;refaz do zero&lt;/b&gt;" style="rounded=1;arcSize=10;html=1;fillColor=#F6E7DF;strokeColor=#C4643F;strokeWidth=2;fontFamily=Helvetica;fontSize=15;fontColor=#26221E;" vertex="1" parent="1">
+      <mxGeometry x="988" y="56" width="190" height="72" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="labB" value="com a entrevista antes" style="text;html=1;align=left;verticalAlign=middle;fontFamily=Helvetica;fontSize=16;fontStyle=1;fontColor=#8B837A;" vertex="1" parent="1">
+      <mxGeometry x="40" y="212" width="300" height="24" as="geometry"/>
+    </mxCell>
+    <mxCell id="b1" value="você descreve&lt;br&gt;&lt;font color=&quot;#8B837A&quot;&gt;2 linhas&lt;/font&gt;" style="rounded=1;arcSize=10;html=1;fillColor=#FFFFFF;strokeColor=#B4ABA0;strokeWidth=1.4;fontFamily=Helvetica;fontSize=15;fontColor=#26221E;" vertex="1" parent="1">
+      <mxGeometry x="40" y="244" width="190" height="72" as="geometry"/>
+    </mxCell>
+    <mxCell id="b2" value="3 perguntas&lt;br&gt;&lt;font color=&quot;#8B837A&quot;&gt;30 segundos&lt;/font&gt;" style="rounded=1;arcSize=10;html=1;fillColor=#FFFFFF;strokeColor=#B4ABA0;strokeWidth=1.4;fontFamily=Helvetica;fontSize=15;fontColor=#26221E;" vertex="1" parent="1">
+      <mxGeometry x="272" y="244" width="190" height="72" as="geometry"/>
+    </mxCell>
+    <mxCell id="b3" value="&lt;b&gt;descobre aqui&lt;/b&gt;" style="rounded=1;arcSize=10;html=1;fillColor=#F6E7DF;strokeColor=#C4643F;strokeWidth=2;fontFamily=Helvetica;fontSize=15;fontColor=#26221E;" vertex="1" parent="1">
+      <mxGeometry x="504" y="244" width="190" height="72" as="geometry"/>
+    </mxCell>
+    <mxCell id="b4" value="corrige e segue" style="rounded=1;arcSize=10;html=1;fillColor=#FFFFFF;strokeColor=#26221E;strokeWidth=1.6;fontFamily=Helvetica;fontSize=15;fontColor=#26221E;" vertex="1" parent="1">
+      <mxGeometry x="736" y="244" width="190" height="72" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="ea1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#B4ABA0;strokeWidth=1.4;endArrow=block;endFill=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="a1" target="a2"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="ea2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#B4ABA0;strokeWidth=1.4;endArrow=block;endFill=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="a2" target="a3"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="ea3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#B4ABA0;strokeWidth=1.4;endArrow=block;endFill=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="a3" target="a4"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="ea4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#C4643F;strokeWidth=1.8;endArrow=block;endFill=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="a4" target="a5"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+    <mxCell id="eb1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#B4ABA0;strokeWidth=1.4;endArrow=block;endFill=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="b1" target="b2"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="eb2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#B4ABA0;strokeWidth=1.4;endArrow=block;endFill=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="b2" target="b3"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="eb3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#26221E;strokeWidth=1.6;endArrow=block;endFill=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="b3" target="b4"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+    <mxCell id="gap" value="" style="rounded=0;html=1;fillColor=#F6E7DF;strokeColor=none;opacity=60;" vertex="1" parent="1">
+      <mxGeometry x="694" y="148" width="484" height="52" as="geometry"/>
+    </mxCell>
+    <mxCell id="gaptxt" value="este trecho é o custo, e ele não aparece no prompt" style="text;html=1;align=center;verticalAlign=middle;fontFamily=Helvetica;fontSize=15;fontStyle=1;fontColor=#C4643F;" vertex="1" parent="1">
+      <mxGeometry x="694" y="148" width="484" height="52" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="axis" value="" style="endArrow=block;endFill=1;html=1;strokeColor=#B4ABA0;strokeWidth=1.4;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="40" y="370" as="sourcePoint"/>
+        <mxPoint x="1178" y="370" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="axistxt" value="tempo" style="text;html=1;align=left;verticalAlign=middle;fontFamily=Helvetica;fontSize=14;fontColor=#8B837A;" vertex="1" parent="1">
+      <mxGeometry x="40" y="378" width="120" height="22" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="notabar" value="" style="rounded=0;html=1;fillColor=#C4643F;strokeColor=none;" vertex="1" parent="1">
+      <mxGeometry x="34" y="420" width="3" height="26" as="geometry"/>
+    </mxCell>
+    <mxCell id="nota" value="O que custa é o tempo até você perceber que ele completou a lacuna com outra coisa." style="text;html=1;align=left;verticalAlign=middle;fontFamily=Helvetica;fontSize=15;fontColor=#26221E;" vertex="1" parent="1">
+      <mxGeometry x="44" y="420" width="1100" height="26" as="geometry"/>
+    </mxCell>
+  </root>
+</mxGraphModel>

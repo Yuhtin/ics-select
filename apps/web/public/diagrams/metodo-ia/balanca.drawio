@@ -1,0 +1,77 @@
+<mxGraphModel dx="1400" dy="700" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" background="#FAFAF8" math="0" shadow="0" adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+
+    <mxCell id="zL" value="" style="rounded=0;html=1;fillColor=#F6E7DF;strokeColor=none;opacity=45;" vertex="1" parent="1">
+      <mxGeometry x="60" y="40" width="330" height="300" as="geometry"/>
+    </mxCell>
+    <mxCell id="zM" value="" style="rounded=0;html=1;fillColor=#FFFFFF;strokeColor=none;" vertex="1" parent="1">
+      <mxGeometry x="390" y="40" width="360" height="300" as="geometry"/>
+    </mxCell>
+    <mxCell id="zR" value="" style="rounded=0;html=1;fillColor=#F6E7DF;strokeColor=none;opacity=45;" vertex="1" parent="1">
+      <mxGeometry x="750" y="40" width="390" height="300" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="curva" value="" style="curved=1;endArrow=none;html=1;strokeColor=#C4643F;strokeWidth=3;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="80" y="300" as="sourcePoint"/>
+        <mxPoint x="1120" y="290" as="targetPoint"/>
+        <Array as="points">
+          <mxPoint x="230" y="220"/>
+          <mxPoint x="400" y="110"/>
+          <mxPoint x="570" y="80"/>
+          <mxPoint x="740" y="115"/>
+          <mxPoint x="920" y="200"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+
+    <mxCell id="ylab" value="qualidade&lt;br&gt;da resposta" style="text;html=1;align=right;verticalAlign=middle;fontFamily=Helvetica;fontSize=14;fontColor=#8B837A;" vertex="1" parent="1">
+      <mxGeometry x="-70" y="150" width="120" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="yaxis" value="" style="endArrow=block;endFill=1;html=1;strokeColor=#B4ABA0;strokeWidth=1.4;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="60" y="340" as="sourcePoint"/>
+        <mxPoint x="60" y="50" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="xaxis" value="" style="endArrow=block;endFill=1;html=1;strokeColor=#B4ABA0;strokeWidth=1.4;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="60" y="340" as="sourcePoint"/>
+        <mxPoint x="1140" y="340" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="xlab" value="quanto contexto você põe no pedido" style="text;html=1;align=center;verticalAlign=middle;fontFamily=Helvetica;fontSize=14;fontColor=#8B837A;" vertex="1" parent="1">
+      <mxGeometry x="420" y="348" width="360" height="24" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="tL" value="POUCO" style="text;html=1;align=left;verticalAlign=middle;fontFamily=Helvetica;fontSize=15;fontStyle=1;fontColor=#C4643F;" vertex="1" parent="1">
+      <mxGeometry x="80" y="392" width="200" height="22" as="geometry"/>
+    </mxCell>
+    <mxCell id="dL" value="ele completa a lacuna com o palpite dele,&lt;br&gt;e o palpite no geral não é o seu caso" style="text;html=1;align=left;verticalAlign=top;fontFamily=Helvetica;fontSize=15;fontColor=#26221E;" vertex="1" parent="1">
+      <mxGeometry x="80" y="416" width="300" height="60" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="tM" value="O SUFICIENTE" style="text;html=1;align=left;verticalAlign=middle;fontFamily=Helvetica;fontSize=15;fontStyle=1;fontColor=#26221E;" vertex="1" parent="1">
+      <mxGeometry x="410" y="392" width="220" height="22" as="geometry"/>
+    </mxCell>
+    <mxCell id="dM" value="o que a tarefa exige,&lt;br&gt;e nada além disso" style="text;html=1;align=left;verticalAlign=top;fontFamily=Helvetica;fontSize=15;fontColor=#26221E;" vertex="1" parent="1">
+      <mxGeometry x="410" y="416" width="300" height="60" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="tR" value="MUITO" style="text;html=1;align=left;verticalAlign=middle;fontFamily=Helvetica;fontSize=15;fontStyle=1;fontColor=#C4643F;" vertex="1" parent="1">
+      <mxGeometry x="770" y="392" width="200" height="22" as="geometry"/>
+    </mxCell>
+    <mxCell id="dR" value="o que importa se perde no meio do que&lt;br&gt;não importa, e cada turno custa mais caro" style="text;html=1;align=left;verticalAlign=top;fontFamily=Helvetica;fontSize=15;fontColor=#26221E;" vertex="1" parent="1">
+      <mxGeometry x="770" y="416" width="340" height="60" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="movebar" value="" style="rounded=0;html=1;fillColor=#C4643F;strokeColor=none;" vertex="1" parent="1">
+      <mxGeometry x="54" y="510" width="3" height="52" as="geometry"/>
+    </mxCell>
+    <mxCell id="move" value="O topo da curva não fica no mesmo lugar. Ele anda conforme a tarefa, o quanto o modelo já sabe daquilo&lt;br&gt;e o que você acabou de colar. Por isso a dose certa não vira regra, e você calibra pelo resultado." style="text;html=1;align=left;verticalAlign=middle;fontFamily=Helvetica;fontSize=16;fontColor=#26221E;" vertex="1" parent="1">
+      <mxGeometry x="64" y="510" width="1080" height="52" as="geometry"/>
+    </mxCell>
+  </root>
+</mxGraphModel>

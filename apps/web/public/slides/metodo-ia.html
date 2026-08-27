@@ -1,0 +1,889 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Método com IA</title>
+<link href="https://fonts.googleapis.com" rel="preconnect" />
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap" rel="stylesheet" />
+<style>
+  /* ══════════ tokens aprovados: identidade Claude Code, tema claro ══════════ */
+  :root {
+    --bg:      #FAFAF8;
+    --ink:     #26221E;
+    --mute:    #8B837A;
+    --faint:   #B4ABA0;
+    --rule:    #E6E1D9;
+    --surface: #FFFFFF;
+    --clay:    #C4643F;
+    --clay-soft:#F6E7DF;
+    --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    --sans: "DM Sans", system-ui, -apple-system, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; height: 100%; overflow: hidden;
+    background: var(--bg); color: var(--ink);
+    font-family: var(--sans); -webkit-font-smoothing: antialiased;
+  }
+
+  /* palco fixo 1600x900, escalado pra viewport. Mesma geometria na tela e no PDF. */
+  #deck { position: fixed; inset: 0; overflow: hidden; }
+  .slide {
+    display: none;
+    position: absolute; left: 50%; top: 50%;
+    width: 1600px; height: 900px;
+    flex-direction: column;
+    padding: 44px 72px 34px;
+    background: var(--bg);
+    position: relative;
+  }
+  .slide.active { display: flex; }
+
+  /* ══════════ cromo: topo e barra de status ══════════ */
+  .s-top {
+    flex: 0 0 auto; display: flex; justify-content: space-between; align-items: center;
+    font-family: var(--mono); font-size: 19px; color: var(--mute); letter-spacing: .02em;
+  }
+  .s-top .brand { color: var(--clay); margin-right: 4px; }
+  .s-body {
+    flex: 1 1 auto; min-height: 0;
+    display: flex; flex-direction: column; justify-content: flex-start; gap: 28px;
+    padding: 22px 0 20px;
+  }
+  /* capa e divisor continuam centralizados: sao slides de respiro */
+  .slide.center .s-body { justify-content: center; }
+  .s-bot {
+    flex: 0 0 auto; border-top: 1px solid var(--rule); padding-top: 18px;
+    display: flex; justify-content: space-between;
+    font-family: var(--mono); font-size: 17px; color: var(--mute); letter-spacing: .06em;
+  }
+  .s-bot .step { color: var(--faint); }
+
+  /* ══════════ tratamento B: painel ══════════ */
+  .rule-clay { width: 74px; height: 4px; background: var(--clay); border-radius: 2px; flex: 0 0 auto; }
+  .p-title {
+    font-family: var(--mono); font-weight: 800; font-size: 62px;
+    letter-spacing: -.025em; line-height: 1.07; margin: 0;
+  }
+  .p-title.sm { font-size: 50px; }
+  .p-title.xl { font-size: 76px; }
+  .p-sub {
+    font-family: var(--sans); font-size: 29px; color: var(--mute);
+    margin: 14px 0 0; line-height: 1.45; max-width: 46ch;
+  }
+  .p-sub b { color: var(--ink); font-weight: 700; }
+  .p-sub code, .p-title code { font-family: var(--mono); font-size: .88em; color: var(--clay); }
+
+  /* ══════════ tratamento A: sessão simulada ══════════ */
+  .promptbox {
+    border: 1px solid var(--rule); border-radius: 14px; background: var(--surface);
+    padding: 22px 26px; display: flex; gap: 16px; align-items: baseline;
+    font-family: var(--mono); font-size: 34px; flex: 0 0 auto;
+  }
+  .promptbox .caret { color: var(--clay); font-weight: 700; }
+  .resp { display: flex; gap: 18px; align-items: flex-start; }
+  .resp .dot { color: var(--clay); font-size: 26px; line-height: 1.5; flex: 0 0 auto; }
+  .resp .txt { font-family: var(--sans); font-size: 30px; line-height: 1.5; max-width: 44ch; }
+  .resp .txt b { font-weight: 700; }
+  .resp .txt code { font-family: var(--mono); font-size: .86em; color: var(--clay); }
+
+  /* bloco monoespaçado (saída de terminal / contagens) */
+  .mono-block {
+    font-family: var(--mono); font-size: 26px; line-height: 1.62;
+    white-space: pre; color: var(--mute);
+  }
+  .mono-block.sm { font-size: 22px; line-height: 1.58; }
+  .clay { color: var(--clay); }
+  .ink  { color: var(--ink); }
+  .dim  { color: var(--faint); }
+
+  /* ══════════ tabela tipografada ══════════ */
+  .ptab { width: 100%; border-collapse: collapse; font-family: var(--sans); font-variant-numeric: tabular-nums; }
+  .ptab th {
+    text-align: left; font-size: 18px; font-weight: 500; letter-spacing: .09em;
+    text-transform: uppercase; color: var(--mute); padding: 0 14px 14px 0;
+    border-bottom: 1px solid var(--rule); vertical-align: bottom;
+  }
+  .ptab td {
+    font-size: 25px; padding: 17px 14px 17px 0;
+    border-bottom: 1px solid var(--rule); vertical-align: top; line-height: 1.3;
+  }
+  .ptab td:first-child, .ptab th:first-child { font-family: var(--mono); font-weight: 700; padding-right: 26px; }
+  .ptab tr:last-child td { border-bottom: none; }
+  .ptab .hl td { color: var(--clay); font-weight: 700; }
+  .ptab.tight td { font-size: 22px; padding: 13px 12px 13px 0; }
+  .ptab .no { color: var(--faint); }
+
+  /* ══════════ grade de peças (pergunta -> peça) ══════════ */
+  .pieces { display: grid; grid-template-columns: 1fr 1fr; gap: 22px 54px; font-family: var(--sans); }
+  .piece { display: flex; flex-direction: column; gap: 5px; }
+  .piece .q { font-size: 23px; color: var(--mute); line-height: 1.35; }
+  .piece .a { font-family: var(--mono); font-size: 30px; font-weight: 700; }
+  .piece .a small { font-family: var(--mono); font-weight: 400; font-size: 20px; color: var(--clay); margin-left: 8px; }
+
+  /* ══════════ lista numerada ══════════ */
+  .steps { display: flex; flex-direction: column; gap: 15px; }
+  .steps .st { display: flex; gap: 20px; align-items: baseline; font-size: 27px; line-height: 1.35; }
+  .steps .st .k {
+    font-family: var(--mono); font-weight: 700; font-size: 21px; color: var(--clay);
+    flex: 0 0 42px;
+  }
+  .steps .st code { font-family: var(--mono); font-size: 24px; color: var(--ink); }
+  .steps .st .why { color: var(--mute); font-size: 22px; display: block; margin-top: 3px; }
+
+  /* ══════════ duas colunas ══════════ */
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 46px; align-items: start; }
+  .card {
+    border: 1px solid var(--rule); border-radius: 14px; background: var(--surface); padding: 26px 30px;
+  }
+  .card.accent { border-color: var(--clay); }
+  .card .ct { font-family: var(--mono); font-size: 26px; font-weight: 700; margin-bottom: 10px; }
+  .card .cd { font-size: 23px; color: var(--mute); line-height: 1.45; }
+  .card .cd b { color: var(--ink); font-weight: 700; }
+
+  /* ══════════ divisor de bloco ══════════ */
+  .div-num {
+    font-family: var(--mono); font-weight: 800; font-size: 150px; line-height: .9;
+    color: var(--clay); letter-spacing: -.04em;
+  }
+  .div-name { font-family: var(--mono); font-weight: 800; font-size: 66px; letter-spacing: -.02em; margin-top: 10px; }
+  .div-desc { font-size: 28px; color: var(--mute); margin-top: 18px; max-width: 44ch; line-height: 1.45; }
+
+  /* ══════════ capa ══════════ */
+  .cover-eyebrow {
+    font-family: var(--mono); font-size: 21px; letter-spacing: .22em; text-transform: uppercase; color: var(--mute);
+  }
+  .cover-title { font-family: var(--mono); font-weight: 800; font-size: 108px; letter-spacing: -.035em; line-height: 1.02; margin: 22px 0 0; }
+  .cover-sub { font-size: 32px; color: var(--mute); margin-top: 24px; max-width: 42ch; line-height: 1.4; }
+  .cover-meta { font-family: var(--mono); font-size: 20px; color: var(--faint); letter-spacing: .1em; margin-top: 40px; }
+
+  /* ══════════ imagem / diagrama ══════════ */
+  .figwrap { flex: 1 1 auto; min-height: 0; display: flex; align-items: center; justify-content: center; }
+  /* imagem retrato encolhe demais num slide 16:9. A caixa de recorte mostra o topo, maior. */
+  .figbox { height: 100%; aspect-ratio: 16 / 10; overflow: hidden; border-radius: 10px;
+            border: 1px solid var(--rule); background: var(--surface); }
+  .figwrap .figbox img { width: 100%; height: 100%; max-width: none; max-height: none;
+                        object-fit: cover; object-position: top center; border-radius: 0; }
+  /* slide de diagrama em modo cheio: menos cromo, mais imagem */
+  .slide.full .s-body { padding: 12px 0; gap: 10px; }
+  .slide.full { padding: 24px 40px 20px; }
+  .figwrap img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 10px; }
+  .figwrap.framed img { border: 1px solid var(--rule); background: var(--surface); }
+  /* o PNG do grafo e transparente: sem um fundo proprio ele some no papel */
+  .figwrap.dark img { background: #14121C; border-color: #14121C; padding: 10px; }
+  .fig-cap { font-size: 22px; color: var(--mute); text-align: center; margin-top: 14px; line-height: 1.4; }
+
+
+
+  /* a marca do Claude Code, girando de canto a cada slide */
+  .ccmark { position: absolute; width: 46px; opacity: .34; pointer-events: none; z-index: 1; }
+  .ccmark svg { display: block; width: 100%; height: auto; }
+  .ccmark.tr { top: 118px; right: 16px; }
+  .ccmark.br { bottom: 118px; right: 16px; }
+  .ccmark.bl { bottom: 118px; left: 16px; }
+  .ccmark.tl { top: 118px;  left: 16px; }
+
+
+  /* ══════════ o turno, desenhado no proprio slide ══════════ */
+  .tn { display: grid; grid-template-columns: 1fr 40px 1fr; gap: 0; align-items: start; }
+  .tn-col { display: flex; flex-direction: column; }
+  .tn-box { background: var(--surface); border: 1px solid var(--rule); border-radius: 12px;
+            padding: 13px 16px; display: flex; gap: 13px; align-items: flex-start; }
+  .tn-box.mesa { border-color: var(--clay); border-width: 1.5px; }
+  .tn-box.dash { border-color: var(--clay); border-style: dashed; }
+  .tn-n { flex: 0 0 auto; width: 29px; height: 29px; border-radius: 50%; display: grid;
+          place-items: center; font-family: var(--mono); font-weight: 700; font-size: 15px;
+          background: var(--ink); color: #fff; }
+  .tn-box.mesa .tn-n, .tn-box.dash .tn-n, .tn-loop .tn-n { background: var(--clay); }
+  .tn-t { font-size: 20px; font-weight: 700; line-height: 1.2; }
+  .tn-d { font-size: 15.5px; color: var(--mute); margin-top: 4px; line-height: 1.4; }
+  .tn-arrow { height: 18px; display: grid; place-items: center; color: var(--faint); font-size: 15px; }
+  .tn-slots { margin-top: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 6px 10px; }
+  .tn-slot { display: flex; align-items: center; gap: 7px; border: 1px solid var(--rule);
+             border-radius: 7px; padding: 6px 9px; background: var(--bg); font-size: 14.5px; }
+  .tn-tag { font-family: var(--mono); font-size: 11.5px; color: var(--clay);
+            background: var(--clay-soft); border-radius: 4px; padding: 1px 5px; flex: 0 0 auto; }
+  .tn-hook { display: flex; align-items: center; gap: 9px; margin-top: 9px;
+             border-left: 3px solid var(--clay); padding: 4px 0 4px 11px;
+             font-size: 15.5px; color: var(--ink); }
+  .tn-split { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+  .tn-opt { background: var(--bg); border: 1px solid var(--rule); border-radius: 9px; padding: 10px 12px; }
+  .tn-opt b { font-family: var(--mono); font-size: 16px; display: block; margin-bottom: 4px; }
+  .tn-opt span { font-size: 14.5px; color: var(--mute); line-height: 1.35; }
+  .tn-bridge { display: grid; place-items: center; padding-top: 96px; color: var(--faint); font-size: 20px; }
+  .tn-loop { grid-column: 1 / -1; margin-top: 13px; display: flex; align-items: center; gap: 12px;
+             border: 1px dashed var(--clay); border-radius: 11px; padding: 10px 16px;
+             background: var(--surface); font-size: 17px; }
+
+  /* ══════════ animações de entrada ══════════ */
+  @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: none; } }
+  @keyframes fadeIn  { from { opacity: 0; } to { opacity: 1; } }
+  .slide.active .anim      { animation: slideUp .55s cubic-bezier(.16,1,.3,1) backwards; }
+  .slide.active .anim-fade { animation: fadeIn .7s cubic-bezier(.16,1,.3,1) backwards; }
+  .slide.active .stagger > * { animation: slideUp .5s cubic-bezier(.16,1,.3,1) backwards; }
+  .slide.active .stagger > *:nth-child(1) { animation-delay: .05s; }
+  .slide.active .stagger > *:nth-child(2) { animation-delay: .13s; }
+  .slide.active .stagger > *:nth-child(3) { animation-delay: .21s; }
+  .slide.active .stagger > *:nth-child(4) { animation-delay: .29s; }
+  .slide.active .stagger > *:nth-child(5) { animation-delay: .37s; }
+  .slide.active .stagger > *:nth-child(6) { animation-delay: .45s; }
+  .slide.active .stagger > *:nth-child(7) { animation-delay: .53s; }
+  .slide.active .stagger > *:nth-child(8) { animation-delay: .61s; }
+  .slide.active .delay-1 { animation-delay: .14s; }
+  .slide.active .delay-2 { animation-delay: .28s; }
+  .slide.active .delay-3 { animation-delay: .42s; }
+  @media (prefers-reduced-motion: reduce) {
+    .slide.active *, .slide.active .stagger > * { animation: none !important; }
+  }
+
+  /* ══════════ impressão: ?print=1 empilha tudo, uma por página ══════════ */
+  @media print {
+    @page { size: 1600px 900px; margin: 0; }
+    html, body { overflow: visible !important; height: auto !important; background: #fff !important;
+                 -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    #deck { position: static !important; display: block !important; overflow: visible !important;
+            height: auto !important; place-items: initial !important; }
+    .slide { display: flex !important; width: 1600px !important; height: 900px !important;
+             transform: none !important; page-break-after: always; break-after: page; }
+    .slide * { animation: none !important; }
+  }
+</style>
+</head>
+<body>
+<div id="deck"></div>
+
+<script>
+/* ════════════════════════════════════════════════════════════════════════════
+   Motor. Reaproveitado de deploy-journey.html: navegação por teclado e clique,
+   fluxo ?print=1, classes de animação, setup sem build.
+   O layout é próprio: identidade Claude Code, tema claro, palco fixo 1600x900.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+const esc = (s) => String(s == null ? '' : s);
+
+/* a marca do Claude Code. O canto muda a cada slide, na ordem tr, br, bl, tl. */
+const CC_MARK = '<svg class="ccmark-svg" viewBox="0 0 66 52" fill="none" xmlns="http://www.w3.org/2000/svg"> <rect x="0" y="13" width="6" height="13" fill="#C4643F"/> <rect x="60" y="13" width="6" height="13" fill="#C4643F"/> <rect x="6" y="39" width="6" height="13" fill="#C4643F"/> <rect x="18" y="39" width="6" height="13" fill="#C4643F"/> <rect x="42" y="39" width="6" height="13" fill="#C4643F"/> <rect x="54" y="39" width="6" height="13" fill="#C4643F"/> <rect x="6" width="54" height="39" fill="#C4643F"/> <rect x="12" y="13" width="6" height="6.5" fill="#26221E"/> <rect x="48" y="13" width="6" height="6.5" fill="#26221E"/> </svg>';
+const CORNERS = ['tr', 'br', 'bl', 'tl'];
+let markSeq = 0;
+function ccmark() {
+  const c = CORNERS[markSeq++ % CORNERS.length];
+  return `<span class="ccmark ${c}" aria-hidden="true">${CC_MARK}</span>`;
+}
+
+
+function chrome(s) {
+  const model = s.model || 'claude code';
+  return `<div class="s-top"><span><span class="brand">&#10043;</span> m&eacute;todo com IA</span><span>${esc(model)}</span></div>`;
+}
+function status(s) {
+  if (s.bare) return `<div class="s-bot"><span>m&eacute;todo com IA</span><span class="step">menos retrabalho</span></div>`;
+  const left = s.beat ? `${s.beat}/6 &middot; ${esc(s.block)}` : esc(s.block || '');
+  return `<div class="s-bot"><span>${left}</span><span class="step">${esc(s.step || '')}</span></div>`;
+}
+const wrap = (s, body, extra) =>
+  `<section class="slide ${extra || ''}">${ccmark()}${chrome(s)}<div class="s-body">${body}</div>${status(s)}</section>`;
+
+/* ── renderers ─────────────────────────────────────────────────────────── */
+
+function r_cover(s) {
+  return `<section class="slide center">${ccmark()}${chrome(s)}
+    <div class="s-body" style="justify-content:center">
+      <div class="rule-clay anim"></div>
+      <div>
+        <p class="cover-eyebrow anim delay-1">${esc(s.eyebrow)}</p>
+        <h1 class="cover-title anim delay-1">${s.title}</h1>
+        <p class="cover-sub anim delay-2">${s.sub}</p>
+        <p class="cover-meta anim delay-3">${esc(s.meta)}</p>
+      </div>
+    </div>
+    ${status(Object.assign({ bare: true }, s))}</section>`;
+}
+
+function r_divider(s) {
+  return wrap(s, `
+    <div class="anim">
+      <div class="div-num">${esc(s.num)}</div>
+      <div class="div-name">${esc(s.name)}</div>
+      <p class="div-desc">${s.desc}</p>
+    </div>`, 'center');
+}
+
+/* tratamento B, o padrão */
+function r_hook(s) {
+  const cls = s.size === 'xl' ? 'xl' : s.size === 'sm' ? 'sm' : '';
+  return wrap(s, `
+    <div class="rule-clay anim"></div>
+    <div class="anim delay-1">
+      <h2 class="p-title ${cls}">${s.title}</h2>
+      ${s.sub ? `<p class="p-sub">${s.sub}</p>` : ''}
+    </div>
+    ${s.mono ? `<div class="mono-block ${s.monoSm ? 'sm' : ''} anim delay-2">${s.mono}</div>` : ''}`);
+}
+
+/* tratamento A, a sessão simulada */
+function r_session(s) {
+  const lines = (s.resp || []).map((t, i) =>
+    `<div class="resp"><span class="dot">&#9679;</span><span class="txt">${t}</span></div>`).join('');
+  return wrap(s, `
+    <div class="promptbox anim"><span class="caret">&gt;</span><span>${s.prompt}</span></div>
+    <div class="stagger" style="display:flex;flex-direction:column;gap:26px">
+      ${lines}
+      ${s.mono ? `<div class="mono-block ${s.monoSm ? 'sm' : ''}">${s.mono}</div>` : ''}
+    </div>`);
+}
+
+function r_table(s) {
+  const head = `<tr>${s.cols.map((c, i) => `<th>${esc(c)}</th>`).join('')}</tr>`;
+  const rows = s.rows.map((r) => {
+    const cells = (r.cells || r).map((c) => `<td${/^&mdash;$|^nada$|^não$|^nao$/.test(c) ? ' class="no"' : ''}>${c}</td>`).join('');
+    return `<tr class="${r.hl ? 'hl' : ''}">${cells}</tr>`;
+  }).join('');
+  return wrap(s, `
+    ${s.title ? `<div class="anim"><h2 class="p-title sm">${s.title}</h2>${s.sub ? `<p class="p-sub">${s.sub}</p>` : ''}</div>` : ''}
+    <table class="ptab ${s.tight ? 'tight' : ''} anim delay-1"><thead>${head}</thead><tbody>${rows}</tbody></table>`);
+}
+
+function r_pieces(s) {
+  const items = s.items.map((p) =>
+    `<div class="piece"><span class="q">${p.q}</span><span class="a">${p.a}${p.ex ? `<small>${p.ex}</small>` : ''}</span></div>`).join('');
+  return wrap(s, `
+    <div class="anim"><h2 class="p-title sm">${s.title}</h2>${s.sub ? `<p class="p-sub">${s.sub}</p>` : ''}</div>
+    <div class="pieces stagger">${items}</div>`);
+}
+
+function r_steps(s) {
+  const items = s.items.map((it, i) =>
+    `<div class="st"><span class="k">${esc(it.k != null ? it.k : i + 1)}</span><span>${it.t}${it.why ? `<span class="why">${it.why}</span>` : ''}</span></div>`).join('');
+  return wrap(s, `
+    <div class="anim"><h2 class="p-title sm">${s.title}</h2>${s.sub ? `<p class="p-sub">${s.sub}</p>` : ''}</div>
+    <div class="steps stagger">${items}</div>`);
+}
+
+function r_two(s) {
+  const cards = s.cards.map((c) =>
+    `<div class="card ${c.accent ? 'accent' : ''}"><div class="ct">${c.t}</div><div class="cd">${c.d}</div></div>`).join('');
+  return wrap(s, `
+    <div class="anim"><h2 class="p-title sm">${s.title}</h2>${s.sub ? `<p class="p-sub">${s.sub}</p>` : ''}</div>
+    <div class="two stagger">${cards}</div>`);
+}
+
+function r_diagram(s) {
+  const img = `<img src="${esc(s.src)}" alt="${esc(s.alt)}" />`;
+  const media = s.crop ? `<div class="figbox">${img}</div>` : img;
+  return `<section class="slide ${s.full ? 'full' : ''}">${ccmark()}${chrome(s)}
+    <div class="s-body" style="gap:${s.full ? 10 : 16}px;padding:${s.full ? 12 : 22}px 0">
+      ${s.title ? `<h2 class="p-title sm anim" style="font-size:${s.full ? 30 : 38}px">${s.title}</h2>` : ''}
+      <div class="figwrap ${s.framed && !s.crop ? 'framed' : ''} ${s.dark ? 'dark' : ''} anim-fade delay-1">${media}</div>
+      ${s.cap ? `<p class="fig-cap anim delay-2">${s.cap}</p>` : ''}
+    </div>
+    ${status(s)}</section>`;
+}
+
+
+
+/* o turno desenhado como slide, nao como imagem: fica nitido e na tipografia do deck */
+function r_turno(s) {
+  const A = '<div class="tn-arrow">&#8595;</div>';
+  return wrap(s, `
+    <div class="anim"><h2 class="p-title sm" style="font-size:34px">a anatomia de um turno</h2></div>
+    <div class="tn anim delay-1">
+      <div class="tn-col">
+        <div class="tn-box"><span class="tn-n">1</span><span><span class="tn-t">você digita</span>
+          <span class="tn-d">o único passo que é seu. Tudo depois é a máquina montando e consumindo contexto.</span></span></div>
+        ${A}
+        <div class="tn-box mesa"><span class="tn-n">2</span><span><span class="tn-t">o harness monta o contexto</span>
+          <span class="tn-d">junta tudo numa requisição só, e essa pilha é a janela de contexto do turno.</span>
+          <span class="tn-slots">
+            <span class="tn-slot">system prompt dele</span>
+            <span class="tn-slot">o seu CLAUDE.md</span>
+            <span class="tn-slot">skills que ativaram</span>
+            <span class="tn-slot">dado que o MCP trouxe</span>
+            <span class="tn-slot">histórico da conversa</span>
+            <span class="tn-slot">o seu texto</span>
+          </span></span></div>
+        ${A}
+        <div class="tn-box"><span class="tn-n">3</span><span><span class="tn-t">o modelo devolve tokens</span>
+          <span class="tn-d">um de cada vez, prevendo o próximo. Alguns formam um pedido de ferramenta, e ele para aí: pede, não executa.</span></span></div>
+      </div>
+
+      <div class="tn-bridge">&#8594;</div>
+
+      <div class="tn-col">
+        <div class="tn-box"><span class="tn-n">4</span><span><span class="tn-t">o harness executa de verdade</span>
+          <span class="tn-d">quem roda o comando, abre o arquivo e chama a API é ele. É aqui, e só aqui, que a sugestão vira ação.</span>
+          <span class="tn-hook">um <b style="font-family:var(--mono)">hook</b> intercepta exatamente aqui, antes e depois</span></span></div>
+        ${A}
+        <div class="tn-box"><span class="tn-n">5</span><span><span class="tn-t">o resultado volta pro contexto</span>
+          <span class="tn-d">a saída da ferramenta entra na janela de contexto como texto, e ocupa lugar igual a qualquer outra coisa.</span></span></div>
+        ${A}
+        <div class="tn-box dash"><span class="tn-n">7</span><span><span class="tn-t">quando o contexto enche</span>
+          <span class="tn-d">o loop não cresce para sempre. O harness tem duas saídas, e as duas custam alguma coisa.</span>
+          <span class="tn-split">
+            <span class="tn-opt"><b>comprime</b><span>resume o começo. Barato, e você perde detalhe.</span></span>
+            <span class="tn-opt"><b>subagente</b><span>manda a parte suja pra um contexto limpo.</span></span>
+          </span></span></div>
+      </div>
+
+      <div class="tn-loop"><span class="tn-n">6</span><span>e volta pro passo 3: o modelo lê o contexto de novo, agora com o resultado dentro dele, e decide o próximo passo. <b>É esse ciclo que faz um agente.</b></span></div>
+    </div>
+
+    `, 'full');
+}
+
+const RENDERERS = {
+  cover: r_cover, divider: r_divider, hook: r_hook, session: r_session,
+  table: r_table, pieces: r_pieces, steps: r_steps, two: r_two,
+  diagram: r_diagram, turno: r_turno,
+};
+
+/* ── SLIDES ────────────────────────────────────────────────────────────── */
+const SLIDES = [{
+    type: 'cover',
+    block: 'antes',
+    eyebrow: 'MÉTODO COM IA',
+    title: 'Método<br>com IA',
+    sub: 'Vocês já usam Claude Code, Codex e Cursor. Isto aqui é o que reduz o número de vezes que vocês refazem.',
+    meta: '60 MIN · 5 PASSOS + MCP',
+  },{
+    type: 'hook',
+    block: 'antes',
+    step: 'o problema',
+    title: 'duas linhas, e ele<br>completa o resto',
+    sub: 'Você escreve duas linhas do que quer e deixa rodar. Funciona em tarefa pequena, e é por isso que todo mundo faz assim.',
+    mono: `você especificou    20%
+ele completou       <span class="clay">80%</span>  com o palpite dele
+
+você descobre qual foi o palpite
+<span class="clay">quando o trabalho já está pronto</span>`,
+  },{
+    type: 'diagram',
+    block: 'antes',
+    step: 'o problema',
+    title: 'onde você descobre',
+    src: '/diagrams/metodo-ia/retrabalho.drawio.png',
+    alt: 'duas linhas do tempo: sem entrevista você descobre o mal-entendido depois de 40 minutos de trabalho; com a entrevista antes, em 30 segundos',
+    cap: 'O que custa é o tempo até você perceber que ele completou a lacuna com outra coisa.',
+    framed: true,
+    full: true,
+  },{
+    type: 'two',
+    block: 'antes',
+    step: 'o eixo',
+    title: 'qualidade e retrabalho<br>são problemas diferentes',
+    sub: 'Os dois parecem o mesmo. Só o segundo custa o seu tempo, e é o único que esta aula ataca.',
+    cards: [
+      { t: 'qualidade', d: 'o código está feio, sem teste, sem estrutura. <b>Se funciona e resolve, tudo bem.</b> Esta aula não vai te pedir para mudar isso.' },
+      { t: 'retrabalho', d: 'você refez porque o resultado não era o que você queria. <b>É esse o custo que os cinco passos atacam.</b>', accent: true },
+    ],
+  },{
+    type: 'divider',
+    block: 'antes',
+    step: 'passos 01-03',
+    num: '01',
+    name: 'antes de executar',
+    desc: 'Três passos que acontecem antes de qualquer trabalho ser feito, e é por isso que são baratos.',
+  },{
+    type: 'hook',
+    block: 'antes',
+    beat: 1,
+    step: 'a entrevista',
+    title: 'ele te entrevista<br>antes de executar',
+    sub: 'Uma pergunta por vez, até vocês dois estarem falando da mesma coisa. O comando é <code>/grill-me</code>.',
+  },{
+    type: 'session',
+    block: 'antes',
+    beat: 1,
+    step: 'a entrevista',
+    prompt: '/grill-me monta o screening de recuperação judicial',
+    resp: [
+      'Antes de começar: o corte é por valor de dívida ou por setor?',
+      'Quando o processo tem mais de um polo passivo, conta como uma situação ou como várias?',
+      'Você quer só as que já tiveram plano aprovado, ou também as em processamento?',
+    ],
+  },{
+    type: 'two',
+    block: 'antes',
+    beat: 1,
+    step: 'a entrevista',
+    title: 'as perguntas valem<br>mais que as respostas',
+    sub: 'Você lê três perguntas em trinta segundos e já sabe em qual dos dois casos está.',
+    cards: [
+      { t: 'ele pegou', d: 'pergunta de detalhe: qual caso de borda importa, o que fazer quando o campo vem vazio, qual das duas leituras vale.' },
+      { t: 'ele não pegou', d: 'pergunta de fundação, e você percebe na primeira. <b>Trinta segundos em vez de quarenta minutos de trabalho errado.</b>', accent: true },
+    ],
+  },{
+    type: 'hook',
+    block: 'antes',
+    beat: 1,
+    step: 'a entrevista',
+    title: 'quando ela paga',
+    sub: 'A entrevista custa de três a dez minutos. O que decide se compensa é o tempo até você conseguir avaliar o resultado.',
+    mono: `tarefa de 5 min     não compensa
+tarefa de 30 min    talvez
+tarefa de meio dia  <span class="clay">compensa quase sempre</span>
+
+/grill-me   6 linhas, chama a skill grilling
+grilling   12 linhas
+             <span class="dim">é markdown num arquivo, não é produto</span>`,
+  },{
+    type: 'hook',
+    block: 'antes',
+    beat: 2,
+    step: 'o registro',
+    title: 'a mesma entrevista,<br>com registro',
+    sub: '<code>/grill-with-docs</code> roda a entrevista igual e grava o que foi decidido no fim.',
+    mono: `sai da conversa, sem tarefa extra:
+
+  ADR        a escolha, as alternativas
+             e por que essa ganhou
+  glossário  os termos do domínio, com a
+             definição que vocês combinaram`,
+  },{
+    type: 'two',
+    block: 'antes',
+    beat: 2,
+    step: 'o registro',
+    title: 'qual usar quando',
+    sub: 'Documentação não pega em time rápido porque é sempre tarefa a mais. Aqui ela é resíduo de conversa que já ia acontecer.',
+    cards: [
+      { t: '/grill-me', d: 'a tarefa é sua, você executa agora, ninguém mais precisa entender a decisão.' },
+      { t: '/grill-with-docs', d: 'outra pessoa vai mexer depois, ou duas pessoas do time usam a mesma palavra para coisas diferentes e todo pedido carrega essa ambiguidade.', accent: true },
+    ],
+  },{
+    type: 'hook',
+    block: 'antes',
+    beat: 3,
+    step: 'o plano',
+    title: 'revise o barato,<br>não o caro',
+    sub: 'A economia é assimétrica, e é a razão inteira deste passo.',
+    mono: `plano de 20 linhas     <span class="clay">2 min</span>, e nenhum apego
+
+600 linhas já escritas  a tarde inteira,
+                        mais a resistência de
+                        jogar fora o que existe`,
+  },{
+    type: 'steps',
+    block: 'antes',
+    beat: 3,
+    step: 'o plano',
+    title: 'de onde vem',
+    sub: 'O superpowers é um plugin. Um comando, catorze skills.',
+    items: [
+      { k: '1', t: '<code>/plugin install superpowers@claude-plugins-official</code>', why: 'comando único, sem precisar adicionar marketplace antes' },
+      { k: '2', t: '<code>brainstorming</code> explora o problema antes de construir', why: 'o plano herda as decisões daqui, então pular produz plano bonito em cima do primeiro palpite' },
+      { k: '3', t: '<code>writing-plans</code> vira o plano escrito', why: 'curto de propósito, feito pra ser lido em dois minutos' },
+      { k: '4', t: 'você lê', why: 'o valor do passo está inteiro aqui. Plano aprovado no automático é o pedido curto com uma etapa a mais' },
+    ],
+  },{
+    type: 'divider',
+    block: 'executando',
+    step: 'passos 04-05',
+    num: '02',
+    name: 'executando',
+    desc: 'Dois passos que acontecem enquanto o trabalho é feito, e nenhum deles pede que você trabalhe mais devagar.',
+  },{
+    type: 'hook',
+    block: 'executando',
+    beat: 4,
+    step: 'subagente',
+    title: 'subagente',
+    sub: 'Um agente disparado de dentro do seu, com contexto limpo, que roda o próprio loop e volta só com a conclusão.',
+    mono: `o loop, que é o mecanismo por baixo:
+
+  recebe o contexto
+  devolve texto, e parte é um pedido
+  alguém <span class="clay">executa de verdade</span>
+  o resultado volta pro contexto
+  repete até concluir`,
+  },{
+    type: 'diagram',
+    block: 'executando',
+    beat: 4,
+    step: 'subagente',
+    title: 'o loop, e onde o subagente entra',
+    src: '/diagrams/metodo-ia/loop.drawio.png',
+    alt: 'o loop do agente e o subagente rodando o mesmo loop com contexto limpo, devolvendo só a conclusão',
+    cap: 'O modelo só lê e escreve. Quem executa e dispara o subagente é o programa em volta.',
+    framed: true,
+    full: true,
+  },{
+    type: 'two',
+    block: 'executando',
+    beat: 4,
+    step: 'subagente',
+    title: 'dois ganhos',
+    sub: 'Um de contexto e um de tempo, e eles são independentes.',
+    cards: [
+      { t: 'contexto', d: 'ler 30 arquivos pra achar uma coisa enche o seu contexto com 29 irrelevantes. No subagente, ele lê os 30 e <b>volta com uma frase</b>.' },
+      { t: 'tempo', d: 'seis tarefas independentes em fila levam a soma dos seis tempos. Em subagentes, levam <b>o tempo da mais lenta</b>.', accent: true },
+    ],
+  },{
+    type: 'hook',
+    block: 'executando',
+    beat: 4,
+    step: 'subagente',
+    title: 'o custo é o briefing',
+    sub: 'O contexto dele começa vazio. Ele não viu a sua conversa, não sabe o que vocês combinaram, não conhece a convenção.',
+    mono: `subagente mal briefado devolve trabalho
+errado com a <span class="clay">mesma confiança</span> de um bem
+briefado.
+
+por isso o passo 3 torna este prático:
+<span class="dim">o plano escrito já é o briefing</span>`,
+  },{
+    type: 'turno',
+    block: 'executando',
+    beat: 4,
+    step: 'o turno',
+  },{
+    type: 'diagram',
+    block: 'executando',
+    beat: 4,
+    step: 'o contexto',
+    title: 'pouco e muito contexto<br>custam os dois',
+    src: '/diagrams/metodo-ia/balanca.drawio.png',
+    alt: 'curva de qualidade da resposta em funcao de quanto contexto entra no pedido, caindo nos dois extremos',
+    cap: 'O topo da curva anda conforme a tarefa. Não vira regra, e você calibra pelo resultado.',
+    framed: true,
+    full: true,
+  },{
+    type: 'diagram',
+    block: 'executando',
+    beat: 4,
+    step: 'o contexto',
+    title: 'compacte aos 70%',
+    src: '/diagrams/metodo-ia/compactar.drawio.png',
+    alt: 'tres baldes de contexto em 40, 70 e 95 por cento, mostrando quando compactar por escolha e quando ele compacta sob pressao',
+    cap: 'Com espaço de sobra você diz o que guardar. No talo, quem escolhe o que cai é ele.',
+    framed: true,
+    full: true,
+  },{
+    type: 'hook',
+    block: 'executando',
+    beat: 5,
+    step: 'revisão',
+    title: 'revisão adversarial',
+    sub: 'Vários revisores com mandato de achar defeito. O ponto não é quantidade, é ângulo.',
+    mono: `5 revisores, mesma lente
+  <span class="dim">→ 5 vezes o mesmo achado</span>
+
+5 revisores, lentes diferentes
+  <span class="clay">→ 5 superfícies cobertas</span>`,
+  },{
+    type: 'pieces',
+    block: 'executando',
+    beat: 5,
+    step: 'revisão',
+    title: 'uma lente por revisor',
+    sub: 'Quem olha arquitetura não enxerga o que quem olha segurança enxerga.',
+    items: [
+      { q: 'onde isso quebra com dado real?', a: 'caso de borda' },
+      { q: 'o que vaza daqui?', a: 'segurança' },
+      { q: 'isso aguenta o volume?', a: 'desempenho' },
+      { q: 'a decisão de estrutura se sustenta?', a: 'arquitetura' },
+      { q: 'está fazendo o que foi pedido?', a: 'aderência' },
+      { q: 'o que ninguém checou?', a: 'lacuna' },
+    ],
+  },{
+    type: 'two',
+    block: 'executando',
+    beat: 5,
+    step: 'revisão',
+    title: 'defeito não é decisão',
+    sub: 'Misturar os dois transforma a revisão numa lista de opinião que ninguém lê.',
+    cards: [
+      { t: 'defeito', d: 'quebra com entrada real. Tem correção, e a correção não precisa de você.' },
+      { t: 'decisão', d: 'dava pra fazer diferente. <b>Precisa de alguém pra responder, e esse alguém é você.</b>', accent: true },
+    ],
+  },{
+    type: 'divider',
+    block: 'dado',
+    step: 'passo 06',
+    num: '03',
+    name: 'o dado real',
+    desc: 'Os cinco passos melhoram o que a IA faz com o que ela tem. Este muda o que ela tem.',
+  },{
+    type: 'hook',
+    block: 'dado',
+    beat: 6,
+    step: 'MCP',
+    title: 'MCP',
+    sub: 'O protocolo que liga o agente num sistema de fora e expõe pra ele as ferramentas e os dados de lá.',
+    mono: `sem MCP   você busca, copia e cola
+          <span class="dim">a análise cobre o que coube no colar</span>
+
+com MCP   ele busca sozinho enquanto trabalha
+          <span class="clay">a análise cobre a fonte inteira</span>
+
+skill diz <span class="ink">como fazer</span>
+MCP  diz <span class="ink">de onde vem o dado</span>`,
+  },{
+    type: 'table',
+    block: 'dado',
+    beat: 6,
+    step: 'mcp-brasil',
+    title: 'mcp-brasil',
+    sub: '70 fontes de dado público brasileiro em 533 ferramentas, licença MIT. 66 delas não pedem chave nenhuma.',
+    tight: true,
+    cols: ['fonte', 'o que serve pra vocês'],
+    rows: [
+      { cells: ['DataJud, STF, STJ', 'exposição a litígio, recuperação judicial, falência'], hl: true },
+      ['BNDES', 'financiamento e exposição de dívida'],
+      ['CVM', 'informação de fundo'],
+      ['PNCP, ComprasNet', 'empresa cuja receita depende de contrato público'],
+      ['Portal da Transparência, TCU', 'desembolso federal e contrato, com reuso comercial permitido'],
+      ['Banco Central', 'Selic e IPCA pro modelo'],
+    ],
+  },{
+    type: 'steps',
+    block: 'dado',
+    beat: 6,
+    step: 'mcp-brasil',
+    title: 'antes de ligar',
+    sub: 'Três coisas que precisam ser ditas junto da recomendação.',
+    items: [
+      { k: '1', t: '<code>claude mcp add mcp-brasil -- uvx --from mcp-brasil python -m mcp_brasil.server</code>', why: 'um comando, e 66 das 70 fontes já funcionam sem chave' },
+      { k: '2', t: 'DataJud exige chave do CNJ', why: 'Resolução 331/2020. Acórdãos de STF e STJ são públicos e não exigem' },
+      { k: '3', t: 'não é serviço oficial do governo', why: 'projeto independente e comunitário. Cada uma das 70 fontes tem a licença de dado dela, e isso importa em uso comercial' },
+    ],
+  },{
+    type: 'hook',
+    block: 'dado',
+    beat: 6,
+    step: 'MCP',
+    title: 'o que o MCP<br>não resolve',
+    sub: 'Mais dado com o mesmo pedido mal feito faz ele buscar mais coisa errada. Quanto mais alcance o agente tem, mais caro sai o mal-entendido.',
+  },{
+    type: 'diagram',
+    block: 'na prática',
+    step: 'na prática',
+    title: 'como eu encaixo isso<br>num fluxo de verdade',
+    src: '/diagrams/metodo-ia/fluxo-do-davi.png',
+    alt: 'o fluxo de quinze passos em quatro fases: planejamento, validacao, execucao e producao',
+    cap: 'Quinze passos, quatro fases. Os cinco de hoje estão espalhados por ele.',
+    framed: true,
+    full: true,
+  },{
+    type: 'table',
+    block: 'na prática',
+    step: 'na prática',
+    title: 'quem faz o quê',
+    sub: 'O modelo sai pela dificuldade da tarefa e pela lente, não por preferência. É daí que vem a economia.',
+    cols: ['papel', 'modelo'],
+    rows: [
+      ['orquestrador', 'Opus 5'],
+      ['implementador', 'GPT 5.6-luna'],
+      ['revisores (lentes diferentes)', 'GPT 5.6-terra ou GPT 5.6-luna'],
+      { cells: ['segurança', 'GPT 5.6-Sol'], hl: true },
+    ],
+  },{
+    type: 'steps',
+    block: 'na prática',
+    step: 'o setup',
+    title: 'o setup mínimo',
+    sub: 'Vocês já têm as ferramentas. Isto aqui é o que falta ligar nelas.',
+    items: [
+      { k: '1', t: '<code>/plugin install mattpocock-skills</code>', why: 'traz o <code>/grill-me</code> e o <code>/grill-with-docs</code>. Marque os dois na instalação, ela é seletiva' },
+      { k: '2', t: '<code>/plugin install superpowers@claude-plugins-official</code>', why: 'catorze skills, entre elas brainstorming, writing-plans e subagent-driven-development' },
+      { k: '3', t: '<code>claude mcp add mcp-brasil -- uvx --from mcp-brasil python -m mcp_brasil.server</code>', why: '66 das 70 fontes funcionam sem chave. DataJud precisa de cadastro no CNJ' },
+      { k: '4', t: 'compacte quando o contexto passar de 70%', why: 'antes de ele compactar sob pressão e escolher sozinho o que cai' },
+    ],
+  },{
+    type: 'hook',
+    block: 'fechamento',
+    step: 'a síntese',
+    size: 'xl',
+    title: 'dois motivos<br>pra perder meio dia',
+    sub: 'Ela entendeu outra coisa, ou ela não tinha o que precisava. Os cinco passos atacam o primeiro. O MCP ataca o segundo.',
+  },{
+    type: 'steps',
+    block: 'fechamento',
+    step: 'por onde começar',
+    title: 'um de cada vez',
+    sub: 'Adotar os cinco de uma vez é a maneira mais confiável de não adotar nenhum.',
+    items: [
+      { k: '1', t: 'Use <code>/grill-me</code> na próxima tarefa longa que aparecer', why: 'é o mais barato de experimentar e o que devolve resposta mais rápido' },
+      { k: '2', t: 'Compare com a tarefa longa anterior', why: 'a métrica não é qualidade, é quantas vezes você refez' },
+      { k: '3', t: 'Só então adote o próximo', why: 'cada passo muda um hábito, e hábito não muda em bloco' },
+    ],
+  },{
+    type: 'diagram',
+    block: 'fechamento',
+    step: 'o resumo',
+    title: 'os cinco passos, como um sistema',
+    src: '/diagrams/metodo-ia/fluxo.drawio.png',
+    alt: 'os cinco passos em dois blocos, antes de executar e executando, com as duas voltas de correção',
+    cap: 'Voltar da caixa 1 custa cinco minutos. Voltar da caixa 5 custa uma rodada inteira.',
+    framed: true,
+    full: true,
+  },{
+    type: 'steps',
+    block: 'fechamento',
+    step: 'o fechamento',
+    title: 'o que fica',
+    sub: 'Cinco passos e um MCP. Se você levar só uma coisa daqui, leve a primeira linha.',
+    items: [
+      { k: '1', t: '<code>/grill-me</code> antes de tarefa longa', why: 'o passo mais barato de testar, e o que devolve resposta na primeira vez que você usa' },
+      { k: '2', t: '<code>/grill-with-docs</code> quando outra pessoa vai mexer', why: 'a decisão fica escrita sem ninguém parar pra documentar' },
+      { k: '3', t: 'plano escrito antes da execução', why: 'dois minutos de leitura no lugar de uma tarde relendo o que já foi feito' },
+      { k: '4', t: 'subagente pro que é independente', why: 'seis tarefas no tempo da mais lenta, desde que o briefing vá junto' },
+      { k: '5', t: 'revisão adversarial, uma lente por revisor', why: 'acha o que quebra sem depender da sua atenção' },
+      { k: '+', t: '<code>mcp-brasil</code> pro dado que hoje você busca e cola', why: '66 das 70 fontes funcionam sem chave nenhuma' },
+    ],
+  },
+];
+
+const deck = document.getElementById('deck');
+deck.innerHTML = SLIDES.map((s) => (RENDERERS[s.type] || r_hook)(s)).join('');
+const all = deck.querySelectorAll('.slide');
+
+/* escala o palco 1600x900 pra caber na viewport, preservando a geometria */
+function fit() {
+  const k = Math.min(window.innerWidth / 1600, window.innerHeight / 900);
+  all.forEach((s) => { s.style.transform = `translate(-50%, -50%) scale(${k})`; });
+}
+window.addEventListener('resize', fit);
+window.addEventListener('load', fit);
+window.addEventListener('orientationchange', fit);
+if (window.ResizeObserver) new ResizeObserver(fit).observe(document.documentElement);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
+
+let cur = 0;
+function show(i) {
+  fit();
+  cur = Math.max(0, Math.min(all.length - 1, i));
+  all.forEach((s, n) => s.classList.toggle('active', n === cur));
+  try { history.replaceState(null, '', '#' + (cur + 1)); } catch (e) {}
+}
+
+document.addEventListener('keydown', (e) => {
+  if (['ArrowRight', ' ', 'PageDown', 'j'].includes(e.key)) { e.preventDefault(); show(cur + 1); }
+  else if (['ArrowLeft', 'PageUp', 'k'].includes(e.key)) { e.preventDefault(); show(cur - 1); }
+  else if (e.key === 'Home') show(0);
+  else if (e.key === 'End') show(all.length - 1);
+});
+document.addEventListener('click', (e) => {
+  if (e.target.closest('a, button, code, img')) return;
+  show(cur + 1);
+});
+
+/* deep link: mudar o hash na barra de endereco navega de verdade */
+window.addEventListener('hashchange', () => {
+  const n = parseInt((location.hash || '').slice(1), 10);
+  if (Number.isFinite(n) && n > 0 && n - 1 !== cur) show(n - 1);
+});
+
+const wantsPrint = new URLSearchParams(location.search).get('print') === '1';
+if (wantsPrint) {
+  all.forEach((s) => s.classList.add('active'));
+  window.addEventListener('load', () => setTimeout(() => window.print(), 1200));
+} else {
+  fit();
+  const h = parseInt((location.hash || '').slice(1), 10);
+  show(Number.isFinite(h) && h > 0 ? h - 1 : 0);
+}
+</script>
+</body>
+</html>
