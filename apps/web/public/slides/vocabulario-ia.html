@@ -421,7 +421,7 @@ function r_turno(s) {
         <div class="tn-box"><span class="tn-n">1</span><span><span class="tn-t">você digita</span>
           <span class="tn-d">o único passo que é seu. Tudo depois é a máquina montando e consumindo contexto.</span></span></div>
         ${A}
-        <div class="tn-box mesa"><span class="tn-n">2</span><span><span class="tn-t">o harness monta a mesa</span>
+        <div class="tn-box mesa"><span class="tn-n">2</span><span><span class="tn-t">o harness monta o contexto</span>
           <span class="tn-d">junta tudo numa requisição só, e essa pilha é a janela de contexto do turno.</span>
           <span class="tn-slots">
             <span class="tn-slot"><span class="tn-tag">beat 7</span>system prompt dele</span>
@@ -443,25 +443,25 @@ function r_turno(s) {
           <span class="tn-d">quem roda o comando, abre o arquivo e chama a API é ele. É aqui, e só aqui, que a sugestão vira ação.</span>
           <span class="tn-hook">um <b style="font-family:var(--mono)">hook</b> intercepta exatamente aqui, antes e depois</span></span></div>
         ${A}
-        <div class="tn-box"><span class="tn-n">5</span><span><span class="tn-t">o resultado volta pra mesa</span>
+        <div class="tn-box"><span class="tn-n">5</span><span><span class="tn-t">o resultado volta pro contexto</span>
           <span class="tn-d">a saída da ferramenta entra na janela de contexto como texto, e ocupa lugar igual a qualquer outra coisa.</span></span></div>
         ${A}
-        <div class="tn-box dash"><span class="tn-n">7</span><span><span class="tn-t">quando a mesa enche</span>
+        <div class="tn-box dash"><span class="tn-n">7</span><span><span class="tn-t">quando o contexto enche</span>
           <span class="tn-d">o loop não cresce para sempre. O harness tem duas saídas, e as duas custam alguma coisa.</span>
           <span class="tn-split">
             <span class="tn-opt"><b>comprime</b><span>resume o começo. Barato, e você perde detalhe.</span></span>
-            <span class="tn-opt"><b>subagente</b><span>manda a parte suja pra uma mesa limpa.</span></span>
+            <span class="tn-opt"><b>subagente</b><span>manda a parte suja pra um contexto limpo.</span></span>
           </span></span></div>
       </div>
 
-      <div class="tn-loop"><span class="tn-n">6</span><span>e volta pro passo 3: o modelo lê a mesa de novo, agora com o resultado dentro dela, e decide o próximo passo. <b>É esse ciclo que faz um agente.</b></span></div>
+      <div class="tn-loop"><span class="tn-n">6</span><span>e volta pro passo 3: o modelo lê o contexto de novo, agora com o resultado dentro dele, e decide o próximo passo. <b>É esse ciclo que faz um agente.</b></span></div>
     </div>
 
     <div class="tn-legend anim delay-2">
       <div class="h">cada caixa é um beat</div>
       <div class="tn-leg"><b>beat 1</b><span>token, a unidade do passo 3</span></div>
       <div class="tn-leg"><b>beat 2</b><span>modelo, quem prevê o próximo</span></div>
-      <div class="tn-leg"><b>beat 3</b><span>contexto, a mesa do passo 2</span></div>
+      <div class="tn-leg"><b>beat 3</b><span>contexto, a janela inteira do passo 2</span></div>
       <div class="tn-leg"><b>beat 4</b><span>agente, o loop dos passos 3 a 6</span></div>
       <div class="tn-leg"><b>beat 5</b><span>skill, carregada sob demanda</span></div>
       <div class="tn-leg"><b>beat 6</b><span>MCP, de onde vem o dado real</span></div>
@@ -587,7 +587,7 @@ números fixos: os pesos.`,
     block: 'fundamentos',
     beat: 3,
     step: 'contexto',
-    title: 'a mesa é finita,<br>e ela apodrece',
+    title: 'o contexto é finito,<br>e ele apodrece',
     sub: 'esse tamanho tem nome: <b>janela de contexto</b>. quando enche, o começo some ou é comprimido.',
     mono: `sessão  = a conversa inteira
 turno   = cada rodada dela`,
@@ -597,7 +597,7 @@ turno   = cada rodada dela`,
     block: 'fundamentos',
     beat: 3,
     step: 'contexto',
-    title: 'o que está na mesa',
+    title: 'o que está no contexto',
     sub: 'contexto irrelevante não é neutro: ocupa espaço e piora a resposta.',
     items: [
       { k: '', t: 'as instruções do sistema' },
@@ -651,10 +651,10 @@ turno   = cada rodada dela`,
     step: 'agente',
     title: 'o loop com ferramenta',
     sub: 'ele não executa nada. ele pede.',
-    mono: `mesa -> modelo -> pedido de ferramenta
+    mono: `contexto -> modelo -> pedido de ferramenta
  ^                        |
  |                        v
-volta pra mesa <- executa de verdade`,
+volta pro contexto <- executa de verdade`,
   },
   {
     type: 'hook',
@@ -674,7 +674,7 @@ volta pra mesa <- executa de verdade`,
     resp: [
       'ele lê a <code>description</code> de cada skill instalada.',
       '<code>code-review</code> combina com o pedido: carrega o arquivo inteiro.',
-      'só essa instrução entra na mesa. as outras 36 continuam de fora.',
+      'só essa instrução entra no contexto. as outras 36 continuam de fora.',
     ],
   },
   {
@@ -722,9 +722,9 @@ grilling.md      <span class="clay">12 linhas</span>
     step: 'MCP',
     prompt: 'qual o status da ICS-142 no Linear?',
     resp: [
-      'isso não está na mesa. ele não sabe.',
+      'isso não está no contexto. ele não sabe.',
       'chama o MCP do Linear: pede o dado real pro sistema externo.',
-      'a resposta volta e entra na mesa.',
+      'a resposta volta e entra no contexto.',
     ],
   },
   {
@@ -750,7 +750,7 @@ grilling.md      <span class="clay">12 linhas</span>
     mono: `harness = system prompt
         + catálogo de ferramentas
         + o loop
-        + o que fazer quando a mesa enche`,
+        + o que fazer quando o contexto enche`,
   },
   {
     type: 'table',
@@ -814,7 +814,7 @@ Hermes + endpoint local
       { q: 'preciso de dado real de outro sistema', a: 'MCP' },
       { q: 'toda vez que ele rodar X, faz Y antes ou depois', a: 'hook' },
       { q: 'quero várias skills de uma vez', a: 'plugin' },
-      { q: 'essa parte suja muito a mesa', a: 'subagente' },
+      { q: 'essa parte suja muito o contexto', a: 'subagente' },
     ],
   },
   {
@@ -825,7 +825,7 @@ Hermes + endpoint local
     prompt: 'git status',
     resp: [
       'o hook reescreve antes de rodar: vira <code>rtk git status</code>.',
-      'a saída já chega filtrada na mesa.',
+      'a saída já chega filtrada no contexto.',
     ],
   },
   {
@@ -847,7 +847,7 @@ Hermes + endpoint local
     block: 'ferramentas',
     beat: 8,
     step: 'o que você pluga',
-    title: 'subagente: a mesa dele começa limpa',
+    title: 'subagente: o contexto dele<br>começa limpo',
     sub: 'existe pra isolar o trabalho sujo. custa isso: ele não viu nada do que você viu, e precisa receber tudo que importa.',
     mono: `lembra do superpowers, no beat 5?
 é um plugin: <span class="clay">14 skills</span>, instaladas de uma vez.`,
@@ -939,10 +939,10 @@ panorama verificado em <span class="clay">26/08/2026</span>`,
     block: 'avancado',
     beat: 10,
     step: 'grafo',
-    title: 'o grafo do neurafy',
+    title: 'exemplo de grafo do graphify',
     src: '/diagrams/vocabulario-ia/beat-10-grafo.png',
     dark: true,
-    alt: 'screenshot do grafo interativo do neurafy, mostrando nós e comunidades conectadas',
+    alt: 'screenshot de um grafo gerado pelo graphify, mostrando nós e comunidades conectadas',
     cap: 'Na tela, uma bolinha por comunidade: 1.091 delas. O grafo inteiro por trás tem 21.546 nós e 53.586 arestas, sobre 2433 arquivos. Você não precisa ler isto, quem consulta é a IA.',
     framed: true,
       full: true,
