@@ -12,7 +12,8 @@
     "test:e2e": "jest --config jest.e2e.config.js",
     "seed:library": "ts-node --transpile-only -r tsconfig-paths/register scripts/seed-library.ts",
     "seed:recovery": "ts-node --transpile-only -r tsconfig-paths/register scripts/seed-recovery.ts",
-    "reschedule:plans": "ts-node --transpile-only -r tsconfig-paths/register scripts/reschedule-scheduled-plans.ts"
+    "reschedule:plans": "ts-node --transpile-only -r tsconfig-paths/register scripts/reschedule-scheduled-plans.ts",
+    "purge:calendar": "ts-node --transpile-only -r tsconfig-paths/register scripts/purge-member-calendar.ts"
   },
   "dependencies": {
     "@ics-select/prisma": "workspace:*",
