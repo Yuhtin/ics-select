@@ -10,6 +10,7 @@ import { mapaTempoReal } from './lessons/mapa-tempo-real';
 import { websocketRpcBlockchain } from './lessons/websocket-rpc-blockchain';
 import { vocabularioIa } from './lessons/vocabulario-ia';
 import { metodoIa } from './lessons/metodo-ia';
+import { noisyNeighborEbpf } from './lessons/noisy-neighbor-ebpf';
 
 const LESSONS: Record<string, Lesson> = {
   [urlShortener.slug]: urlShortener,
@@ -23,6 +24,7 @@ const LESSONS: Record<string, Lesson> = {
   [websocketRpcBlockchain.slug]: websocketRpcBlockchain,
   [vocabularioIa.slug]: vocabularioIa,
   [metodoIa.slug]: metodoIa,
+  [noisyNeighborEbpf.slug]: noisyNeighborEbpf,
 };
 
 export function getLesson(slug: string): Lesson | undefined {

@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>O Vizinho Barulhento</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect" />
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+  /* -- Netflix visual language --
+     A ESTRUTURA e a metafora: a interface de streaming. Barra de navegacao
+     preta no topo com o logotipo vermelho, abertura como BILLBOARD (o banner
+     gigante do titulo em destaque), secoes viram TEMPORADAS, beats viram
+     EPISODIOS numa lista com numeral gigante, comparacoes viram uma fileira
+     de title cards com sombra, e a barra vermelha embaixo e o
+     "continue assistindo" da aula.
+     Netflix Sans -> Archivo. Vermelho E50914 usado com parcimonia. */
+  :root {
+    --black:  #000000;
+    --canvas: #141414;
+    --card:   #181818;
+    --card-hi:#232323;
+    --line:   #2b2b2b;
+    --ink:    #ffffff;
+    --muted:  #b3b3b3;
+    --faint:  #777777;
+    --ghost:  rgba(255,255,255,0.10);
+    --red:    #e50914;
+  }
+  * { box-sizing: border-box; }
+  html, body { background: var(--black); color: var(--ink); font-family: 'Inter', system-ui, sans-serif; overflow: hidden; height: 100vh; margin: 0; }
+  .display { font-family: 'Archivo', sans-serif; font-weight: 800; letter-spacing: -0.02em; line-height: 1.04; }
+  .semi { font-family: 'Archivo', sans-serif; font-weight: 600; letter-spacing: -0.01em; }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+  .cap { text-transform: uppercase; letter-spacing: 0.16em; font-weight: 600; }
+  .slide { display: none; height: 100vh; width: 100vw; flex-direction: column; }
+  .slide.active { display: flex; }
+  .card { background: var(--card); border-radius: 4px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); }
+  .console { background: var(--black); border-radius: 4px; border-left: 3px solid var(--red); box-shadow: 0 10px 30px rgba(0,0,0,0.6); }
+  .chip { border-radius: 3px; }
+  /* a barra vermelha vertical, a marca mais reconhecivel da casa */
+  .rail { border-left: 4px solid var(--red); padding-left: 16px; }
+  .vignette { background: radial-gradient(120% 100% at 78% 20%, rgba(229,9,20,0.16), transparent 62%), var(--canvas); }
+
+  @keyframes slideUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes fadeIn  { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes growIn  { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
+  .slide.active .anim { animation: slideUp 0.5s cubic-bezier(0.16,1,0.3,1) backwards; }
+  .slide.active .anim-fade { animation: fadeIn 0.7s ease backwards; }
+  .slide.active .stagger > * { animation: growIn 0.45s cubic-bezier(0.16,1,0.3,1) backwards; }
+  .slide.active .stagger > *:nth-child(1) { animation-delay: 0.05s; }
+  .slide.active .stagger > *:nth-child(2) { animation-delay: 0.12s; }
+  .slide.active .stagger > *:nth-child(3) { animation-delay: 0.19s; }
+  .slide.active .stagger > *:nth-child(4) { animation-delay: 0.26s; }
+  .slide.active .delay-1 { animation-delay: 0.14s; }
+  .slide.active .delay-2 { animation-delay: 0.26s; }
+
+  /* -- "tu-dum" open, ICS version --
+     Recriacao do abertura de marca da Netflix: a camera esta DENTRO do brilho
+     vermelho desfocado da marca, puxa pra fora enquanto o texto ganha foco,
+     um flash marca o instante do impacto ("dum"), e some revelando a capa.
+     Referencia de tecnica: recriacoes em CSS pura do efeito (ex. codepen.io/claudio_bonfati/pen/mdryxPv),
+     que usam blur+scale+opacity sobre o texto da marca em vez de video. */
+  #intro {
+    position: fixed; inset: 0; z-index: 999;
+    background: #000;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+    transition: opacity 0.5s ease;
+  }
+  #intro.intro-out { opacity: 0; pointer-events: none; }
+  #intro .intro-stage { position: relative; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; }
+  #intro .intro-beam {
+    position: absolute; top: 50%; left: 50%;
+    width: 46px; height: 240px;
+    background: linear-gradient(180deg, transparent, var(--red) 45%, var(--red) 55%, transparent);
+    filter: blur(18px);
+    opacity: 0;
+    transform-origin: center;
+    animation: introBeam 2000ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+  #intro .intro-beam.b1 { transform: translate(-172px, -50%) scaleY(1.9); animation-delay: 0ms; }
+  #intro .intro-beam.b2 { transform: translate(-50%, -50%) scaleY(2.4); animation-delay: 60ms; }
+  #intro .intro-beam.b3 { transform: translate(78px, -50%) scaleY(1.9); animation-delay: 120ms; }
+  #intro .intro-mark {
+    position: relative;
+    font-family: 'Archivo', sans-serif; font-weight: 800; letter-spacing: 0.02em;
+    font-size: 168px; line-height: 1; color: var(--red);
+    opacity: 0; transform: scale(5.4);
+    filter: blur(30px) drop-shadow(0 0 60px rgba(229,9,20,0.85));
+    animation: introMark 2000ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+  #intro .intro-flash {
+    position: absolute; inset: 0;
+    background: radial-gradient(closest-side, rgba(255,255,255,0.95), rgba(255,255,255,0) 70%);
+    opacity: 0;
+    animation: introFlash 2000ms linear forwards;
+  }
+  #intro .intro-tag {
+    position: absolute; bottom: 64px; left: 0; right: 0;
+    text-align: center;
+    font-family: 'Inter', sans-serif; font-weight: 500; letter-spacing: 0.24em; text-transform: uppercase;
+    font-size: 13px; color: var(--faint);
+    opacity: 0;
+    animation: introTag 2000ms ease forwards;
+  }
+
+  @keyframes introBeam {
+    0%   { opacity: 0; }
+    18%  { opacity: 0.9; }
+    46%  { opacity: 0.55; }
+    64%  { opacity: 0; }
+    100% { opacity: 0; }
+  }
+  @keyframes introMark {
+    0%   { opacity: 0;   transform: scale(5.4); filter: blur(30px) drop-shadow(0 0 60px rgba(229,9,20,0.85)); }
+    22%  { opacity: 1;   transform: scale(3.4); filter: blur(18px) drop-shadow(0 0 50px rgba(229,9,20,0.85)); }
+    60%  { opacity: 1;   transform: scale(1.16); filter: blur(3px)  drop-shadow(0 0 26px rgba(229,9,20,0.7)); }
+    64%  { opacity: 1;   transform: scale(1.16); filter: blur(0px)  drop-shadow(0 0 10px rgba(229,9,20,0.55)); }
+    72%  { opacity: 1;   transform: scale(1);    filter: blur(0px)  drop-shadow(0 0 6px rgba(229,9,20,0.4)); }
+    100% { opacity: 1;   transform: scale(1);    filter: blur(0px)  drop-shadow(0 0 6px rgba(229,9,20,0.4)); }
+  }
+  @keyframes introFlash {
+    0%   { opacity: 0; }
+    58%  { opacity: 0; }
+    63%  { opacity: 0.95; }
+    72%  { opacity: 0; }
+    100% { opacity: 0; }
+  }
+  @keyframes introTag {
+    0%   { opacity: 0; transform: translateY(6px); }
+    70%  { opacity: 0; transform: translateY(6px); }
+    88%  { opacity: 1; transform: translateY(0); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+
+  /* "pausa" ao entrar num slide de apoio, como se a aula parasse pra
+     explicar aquilo: um icone de pause aparece sobre um fundo escurecido,
+     a troca de slide acontece por baixo enquanto ele cobre a tela, e ele
+     revela o resultado ao sumir. Ao voltar, o mesmo com um icone de play. */
+  #pause-overlay {
+    position: fixed; inset: 0; z-index: 500;
+    background: rgba(0,0,0,0);
+    display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 16px;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.22s ease, background 0.22s ease;
+  }
+  #pause-overlay.on { opacity: 1; background: rgba(0,0,0,0.82); pointer-events: auto; }
+  #pause-overlay .po-icon {
+    width: 78px; height: 78px; border-radius: 50%;
+    background: rgba(255,255,255,0.07); border: 2px solid rgba(255,255,255,0.22);
+    display: flex; align-items: center; justify-content: center;
+    transform: scale(0.4); opacity: 0;
+  }
+  #pause-overlay.on .po-icon { animation: poPop 0.5s cubic-bezier(0.16,1,0.3,1) forwards; }
+  @keyframes poPop {
+    0%   { transform: scale(0.4); opacity: 0; }
+    55%  { transform: scale(1.14); opacity: 1; }
+    75%  { transform: scale(0.96); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  #pause-overlay .po-label {
+    font-family: 'JetBrains Mono', monospace; font-size: 11.5px; letter-spacing: 0.22em; text-transform: uppercase;
+    color: rgba(255,255,255,0.65); opacity: 0; transform: translateY(4px);
+  }
+  #pause-overlay.on .po-label { animation: poFade 0.4s ease 0.16s forwards; }
+  @keyframes poFade { to { opacity: 1; transform: translateY(0); } }
+
+  /* azul pro conteudo de apoio, fora do fluxo principal */
+  :root { --blue: #5b9dd9; }
+  .rail-blue { border-left: 4px solid var(--blue); padding-left: 16px; }
+  .support-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: transparent; border: 1px solid rgba(91,157,217,0.45); color: var(--blue);
+    font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 500;
+    padding: 9px 18px; border-radius: 999px; cursor: pointer;
+  }
+  .support-btn:hover { background: rgba(91,157,217,0.12); border-color: var(--blue); }
+  .back-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: transparent; border: 1px solid var(--line); color: var(--muted);
+    font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 500;
+    padding: 9px 18px; border-radius: 999px; cursor: pointer;
+  }
+  .back-btn:hover { color: #fff; border-color: var(--faint); }
+
+  @media print {
+    @page { size: 1600px 900px; margin: 0; }
+    html, body { overflow: visible !important; height: auto !important; background: var(--black) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    #deck { overflow: visible !important; height: auto !important; width: auto !important; display: block !important; }
+    .slide { display: flex !important; width: 1600px !important; height: 900px !important; min-height: 900px !important; max-height: 900px !important; page-break-after: always !important; break-after: page !important; break-inside: avoid !important; animation: none !important; }
+    .slide:last-child { page-break-after: avoid !important; break-after: avoid !important; }
+    .slide *, .slide *::before, .slide *::after { animation: none !important; transition: none !important; }
+ 
+    #intro { display: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div id="intro">
+  <div class="intro-stage">
+    <span class="intro-beam b1"></span>
+    <span class="intro-beam b2"></span>
+    <span class="intro-beam b3"></span>
+    <div class="intro-mark">ICS</div>
+    <div class="intro-flash"></div>
+    <div class="intro-tag">Baseado em fatos reais</div>
+  </div>
+</div>
+
+<div id="deck"></div>
+
+<div id="pause-overlay">
+  <div class="po-icon" id="po-icon"></div>
+  <div class="po-label" id="po-label"></div>
+</div>
+
+<script>
+const SECTIONS = [
+  { num: '01', label: 'A máquina compartilhada', beats: [1, 2] },
+  { num: '02', label: 'A métrica certa',          beats: [3, 4] },
+  { num: '03', label: 'Medir sem estragar',       beats: [5, 6, 7] },
+  { num: '04', label: 'De quem é a culpa',        beats: [8, 9] },
+  { num: '05', label: 'Do kernel ao alerta',      beats: [10, 11] },
+];
+const TITLES = {
+  1: 'A máquina que você divide',
+  2: 'CPU em 20% e mesmo assim lento',
+  3: 'A fila que ninguém olha',
+  4: 'p99, não média',
+  5: 'Medir sem estragar o que se mede',
+  6: 'Dois hooks e um mapa',
+  7: 'O coletor não pode comer a CPU',
+  8: 'De quem é a CPU: cgroup e cardinalidade',
+  9: 'Uma métrica mente, duas contam a verdade',
+  10: 'Arquitetura: do tracepoint ao alerta',
+  11: 'AWS: cada caixa, um managed service',
+};
+function sectionOf(beat) { return SECTIONS.find(s => s.beats.includes(beat)); }
+function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+// destaca UMA expressao do titulo em vermelho: escreva {assim}
+function kw(s) { return String(s).replace(/\{([^}]+)\}/g, '<span style="color:var(--red)">$1</span>'); }
+
+
+const CODE_HOOKS = [
+  [['c', '// 1. o processo ficou pronto pra rodar']],
+  [['k', 'on sched_wakeup'], ['n', '(task):']],
+  [['n', '    map[task.pid] = agora_ns()          '], ['c', '// so insere se nao existir']],
+  [],
+  [['c', '// 2. a CPU trocou de processo']],
+  [['k', 'on sched_switch'], ['n', '(prev, next):']],
+  [['n', '    t0 = map[next.pid]']],
+  [['k', '    if'], ['n', ' t0 == null: '], ['k', 'return'], ['n', '            '], ['c', '// sem par, ignora']],
+  [],
+  [['n', '    latencia = agora_ns() - t0']],
+  [['k', '    delete'], ['n', ' map[next.pid]                 '], ['c', '// senao o mapa vaza']],
+  [],
+  [['n', '    emitir(cgroup(next), cgroup(prev), latencia)']],
+];
+
+const SLIDES = [
+  { type: 'cover' },
+
+  { type: 'divider', num: '01', label: 'A máquina compartilhada', meta: '2 episódios · multi-tenancy, utilização vs saturação' },
+
+  // 1. a pergunta que puxa a temporada inteira
+  { type: 'hook', beat: 1, kicker: 'Faixa 01',
+    title: 'O p99 da sua API dobrou, e a CPU do seu container está em {20%}.',
+    sub: 'São 10:35, ninguém fez deploy. Onde você olha primeiro, e por quê?',
+    tags: ['multi-tenancy', 'noisy neighbor', 'cgroup', 'triagem'] },
+
+  // 2. fundamento: CPU, processo, kernel: o vocabulario minimo pra discutir a pergunta
+  { type: 'teach', beat: 1, kicker: 'Pra responder, primeiro: o que a CPU realmente faz',
+    title: 'Um núcleo por vez, uma fila pra todo mundo',
+    bullets: [
+      { icon: 'cpu', text: '<strong>CPU e núcleos</strong>: cada núcleo só faz uma coisa por vez.' },
+      { icon: 'activity', text: '<strong>Processo</strong>: quando você abre um programa, ele vira uma coisa viva na memória, fazendo algo agora.' },
+      { icon: 'gear', text: '<strong>Kernel</strong>: o gerente que ninguém vê, decide quem usa cada núcleo e troca de processo centenas de milhares de vezes por segundo.' },
+      { icon: 'layers', text: 'É assim que a Netflix roda: milhares de containers de times diferentes, divididos entre poucas máquinas físicas, pra não desperdiçar capacidade paga.' } ] },
+
+  // 3. fundamento: container x VM: por que dividir a maquina cria risco
+  { type: 'compare', beat: 1, kicker: 'E por que dividir a máquina cria um risco',
+    left:  { tag: 'container', title: 'Compartilha o kernel', points: [
+      'Namespace limita o que ele enxerga',
+      'Cgroup limita quanto ele consome',
+      'Mais barato, mais denso por máquina' ] },
+    right: { tag: 'VM', hot: true, title: 'Kernel isolado, numa camada própria', points: [
+      'Ninguém de fora enxerga nem compete por ele',
+      'Mais pesado, mais caro por unidade de CPU' ] },
+    note: 'Todos os containers de uma máquina dividem o MESMO kernel, os MESMOS núcleos. Não existe parede física entre eles: é esse o risco que a VM não tem.' },
+
+  // 4. fundamento: paralelismo x concorrencia
+  { type: 'hook', beat: 1,
+    title: 'O servidor da Netflix onde seu container roda tem {16 núcleos}, e agora mesmo 400 processos estão disputando espaço nele.',
+    sub: 'Quantos desses 400 estão sendo executados neste exato instante, e o que está acontecendo com os outros?',
+    tags: ['núcleos', 'execução simultânea'] },
+  { type: 'compare', beat: 1, kicker: 'O que "ao mesmo tempo" quer dizer, de verdade',
+    left:  { tag: '16 processos', title: 'Rodando ao mesmo tempo, de verdade', points: [
+      'Um processo por núcleo, executando agora',
+      'Simultaneidade real: dois núcleos, duas instruções, no mesmo instante',
+      'É o teto físico da máquina' ] },
+    right: { tag: '384 processos', hot: true, title: 'Competindo pela vez', points: [
+      'O kernel troca entre eles centenas de milhares de vezes por segundo',
+      'Cada um roda um pedacinho, para, e cede o núcleo pro próximo',
+      'Parece simultâneo de fora, mas é revezamento muito rápido' ] },
+    note: 'Isso tem nome, e vocês já viram: os 16 que rodam de verdade ao mesmo tempo são paralelismo. Os 384 revezando um núcleo já ocupado são concorrência. Segura essa ideia, ela volta já já quando a gente pensar de novo no container que está em 20%.' },
+
+  // 6. volta pra pergunta original, agora com vocabulario
+  { type: 'hook', beat: 1,
+    title: 'Voltando pro nosso host: o p99 dobrou, ninguém fez deploy, e a CPU do container continua em {20%}.',
+    sub: 'Com o que vocês já sabem agora sobre processo, kernel, container e paralelismo, onde você olha primeiro?',
+    tags: ['revisão', 'processo', 'container', 'paralelismo'] },
+
+  { type: 'hook', beat: 2, kicker: 'Faixa 02',
+    title: 'A utilização de CPU mede só o tempo em que os núcleos ficaram {ocupados}.',
+    sub: 'Descreva um cenário em que esse número fica baixo e o serviço fica lento pelo mesmo motivo.',
+    tags: ['utilização', 'saturação', 'throttling', 'load average'] },
+  { type: 'compare', beat: 2, kicker: 'A fila do caixa',
+    left:  { tag: 'utilização', title: 'Quem conseguiu', points: [
+      'Fração do tempo em que o recurso esteve ocupado',
+      'É a métrica que todo dashboard já tem',
+      'Fica bonita justamente quando o sistema sofre por espera',
+      'Cega pra quem tentou e não conseguiu' ] },
+    right: { tag: 'saturação', hot: true, title: 'Quem ficou na fila', points: [
+      'Quanto trabalho ficou esperando a vez',
+      'Quase nunca está no dashboard',
+      'É onde o vizinho barulhento aparece',
+      'Um caixa em 60% com 20 pessoas na fila existe' ] } },
+
+  // 7. throttling + runnable x sleeping: responde "mais ou menos" e ja
+  // planta a suspeita que so vira certeza no beat 9
+  { type: 'compare3', beat: 2, kicker: 'A fila tem nome, e mais de uma causa', cards: [
+      { tag: 'sleeping', title: 'Dormindo, esperando de fora', sub: 'não é culpa da CPU', points: [
+        'Espera disco, rede, banco de dados',
+        'Não é sintoma de contenção' ] },
+      { tag: 'runnable', hot: true, title: 'Pronto, só falta a vez', sub: 'isso é saturação', points: [
+        'Tem tudo pronto pra trabalhar',
+        'É exatamente o que a utilização não mostra' ] },
+      { tag: 'throttling', title: 'A própria cota estourou', sub: 'mesmo efeito, outra causa', points: [
+        'Cota de CPU por janela de tempo',
+        'Kernel para de escalonar até a próxima janela' ] } ],
+    note: 'Os 20% podem estar certos, e o container mesmo assim preso numa fila. Só de olhar não dá pra saber se foi a própria cota ou um vizinho: isso a gente resolve com uma métrica de verdade.' },
+
+  { type: 'divider', num: '02', label: 'A métrica certa', meta: '2 episódios · run queue latency, percentil' },
+  { type: 'hook', beat: 3, kicker: 'Faixa 03',
+    title: 'Um processo fica pronto pra rodar às 10:35:02,000, mas só recebe a CPU às {10:35:02,131}.',
+    sub: 'Que nome tem esse intervalo, e o que precisa acontecer no kernel pra você medi-lo?',
+    tags: ['run queue', 'runnable', 'scheduling delay', 'wakeup'],
+    support: [ { id: 'extra-tempo', label: 'Mili, micro, nano: a régua do tempo' } ] },
+  { type: 'flow', beat: 3, kicker: 'Onde o cronômetro começa e onde ele para',
+    steps: [
+      { t: 'Dormindo', d: 'O processo está bloqueado, esperando algo de fora.' },
+      { t: 'Fica pronto (t0)', d: 'Chega o pacote de rede. Vira RUNNABLE, o relógio começa.' },
+      { t: 'Espera na fila', d: 'Pronto pra trabalhar, só falta a vez no núcleo.' },
+      { t: 'Recebe CPU (t1)', d: 'O escalonador escolhe o processo. RUNNING começa, o relógio para.' } ],
+    note: 'Run queue latency é t1 menos t0. Dois instantes e uma subtração: toda a engenharia do resto da aula existe pra capturar isso barato.' },
+  { type: 'stat', beat: 3, kicker: 'O incidente, em números', stats: [
+      ['83 µs',    'p99 de espera com o host tranquilo'],
+      ['400 µs',   'os picos ocasionais do baseline'],
+      ['131 ms',   'p99 depois que o vizinho subiu'],
+      ['1.500 ×',  'o fator entre o normal e o incidente'] ] },
+  { type: 'hook', beat: 4, kicker: 'Faixa 04',
+    title: 'A média ficou em 1 milissegundo o dia inteiro, e mesmo assim o time reclamou de {lentidão}.',
+    sub: 'Explique como as duas coisas são verdade ao mesmo tempo.',
+    tags: ['p99', 'cauda', 'histograma', 'agregação'],
+    support: [ { id: 'extra-percentil', label: 'Por que não usar a média?' } ] },
+  { type: 'list', beat: 4, kicker: 'Por que percentil, e não média',
+    items: [
+      ['A conta', '10.000 esperas de 80 µs mais 100 esperas de 131 ms dão média de ~1,4 ms. O alerta em 5 ms fica calado enquanto 100 requisições levam um tapa.'],
+      ['A leitura', 'p99 é literal: 99% foram mais rápidos, 1% foi mais lento. Não é pior caso, e não é "quase todo mundo bem".'],
+      ['A implementação', 'Histograma com buckets, percentil calculado da distribuição acumulada. Guardar todas as amostras não escala.'],
+      ['A armadilha', 'Percentil não soma e não faz média. O p99 da frota não é a média dos p99 dos hosts.'] ] },
+
+  { type: 'divider', num: '03', label: 'Medir sem estragar', meta: '3 episódios · eBPF, hooks, rate limit' },
+  { type: 'hook', beat: 5, kicker: 'Faixa 05',
+    title: 'Você precisa medir TODA troca de processo, em toda máquina, o dia inteiro, {em produção}.',
+    sub: 'Antes de pensar em como, diga o que pode dar errado nesse plano.',
+    tags: ['efeito observador', 'hot path', 'eBPF', 'verifier'],
+    support: [ { id: 'extra-ebpf', label: 'eBPF em uma frase' } ] },
+  { type: 'compare', beat: 5, kicker: 'Onde o seu código roda',
+    left:  { tag: 'userspace', title: 'Onde a maioria imagina', points: [
+      'O agente em Go lê eventos já prontos',
+      'Longe do caminho quente',
+      'Fácil de programar, mas tarde demais' ] },
+    right: { tag: 'kernel', hot: true, title: 'Onde o código realmente roda', points: [
+      'O programa eBPF roda dentro do próprio evento',
+      'Sem context switch pra sair e voltar',
+      'Orçamento: menos de 600 nanossegundos por evento' ] },
+    note: 'O gancho é o tracepoint do escalonador, sched_wakeup e sched_switch. Um context switch inteiro custa alguns microssegundos: a medição fica na casa de poucos por cento do que ela observa.' },
+  { type: 'compare3', beat: 5, kicker: 'O que torna isso aceitável', cards: [
+      { tag: 'verifier',   title: 'O kernel prova antes', sub: 'segurança', points: [
+        'Prova que o programa termina',
+        'Prova que não acessa memória indevida',
+        'Não passou, não carrega' ] },
+      { tag: 'tracepoint', title: 'Ponto estável do kernel', sub: 'onde se pendurar', points: [
+        'sched_wakeup: ficou pronto',
+        'sched_switch: a CPU trocou',
+        'tp_btf entrega a struct real' ] },
+      { tag: '< 600 ns',   hot: true, title: 'O orçamento por evento', sub: 'custo medido', points: [
+        'Medido com bpftop, feito pra isso',
+        'Context switch custa microssegundos',
+        'Serviço Java: diferença não mensurável' ] } ] },
+  { type: 'hook', beat: 6, kicker: 'Faixa 06',
+    title: 'O kernel te dá dois avisos: um de que o processo {ficou pronto}, outro de que a CPU trocou.',
+    sub: 'Só com esses dois avisos, dá pra montar um jeito de calcular quanto tempo cada processo esperou?',
+    tags: ['hash map', 'timestamp', 'lookup', 'delete'],
+    support: [ { id: 'extra-hashmap', label: 'O que é um hash map?' } ] },
+  { type: 'code', beat: 6, kicker: 'O algoritmo inteiro', lines: CODE_HOOKS, notes: [
+      ['Primeiro wakeup vence', 'Um processo pode acordar várias vezes antes de rodar. O relógio que vale é o do primeiro, senão a espera medida encolhe.'],
+      ['Quem ENTRA na CPU', 'O switch entrega os dois lados. A espera que terminou é a de quem está entrando. Trocar os dois inverte a métrica sem gerar número absurdo.'],
+      ['Delete é sobrevivência', 'PID nasce e morre o tempo todo. Mapa que só cresce estoura o limite e passa a falhar em silêncio.'] ] },
+  { type: 'flow', beat: 6, kicker: 'Insere no wakeup, subtrai no switch',
+    steps: [
+      { t: 'sched_wakeup dispara', d: 'Guarda a hora atual num mapa, pela chave do processo. Só insere se ainda não existir.' },
+      { t: 'sched_switch dispara', d: 'Busca a hora guardada de quem está entrando na CPU.' },
+      { t: 'Subtrai e apaga', d: 'Calcula a espera e apaga a entrada do mapa, pra não vazar memória.' } ],
+    note: 'Um dicionário PID para timestamp, o padrão vale pra qualquer par "começou / terminou". Se a busca vier vazia, o evento é ignorado, nunca reportado como zero.' },
+  { type: 'hook', beat: 7, kicker: 'Faixa 07',
+    title: 'O programa funciona, só que o coletor em userspace começou a comer CPU sozinho, e agora você virou o {vizinho barulhento}.',
+    sub: 'Onde você corta, e por que aí?',
+    tags: ['rate limit', 'amostragem', 'ring buffer', 'early exit'] },
+  { type: 'list', beat: 7, kicker: 'A ordem das perguntas é a otimização',
+    items: [
+      ['É tarefa do kernel?', 'PID zero sai antes de qualquer trabalho. Comparar dois números é quase de graça.'],
+      ['Achou par no mapa?', 'Se não achou, o evento é descartado ali mesmo. Só um lookup.'],
+      ['Passou no limite de taxa?', 'Rate limit por cgroup, não global. Estourou, descarta antes de gerar qualquer dado.'],
+      ['Sobreviveu até aqui?', 'Só agora reserva espaço no ring buffer e escreve os 32 bytes do evento.'] ] },
+  { type: 'compare3', beat: 7, kicker: 'Três cortes, um princípio', cards: [
+      { tag: 'rate limit', hot: true, title: 'Por cgroup, não global', sub: 'no kernel', points: [
+        'Chave = cgroup + CPU, e não a máquina toda',
+        'Um container ativo não afoga os outros',
+        'Amostragem com atribuição preservada' ] },
+      { tag: 'ring buffer', title: 'Sair sem syscall', sub: 'transporte', points: [
+        'Buffer circular compartilhado',
+        'Sem cópia extra, sem syscall por evento',
+        'O registro tem 4 campos e ~32 bytes' ] },
+      { tag: 'early exit', title: 'Barato primeiro', sub: 'ordem das guardas', points: [
+        'Tarefa do kernel tem PID 0, sai antes de tudo',
+        'Comparar inteiro é grátis, mapa não é',
+        'Cada saída antecipada é lucro' ] } ] },
+  { type: 'divider', num: '04', label: 'De quem é a culpa', meta: '2 episódios · atribuição, cardinalidade, o discriminante' },
+  { type: 'hook', beat: 8, kicker: 'Faixa 08',
+    title: 'A espera que você mediu nasceu de um PID, mas o dashboard só entende {nome de serviço}.',
+    sub: 'Como o número atravessa essa ponte, e o que explode se você exagerar nas etiquetas?',
+    tags: ['cgroup id', 'atribuição', 'tag', 'cardinalidade'] },
+  { type: 'list', beat: 8, kicker: 'O que vira etiqueta e o que não vira',
+    items: [
+      ['container', 'Poucos valores, estável, é por ele que você filtra. Passa. A tradução cgroup para nome acontece no agente local, na borda.'],
+      ['causa da preempção', 'Três valores: mesmo container, outro container, serviço do sistema. Passa com folga, e é ela que aponta o dedo.'],
+      ['PID', 'Reciclado e efetivamente ilimitado no dia. Cada PID novo cria uma série que nunca mais recebe um ponto. Não passa.'],
+      ['requisição, usuário, timestamp', 'Alta cardinalidade por definição. Essas dimensões vivem em log e em trace, não em métrica.'] ] },
+  { type: 'hook', beat: 9, kicker: 'Faixa 09 · o clímax',
+    title: 'A espera disparou, mas antes de acusar o vizinho: que {outra} explicação dá exatamente o mesmo gráfico?',
+    sub: 'E que segunda métrica separa as duas?',
+    tags: ['throttling', 'discriminante', 'sched.switch.out', 'causa raiz'] },
+  { type: 'table', beat: 9, kicker: 'Mesmo gráfico, duas causas',
+    cols: ['', 'runq.latency (espera)', 'sched.switch.out por OUTRO cgroup'],
+    rows: [
+      ['Throttling da própria cota', 'sobe', 'parado'],
+      ['Vizinho barulhento',          'sobe', 'sobe'],
+      ['Concorrência interna',        'sobe', 'parado (sobe no mesmo cgroup)'] ],
+    note: 'A coluna do meio é igual nas três linhas. Quem decide é a da direita. Uma métrica descreve, duas diagnosticam.' },
+  { type: 'stat', beat: 9, kicker: 'O desfecho real, e a ironia', stats: [
+      ['10:35',  'sobe o container2 e ocupa todos os cores'],
+      ['131 ms', 'o p99 do container1 explode'],
+      ['sistema', 'quem preemptou foram os serviços do host'],
+      ['≠', 'causa direta e causa raiz não são a mesma coisa'] ] },
+
+  { type: 'divider', num: '05', label: 'Do kernel ao alerta', meta: '2 episódios · arquitetura e AWS' },
+  { type: 'hook', beat: 10, kicker: 'Faixa 10',
+    title: 'Uma troca de contexto acontece agora, neste servidor. Desenhe com a gente {cada camada} que ela atravessa até virar um alerta.',
+    sub: 'Depois desenha o caminho de volta, o da consulta.',
+    tags: ['agente por host', 'agregação na borda', 'série temporal', 'read path'] },
+  { type: 'compare', beat: 10, kicker: 'Write path e read path',
+    left:  { tag: 'write path', title: 'Volume caindo a cada estágio', points: [
+      'Tracepoint dispara ~500 mil vezes por segundo',
+      'Guardas e rate limit descartam dentro do kernel',
+      'O que sobra vai pro ring buffer',
+      'Agente local traduz e agrega numa janela',
+      'Só o agregado sobe pela rede' ] },
+    right: { tag: 'read path', hot: true, title: 'Poucas consultas, cada uma pesada', points: [
+      'Dashboard ou alerta faz a pergunta',
+      '"p99 do checkout-service na última hora"',
+      'O backend responde a partir do estado durável' ] },
+    note: 'Cinco estágios de redução na escrita, um salto só na leitura. Perfis opostos, escalados separadamente.' },
+  { type: 'hook', beat: 11, kicker: 'Faixa 11',
+    title: 'Pra cada caixa do desenho a gente escolhe um managed service, e o que importa é o que te {obriga} a escolher esse e não outro.',
+    sub: 'Uma das linhas não é trade-off, é corte.',
+    tags: ['EC2 vs Fargate', 'AMP', 'Managed Grafana', 'Firehose'] },
+  { type: 'table', beat: 11, kicker: 'Caixa a caixa',
+    cols: ['Caixa', 'Serviço', 'Por quê'],
+    rows: [
+      ['Kernel + agente', 'EC2 (ECS ou EKS)', 'Fargate/Lambda: sem kernel'],
+      ['Métrica agregada', 'Amazon Managed Prometheus', 'CloudWatch: caro por dimensão'],
+      ['Painel e alerta', 'Managed Grafana + SNS', ''],
+      ['Amostra crua', 'Firehose, S3, Athena', 'escrita alta, leitura rara'] ],
+    note: 'Sem acesso ao kernel do host não existe eBPF, e isso elimina serverless antes de qualquer comparação de preço. É a mesma diferença entre container e VM que vimos lá no começo: no EC2 o kernel do host está ali, acessível; no Fargate, cada tarefa tem o próprio kernel, fechado pra fora.' },
+
+  // ── conteúdo de apoio: fora do fluxo principal, só entra se o
+  // apresentador clicar no botão do hook. Não conta no contador de episódios.
+  { type: 'extra', id: 'extra-tempo', aside: true, kicker: 'Antes de tudo',
+    title: 'A régua do tempo: mili, micro, nano',
+    stats: [
+      ['~120 ms', 'um piscar de olhos'],
+      ['83 µs', 'o normal desta aula (p99)'],
+      ['< 600 ns', 'orçamento pra medir 1 evento'] ] },
+
+  { type: 'extra', id: 'extra-percentil', aside: true, kicker: 'Antes de tudo',
+    title: 'Por que não usar a média',
+    bullets: [
+      '10 mil esperas de 80 µs mais 100 de 131 ms no mesmo minuto dão média de ~1,4 ms.',
+      'Parece ótimo, e esconde as 100 requisições que levaram um tapa.',
+      '<strong>p99</strong>: 99% das medições foram mais rápidas que esse valor, 1% foi mais lento.',
+      'Não é o pior caso. É o corte que mostra o problema raro sem se enganar pelo normal.' ] },
+
+  { type: 'extra', id: 'extra-ebpf', aside: true, kicker: 'Antes de tudo',
+    title: 'eBPF em uma frase',
+    bullets: [
+      'Roda um pedacinho de código SEU dentro do kernel, no exato momento de um evento, sem reiniciar nada.',
+      '<strong>Seguríssima</strong> não é força de expressão: o próprio kernel prova, antes de aceitar, que o código termina e não mexe onde não deve.',
+      'Não passou, não roda.',
+      'É isso que permite medir produção o tempo todo, a menos de 600 nanossegundos por evento.' ] },
+
+  { type: 'extra', id: 'extra-hashmap', aside: true, kicker: 'Antes de tudo',
+    title: 'O que é um hash map',
+    bullets: [
+      'Guarda pares de chave e valor, e acha qualquer um deles quase na hora, sem varrer o resto.',
+      'É a agenda do celular: você não lê os mil contatos até achar a Maria, vai direto no M.',
+      'Aqui a chave é o número do processo, e o valor é o instante em que ele ficou pronto pra rodar.' ] },
+
+  { type: 'closing' },
+];
+
+function ico(p, size) { size = size || 15; return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`; }
+
+// icones (estilo lucide) pra ilustrar bullets quando fizer sentido: cada
+// termo do slide de CPU/processo/kernel ganha um simbolo reconhecivel, em
+// vez de todo bullet usar a mesma bolinha.
+const ICONS = {
+  cpu: '<rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 2v2M15 2v2M9 20v2M15 20v2M2 9h2M2 15h2M20 9h2M20 15h2"/>',
+  activity: '<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>',
+  gear: '<circle cx="12" cy="12" r="3.2"/><path d="M12 3v2.4M12 18.6V21M4.9 4.9l1.7 1.7M17.4 17.4l1.7 1.7M3 12h2.4M18.6 12H21M4.9 19.1l1.7-1.7M17.4 6.6l1.7-1.7"/>',
+  layers: '<path d="M12 2 2 7l10 5 10-5-10-5Z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>',
+};
+
+/* barra de navegacao + progresso "continue assistindo" */
+// posicao do slide contando so os slides "principais" (exclui os aside,
+// que sao desvio e nao devem mexer na barra de progresso nem no contador)
+const MAIN_TOTAL = SLIDES.filter(sl => !sl.aside).length;
+function mainPosition(idx) {
+  let n = 0;
+  for (let i = 0; i <= idx; i++) if (!SLIDES[i].aside) n++;
+  return n;
+}
+
+function chrome(slide, idx, inner) {
+  const sec = slide.beat ? sectionOf(slide.beat) : null;
+  const nav = SECTIONS.map(sc => {
+    const on = sec && sc.num === sec.num;
+    return `<span class="text-[13px] ${on ? 'font-semibold' : ''}" style="color:${on ? 'var(--ink)' : 'var(--faint)'}">${sc.label}</span>`;
+  }).join('');
+  const mainNo = mainPosition(idx);
+  const pct = (mainNo / MAIN_TOTAL) * 100;
+
+  return `<div class="slide" style="background:var(--canvas)">
+    <header class="flex items-center gap-9 px-14 h-[68px] shrink-0" style="background:var(--black)">
+      <span class="display text-[22px] tracking-[0.14em]" style="color:var(--red)">ICS</span>
+      <nav class="flex items-center gap-7">${nav}</nav>
+      <div class="ml-auto flex items-center gap-5">
+        ${slide.beat ? `<span class="chip mono text-[11px] cap px-2.5 py-1" style="background:var(--ghost);color:var(--muted)">E${String(slide.beat).padStart(2, '0')} de 11</span>` : ''}
+        <span class="mono text-[12px]" style="color:var(--faint)">${String(mainNo).padStart(2, '0')} / ${MAIN_TOTAL}</span>
+      </div>
+    </header>
+    <div class="flex-1 flex flex-col px-14 py-11 min-h-0">${inner}</div>
+    <div class="h-[3px] shrink-0" style="background:#2b2b2b">
+      <div class="h-full" style="width:${pct}%;background:var(--red)"></div>
+    </div>
+  </div>`;
+}
+
+/* cabecalho de episodio: barra vermelha + temporada + titulo do beat */
+function epHead(slide) {
+  const sec = sectionOf(slide.beat);
+  return `<div class="anim rail mb-8">
+    <div class="cap text-[11px]" style="color:var(--muted)">Temporada ${sec.num} &middot; Epis&oacute;dio ${String(slide.beat).padStart(2, '0')}</div>
+    <div class="semi text-[19px] mt-1">${TITLES[slide.beat]}</div>
+  </div>`;
+}
+
+function kicker(slide) {
+  return `<div class="anim rail mb-7">
+    <div class="cap text-[11px]" style="color:var(--muted)">${sectionOf(slide.beat).label}</div>
+    <div class="semi text-[19px] mt-1">${slide.kicker}</div>
+  </div>`;
+}
+
+function render(slide, idx) {
+  switch (slide.type) {
+    case 'cover':
+      return `<div class="slide vignette">
+        <header class="flex items-center px-14 h-[68px] shrink-0">
+          <span class="display text-[22px] tracking-[0.14em]" style="color:var(--red)">ICS</span>
+          <span class="ml-auto mono text-[12px] cap" style="color:var(--faint)">Netflix TechBlog &middot; set 2024</span>
+        </header>
+        <div class="flex-1 flex flex-col justify-center px-24">
+          <div class="anim rail">
+            <div class="cap text-[12px]" style="color:var(--muted)">Aula original &middot; 5 temporadas &middot; 11 epis&oacute;dios</div>
+          </div>
+          <h1 class="display anim delay-1 text-[92px] mt-8 max-w-[16ch]">O Vizinho <span style="color:var(--red)">Barulhento</span></h1>
+          <p class="anim delay-2 text-[23px] mt-8 max-w-[64ch]" style="color:var(--muted)">A Netflix instrumentou o scheduler do Linux com eBPF pra responder se a culpa &eacute; do seu c&oacute;digo ou do vizinho.</p>
+          <div class="anim-fade delay-2 mt-11 flex items-center gap-4">
+            <span class="inline-flex items-center gap-2.5 px-6 py-3 rounded-[4px] semi text-[16px]" style="background:var(--ink);color:var(--black)">
+              ${ico('<polygon points="6 3 20 12 6 21 6 3" fill="currentColor" stroke="none"/>')} Come&ccedil;ar
+            </span>
+          </div>
+        </div>
+        <div class="h-[3px] shrink-0" style="background:#2b2b2b"><div class="h-full" style="width:2%;background:var(--red)"></div></div>
+      </div>`;
+
+    case 'divider':
+      return `<div class="slide vignette items-center justify-center">
+        <div class="w-full px-24 flex items-center gap-14">
+          <div class="display anim text-[220px] leading-none" style="color:transparent;-webkit-text-stroke:3px var(--red)">${slide.num}</div>
+          <div>
+            <div class="anim cap text-[12px] mb-4" style="color:var(--red)">Temporada ${slide.num}</div>
+            <h2 class="display anim delay-1 text-[62px] max-w-[16ch]">${slide.label}</h2>
+            <p class="anim delay-2 mono text-[15px] mt-6" style="color:var(--muted)">${slide.meta}</p>
+          </div>
+        </div>
+      </div>`;
+
+    case 'hook':
+      return chrome(slide, idx, `
+        <div class="flex-1 flex flex-col justify-center">
+          ${epHead(slide)}
+          <h2 class="display anim delay-1 text-[56px] max-w-[24ch] leading-[1.12]">${kw(slide.title)}</h2>
+          <p class="anim delay-2 text-[22px] mt-8 max-w-[58ch]" style="color:var(--muted)">${slide.sub}</p>
+          <div class="anim-fade delay-2 mt-11 flex flex-wrap gap-2.5">
+            ${slide.tags.map(t => `<span class="chip mono px-3 py-1.5 text-[12px]" style="background:var(--card-hi);color:var(--muted)">${t}</span>`).join('')}
+          </div>
+          ${slide.support ? `
+          <div class="anim-fade delay-2 mt-5 flex flex-wrap gap-3">
+            ${slide.support.map(x => `<button type="button" class="support-btn" data-jump="${x.id}">${ico('<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 4.5 1.5c0 1.5-2 1.8-2 3.3"/><path d="M12 17h.01"/>')}<span>${x.label}</span></button>`).join('')}
+          </div>` : ''}
+        </div>`);
+
+    /* diagrama desenhado de verdade: passos em caixa, ligados por seta.
+       Usa a largura inteira em vez de crescer pra baixo. */
+    case 'flow':
+      return chrome(slide, idx, `
+        <div class="flex-1 flex flex-col justify-center">
+          ${kicker(slide)}
+          <div class="anim delay-2 flex items-center gap-3 flex-wrap mt-3">
+            ${slide.steps.map((st, i) => `
+              <div class="flex items-center gap-3">
+                <div class="card p-6 flex flex-col" style="width:260px">
+                  <div class="mono text-[10.5px] cap mb-2" style="color:var(--red)">passo ${i + 1}</div>
+                  <div class="semi text-[16px] mb-2 leading-snug">${st.t}</div>
+                  <div class="text-[13px] leading-relaxed" style="color:var(--muted)">${st.d}</div>
+                </div>
+                ${i < slide.steps.length - 1 ? `<svg class="shrink-0" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>` : ''}
+              </div>`).join('')}
+          </div>
+          ${slide.note ? `<p class="anim delay-2 text-[18px] mt-9 max-w-[90ch]" style="color:var(--muted)">${slide.note}</p>` : ''}
+        </div>`);
+
+    /* ensino direto no fluxo principal (nao e "apoio": chrome padrao, rail
+       vermelho como qualquer outro slide de conteudo, conta no contador).
+       Corpo em grade de 2 colunas quando tem 3+ paragrafos: usa a LARGURA
+       inteira do slide em vez de empilhar tudo numa coluna estreita, que e
+       o que fazia o texto estourar pra baixo da tela fixa. */
+    case 'teach': {
+      if (slide.bullets) {
+        return chrome(slide, idx, `
+          <div class="flex-1 flex flex-col justify-center">
+            ${kicker(slide)}
+            <h2 class="display anim delay-1 text-[34px] max-w-[38ch] leading-[1.22] mb-8">${slide.title}</h2>
+            <div class="anim delay-2 flex flex-col gap-4 max-w-[78ch] stagger">
+              ${slide.bullets.map(b => {
+                const isObj = typeof b === 'object';
+                const iconSvg = isObj && b.icon ? ico(ICONS[b.icon] || b.icon, 21) : ico('<circle cx="12" cy="12" r="4"/>');
+                const text = isObj ? b.text : b;
+                return `<div class="flex gap-4 items-start text-[18px]"><span class="mt-0.5 shrink-0" style="color:var(--red)">${iconSvg}</span><span style="color:var(--muted)">${text}</span></div>`;
+              }).join('')}
+            </div>
+          </div>`);
+      }
+      const cols = slide.body.length >= 3 ? 2 : 1;
+      return chrome(slide, idx, `
+        <div class="flex-1 flex flex-col justify-center">
+          ${kicker(slide)}
+          <h2 class="display anim delay-1 text-[34px] max-w-[38ch] leading-[1.22] mb-8">${slide.title}</h2>
+          <div class="anim delay-2 grid gap-x-12 gap-y-4" style="grid-template-columns:repeat(${cols}, 1fr)">
+            ${slide.body.map(pp => `<p class="text-[16.5px] leading-relaxed" style="color:var(--muted)">${pp}</p>`).join('')}
+          </div>
+        </div>`);
+    }
+
+    case 'code':
+      return chrome(slide, idx, `
+        <div class="flex-1 flex flex-col min-h-0">
+          ${kicker(slide)}
+          <div class="flex gap-8 flex-1 min-h-0">
+            <div class="console anim delay-1 flex-1 px-9 py-7 overflow-hidden flex items-center">
+              <pre class="mono text-[16px] leading-[1.75] w-full">${slide.lines.map(line => line.map(([k, t]) => {
+                const c = k === 'c' ? 'var(--faint)' : k === 'k' ? 'var(--red)' : 'var(--muted)';
+                const w = k === 'k' ? '700' : '400';
+                return `<span style="color:${c};font-weight:${w}">${esc(t)}</span>`;
+              }).join('')).join(String.fromCharCode(10))}</pre>
+            </div>
+            <div class="w-[400px] shrink-0 flex flex-col gap-4 justify-center stagger">
+              ${slide.notes.map(([t, d]) => `
+                <div class="card p-5" style="border-left:3px solid var(--red)">
+                  <div class="semi text-[16px] mb-1.5">${t}</div>
+                  <div class="text-[14px] leading-relaxed" style="color:var(--muted)">${d}</div>
+                </div>`).join('')}
+            </div>
+          </div>
+        </div>`);
+
+    /* lista de episodios: numeral gigante a esquerda, como a aba Episodios */
+    case 'list':
+      return chrome(slide, idx, `
+        <div class="flex-1 flex flex-col justify-center">
+          ${kicker(slide)}
+          <div class="flex flex-col stagger">
+            ${slide.items.map(([k, d], i) => `
+              <div class="flex gap-8 items-center py-5" style="${i < slide.items.length - 1 ? 'border-bottom:1px solid var(--line);' : ''}">
+                <span class="display text-[42px] w-14 shrink-0 text-center" style="color:var(--faint)">${i + 1}</span>
+                <div class="w-[300px] shrink-0 semi text-[21px] leading-snug">${k}</div>
+                <div class="text-[17px] leading-relaxed" style="color:var(--muted)">${d}</div>
+              </div>`).join('')}
+          </div>
+        </div>`);
+
+    /* title cards lado a lado, o destaque com a barra vermelha no topo */
+    case 'compare':
+      return chrome(slide, idx, `
+        <div class="flex-1 flex flex-col justify-center">
+          ${kicker(slide)}
+          <div class="grid grid-cols-2 gap-7 stagger">
+            ${[slide.left, slide.right].map(c => `
+              <div class="card overflow-hidden flex flex-col">
+                <div class="h-[4px]" style="background:${c.hot ? 'var(--red)' : 'var(--line)'}"></div>
+                <div class="p-8 flex flex-col">
+                  <span class="chip mono self-start px-2.5 py-1 text-[11px] cap mb-5" style="background:${c.hot ? 'var(--red)' : 'var(--ghost)'};color:${c.hot ? 'var(--ink)' : 'var(--muted)'}">${c.tag}</span>
+                  <div class="display text-[31px] mb-6">${c.title}</div>
+                  <div class="flex flex-col gap-3.5">
+                    ${c.points.map(p => `<div class="flex gap-3 items-start text-[17px]"><span class="mt-1 shrink-0" style="color:${c.hot ? 'var(--red)' : 'var(--faint)'}">${ico('<path d="M5 12h14"/>')}</span><span style="color:var(--muted)">${p}</span></div>`).join('')}
+                  </div>
+                </div>
+              </div>`).join('')}
+          </div>
+          ${slide.note ? `<p class="anim delay-2 text-[18px] mt-7 max-w-[86ch]" style="color:var(--muted)">${slide.note}</p>` : ''}
+        </div>`);
+
+    case 'compare3':
+      return chrome(slide, idx, `
+        <div class="flex-1 flex flex-col justify-center">
+          ${kicker(slide)}
+          <div class="grid grid-cols-3 gap-6 stagger">
+            ${slide.cards.map(c => `
+              <div class="card overflow-hidden flex flex-col">
+                <div class="h-[4px]" style="background:${c.hot ? 'var(--red)' : 'var(--line)'}"></div>
+                <div class="p-7 flex flex-col flex-1">
+                  <span class="chip mono self-start px-2.5 py-1 text-[11px] cap mb-4" style="background:${c.hot ? 'var(--red)' : 'var(--ghost)'};color:${c.hot ? 'var(--ink)' : 'var(--muted)'}">${c.tag}</span>
+                  <div class="display text-[25px]">${c.title}</div>
+                  <div class="mono text-[12px] cap mt-2 mb-6" style="color:var(--faint)">${c.sub}</div>
+                  <div class="flex flex-col gap-3 mt-auto">
+                    ${c.points.map(p => `<div class="flex gap-3 items-start text-[16px]"><span class="mt-0.5 shrink-0" style="color:${c.hot ? 'var(--red)' : 'var(--faint)'}">${ico('<path d="M5 12h14"/>')}</span><span style="color:var(--muted)">${p}</span></div>`).join('')}
+                  </div>
+                </div>
+              </div>`).join('')}
+          </div>
+          ${slide.note ? `<p class="anim delay-2 text-[18px] mt-8 max-w-[90ch]" style="color:var(--muted)">${slide.note}</p>` : ''}
+        </div>`);
+
+    case 'stat':
+      return chrome(slide, idx, `
+        <div class="flex-1 flex flex-col justify-center">
+          ${kicker(slide)}
+          <div class="grid grid-cols-4 gap-5 stagger">
+            ${slide.stats.map(([n, l]) => `
+              <div class="card p-7">
+                <div class="display text-[46px]" style="color:var(--red)">${n}</div>
+                <div class="text-[16px] mt-3 leading-snug" style="color:var(--muted)">${l}</div>
+              </div>`).join('')}
+          </div>
+        </div>`);
+
+    case 'table':
+      return chrome(slide, idx, `
+        <div class="flex-1 flex flex-col justify-center">
+          ${kicker(slide)}
+          <div class="card anim delay-1 overflow-hidden">
+            <div class="h-[4px]" style="background:var(--red)"></div>
+            <div class="grid grid-cols-[1.1fr_1fr_1.3fr] mono text-[11px] cap px-8 py-4" style="color:var(--faint);border-bottom:1px solid var(--line)">
+              ${slide.cols.map(c => `<div>${c}</div>`).join('')}
+            </div>
+            ${slide.rows.map((r, i) => `
+              <div class="grid grid-cols-[1.1fr_1fr_1.3fr] px-8 py-6 items-center" style="${i < slide.rows.length - 1 ? 'border-bottom:1px solid var(--line);' : ''}">
+                <div class="semi text-[21px] pr-6">${r[0]}</div>
+                <div class="mono text-[19px]" style="color:var(--muted)">${r[1]}</div>
+                <div class="mono text-[19px]" style="color:${r[2].startsWith('sobe') ? 'var(--red)' : 'var(--faint)'}">${r[2]}</div>
+              </div>`).join('')}
+          </div>
+          <p class="anim delay-2 text-[19px] mt-7 max-w-[88ch]" style="color:var(--muted)">${slide.note}</p>
+        </div>`);
+
+    case 'closing':
+      return `<div class="slide vignette items-center justify-center">
+        <div class="w-full px-24">
+          <div class="anim rail"><div class="cap text-[12px]" style="color:var(--muted)">Final da temporada</div></div>
+          <h2 class="display anim delay-1 text-[64px] mt-8 max-w-[22ch]">Uma m&eacute;trica sozinha te faz culpar a <span style="color:var(--red)">pessoa errada</span>.</h2>
+          <p class="anim delay-2 text-[23px] mt-9 max-w-[72ch]" style="color:var(--muted)">Utiliza&ccedil;&atilde;o engana, satura&ccedil;&atilde;o denuncia. Quem mede faz parte do sistema. Descarte cedo e com a chave certa. Etiqueta &eacute; chave, e chave tem cardinalidade. E quando um sintoma tem duas causas, procure a segunda m&eacute;trica que s&oacute; se move em uma delas.</p>
+          <div class="anim-fade delay-2 mt-12 flex flex-wrap items-center gap-2.5">
+            ${['medir espera', 'reportar p99', 'medir barato', 'atribuir', 'desempatar'].map((t, i, a) =>
+              `<span class="chip px-3.5 py-1.5 text-[13px]" style="background:var(--card-hi);color:var(--muted)">${t}</span>${i < a.length - 1 ? `<span style="color:var(--red)">/</span>` : ''}`).join('')}
+          </div>
+        </div>
+      </div>`;
+
+    /* conteudo de apoio: fora do fluxo, chrome proprio (sem barra de
+       progresso, sem contador de episodio) pra deixar claro que e um desvio */
+    case 'extra':
+      return `<div class="slide" style="background:var(--canvas)">
+        <header class="flex items-center justify-between px-14 h-[68px] shrink-0" style="background:var(--black);border-bottom:2px solid var(--blue)">
+          <div class="flex items-center gap-4">
+            <span class="display text-[20px] tracking-[0.14em]" style="color:var(--red)">ICS</span>
+            <span class="chip mono text-[10px] cap px-2.5 py-1" style="background:rgba(91,157,217,.15);color:var(--blue)">Conte&uacute;do de apoio</span>
+          </div>
+          <button type="button" class="back-btn" data-back>${ico('<path d="M19 12H5M12 19l-7-7 7-7"/>')} Voltar</button>
+        </header>
+        <div class="flex-1 flex flex-col px-14 py-11 justify-center min-h-0">
+          <div class="anim rail-blue mb-7">
+            <div class="cap text-[11px]" style="color:var(--blue)">${slide.kicker || 'Pra apoiar'}</div>
+          </div>
+          <h2 class="display anim delay-1 text-[44px] max-w-[24ch] leading-[1.18] mb-7">${slide.title}</h2>
+          ${slide.stats ? `
+          <div class="anim delay-2 grid grid-cols-3 gap-4 max-w-[74ch]">
+            ${slide.stats.map(([n, l]) => `<div class="card p-6"><div class="display text-[36px]" style="color:var(--blue)">${n}</div><div class="text-[13.5px] mt-2 leading-snug" style="color:var(--muted)">${l}</div></div>`).join('')}
+          </div>` : slide.bullets ? `
+          <div class="anim delay-2 flex flex-col gap-3.5 max-w-[74ch]">
+            ${slide.bullets.map(b => `<div class="flex gap-3.5 items-start text-[17px]"><span class="mt-1.5 shrink-0" style="color:var(--blue)">${ico('<circle cx="12" cy="12" r="4"/>')}</span><span style="color:var(--muted)">${b}</span></div>`).join('')}
+          </div>` : `
+          <div class="anim delay-2 flex flex-col gap-4 max-w-[74ch]">
+            ${slide.body.map(pp => `<p class="text-[18px] leading-relaxed" style="color:var(--muted)">${pp}</p>`).join('')}
+          </div>`}
+          ${slide.art ? `<div class="console anim delay-2 mt-7 px-7 py-5 max-w-[74ch]"><pre class="mono text-[13.5px] leading-[1.6]" style="color:var(--muted)">${esc(slide.art)}</pre></div>` : ''}
+        </div>
+      </div>`;
+
+    default:
+      return `<div class="slide"><div class="p-14">slide?</div></div>`;
+  }
+}
+
+const deck = document.getElementById('deck');
+deck.innerHTML = SLIDES.map((s, i) => render(s, i)).join('');
+const slides = [...document.querySelectorAll('.slide')];
+
+let cur = 0;
+function show(i) {
+  cur = Math.max(0, Math.min(slides.length - 1, i));
+  slides.forEach((el, idx) => el.classList.toggle('active', idx === cur));
+}
+
+// slides 'aside' (conteudo de apoio) ficam FORA da navegacao normal: setas e
+// clique nunca entram neles sozinhos, so um jumpTo() explicito leva la.
+function isAside(i) { return !!(SLIDES[i] && SLIDES[i].aside); }
+function nextMainIndex(from) { let i = from + 1; while (i < SLIDES.length && isAside(i)) i++; return Math.min(i, slides.length - 1); }
+function prevMainIndex(from) { let i = from - 1; while (i >= 0 && isAside(i)) i--; return Math.max(i, 0); }
+
+let returnTo = null; // pra onde 'voltar' leva, quando se entra num aside
+
+function next() { if (isAside(cur)) { back(); return; } show(nextMainIndex(cur)); }
+function prev() { if (isAside(cur)) { back(); return; } show(prevMainIndex(cur)); }
+
+// abre um slide de apoio por id, lembrando de onde saiu
+function jumpTo(id) {
+  const idx = SLIDES.findIndex(sl => sl.id === id);
+  if (idx === -1) return;
+  returnTo = cur;
+  show(idx);
+}
+// volta pro slide principal de onde o apoio foi aberto (ou so recua, se
+// por algum motivo nao tiver um ponto de retorno guardado)
+function back() {
+  const r = returnTo;
+  returnTo = null;
+  show(r !== null ? r : prevMainIndex(cur));
+}
+
+// "pausa a aula" antes de trocar de slide: cobre a tela com um icone
+// (pause pra entrar no apoio, play pra voltar), troca o conteudo por baixo
+// enquanto esta coberto, e revela ao sumir. So decora jumpTo/back, a
+// navegacao em si (indices, returnTo) continua identica.
+const pauseOverlay = document.getElementById('pause-overlay');
+const poIcon = document.getElementById('po-icon');
+const poLabel = document.getElementById('po-label');
+const PAUSE_SVG = '<svg width="28" height="28" viewBox="0 0 24 24" fill="var(--red)"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>';
+const PLAY_SVG = '<svg width="28" height="28" viewBox="0 0 24 24" fill="var(--red)"><polygon points="7 4 20 12 7 20 7 4"/></svg>';
+let pauseBusy = false;
+function pauseTransition(doNav, mode) {
+  if (pauseBusy) { doNav(); return; }
+  pauseBusy = true;
+  poIcon.innerHTML = mode === 'play' ? PLAY_SVG : PAUSE_SVG;
+  poLabel.textContent = mode === 'play' ? 'retomando a aula' : 'pausando pra explicar';
+  pauseOverlay.classList.add('on');
+  setTimeout(doNav, 480);
+  setTimeout(() => { pauseOverlay.classList.remove('on'); pauseBusy = false; }, 560);
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); next(); }
+  else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); prev(); }
+  else if (e.key === 'Home') show(0);
+  else if (e.key === 'End') { let i = slides.length - 1; while (i >= 0 && isAside(i)) i--; show(i); }
+  else if (e.key === 'Escape' && isAside(cur)) pauseTransition(back, 'play');
+});
+deck.addEventListener('click', (e) => {
+  const jumpBtn = e.target.closest('[data-jump]');
+  if (jumpBtn) { pauseTransition(() => jumpTo(jumpBtn.dataset.jump), 'pause'); return; }
+  const backBtn = e.target.closest('[data-back]');
+  if (backBtn) { pauseTransition(back, 'play'); return; }
+  if (e.clientX < window.innerWidth * 0.28) prev(); else next();
+});
+
+const isPrint = new URLSearchParams(location.search).get('print') === '1';
+const introEl = document.getElementById('intro');
+
+// som sintetizado do "tu-dum", sem arquivo de audio: dois golpes graves com
+// decaimento exponencial. Autoplay de audio costuma ser bloqueado sem gesto
+// do usuario, entao falha em silencio e tenta de novo no primeiro clique/tecla.
+function playTuDum() {
+  try {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    const ctx = new Ctx();
+    const hit = (t, freq, gain, dur) => {
+      const osc = ctx.createOscillator();
+      const sub = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.type = 'sine'; sub.type = 'triangle';
+      osc.frequency.setValueAtTime(freq, t);
+      sub.frequency.setValueAtTime(freq * 0.5, t);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(gain, t + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      osc.connect(g); sub.connect(g); g.connect(ctx.destination);
+      osc.start(t); sub.start(t); osc.stop(t + dur + 0.05); sub.stop(t + dur + 0.05);
+    };
+    const now = ctx.currentTime;
+    hit(now, 150, 0.16, 0.35);         // "tu", curto e grave
+    hit(now + 1.28, 98, 0.22, 0.9);    // "dum", mais grave e mais longo, no flash
+  } catch (err) { /* autoplay bloqueado, segue so visual */ }
+}
+if (!isPrint) {
+  playTuDum();
+  document.addEventListener('pointerdown', playTuDum, { once: true });
+  document.addEventListener('keydown', playTuDum, { once: true });
+}
+
+let introDone = isPrint;
+function endIntro() {
+  if (introDone) return;
+  introDone = true;
+  introEl.classList.add('intro-out');
+  setTimeout(() => { introEl.style.display = 'none'; }, 520);
+}
+
+// modo de depuracao pra ajustar o timing sem correr contra o relogio:
+// abra com ?intro=freeze e use window.seekIntro(ms) no console pra
+// congelar num quadro qualquer da animacao (0 a ~2000ms).
+const introFreeze = new URLSearchParams(location.search).get('intro') === 'freeze';
+if (introFreeze) {
+  introEl.querySelectorAll('.intro-beam, .intro-mark, .intro-flash, .intro-tag')
+    .forEach((el) => { el.style.animationPlayState = 'paused'; });
+  window.seekIntro = (ms) => {
+    introEl.querySelectorAll('.intro-beam, .intro-mark, .intro-flash, .intro-tag')
+      .forEach((el) => { el.style.animationDelay = (-ms) + 'ms'; });
+  };
+  window.seekIntro(0);
+}
+
+if (isPrint) {
+  introEl.style.display = 'none';
+  setTimeout(() => window.print(), 600);
+} else {
+  show(0);
+  if (!introFreeze) setTimeout(endIntro, 2500);
+  introEl.addEventListener('click', endIntro);
+  document.addEventListener('keydown', endIntro, { once: true });
+}
+</script>
+</body>
+</html>

@@ -32,7 +32,12 @@ export type NodeGroup =
   | 'fanout'
   | 'rpc'
   | 'live'
-  | 'panel';
+  | 'panel'
+  | 'tenancy'
+  | 'metric'
+  | 'probe'
+  | 'attrib'
+  | 'pipeline';
 
 export type Asker = {
   name: string;
