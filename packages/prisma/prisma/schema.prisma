@@ -103,6 +103,10 @@ model User {
   role              Role             @default(MEMBER)
   whatsappPhone     String?
   privacyAcceptedAt DateTime?
+  // Set when the member leaves the program. Non-null blocks login and refresh
+  // (see AuthService) while keeping every row of their history intact —
+  // deleting the User cascades into plans, retros, attendance and notes.
+  disabledAt        DateTime?
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
   themePreference   ThemePreference?

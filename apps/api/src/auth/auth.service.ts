@@ -13,6 +13,13 @@ export const BOOTSTRAP_ADMIN_EMAILS_TOKEN = 'BOOTSTRAP_ADMIN_EMAILS_TOKEN';
 // of a raw 401.
 export const EMAIL_NOT_INVITED = 'EMAIL_NOT_INVITED';
 
+// Marker thrown from loginWithGoogle when the account exists but has been
+// disabled (member left the program). Deliberately distinct from
+// EMAIL_NOT_INVITED so the login page can explain the right thing, and so a
+// disabled account never looks like a never-invited one to the admin reading
+// logs. The controller redirects to /login?error=account_disabled.
+export const ACCOUNT_DISABLED = 'ACCOUNT_DISABLED';
+
 type LoginResult = {
   user: {
     id: string;
@@ -40,6 +47,15 @@ export class AuthService {
 
   async loginWithGoogle(profile: GoogleProfilePayload): Promise<LoginResult> {
     const existing = await this.prisma.user.findUnique({ where: { email: profile.email } });
+
+    // Checked before the bootstrap-admin branch on purpose: an explicit
+    // disable by the admin outranks membership of BOOTSTRAP_ADMIN_EMAILS.
+    // Otherwise a disabled account whose email is still in that env var
+    // would walk straight back in with ADMIN role.
+    if (existing?.disabledAt) {
+      throw new UnauthorizedException(ACCOUNT_DISABLED);
+    }
+
     const shouldBeAdmin = this.bootstrapAdmins.includes(profile.email);
 
     // First-login allowlist gate: if this email doesn't have a User row yet
@@ -155,6 +171,12 @@ export class AuthService {
     if (!existing) return null;
     const user = await this.prisma.user.findUnique({ where: { id: existing.userId } });
     if (!user) return null;
+    // A live session must not outlive the disable. The access token is only
+    // 15min, so blocking rotation here caps a disabled member's remaining
+    // access at one token lifetime even if nobody deletes their RefreshToken
+    // rows. Returning null (not throwing) matches how this method already
+    // reports "no valid session" to the controller.
+    if (user.disabledAt) return null;
     const rotated = await this.refresh.rotate(plaintextRefreshToken, user.id);
     const accessToken = this.jwt.sign({
       sub: user.id,
