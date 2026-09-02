@@ -10,6 +10,15 @@ export type AdminTopicOnItem = {
   order: number | null;
 };
 
+export type ChallengeLanguage = 'PYTHON' | 'CPP';
+
+export type AdminLibraryTestCase = {
+  name: string;
+  stdin: string;
+  expectedStdout: string;
+  hidden?: boolean;
+};
+
 export type AdminLibraryItem = {
   id: string;
   title: string;
@@ -23,6 +32,10 @@ export type AdminLibraryItem = {
   tracks: string[];
   topicId: string | null;
   topics: AdminTopicOnItem[];
+  // Optional because the backend ships these fields independently from the
+  // web build; older API may not include them yet (treat as null/[]).
+  testCases?: AdminLibraryTestCase[] | null;
+  testCasesLanguages?: ChallengeLanguage[];
   createdAt: string;
 };
 
@@ -142,5 +155,28 @@ export function useDeleteTopic() {
     mutationFn: (id: string) =>
       apiFetch<{ ok: boolean }>(`/topics/${id}`, { method: 'DELETE' }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['topics'] }),
+  });
+}
+
+export function useSetTestCases() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: {
+      id: string;
+      testCases: AdminLibraryTestCase[];
+      testCasesLanguages: ChallengeLanguage[];
+    }) =>
+      apiFetch<{ ok: true; count: number }>(`/library/${input.id}/test-cases`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          testCases: input.testCases,
+          testCasesLanguages: input.testCasesLanguages,
+        }),
+      }),
+    onSuccess: () => {
+      // The list is re-rendered with the new testCases payload so the
+      // editor reflects what's persisted without a manual refresh.
+      qc.invalidateQueries({ queryKey: ['admin', 'library'] });
+    },
   });
 }

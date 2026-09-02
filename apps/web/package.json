@@ -13,10 +13,13 @@
     "test:update": "playwright test --update-snapshots"
   },
   "dependencies": {
+    "@codemirror/lang-cpp": "^6.0.3",
+    "@codemirror/lang-python": "^6.2.1",
     "@heroui/react": "^2.4.0",
     "@ics-select/shared": "workspace:*",
     "@tanstack/react-query": "^5.97.0",
     "@tremor/react": "^3.18.7",
+    "@uiw/react-codemirror": "^4.25.10",
     "@vercel/analytics": "^2.0.1",
     "clsx": "^2.1.1",
     "framer-motion": "^11.18.2",

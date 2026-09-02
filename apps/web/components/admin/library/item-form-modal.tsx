@@ -6,6 +6,7 @@ import {
   useUpdateLibraryItem,
   type AdminLibraryItem,
 } from '../../../lib/queries/admin-library';
+import { TestCasesEditor } from './test-cases-editor';
 
 const FORMATS = ['VIDEO', 'ARTICLE', 'BOOK', 'PROBLEM', 'OTHER'] as const;
 const DIFFICULTIES = ['EASY', 'MEDIUM', 'HARD'] as const;
@@ -256,6 +257,13 @@ export function ItemFormModal({ open, initial, onClose }: ItemFormModalProps) {
               </p>
             )}
           </div>
+        )}
+
+        {/* Test cases are only meaningful on PROBLEM items that already exist.
+            We hide the editor while creating because we have no id to PATCH
+            against; the admin can edit test cases after saving the item. */}
+        {isEdit && initial && form.format === 'PROBLEM' && (
+          <TestCasesEditor item={initial} />
         )}
 
         <div className="mt-6 flex justify-end gap-3">

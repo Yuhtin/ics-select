@@ -1,0 +1,48 @@
+version: 2
+
+# Monitor the base images of the sandbox Dockerfiles. When upstream
+# publishes a patched python:3.12-slim or debian:stable-slim, Dependabot
+# opens a one-line PR bumping the digest. Merging it triggers the
+# sandbox-images workflow (paths: infra/sandbox/**), which rebuilds, scans
+# with Trivy, and pushes a new :stable tag. The VPS cron pulls it the
+# next Sunday.
+#
+# We deliberately do NOT monitor pnpm or pip deps here. Those have their
+# own surface and would flood the PR queue. Add later if the value is
+# clear.
+
+updates:
+  - package-ecosystem: 'docker'
+    directory: '/infra/sandbox'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: 'chore(sandbox)'
+    labels:
+      - 'sandbox'
+      - 'dependencies'
+
+  - package-ecosystem: 'docker'
+    directory: '/infra/sandbox-host-service'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: 'chore(sandbox-host)'
+    labels:
+      - 'sandbox'
+      - 'dependencies'
+
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'monthly'
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: 'chore(ci)'
+    labels:
+      - 'ci'
+      - 'dependencies'

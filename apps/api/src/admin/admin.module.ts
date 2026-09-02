@@ -11,6 +11,7 @@ import { InvitesModule } from './invites/invites.module.js';
 import { CockpitModule } from './cockpit/cockpit.module.js';
 import { CycleReceiptModule } from './cycle-receipt/cycle-receipt.module.js';
 import { MocksModule } from './mocks/mocks.module.js';
+import { AdminChallengesModule } from './challenges/admin-challenges.module.js';
 
 @Module({
   imports: [
@@ -26,7 +27,8 @@ import { MocksModule } from './mocks/mocks.module.js';
     CockpitModule,
     CycleReceiptModule,
     MocksModule,
+    AdminChallengesModule,
   ],
-  exports: [InvitesModule, MocksModule],
+  exports: [InvitesModule, MocksModule, AdminChallengesModule],
 })
 export class AdminModule {}

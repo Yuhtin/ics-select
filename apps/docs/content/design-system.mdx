@@ -1,0 +1,101 @@
+---
+title: Design system
+description: The visual identity of ICS Select — Magazine Editorial, dual serif, disciplined palette, accents earned by meaning.
+---
+
+# Design system
+
+ICS Select looks the way it does on purpose. The visual identity is "Magazine Editorial": a digital newspaper voice for narrative surfaces, a Bloomberg-terminal voice for dense-data surfaces, no decorative color, no shadows, and accent colors that have to earn the right to appear.
+
+The full reference lives at `docs/design-system.md` in the repo. This page is the summary that explains the **why**.
+
+## The dual-serif decision
+
+Two serifs, used in different contexts:
+
+- **Newsreader** (variable, opsz 6..72) for narrative surfaces: member home, item detail, cohort, retro, admin triage, member detail. The voice is "digital newspaper, slightly literary".
+- **Source Serif 4** (variable, opsz 8..60) for dense-data surfaces: plan editor, cycle page, library, AI usage. The voice is "Bloomberg, financial terminal". Numbers use `font-variant-numeric: tabular-nums`.
+
+Plus Inter for UI chrome (buttons, labels, nav) and IBM Plex Mono for numeric badges and IDs.
+
+The two-serif choice is the riskiest move in the whole system. Most products pick one type family and stick to it. ICS Select uses serif **specifically because** members spend an hour or more reading on these surfaces, and a serif at a serious size feels like reading, not like swiping. The two faces are different enough to feel like different sections of a magazine and similar enough not to clash on a page that mixes both.
+
+## The palette
+
+A single creme-leaning paper, two warm grays, a hard ink, and exactly two accent colors:
+
+```
+--paper         #FAFAF7   page bg (creme warm)
+--paper-warm    #EFEEE8   section bg
+--surface       #FFFFFF   card, input bg
+--ink           #1A1A1A   primary text + primary button
+--ink-soft      #44403C   secondary text
+--ink-mute      #78716C   meta / eyebrow
+--ink-faint     #A8A29E   placeholder, disabled
+--rule          #E5E4DF   dividers, borders
+--accent        #C45D3A   terracotta — reflective / returning
+--focus         #4F46E5   indigo — act-now / momentum
+```
+
+That is it. No teal, no soft pink, no "this card is special" pastel. Plane separation comes from `paper → paper-warm → surface` plus a one-pixel rule border, never from a box shadow. The discipline is what makes the rare accent appearance feel meaningful.
+
+## Accent meaning, earned
+
+Each accent has exactly one job:
+
+| Token | When it appears |
+|---|---|
+| `--focus` (indigo) | "This is your moment to act." Hero `now` state, 30-day streak milestone, start-CTA. |
+| `--accent` (terracotta) | "Returning, reflective." Carry-over sections, AI rationale block, 14-day streak. |
+| `--outcome-stuck` (deep red) | "Urgent." Running-late hero, stuck banner, urgent admin alerts. |
+| `--outcome-done-hard` (amber) | "Past-due warning." Late list row border + badge. |
+| `--outcome-done-easy` (green) | "Completed / on track." All-done hero dot, 7-day streak, done-dots. |
+
+One accent per visual unit. If multiple states could apply, the priority is `stuck > late > focus > accent > default`. The most common bug a new contributor makes is "this looks bland, let me add a brand color here". Resist. The blandness on a normal day is what makes the focus on an urgent day actually focus the eye.
+
+## Outcome tokens
+
+Item outcomes use a small dot (6 to 10 pixels) or a three-pixel left border, never a full background. The point is to be readable in a list of fifteen items without making the list feel like a christmas tree.
+
+```
+--done-easy   #065F46
+--done-hard   #B45309
+--doubts      #6B21A8
+--stuck       #991B1B
+--pending     #A8A29E
+```
+
+In Tailwind, these are prefixed `outcome-` (`text-outcome-done-easy`, `text-outcome-stuck`). The unprefixed names (`text-done-easy`) do not exist; Tailwind drops them silently and the element renders with inherited color. Always grep `tailwind.config.ts` before using a color class you did not write.
+
+## Geometry
+
+- Spacing: multiples of 4 (4, 8, 12, 16, 24, 32, 48, 64).
+- Radius: cards 12, inputs 8, pills 999, images 8.
+- No box-shadow on the main design.
+- Motion via Framer Motion: 150ms hover, 200ms modal, 300ms page. Easing `[0.16, 1, 0.3, 1]`.
+
+## Platform colors
+
+Each study-material source has a three-pixel vertical stripe in its signature color before the item title:
+
+| Platform | Color |
+|---|---|
+| YouTube | red `#FF0000` |
+| LeetCode | orange `#FFA116` |
+| Medium | black `#191919` |
+| GitHub | purple `#8B5CF6` |
+| Article | teal `#0D9488` |
+| Book | amber `#D97706` |
+
+This creates natural visual variety in a long plan list without being decorative. Detection is in `apps/web/lib/format/platform.ts`: URL pattern first, then a fallback to `ItemFormat`.
+
+## What never appears
+
+- **Emojis.** The codebase uses `lucide-react` icons at stroke 1.5. The `⚠` glyph counts as emoji on most platforms; use `<AlertTriangle />` instead.
+- **Box shadows on the main design.** Plane separation only.
+- **Marketing-tone copy on the product.** No "Welcome back, champion!", no "Let's crush this week!". The voice is editorial, not coach.
+- **Brand colors for decoration.** Indigo, terracotta, and the outcome tokens have to earn their pixel.
+
+## When in doubt
+
+If you are about to add a color or a shadow and you are not sure if it is allowed, the answer is almost certainly no. The full design system file (`docs/design-system.md` in the repo) has the long version, including code patterns for the hero card, list row, item card, and cockpit cards.

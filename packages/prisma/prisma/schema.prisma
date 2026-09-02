@@ -86,6 +86,18 @@ enum MockType {
   SYSTEM_DESIGN
 }
 
+enum ChallengeLanguage {
+  PYTHON
+  CPP
+}
+
+enum ChallengeRating {
+  EASY
+  MEDIUM
+  HARD
+  ABANDONED
+}
+
 enum UserEventType {
   SESSION_START
   PLAN_VIEW
@@ -127,6 +139,7 @@ model User {
   invitesCreated     InvitedEmail[]      @relation("inviteCreatedBy")
   events             UserEvent[]
   mocks              MockInterview[]
+  challenges         ChallengeAttempt[]
 }
 
 // Allowlist for first-login. Admin pre-registers an email with a role; the
@@ -185,6 +198,7 @@ model Cycle {
   retros      WeeklyRetro[]
   invites     InvitedEmail[]
   mocks       MockInterview[]
+  challenges  ChallengeAttempt[]
 }
 
 model CycleMembership {
@@ -284,8 +298,18 @@ model LibraryItem {
   createdAt        DateTime                     @default(now())
   updatedAt        DateTime                     @updatedAt
 
-  topics    LibraryItemTopic[]
-  planItems WeeklyPlanItem[]
+  // Challenge Mode test cases authored by the admin (feature 11). JSON shape
+  // validated by Zod at the API layer; Prisma can't enforce the inner schema.
+  // Each entry is { name, stdin, expectedStdout, hidden? }. Null = item is
+  // open in challenge mode but without graded tests (Run-only mode).
+  testCases          Json?
+  // Languages the admin has authored test cases for. Lets the member's UI
+  // grey out language options that won't have any tests run against them.
+  testCasesLanguages ChallengeLanguage[]          @default([])
+
+  topics     LibraryItemTopic[]
+  planItems  WeeklyPlanItem[]
+  challenges ChallengeAttempt[]
 
   @@index([format])
   @@index([difficulty])
@@ -536,4 +560,61 @@ model MockInterview {
   @@index([userId, cycleId])
   @@index([userId, conductedAt])
   @@index([type])
+}
+
+// Self-reported live coding challenge against a LibraryItem (feature 11).
+// The member starts the attempt, the timer runs server-side from `startedAt`,
+// and submission/abandonment closes the row. `finalCode` carries the code at
+// close time (auto-saved during the attempt). `testResults` is the raw JSON
+// per-case payload for debug, separate from the consolidated counts.
+model ChallengeAttempt {
+  id            String            @id @default(cuid())
+  userId        String
+  cycleId       String
+  libraryItemId String
+  language      ChallengeLanguage
+  startedAt     DateTime          @default(now())
+  submittedAt   DateTime?
+  durationSec   Int               @default(0)
+  approachText  String            @default("")
+  finalCode     String            @default("")
+  selfRating    ChallengeRating   @default(ABANDONED)
+  notes         String?
+  testsPassed   Int?
+  testsTotal    Int?
+  testResults   Json?
+  createdAt     DateTime          @default(now())
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cycle       Cycle       @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  libraryItem LibraryItem @relation(fields: [libraryItemId], references: [id], onDelete: Cascade)
+
+  @@index([userId, cycleId])
+  @@index([userId, libraryItemId])
+  @@index([libraryItemId, submittedAt])
+}
+
+// Audit log of every sandbox `docker run` invocation. Decoupled from
+// ChallengeAttempt because (a) a single attempt produces many executions
+// (each Run plus N test cases at submit time), (b) some executions happen
+// outside any attempt (admin "Test against my code" tooling), and (c)
+// retention differs — attempts are historical, logs prune after 30 days.
+model SandboxExecutionLog {
+  id            String            @id @default(cuid())
+  userId        String?
+  attemptId     String?
+  language      ChallengeLanguage
+  // OK | TIMEOUT | COMPILE_ERROR | RUNTIME_ERROR | SANDBOX_ERROR
+  status        String
+  exitCode      Int?
+  durationMs    Int
+  stdoutBytes   Int               @default(0)
+  stderrBytes   Int               @default(0)
+  codeBytes     Int               @default(0)
+  stdinBytes    Int               @default(0)
+  occurredAt    DateTime          @default(now())
+
+  @@index([occurredAt])
+  @@index([userId, occurredAt])
+  @@index([status, occurredAt])
 }

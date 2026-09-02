@@ -1,0 +1,136 @@
+name: Sandbox images
+
+# Builds the per-language sandbox images that the Challenge Mode feature
+# spawns to run member code. Triggered when the Dockerfiles change, on a
+# weekly schedule to pick up upstream base-image CVE patches, and on
+# manual dispatch when we want to force a rebuild.
+#
+# Trivy gates the push: any HIGH or CRITICAL vulnerability in the built
+# image blocks `docker push`, so a CVE in python:3.12-slim either gets
+# patched upstream first or surfaces here as a failed job.
+#
+# Output: ghcr.io/<owner>/ics-sandbox-{python,cpp} with two tags each —
+#   :stable          → latest green build
+#   :stable-YYYYMMDD → dated for rollback
+# The VPS cron (infra/sandbox/refresh.sh) pulls :stable weekly.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'infra/sandbox/**'
+      - 'infra/sandbox-host-service/**'
+      - '.github/workflows/sandbox-images.yml'
+  schedule:
+    # Sundays 06:00 UTC = 03:00 BRT. Runs a few hours before the VPS
+    # refresh cron (07:00 BRT) so the new image is ready to be pulled.
+    - cron: '0 6 * * 0'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  packages: write
+  security-events: write   # Trivy can upload SARIF to the security tab
+
+concurrency:
+  group: sandbox-images-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - language: python
+            context: .
+            dockerfile: infra/sandbox/Dockerfile.python
+            image: ics-sandbox-python
+          - language: cpp
+            context: .
+            dockerfile: infra/sandbox/Dockerfile.cpp
+            image: ics-sandbox-cpp
+          # The host service isn't a sandbox image — it's the privileged
+          # broker that calls `docker run` against the host daemon on behalf
+          # of the API container. Same build + scan + push pipeline so it
+          # gets the same Trivy gate.
+          - language: host
+            context: infra/sandbox-host-service
+            dockerfile: infra/sandbox-host-service/Dockerfile
+            image: ics-sandbox-host
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set image metadata
+        id: meta
+        run: |
+          OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          DATE_TAG=$(date -u '+%Y%m%d')
+          echo "owner=${OWNER_LC}" >> "$GITHUB_OUTPUT"
+          echo "ref=ghcr.io/${OWNER_LC}/${{ matrix.image }}" >> "$GITHUB_OUTPUT"
+          echo "stable=ghcr.io/${OWNER_LC}/${{ matrix.image }}:stable" >> "$GITHUB_OUTPUT"
+          echo "dated=ghcr.io/${OWNER_LC}/${{ matrix.image }}:stable-${DATE_TAG}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v4
+
+      # Build locally first (load: true). Trivy scans the local image,
+      # and only if it passes do we log in to ghcr and push. This avoids
+      # pushing a vulnerable image that we'd then have to delete.
+      - name: Build (local)
+        uses: docker/build-push-action@v7
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          load: true
+          tags: ${{ matrix.image }}:scan
+          # OCI labels so refresh.sh's `image prune --filter label=...` only
+          # touches images that came from this repo, not random VPS junk.
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.licenses=UNLICENSED
+            org.opencontainers.image.title=${{ matrix.image }}
+
+      - name: Trivy vulnerability scan (gating)
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ${{ matrix.image }}:scan
+          severity: HIGH,CRITICAL
+          # CVEs without a fix yet can't be acted on — don't block the
+          # whole pipeline on them. The next rebuild after upstream
+          # publishes a fix will pick it up.
+          ignore-unfixed: true
+          exit-code: 1
+          format: table
+          # Cache the vuln DB across runs.
+          cache: 'true'
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push
+        uses: docker/build-push-action@v7
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: |
+            ${{ steps.meta.outputs.stable }}
+            ${{ steps.meta.outputs.dated }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.licenses=UNLICENSED
+            org.opencontainers.image.title=${{ matrix.image }}
+
+      - name: Summary
+        run: |
+          echo "Built and pushed:" >> "$GITHUB_STEP_SUMMARY"
+          echo "- \`${{ steps.meta.outputs.stable }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- \`${{ steps.meta.outputs.dated }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "VPS will pull these on the next Sunday 07:00 BRT cron run." >> "$GITHUB_STEP_SUMMARY"
