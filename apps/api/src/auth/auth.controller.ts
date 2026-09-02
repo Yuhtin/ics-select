@@ -10,7 +10,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { AuthGuard } from '@nestjs/passport';
 import type { Request, Response } from 'express';
-import { AuthService, EMAIL_NOT_INVITED } from './auth.service.js';
+import { ACCOUNT_DISABLED, AuthService, EMAIL_NOT_INVITED } from './auth.service.js';
 import { Public } from './decorators/public.decorator.js';
 import { CurrentUser } from './decorators/current-user.decorator.js';
 import type { JwtStrategyPayload } from './strategies/jwt.strategy.js';
@@ -45,9 +45,12 @@ export class AuthController {
       // the UI can show "email not invited". Rethrow anything else so the
       // global filter maps it normally (500 / wrapped Unauthorized etc.).
       const msg = err instanceof UnauthorizedException ? err.message : null;
-      if (msg === EMAIL_NOT_INVITED) {
+      if (msg === EMAIL_NOT_INVITED || msg === ACCOUNT_DISABLED) {
         const url = new URL('/login', frontend);
-        url.searchParams.set('error', 'not_invited');
+        url.searchParams.set(
+          'error',
+          msg === ACCOUNT_DISABLED ? 'account_disabled' : 'not_invited',
+        );
         res.redirect(url.toString());
         return;
       }

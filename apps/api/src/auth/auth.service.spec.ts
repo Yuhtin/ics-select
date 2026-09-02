@@ -1,4 +1,4 @@
-import { AuthService } from './auth.service';
+import { ACCOUNT_DISABLED, AuthService } from './auth.service';
 
 type FakeUser = {
   id: string;
@@ -7,6 +7,7 @@ type FakeUser = {
   pictureUrl: string | null;
   role: 'ADMIN' | 'MEMBER';
   privacyAcceptedAt: Date | null;
+  disabledAt: Date | null;
 };
 type FakeCycle = {
   id: string;
@@ -33,12 +34,18 @@ function fakeDeps(bootstrap: string[] = []) {
   const memberships = new Map<string, FakeMembership>();
   const prisma = {
     user: {
-      findUnique: jest.fn(async ({ where }: { where: { email: string } }) =>
-        users.get(where.email) ?? null,
-      ),
-      create: jest.fn(async ({ data }: { data: Omit<FakeUser, 'id'> }) => {
+      // loginWithGoogle looks up by email, refreshSession by id — the fake
+      // has to answer both or the refresh tests silently get null.
+      findUnique: jest.fn(async ({ where }: { where: { email?: string; id?: string } }) => {
+        if (where.email) return users.get(where.email) ?? null;
+        for (const u of users.values()) if (u.id === where.id) return u;
+        return null;
+      }),
+      // The service never sets disabledAt on create, so the fake supplies the
+      // column default rather than accepting it from the caller.
+      create: jest.fn(async ({ data }: { data: Omit<FakeUser, 'id' | 'disabledAt'> }) => {
         const id = `u-${users.size + 1}`;
-        const rec = { id, ...data } as FakeUser;
+        const rec = { id, disabledAt: null, ...data } as FakeUser;
         users.set(data.email, rec);
         return rec;
       }),
@@ -282,3 +289,64 @@ describe('AuthService.loginWithGoogle', () => {
     expect(gcal.invalidateAuth).toHaveBeenCalledWith(result.user.id);
   });
 });
+
+describe('AuthService — disabled accounts', () => {
+  const profile = {
+    email: 'pedro@sou.inteli.edu.br',
+    name: 'Pedro',
+    pictureUrl: 'http://pic',
+    accessToken: 'ga',
+    refreshToken: 'gr',
+  };
+
+  function disabledUser(): FakeUser {
+    return {
+      id: 'u-1',
+      email: profile.email,
+      name: 'Pedro',
+      pictureUrl: null,
+      role: 'MEMBER',
+      privacyAcceptedAt: null,
+      disabledAt: new Date('2026-09-02T12:00:00Z'),
+    };
+  }
+
+  it('rejects login for a disabled account', async () => {
+    const { svc, users } = fakeDeps();
+    users.set(profile.email, disabledUser());
+    await expect(svc.loginWithGoogle(profile)).rejects.toThrow(ACCOUNT_DISABLED);
+  });
+
+  it('does not refresh the Google tokens of a disabled account', async () => {
+    const { svc, users, prisma } = fakeDeps();
+    users.set(profile.email, disabledUser());
+    await expect(svc.loginWithGoogle(profile)).rejects.toThrow(ACCOUNT_DISABLED);
+    // Bailing before the upsert matters: a disabled member must not get a
+    // fresh access token minted into GoogleAccount as a login side effect.
+    expect(prisma.googleAccount.upsert).not.toHaveBeenCalled();
+  });
+
+  it('disable outranks the bootstrap-admin allowlist', async () => {
+    const { svc, users } = fakeDeps([profile.email]);
+    users.set(profile.email, disabledUser());
+    await expect(svc.loginWithGoogle(profile)).rejects.toThrow(ACCOUNT_DISABLED);
+  });
+
+  it('refuses to rotate a refresh token once the account is disabled', async () => {
+    const { svc, users, refresh } = fakeDeps();
+    users.set(profile.email, disabledUser());
+    expect(await svc.refreshSession('rt-any')).toBeNull();
+    expect(refresh.rotate).not.toHaveBeenCalled();
+  });
+
+  it('still lets an active account log in and refresh', async () => {
+    const { svc, users, refresh } = fakeDeps();
+    users.set(profile.email, { ...disabledUser(), disabledAt: null });
+    const login = await svc.loginWithGoogle(profile);
+    expect(login.user.email).toBe(profile.email);
+    const refreshed = await svc.refreshSession('rt-any');
+    expect(refreshed).not.toBeNull();
+    expect(refresh.rotate).toHaveBeenCalled();
+  });
+});
+

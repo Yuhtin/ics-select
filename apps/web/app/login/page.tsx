@@ -136,9 +136,16 @@ export default function LoginPage() {
 function LoginErrorBanner() {
   const searchParams = useSearchParams();
   const error = searchParams.get('error');
-  if (error !== 'not_invited' && error !== 'auth_retry') return null;
+  if (error !== 'not_invited' && error !== 'auth_retry' && error !== 'account_disabled')
+    return null;
   const copy =
-    error === 'auth_retry'
+    error === 'account_disabled'
+      ? {
+          title: 'Acesso encerrado',
+          body:
+            'Sua participação no ICS Select foi encerrada, então esta conta não entra mais na plataforma. Se acha que é engano, fale com o diretor educacional.',
+        }
+      : error === 'auth_retry'
       ? {
           title: 'Login falhou — tenta de novo',
           body:
