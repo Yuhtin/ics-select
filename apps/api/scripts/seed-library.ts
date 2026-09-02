@@ -1025,7 +1025,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'YouTube — KodeKloud',
     tags: ['concept', 'code-reading', 'ai-coding', 'code-review', 'onboarding'],
-    topicOrder: { 'foundations': 12 },
+    topicOrder: { 'foundations': 15 },
   },
 
   // ---------------------------------------------------------------------------
@@ -5644,7 +5644,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'YouTube — PawelCodeStuff',
     tags: ['concept', 'fundamentals', 'unicode', 'rendering', 'curiosity', 'pawel-code-stuff'],
-    topicOrder: { 'foundations': 7 },
+    topicOrder: { 'foundations': 10 },
   },
   {
     title: 'File Compression Explained In 4 Minutes',
@@ -5658,7 +5658,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'YouTube — PawelCodeStuff',
     tags: ['concept', 'fundamentals', 'compression', 'huffman', 'lz77', 'curiosity', 'pawel-code-stuff'],
-    topicOrder: { 'foundations': 8 },
+    topicOrder: { 'foundations': 11 },
   },
 
   // --- senior-eng case studies + URL shortener case + SD overview — 2026-05-13 ---
@@ -5688,7 +5688,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — NeetCode',
     tags: ['concept', 'system-design', 'overview', 'cap', 'acid', 'neetcode'],
-    topicOrder: { 'foundations': 9, 'scalability': 8 },
+    topicOrder: { 'foundations': 12, 'scalability': 8 },
   },
   {
     title: 'Tiny URL — System Design Interview Question (URL shortener)',
@@ -5912,7 +5912,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'YouTube — Renato Augusto',
     tags: ['case-study', 'software-failure', 'concurrency', 'critical-systems', 'testing', 'renato-augusto'],
-    topicOrder: { 'foundations': 10 },
+    topicOrder: { 'foundations': 13 },
   },
   {
     title: 'A História Não Contada do Desastre do Ariane 5',
@@ -5926,7 +5926,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'YouTube — Renato Augusto',
     tags: ['case-study', 'software-failure', 'type-conversion', 'testing', 'critical-systems', 'code-reuse', 'renato-augusto'],
-    topicOrder: { 'foundations': 11 },
+    topicOrder: { 'foundations': 14 },
   },
 
   // --- Renato case-studies: Google Drive + Ticketmaster — 2026-05-13 ---
@@ -6393,7 +6393,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
     source: 'YouTube — Tech With Soleyman',
     tags: ['career', 'cloud-engineer', 'devops', 'solutions-architect', 'tech-with-soleyman'],
-    topicOrder: { 'foundations': 13, 'cloud': 17 },
+    topicOrder: { 'foundations': 16, 'cloud': 17 },
   },
   {
     title: 'AWS Cloud Engineer Full Course For Beginners (2026)',
@@ -6429,7 +6429,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'YouTube — Cadams Tech',
     tags: ['career', 'career-oneoff', 'backend', 'cadams-tech'],
-    topicOrder: { 'foundations': 14 },
+    topicOrder: { 'foundations': 17 },
   },
   {
     title: 'What Does A Solutions Engineer Actually Do?',
@@ -6443,7 +6443,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'YouTube — Seraphine Young',
     tags: ['career', 'career-oneoff', 'solutions-engineer', 'pre-sales', 'seraphine-young'],
-    topicOrder: { 'foundations': 15 },
+    topicOrder: { 'foundations': 18 },
   },
   {
     title: 'Who A Blockchain Developer REALLY Is? Revealing the Myths',
@@ -6457,7 +6457,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'YouTube — Jelvix',
     tags: ['career', 'career-oneoff', 'blockchain', 'web3', 'jelvix'],
-    topicOrder: { 'foundations': 16 },
+    topicOrder: { 'foundations': 19 },
   },
   {
     title: 'So You Want To Be A Security Engineer',
@@ -6471,7 +6471,7 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'YouTube — A Cloud Guru',
     tags: ['career', 'career-oneoff', 'security-engineer', 'cybersecurity', 'a-cloud-guru'],
-    topicOrder: { 'foundations': 17, 'security': 15 },
+    topicOrder: { 'foundations': 20, 'security': 15 },
   },
   {
     title: 'Red vs Blue vs Purple Team Explained for Beginners!',
@@ -6485,7 +6485,60 @@ const ITEMS: ItemSeed[] = [
     tracks: [],
     source: 'YouTube — LabCyber',
     tags: ['career', 'career-oneoff', 'red-team', 'blue-team', 'purple-team', 'labcyber'],
-    topicOrder: { 'foundations': 18, 'security': 16 },
+    topicOrder: { 'foundations': 21, 'security': 16 },
+  },
+
+  // ---------------------------------------------------------------------------
+  // FOUNDATIONS — método de LeetCode. Entram logo depois do "LeetCode vai te
+  // fazer melhorar como dev?" (Galego, order 6): como abordar uma questão,
+  // que padrões existem, e como montar a rotina de estudo.
+  //
+  // Os três canais NÃO entram na whitelist — Davi aprovou estes vídeos, não os
+  // canais (mesmo precedente do KodeKloud). Tag `channel-oneoff` pra rastrear.
+  // NeetCodeIO segue filtrado pro resto: o filtro existe por causa dos
+  // solve-alongs de VSCode, e este vídeo não é um.
+  // ---------------------------------------------------------------------------
+  {
+    title: 'How to Solve ANY LeetCode Problem (Step-by-Step)',
+    url: 'https://www.youtube.com/watch?v=OTNe0eV8418',
+    description:
+      'Codebagel — método em 5 passos pra atacar qualquer questão: simplificar o enunciado, reconhecer o padrão, montar o plano de implementação, codar, debugar. No fim ele roda os passos numa questão HARD.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 13,
+    topicSlugs: ['foundations'],
+    tracks: [],
+    source: 'YouTube — Codebagel',
+    tags: ['concept', 'channel-oneoff', 'leetcode', 'problem-solving', 'interview-prep', 'codebagel'],
+    topicOrder: { 'foundations': 7 },
+  },
+  {
+    title: '8 patterns to solve 80% Leetcode problems',
+    url: 'https://www.youtube.com/watch?v=xo7XrRVxH8Y',
+    description:
+      'Sahil & Sarra — os 8 padrões que aparecem na maioria das questões de LeetCode. 8min, é uma passada de nome em cada padrão, não o ensino de cada um.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 8,
+    topicSlugs: ['foundations', 'array'],
+    tracks: [],
+    source: 'YouTube — Sahil & Sarra',
+    tags: ['concept', 'channel-oneoff', 'leetcode', 'patterns', 'interview-prep', 'sahil-sarra'],
+    topicOrder: { 'foundations': 8, 'array': 51 },
+  },
+  {
+    title: 'How I would learn Leetcode if I could start over',
+    url: 'https://www.youtube.com/watch?v=aHZW7TuY_yo',
+    description:
+      'NeetCodeIO — como o autor do NeetCode 150 estudaria LeetCode se recomeçasse: o erro que ele cometeu no início, por que só aumentar o volume de questões trava, e como montar um sistema de estudo.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 19,
+    topicSlugs: ['foundations'],
+    tracks: [],
+    source: 'YouTube — NeetCodeIO',
+    tags: ['concept', 'channel-oneoff', 'leetcode', 'study-method', 'interview-prep', 'neetcode'],
+    topicOrder: { 'foundations': 9 },
   },
 ];
 
