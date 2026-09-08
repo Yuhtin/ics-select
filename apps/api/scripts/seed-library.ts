@@ -6540,6 +6540,28 @@ const ITEMS: ItemSeed[] = [
     tags: ['concept', 'channel-oneoff', 'leetcode', 'study-method', 'interview-prep', 'neetcode'],
     topicOrder: { 'foundations': 9 },
   },
+  // ---------------------------------------------------------------------------
+  // Confidential computing (aprovado 2026-09-08)
+  //
+  // IBM Technology está na lista de canais REJEITADOS (estilo corporate frio).
+  // Davi trouxe este vídeo e aprovou como exceção pontual — o canal continua
+  // fora da whitelist e nenhum outro item IBM entra sem ele mandar de novo.
+  // Formato lightboard, zero IDE. Tag `channel-oneoff` pra rastrear.
+  // ---------------------------------------------------------------------------
+  {
+    title: 'What is Confidential Computing?',
+    url: 'https://www.youtube.com/watch?v=pMHxLBJ6_UA',
+    description:
+      'IBM Technology — lightboard sobre dado em uso: por que criptografia em repouso e em trânsito não cobre o momento em que o processo carrega o dado na memória, e o que o TEE (enclave de hardware) faz nesse ponto. No fim, casos de uso em cloud pública. 9min.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 9,
+    topicSlugs: ['security', 'cloud'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — IBM Technology',
+    tags: ['concept', 'channel-oneoff', 'security', 'confidential-computing', 'tee', 'enclave', 'encryption', 'ibm-technology'],
+    topicOrder: { 'security': 17 },
+  },
 ];
 
 // -----------------------------------------------------------------------------
