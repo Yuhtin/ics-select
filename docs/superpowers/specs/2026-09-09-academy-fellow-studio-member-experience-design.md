@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-09
 
-**Status:** Approved design, awaiting written-spec review
+**Status:** Approved
 
 **Parent identity:** [Academy Fellow Visual Identity Redesign](./2026-09-09-academy-fellow-visual-identity-design.md)
 
@@ -238,8 +238,8 @@ The component does not fetch data, call APIs, infer domain rules, or persist dra
 The visible step list is derived from the existing data:
 
 1. If stuck or doubt items exist, choose the blocked item.
-2. If a blocked item was chosen, answer what would unblock it.
-3. If a weekly recap exists, choose the item that was most valuable, including None.
+2. If stuck or doubt items exist, answer what would unblock the work.
+3. If a weekly recap exists, choose the item that was most valuable, including the existing `Nenhum` option.
 4. Explain why that item was valuable.
 5. Describe one change desired in the next plan.
 
