@@ -211,11 +211,11 @@ export function ItemFocus({ item }: ItemFocusProps) {
                     value={actualMinutesInput}
                     onChange={(e) => setActualMinutesInput(e.target.value)}
                     placeholder="Ex: 45"
-                    className="mt-1 w-32 rounded-input border border-border-token bg-surface px-3 py-2 font-mono text-sm tabular-nums text-fg placeholder:text-fg-mute focus:outline-none focus:ring-2 focus:ring-primary"
+                    className="mt-1 min-h-11 w-32 rounded-input border border-border-token bg-surface px-3 py-2 font-mono text-sm tabular-nums text-fg placeholder:text-fg-mute focus:outline-none focus:ring-2 focus:ring-primary"
                   />
                 </label>
                 {actualMinutesInput.trim() !== '' && parsedMinutes === null && (
-                  <p className="font-mono text-[11px] text-outcome-stuck">
+                  <p className="font-sans text-[11px] text-outcome-stuck">
                     Use um número inteiro entre 1 e 1440.
                   </p>
                 )}

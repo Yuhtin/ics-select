@@ -47,8 +47,8 @@ export function TimePill({
   useLayoutEffect(() => {
     if (!open || !buttonRef.current) return;
     const rect = buttonRef.current.getBoundingClientRect();
-    const POPOVER_MAX_H = 320;
-    const POPOVER_W = 260;
+    const POPOVER_MAX_H = allowEndOfDay ? 384 : 324;
+    const POPOVER_W = 312;
     const spaceBelow = window.innerHeight - rect.bottom;
     const top =
       spaceBelow < POPOVER_MAX_H + 12 && rect.top > POPOVER_MAX_H + 12
@@ -59,7 +59,7 @@ export function TimePill({
       left = Math.max(8, window.innerWidth - POPOVER_W - 8);
     }
     setCoords({ left, top, width: POPOVER_W });
-  }, [open]);
+  }, [open, allowEndOfDay]);
 
   // Close on outside click or Escape
   useEffect(() => {
@@ -175,7 +175,7 @@ export function TimePill({
                             }
                           }}
                           className={clsx(
-                            'h-9 rounded-input font-mono text-[12px] tabular-nums transition-colors',
+                            'h-11 min-w-11 rounded-input font-mono text-[12px] tabular-nums transition-colors',
                             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
                             !allowed && 'cursor-not-allowed text-fg-mute',
                             allowed && isSelected && 'bg-primary text-primary-fg',
@@ -230,7 +230,7 @@ export function TimePill({
                     disabled={!isTimeAllowed(1440)}
                     onClick={() => commit(1440)}
                     className={clsx(
-                      'mt-4 flex w-full items-center justify-between rounded-[8px] border px-3 py-2 font-sans text-[12px] transition-colors',
+                      'mt-4 flex min-h-11 w-full items-center justify-between rounded-[8px] border px-3 py-2 font-sans text-[12px] transition-colors',
                       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
                       !isTimeAllowed(1440)
                         ? 'cursor-not-allowed border-border-token/60 text-fg-mute'

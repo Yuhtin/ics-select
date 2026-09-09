@@ -122,12 +122,31 @@ test.describe('settings tabs', () => {
       await page.keyboard.press('Tab');
       await page.getByRole('button', { name: 'What does this do?' }).focus();
       await expect(page.getByRole('tooltip')).toContainText('study events created by Academy Fellow');
-      await page.getByRole('button', { name: 'Mon start' }).click();
-      const picker = page.getByRole('dialog', { name: 'Mon start picker' });
-      await expect(picker).toBeVisible();
-      await expect(picker).toHaveScreenshot(`academy-time-picker-${theme}.png`, { animations: 'disabled' });
-      await page.keyboard.press('Escape');
-      await expect(picker).toBeHidden();
+      for (const label of ['Mon start', 'Mon end']) {
+        await page.getByRole('button', { name: label, exact: true }).click();
+        const dialog = page.getByRole('dialog', { name: `${label} picker` });
+        await expect(dialog).toHaveCSS('opacity', '1');
+        await expect(dialog).toHaveCSS('transform', 'none');
+        const choices = await dialog.locator('button:enabled').evaluateAll((buttons) => buttons.map((button) => {
+          const { width, height } = button.getBoundingClientRect();
+          return { label: button.getAttribute('aria-label') ?? button.textContent, width, height };
+        }));
+        expect(choices.length).toBeGreaterThan(0);
+        expect.soft(choices.find(({ width, height }) => width < 44 || height < 44), `${label} choices must be at least 44×44px`).toBeUndefined();
+        if (label === 'Mon end') {
+          expect.soft((await dialog.getByRole('button', { name: /End of day/ }).boundingBox())?.height).toBeGreaterThanOrEqual(44);
+        }
+        const bounds = await dialog.boundingBox();
+        expect(bounds!.x).toBeGreaterThanOrEqual(0);
+        expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(390);
+        expect(bounds!.y).toBeGreaterThanOrEqual(0);
+        expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(844);
+        if (label === 'Mon start') {
+          await expect(dialog).toHaveScreenshot(`academy-time-picker-${theme}.png`, { animations: 'disabled' });
+        }
+        await page.keyboard.press('Escape');
+        await expect(dialog).toBeHidden();
+      }
     });
 
     test(`onboarding steps stay readable in ${theme}`, async ({ page }) => {
@@ -140,6 +159,8 @@ test.describe('settings tabs', () => {
       await expect(page.getByRole('heading', { name: 'Where should we reach you?' })).toBeVisible();
       await page.getByRole('textbox').fill('+55');
       await expect(page.getByText('E.164 format:', { exact: false })).toBeVisible();
+      const sansFont = await page.locator('body').evaluate((body) => getComputedStyle(body).fontFamily);
+      await expect.soft(page.getByText('E.164 format:', { exact: false })).toHaveCSS('font-family', sansFont);
       await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
       await page.getByRole('textbox').fill('+5511987654321');
       await page.getByRole('button', { name: 'Next' }).click();
@@ -150,6 +171,15 @@ test.describe('settings tabs', () => {
       await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       await page.getByRole('button', { name: 'Next' }).click();
       await expect(page.getByRole('heading', { name: 'Dark or light?' })).toBeVisible();
+      await expect(page.getByRole('button', { name: "LET'S GOOOO" })).toBeEnabled();
+      await page.route(`${API_BASE}/me/profile`, (route) => route.fulfill({
+        status: 503,
+        json: { error: { code: 'UNAVAILABLE', message: "Couldn't save. Try again." } },
+      }));
+      await page.getByRole('button', { name: "LET'S GOOOO" }).click();
+      const submitError = page.getByText("Couldn't save. Try again.", { exact: true });
+      await expect(submitError).toBeVisible();
+      await expect.soft(submitError).toHaveCSS('font-family', sansFont);
       await expect(page.getByRole('button', { name: "LET'S GOOOO" })).toBeEnabled();
     });
   }

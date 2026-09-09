@@ -73,6 +73,27 @@ async function mockMemberProduct(page: Page, theme: 'light' | 'dark') {
 }
 
 for (const theme of ['light', 'dark'] as const) {
+  test(`member outcome form has mobile touch targets and sans validation in ${theme}`, async ({ page }) => {
+    await mockMemberProduct(page, theme);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/me/item/binary-search');
+    await page.getByRole('button', { name: /Nailed it$/ }).click();
+    const minutes = page.getByRole('spinbutton');
+    await expect(minutes).toBeVisible();
+    const bounds = await minutes.boundingBox();
+    expect.soft(bounds?.height).toBeGreaterThanOrEqual(44);
+    expect(bounds?.width).toBeGreaterThanOrEqual(44);
+    await minutes.fill('0');
+    const validation = page.getByText('Use um número inteiro entre 1 e 1440.');
+    await expect(validation).toBeVisible();
+    const sansFont = await page.locator('body').evaluate((body) => getComputedStyle(body).fontFamily);
+    await expect.soft(validation).toHaveCSS('font-family', sansFont);
+    await expect(page.getByRole('button', { name: 'Save outcome' })).toBeDisabled();
+    await minutes.fill('45');
+    await expect(validation).toBeHidden();
+    await expect(page.getByRole('button', { name: 'Save outcome' })).toBeEnabled();
+  });
+
   test(`member routes and actions remain usable in ${theme}`, async ({ page }) => {
     await mockMemberProduct(page, theme);
     await page.setViewportSize({ width: 1440, height: 1000 });

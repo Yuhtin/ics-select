@@ -166,7 +166,7 @@ export default function MemberOnboardingPage() {
                   error={phone.length > 0 && !phoneOk}
                 />
                 {phone.length > 0 && !phoneOk && (
-                  <p className="mt-2 font-mono text-[11px] text-danger">
+                  <p className="mt-2 font-sans text-[11px] text-danger">
                     E.164 format: + country code + number. Example: +5511999999999
                   </p>
                 )}
@@ -235,7 +235,7 @@ export default function MemberOnboardingPage() {
       </div>
 
       {submitError && (
-        <p className="mt-4 font-mono text-[11px] text-danger">{submitError}</p>
+        <p className="mt-4 font-sans text-[11px] text-danger">{submitError}</p>
       )}
 
       <nav className="mt-10 flex items-center justify-between gap-3">
