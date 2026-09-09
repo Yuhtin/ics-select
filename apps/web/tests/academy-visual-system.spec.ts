@@ -322,11 +322,28 @@ for (const theme of ['light', 'dark'] as const) {
     await page.getByRole('button', { name: 'Save outcome' }).click();
     expect((await outcomeRequest).postDataJSON()).toEqual({ outcome: 'DONE_EASY', reflection: undefined, actualMinutes: 45 });
 
+    await page.goto('/me/cohort');
+    await page.addStyleTag({ content: 'nextjs-portal { display: none !important; }' });
+    await expect(page.getByRole('heading', { name: '2 classmates this cycle' })).toBeVisible();
+    await expect(page.getByText('Recursion intro')).toBeVisible();
+    await expect(page).toHaveScreenshot(`academy-cohort-route-${theme}.png`, { fullPage: true, animations: 'disabled' });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  });
+
+  test(`Calendar member routes and actions remain usable in ${theme}`, async ({ page }) => {
+    await mockMemberProduct(page, theme);
+    await page.setViewportSize({ width: 1440, height: 1000 });
     await page.goto('/me/plan');
     await page.addStyleTag({ content: 'nextjs-portal { display: none !important; }' });
     await expect(page).toHaveURL(/\/me\/calendar$/);
     await expect(page.getByText('This week · 1 Academy Fellow')).toBeVisible();
     await expect(page.getByText('Mentor office hours')).toBeVisible();
+    const external = page.getByRole('link', { name: 'Open external link' });
+    await expect(external).toHaveAttribute('href', 'https://meet.google.com/example');
+    const target = await external.boundingBox();
+    expect(target?.width).toBeGreaterThanOrEqual(44);
+    expect(target?.height).toBeGreaterThanOrEqual(44);
     await expect(page).toHaveScreenshot(`academy-calendar-route-${theme}.png`, { fullPage: true, animations: 'disabled' });
     await page.getByText(memberItem.title, { exact: true }).last().click();
     const dialog = page.getByRole('dialog');
@@ -341,13 +358,12 @@ for (const theme of ['light', 'dark'] as const) {
     expect((await rescheduleRequest).postDataJSON()).toEqual({ start: '2026-04-17T20:00:00Z', end: '2026-04-17T20:45:00Z' });
     await expect(dialog).toBeHidden();
 
-    await page.goto('/me/cohort');
-    await page.addStyleTag({ content: 'nextjs-portal { display: none !important; }' });
-    await expect(page.getByRole('heading', { name: '2 classmates this cycle' })).toBeVisible();
-    await expect(page.getByText('Recursion intro')).toBeVisible();
-    await expect(page).toHaveScreenshot(`academy-cohort-route-${theme}.png`, { fullPage: true, animations: 'disabled' });
     await page.setViewportSize({ width: 390, height: 844 });
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await page.getByText(memberItem.title, { exact: true }).last().evaluate((element) => element.scrollIntoView({ block: 'center', inline: 'center' }));
+    await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await expect(page).toHaveScreenshot(`academy-calendar-mobile-${theme}.png`, { fullPage: true, animations: 'disabled' });
   });
 
   test(`member empty, loading and failure states in ${theme}`, async ({ page }) => {

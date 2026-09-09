@@ -57,7 +57,7 @@ export default function MeCalendarPage() {
   const handleToday = useCallback(() => setWeekStart(startOfSundayWeek(new Date())), []);
 
   return (
-    <div className="space-y-6">
+    <div data-testid="calendar-workspace" className="min-w-0 space-y-5">
       <CalendarHeader
         weekStart={weekStart}
         weekEnd={weekEnd}
@@ -71,15 +71,21 @@ export default function MeCalendarPage() {
       ) : (
         <>
           {!data.hasGoogleConnection && <CalendarConnectBanner variant="not_connected" />}
-          <div className="grid gap-6 lg:grid-cols-[240px_minmax(0,1fr)]">
-            <CalendarSidebar events={data.events} timezone={data.timezone} />
-            <div className="space-y-6">
-              <CalendarApp
-                weekStart={weekStart}
-                timezone={data.timezone}
-                events={data.events}
-                onRescheduleClick={setEditing}
-              />
+          <div className="grid min-w-0 gap-5 lg:grid-cols-[220px_minmax(0,1fr)]">
+            <div data-testid="calendar-agenda" className="border-b border-border-token pb-5 lg:border-b-0 lg:border-r lg:pb-0 lg:pr-5">
+              <CalendarSidebar events={data.events} timezone={data.timezone} />
+            </div>
+            <div className="min-w-0">
+              <div className="overflow-x-auto">
+                <div className="min-w-[840px]">
+                  <CalendarApp
+                    weekStart={weekStart}
+                    timezone={data.timezone}
+                    events={data.events}
+                    onRescheduleClick={setEditing}
+                  />
+                </div>
+              </div>
               <CalendarLegend />
             </div>
           </div>

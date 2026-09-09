@@ -72,7 +72,7 @@ export function CalendarSidebar({ events, timezone }: CalendarSidebarProps) {
           <p className="font-sans text-xs font-medium text-fg-mute">
             {day}
           </p>
-          <ul className="space-y-1">
+          <ul className="divide-y divide-border-token">
             {items.map((item) => {
               const platform = detectPlatform(item.ics?.url, item.ics?.format);
               const outcome = item.ics?.outcome ?? 'PENDING';
@@ -80,14 +80,14 @@ export function CalendarSidebar({ events, timezone }: CalendarSidebarProps) {
                 <li key={item.id}>
                   <Link
                     href={`/me/item/${item.ics?.itemId}`}
-                    className="group flex min-h-11 items-center gap-2 rounded-input py-2 pl-0 pr-2 transition-colors hover:bg-bg-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+                    className="group flex min-h-11 items-center gap-2 rounded-input py-3 pl-0 pr-1 transition-colors hover:bg-bg-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
                   >
-                    <span className={`h-[28px] w-[3px] rounded-sm ${PLATFORM_CLASS[platform]}`} />
-                    <span className={`h-2 w-2 rounded-full ${OUTCOME_CLASS[outcome]}`} />
-                    <span className="min-w-0 flex-1 truncate font-sans text-[13px] text-fg">
+                    <span aria-hidden className={`h-7 w-[3px] shrink-0 rounded-sm ${PLATFORM_CLASS[platform]}`} />
+                    <span aria-hidden className={`h-2 w-2 shrink-0 rounded-full ${OUTCOME_CLASS[outcome]}`} />
+                    <span className="min-w-0 flex-1 font-sans text-[13px] leading-relaxed text-fg">
                       {item.title}
                     </span>
-                    <span className="font-sans text-[10px] tabular-nums text-fg-mute">
+                    <span className="shrink-0 font-mono text-[10px] tabular-nums text-fg-mute">
                       {formatTime(item.start, timezone)}
                     </span>
                   </Link>

@@ -20,6 +20,13 @@ async function mockStudioMember(page: Page, retroOpen = true) {
     const path = new URL(route.request().url()).pathname;
     const body: Record<string, unknown> = {
       '/me': member,
+      '/me/calendar': {
+        weekStart: '2026-04-12', weekEnd: '2026-04-18', timezone: 'America/Sao_Paulo', hasGoogleConnection: true,
+        events: [
+          { id: 'study-1', kind: 'ICS', title: item.title, start: '2026-04-17T19:00:00Z', end: '2026-04-17T19:45:00Z', allDay: false, ics: { ...item, itemId: item.id } },
+          { id: 'external-1', kind: 'EXTERNAL', title: 'Mentor office hours', start: '2026-04-16T17:00:00Z', end: '2026-04-16T18:00:00Z', allDay: false, meetLink: 'https://meet.google.com/example', location: 'Campus' },
+        ],
+      },
       '/me/home': {
         hero: { state: 'now', item }, today: [item], late: [], days: [], unscheduled: [],
         streak: { current: 7, last7: [true, true, true, true, true, true, true] },
@@ -162,5 +169,38 @@ for (const theme of ['light', 'dark'] as const) {
     await expect(page.getByTitle('Hashing — 1/4')).toHaveClass(/bg-primary\/25/);
     await expect(page.getByTitle('Arrays — 4/6')).toHaveClass(/bg-primary\/65/);
     await expect(page.getByTitle('Recursion — 4/4')).toHaveClass(/bg-success/);
+  });
+}
+
+for (const width of [390, 1440]) {
+  test(`Calendar makes the week grid the primary planning surface at ${width}px`, async ({ page }) => {
+    await mockStudioMember(page);
+    // Freeze only Date: the Playwright clock's Intl shim conflicts with temporal-polyfill/global.
+    await page.addInitScript(() => {
+      const NativeDate = Date;
+      const fixed = NativeDate.parse('2026-04-17T19:00:00Z');
+      window.Date = class extends NativeDate {
+        constructor(...args: ConstructorParameters<typeof Date>) {
+          super(...(args.length ? args : [fixed]));
+        }
+        static now() { return fixed; }
+      } as DateConstructor;
+    });
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/me/calendar');
+    const workspace = page.getByTestId('calendar-workspace');
+    await expect(workspace).toBeVisible();
+    const agenda = page.getByTestId('calendar-agenda');
+    await expect(agenda).toHaveCSS(width >= 1024 ? 'border-right-width' : 'border-bottom-width', '1px');
+    await expect(workspace.getByRole('heading', { level: 1 })).toHaveText('Apr 12 to Apr 18');
+    await expect(page.getByText('Binary search patterns', { exact: true }).last()).toBeVisible();
+    await expect(agenda.getByRole('link', { name: /Binary search patterns/ })).toHaveAttribute('href', '/me/item/binary-search');
+    for (const name of ['Today', 'Previous week', 'Next week']) {
+      const control = workspace.getByRole('button', { name, exact: true });
+      expect((await control.boundingBox())?.height).toBeGreaterThanOrEqual(44);
+      await control.focus();
+      await expect(control).not.toHaveCSS('box-shadow', 'none');
+    }
+    await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   });
 }
