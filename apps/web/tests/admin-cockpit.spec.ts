@@ -223,6 +223,46 @@ async function setupMocks(page: Page, state: 'AT_RISK' | 'WATCH' | 'ON_TRACK') {
 
 test.describe('Academy admin operations', () => {
   for (const theme of ['light', 'dark'] as const) {
+    test(`plans keep member names readable from mobile to desktop in ${theme}`, async ({ page }) => {
+      await setupMocks(page, 'ON_TRACK');
+      await page.addInitScript((value) => localStorage.setItem('ics-theme', value), theme);
+      await page.route(`${API_BASE}/cycles`, (route) => route.fulfill({ json: [
+        { ...BASE_COCKPIT.cycle, status: 'ACTIVE' },
+      ] }));
+      await page.route(`${API_BASE}/admin/cycles/cy1/plans?*`, (route) => route.fulfill({ json: {
+        cycle: BASE_COCKPIT.cycle,
+        weeks: [{
+          weekStart: '2026-09-01', weekEnd: '2026-09-07',
+          plans: [{
+            id: 'plan1', status: 'PUBLISHED', lastActivityAt: '2026-09-01T12:00:00Z',
+            items: { done: 8, total: 11 }, user: BASE_COCKPIT.member,
+          }],
+        }],
+      } }));
+      await page.setViewportSize({ width: 390, height: 960 });
+      await page.goto('/admin/plans?cycleId=cy1');
+      const row = page.getByRole('link', { name: /Maria Clara/ });
+      await expect(row).toHaveAttribute('href', '/admin/member/u1/plan/plan1');
+      await page.evaluate(() => document.fonts.ready);
+      for (const width of [390, 768, 1440]) {
+        await page.setViewportSize({ width, height: 960 });
+        const name = row.getByText('Maria Clara', { exact: true });
+        expect(await name.evaluate((element) => element.getBoundingClientRect().width)).toBeGreaterThan(0);
+        expect(await name.evaluate((element) => element.clientWidth >= element.scrollWidth)).toBe(true);
+        await expect(name).toBeInViewport({ ratio: 1 });
+        for (const label of ['PUBLISHED', '8/11 done', '1w ago', '→']) {
+          await expect(row.getByText(label, { exact: true })).toBeInViewport({ ratio: 1 });
+        }
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+        await row.focus();
+        await expect(row).toBeFocused();
+        await expect(page.getByLabel('Cycle', { exact: true })).toBeEnabled();
+        await expect(page.getByLabel('Status', { exact: true })).toBeEnabled();
+      }
+      await page.getByLabel('Status', { exact: true }).selectOption('published');
+      await expect(page).toHaveURL(/status=published/);
+    });
+
     test(`waitlist course filters show hover feedback in ${theme}`, async ({ page }) => {
       await setupMocks(page, 'ON_TRACK');
       await page.addInitScript((value) => localStorage.setItem('ics-theme', value), theme);

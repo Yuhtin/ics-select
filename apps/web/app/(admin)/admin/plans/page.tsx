@@ -145,9 +145,9 @@ function PlansPageInner() {
                   <li key={plan.id}>
                     <Link
                       href={`/admin/member/${plan.user.id}/plan/${plan.id}`}
-                      className="flex items-center gap-4 px-4 py-3 hover:bg-bg-subtle/60 transition-colors"
+                      className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 hover:bg-bg-subtle/60 transition-colors sm:flex-nowrap"
                     >
-                      <span className="flex-1 font-sans text-base font-semibold text-fg truncate">
+                      <span className="w-full shrink-0 font-sans text-base font-semibold text-fg truncate sm:w-auto sm:flex-1">
                         {plan.user.name}
                       </span>
                       <span
