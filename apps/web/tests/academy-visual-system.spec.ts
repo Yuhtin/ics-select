@@ -218,7 +218,13 @@ const memberItem = {
 const memberHome = {
   hero: { state: 'now', item: memberItem }, today: [memberItem], late: [], days: [],
   unscheduled: [], streak: { current: 7, last7: [true, true, true, true, true, true, true] },
-  carryOverReflection: null, topicCoverage: [],
+  carryOverReflection: null, topicCoverage: [
+    { topicId: 'complexity', slug: 'complexity', label: 'Complexity', order: 0, itemsPlanned: 0, itemsDone: 0 },
+    { topicId: 'hashing', slug: 'hashing', label: 'Hashing', order: 1, itemsPlanned: 4, itemsDone: 1 },
+    { topicId: 'arrays', slug: 'arrays', label: 'Arrays', order: 2, itemsPlanned: 4, itemsDone: 2 },
+    { topicId: 'recursion', slug: 'recursion', label: 'Recursion', order: 3, itemsPlanned: 4, itemsDone: 4 },
+  ],
+  studyTime: { actualMinutes: 90, estimatedMinutes: 120, itemsWithTime: 2, itemsTotal: 3 },
 };
 const memberDetail = {
   ...memberItem, reflection: null, completedAt: null,

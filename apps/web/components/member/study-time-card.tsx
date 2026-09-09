@@ -24,6 +24,7 @@ export function StudyTimeCard({ studyTime, presentation = 'card', className }: S
       : Math.min(150, Math.round((actualMinutes / estimatedMinutes) * 100));
   const overrun = estimatedMinutes > 0 && actualMinutes > estimatedMinutes * OVERRUN_RATIO;
   const barWidth = Math.min(100, pct);
+  const progressTone = presentation === 'context' ? 'bg-fg-mute' : 'bg-primary';
 
   return (
     <section className={clsx(PRESENTATION[presentation], className)}>
@@ -42,7 +43,7 @@ export function StudyTimeCard({ studyTime, presentation = 'card', className }: S
         <div
           className={clsx(
             'h-full transition-[width]',
-            overrun ? 'bg-reflect' : 'bg-primary',
+            overrun ? 'bg-reflect' : progressTone,
           )}
           style={{ width: `${barWidth}%` }}
         />

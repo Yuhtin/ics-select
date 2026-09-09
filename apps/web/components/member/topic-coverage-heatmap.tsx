@@ -40,12 +40,19 @@ const TIER_BG: Record<MasteryTier, string> = {
   complete: 'bg-success',
 };
 
+const CONTEXT_TIER_BG: Record<MasteryTier, string> = {
+  ...TIER_BG,
+  started: 'bg-fg-mute/25',
+  'on-track': 'bg-fg-mute/65',
+};
+
 interface Props {
   topics: CoverageTopic[];
   selectedId?: string | null;
   onSelect?: (topicId: string | null) => void;
   tileSize?: number;
   showLegend?: boolean;
+  presentation?: 'default' | 'context';
 }
 
 export function TopicCoverageHeatmap({
@@ -54,6 +61,7 @@ export function TopicCoverageHeatmap({
   onSelect,
   tileSize = 22,
   showLegend = true,
+  presentation = 'default',
 }: Props) {
   const grouped = useMemo(() => {
     const byPhase = new Map<PhaseKey, CoverageTopic[]>();
@@ -71,6 +79,7 @@ export function TopicCoverageHeatmap({
   }, [topics]);
 
   const dim = { width: tileSize, height: tileSize };
+  const tierBackground = presentation === 'context' ? CONTEXT_TIER_BG : TIER_BG;
 
   return (
     <div className="space-y-3">
@@ -114,7 +123,7 @@ export function TopicCoverageHeatmap({
                       style={dim}
                       className={clsx(
                         'rounded-[3px] border transition-all',
-                        TIER_BG[tier],
+                        tierBackground[tier],
                         isSelected
                           ? 'scale-110 border-primary shadow-sm'
                           : 'border-transparent',
@@ -140,7 +149,7 @@ export function TopicCoverageHeatmap({
                   key={tier}
                   className={clsx(
                     'h-2.5 w-2.5 rounded-[2px]',
-                    TIER_BG[tier],
+                    tierBackground[tier],
                   )}
                 />
               ),

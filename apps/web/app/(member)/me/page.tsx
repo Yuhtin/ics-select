@@ -90,7 +90,7 @@ export default function MeHomePage() {
           {data.topicCoverage.length > 0 && (
             <section className="py-5">
               <p className="text-xs text-fg-mute">Topic coverage</p>
-              <div className="mt-4"><TopicCoverageHeatmap topics={data.topicCoverage} tileSize={18} /></div>
+              <div className="mt-4"><TopicCoverageHeatmap topics={data.topicCoverage} tileSize={18} presentation="context" /></div>
             </section>
           )}
         </StudioContextRail>

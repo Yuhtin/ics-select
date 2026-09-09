@@ -23,7 +23,12 @@ async function mockStudioMember(page: Page, retroOpen = true) {
       '/me/home': {
         hero: { state: 'now', item }, today: [item], late: [], days: [], unscheduled: [],
         streak: { current: 7, last7: [true, true, true, true, true, true, true] },
-        carryOverReflection: null, topicCoverage: [],
+        carryOverReflection: null, topicCoverage: [
+          { topicId: 'complexity', slug: 'complexity', label: 'Complexity', order: 0, itemsPlanned: 0, itemsDone: 0 },
+          { topicId: 'hashing', slug: 'hashing', label: 'Hashing', order: 1, itemsPlanned: 4, itemsDone: 1 },
+          { topicId: 'arrays', slug: 'arrays', label: 'Arrays', order: 2, itemsPlanned: 4, itemsDone: 2 },
+          { topicId: 'recursion', slug: 'recursion', label: 'Recursion', order: 3, itemsPlanned: 4, itemsDone: 4 },
+        ],
         studyTime: { actualMinutes: 90, estimatedMinutes: 120, itemsWithTime: 2, itemsTotal: 3 },
       },
       '/me/cohort': { cycleName: '2026.2', memberCount: 0, members: [], ranking: [
@@ -131,3 +136,31 @@ test('Today uses an open focus band and divided context rail', async ({ page }) 
   await expect(context.getByText('Study time this week')).toBeVisible();
   await expect(page.locator('[data-metadata-pill]')).toHaveCount(0);
 });
+
+for (const theme of ['light', 'dark'] as const) {
+  test(`Today uses neutral aggregate metrics and preserves reference defaults in ${theme}`, async ({ page }) => {
+    await mockStudioMember(page);
+    await page.addInitScript((value) => localStorage.setItem('ics-theme', value), theme);
+    await page.goto('/me');
+    const context = page.getByTestId('studio-context-rail');
+    const study = context.locator('section').filter({ has: page.getByText('Study time this week', { exact: true }) });
+    const coverage = context.locator('section').filter({ has: page.getByText('Topic coverage', { exact: true }) });
+    await expect(study).toBeVisible();
+    await expect(coverage).toBeVisible();
+    await expect.soft(study.locator('[class*="bg-primary"]')).toHaveCount(0);
+    await expect.soft(coverage.locator('[class*="bg-primary"]')).toHaveCount(0);
+    const neutral = await study.getByText('Study time this week').evaluate((element) => getComputedStyle(element).color);
+    await expect.soft(study.locator('[style]')).toHaveCSS('background-color', neutral);
+    await expect(coverage.getByTitle('Hashing — 1/4')).toHaveClass(/bg-fg-mute\/25/);
+    await expect(coverage.getByTitle('Arrays — 2/4')).toHaveClass(/bg-fg-mute\/65/);
+    await expect(coverage.getByTitle('Recursion — 4/4')).toHaveClass(/bg-success/);
+    await expect(coverage.getByTitle('Complexity — 0/0')).toHaveClass(/bg-bg-subtle/);
+
+    await page.goto('/dev/me-preview');
+    const referenceStudy = page.locator('section').filter({ has: page.getByText('Study time this week', { exact: true }) });
+    await expect(referenceStudy.locator('[style]')).toHaveClass(/bg-primary/);
+    await expect(page.getByTitle('Hashing — 1/4')).toHaveClass(/bg-primary\/25/);
+    await expect(page.getByTitle('Arrays — 4/6')).toHaveClass(/bg-primary\/65/);
+    await expect(page.getByTitle('Recursion — 4/4')).toHaveClass(/bg-success/);
+  });
+}
