@@ -15,10 +15,11 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // DS v2 — Focus room palette
+        // Academy Fellow semantic palette
         bg: 'hsl(var(--bg) / <alpha-value>)',
         'bg-subtle': 'hsl(var(--bg-subtle) / <alpha-value>)',
         surface: 'hsl(var(--surface) / <alpha-value>)',
+        'surface-strong': 'hsl(var(--surface-strong) / <alpha-value>)',
         'surface-hover': 'hsl(var(--surface-hover) / <alpha-value>)',
 
         fg: {
@@ -99,21 +100,21 @@ const config: Config = {
         DEFAULT: 'hsl(var(--border) / <alpha-value>)',
       },
       fontFamily: {
-        serif: ['Newsreader', 'Georgia', 'serif'],
+        serif: ['var(--font-newsreader)', 'Georgia', 'serif'],
         // serif-tool is a legacy alias; DS v2 uses serif only for moments.
         // Kept pointing at Newsreader so admin pages that still reference
         // it don't break. New code should use `font-serif` for moments or
         // `font-sans` (Inter) for everything else.
-        'serif-tool': ['Newsreader', 'Georgia', 'serif'],
-        sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-        mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
+        'serif-tool': ['var(--font-newsreader)', 'Georgia', 'serif'],
+        sans: ['var(--font-inter)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        mono: ['var(--font-jetbrains-mono)', 'ui-monospace', 'monospace'],
       },
       borderRadius: {
-        card: '0.625rem',   // 10px — tighter v2
+        card: '1rem',
         pill: '9999px',
-        input: '0.5rem',    // 8px
-        tile: '0.875rem',   // 14px — stat tiles
-        img: '0.5rem',
+        input: '0.625rem',
+        tile: '1rem',
+        img: '0.75rem',
       },
       letterSpacing: {
         eyebrow: '0.08em',  // tightened from 0.14em
@@ -147,14 +148,14 @@ const config: Config = {
       themes: {
         light: {
           colors: {
-            background: '#F7F8FA',
-            foreground: '#14181F',
+            background: '#F3F3F1',
+            foreground: '#18181C',
           },
         },
         dark: {
           colors: {
-            background: '#0F1218',
-            foreground: '#F2F4F7',
+            background: '#111114',
+            foreground: '#F4F4F1',
           },
         },
       },

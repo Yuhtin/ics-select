@@ -1,16 +1,29 @@
 import type { Metadata } from 'next';
+import { Inter, JetBrains_Mono, Newsreader } from 'next/font/google';
 import { Analytics } from '@vercel/analytics/next';
 import { Providers } from './providers';
 import './globals.css';
 
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter', display: 'swap' });
+const newsreader = Newsreader({
+  subsets: ['latin'],
+  variable: '--font-newsreader',
+  display: 'swap',
+});
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ['latin'],
+  variable: '--font-jetbrains-mono',
+  display: 'swap',
+});
+
 export const metadata: Metadata = {
-  title: 'ICS Select — Preparacao para tech de elite | Inteli',
+  title: 'Academy Fellow | Preparação para tech de elite | Inteli Academy',
   description:
     'Programa exclusivo que prepara os 12 melhores alunos do Inteli para Big Tech, consulting tech, competitive programming e startups top.',
   openGraph: {
-    title: 'ICS Select — Preparacao para tech de elite',
+    title: 'Academy Fellow | Preparação para tech de elite',
     description:
-      'Programa exclusivo pra entrevistas tecnicas em Big Tech, consulting tech, competitive programming e startups top.',
+      'Programa exclusivo pra entrevistas técnicas em Big Tech, consulting tech, competitive programming e startups top.',
     type: 'website',
   },
 };
@@ -22,19 +35,7 @@ export default function RootLayout({
   // via a small inline script (see providers.tsx ThemeScript).
   return (
     <html lang="pt-BR" suppressHydrationWarning>
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link
-          rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossOrigin="anonymous"
-        />
-        <link
-          rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=JetBrains+Mono:wght@400;500;600&display=swap"
-        />
-      </head>
-      <body className="min-h-screen font-sans">
+      <body className={`${inter.variable} ${newsreader.variable} ${jetbrainsMono.variable} min-h-screen font-sans`}>
         <Providers>{children}</Providers>
         <Analytics />
       </body>

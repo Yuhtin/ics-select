@@ -3,36 +3,38 @@
 @tailwind utilities;
 
 /* ============================================================
-   ICS Design System v2 — "Focus room"
-   Cool neutral base (Linear/Notion), Inter-first, serif for moments,
-   functional accents with disciplined color. Dark mode first-class.
+   Academy Fellow — Inteli Academy
+   Cool neutral surfaces, Academy blue, Inter-first interfaces,
+   editorial Newsreader moments, and semantic outcome colors.
    Legacy v1 tokens (paper/ink/accent/focus/rule) remain as aliases
    so components written against v1 keep working.
    ============================================================ */
 
 :root,
 [data-theme='light'] {
+  --brand-mark-filter: none;
   /* Surfaces — cool neutral */
-  --bg: 220 14% 98%;            /* #F7F8FA */
-  --bg-subtle: 220 14% 96%;     /* #F1F3F6 */
-  --surface: 0 0% 100%;         /* #FFFFFF */
-  --surface-hover: 220 14% 97%;
+  --bg: 60 8% 95%;
+  --bg-subtle: 228 16% 94%;
+  --surface: 60 14% 99%;
+  --surface-strong: 231 14% 90%;
+  --surface-hover: 228 16% 96%;
 
   /* Ink scale */
-  --fg: 220 20% 10%;            /* #14181F */
-  --fg-soft: 220 10% 32%;       /* #4B525C */
-  --fg-mute: 220 8% 48%;        /* #707682 */
-  --fg-faint: 220 8% 64%;       /* #9AA0AB */
-  --fg-ghost: 220 8% 80%;
+  --fg: 240 8% 10%;
+  --fg-soft: 233 6% 29%;
+  --fg-mute: 230 6% 43%;
+  --fg-faint: 230 6% 58%;
+  --fg-ghost: var(--border-strong);
 
   /* Borders */
-  --border: 220 14% 91%;        /* #E4E7EC */
-  --border-strong: 220 14% 82%;
+  --border: 233 12% 87%;
+  --border-strong: 230 11% 77%;
 
   /* Functional accents — same chroma, varied hue */
-  --primary: 243 75% 59%;       /* #4F46E5 indigo — act-now */
-  --primary-soft: 243 75% 96%;
-  --primary-fg: 0 0% 100%;
+  --primary: 251 100% 50%;
+  --primary-soft: 252 100% 95%;
+  --primary-fg: 248 100% 98%;
 
   --success: 160 70% 38%;       /* #1E9B6B emerald — done */
   --success-soft: 160 60% 94%;
@@ -76,23 +78,25 @@
 }
 
 [data-theme='dark'] {
-  --bg: 222 18% 8%;
-  --bg-subtle: 222 16% 11%;
-  --surface: 222 14% 13%;
-  --surface-hover: 222 14% 16%;
+  --brand-mark-filter: brightness(0) invert(1);
+  --bg: 240 8% 7%;
+  --bg-subtle: 240 10% 10%;
+  --surface: 240 9% 13%;
+  --surface-strong: 240 9% 17%;
+  --surface-hover: 240 9% 16%;
 
-  --fg: 210 15% 96%;
-  --fg-soft: 215 12% 78%;
-  --fg-mute: 218 10% 60%;
-  --fg-faint: 220 8% 44%;
-  --fg-ghost: 220 8% 30%;
+  --fg: 60 12% 95%;
+  --fg-soft: 240 6% 81%;
+  --fg-mute: 234 6% 65%;
+  --fg-faint: 230 5% 49%;
+  --fg-ghost: var(--border-strong);
 
-  --border: 222 14% 20%;
-  --border-strong: 222 14% 28%;
+  --border: 234 9% 21%;
+  --border-strong: 234 7% 30%;
 
-  --primary: 243 90% 70%;
-  --primary-soft: 243 60% 20%;
-  --primary-fg: 0 0% 100%;
+  --primary: 250 100% 64%;
+  --primary-soft: 249 43% 22%;
+  --primary-fg: 248 100% 98%;
 
   --success: 160 70% 48%;
   --success-soft: 160 60% 18%;
@@ -122,7 +126,7 @@ body {
 }
 
 html {
-  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
@@ -169,48 +173,6 @@ body {
   box-shadow: 0 0 0 4px hsl(var(--primary) / 0.12);
 }
 
-/* Split-text: visible by default, animates only once JS marks .split-go */
-.split-text span {
-  display: inline-block;
-}
-.split-text.split-go span {
-  opacity: 0;
-  transform: translateY(40%);
-  animation: splitIn 800ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-@keyframes splitIn {
-  from {
-    opacity: 0;
-    transform: translateY(40%);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Chip-word bounce in hero title */
-.chip-word {
-  display: inline-block;
-  background: hsl(var(--success-soft));
-  padding: 0 28px 6px;
-  border-radius: 999px;
-  font-style: italic;
-  transform: translateZ(0);
-  animation: chipBounce 2.8s cubic-bezier(0.16, 1, 0.3, 1) infinite;
-  vertical-align: baseline;
-  margin-top: 4px;
-}
-@keyframes chipBounce {
-  0%,
-  100% {
-    transform: rotate(-1deg) translateY(0);
-  }
-  50% {
-    transform: rotate(1deg) translateY(-3px);
-  }
-}
-
 /* Marquee */
 .marquee-track {
   display: flex;
@@ -242,27 +204,6 @@ body {
   }
   50% {
     transform: translateY(-6px);
-  }
-}
-
-/* Live pulse dot (success) */
-.dot-live-success {
-  width: 8px;
-  height: 8px;
-  border-radius: 999px;
-  background: hsl(var(--success));
-  box-shadow: 0 0 0 0 hsl(var(--success) / 0.6);
-  animation: livePulse 2s infinite;
-}
-@keyframes livePulse {
-  0% {
-    box-shadow: 0 0 0 0 hsl(var(--success) / 0.6);
-  }
-  70% {
-    box-shadow: 0 0 0 10px hsl(var(--success) / 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 hsl(var(--success) / 0);
   }
 }
 
@@ -319,17 +260,9 @@ body {
   min-height: calc(100vh - 32px);
 }
 
-/* Smooth scroll on the landing, with offset so the sticky topbar doesn't cover the target */
-html:has(.landing-stage) {
-  scroll-behavior: smooth;
-}
+/* Offset anchors beneath the landing navigation. */
 .landing-stage [id] {
   scroll-margin-top: 88px;
-}
-@media (prefers-reduced-motion: reduce) {
-  html:has(.landing-stage) {
-    scroll-behavior: auto;
-  }
 }
 
 /* Reveal on scroll */
@@ -345,30 +278,14 @@ html:has(.landing-stage) {
   transform: translateY(0);
 }
 
-/* Cursor dot */
-.cursor-dot {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 8px;
-  height: 8px;
-  border-radius: 999px;
-  background: hsl(var(--fg));
-  pointer-events: none;
-  z-index: 90;
-  transform: translate(-50%, -50%);
-  transition:
-    width 200ms cubic-bezier(0.16, 1, 0.3, 1),
-    height 200ms cubic-bezier(0.16, 1, 0.3, 1),
-    background 200ms,
-    opacity 200ms;
-  opacity: 0;
-  mix-blend-mode: difference;
-}
-
-@media (max-width: 960px) {
-  .cursor-dot {
-    display: none;
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
 
