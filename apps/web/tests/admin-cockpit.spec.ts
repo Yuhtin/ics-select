@@ -218,9 +218,15 @@ async function setupMocks(page: Page, state: 'AT_RISK' | 'WATCH' | 'ON_TRACK') {
 }
 
 test.describe('Member cockpit', () => {
+  test.afterEach(async ({ page }) => {
+    await expect(page.getByText('Academy Fellow', { exact: true }).first()).toBeVisible();
+    await expect(page.getByText('ICS Select', { exact: true })).toHaveCount(0);
+  });
+
   test('AT_RISK state', async ({ page }) => {
     await setupMocks(page, 'AT_RISK');
     await page.goto('/admin/member/u1');
+    await page.addStyleTag({ content: 'nextjs-portal { display: none !important; }' });
     await expect(page.getByText('AT RISK', { exact: true }).first()).toBeVisible();
     await page.waitForTimeout(400);
     await expect(page).toHaveScreenshot('cockpit-at-risk.png', { fullPage: true });
@@ -229,6 +235,7 @@ test.describe('Member cockpit', () => {
   test('WATCH state', async ({ page }) => {
     await setupMocks(page, 'WATCH');
     await page.goto('/admin/member/u1');
+    await page.addStyleTag({ content: 'nextjs-portal { display: none !important; }' });
     await expect(page.getByText('WATCH', { exact: true }).first()).toBeVisible();
     await page.waitForTimeout(400);
     await expect(page).toHaveScreenshot('cockpit-watch.png', { fullPage: true });
@@ -237,8 +244,34 @@ test.describe('Member cockpit', () => {
   test('ON_TRACK state', async ({ page }) => {
     await setupMocks(page, 'ON_TRACK');
     await page.goto('/admin/member/u1');
+    await page.addStyleTag({ content: 'nextjs-portal { display: none !important; }' });
     await expect(page.getByText('Maria Clara')).toBeVisible();
     await page.waitForTimeout(400);
     await expect(page).toHaveScreenshot('cockpit-on-track.png', { fullPage: true });
+  });
+
+  test('admin shell keeps all destinations accessible at desktop and mobile widths', async ({ page }) => {
+    await setupMocks(page, 'ON_TRACK');
+    await page.goto('/admin/member/u1');
+    await page.addStyleTag({ content: 'nextjs-portal { display: none !important; }' });
+    const header = page.getByRole('banner');
+    for (const width of [1280, 1024, 390]) {
+      await page.setViewportSize({ width, height: 844 });
+      for (const [name, path] of [['Members', 'members'], ['Cycles', 'cycles'], ['Plans', 'plans'], ['Library', 'library'], ['Waitlist', 'waitlist'], ['Meetings', 'meetings'], ['Config', 'config']]) {
+        const link = header.getByRole('link', { name, exact: true });
+        await expect(link).toHaveAttribute('href', `/admin/${path}`);
+        await link.focus();
+        await expect(link).toBeFocused();
+        await expect(link).not.toHaveCSS('box-shadow', 'none');
+        expect((await link.boundingBox())?.height).toBeGreaterThanOrEqual(44);
+      }
+      await expect.poll(() => header.evaluate((element) => element.scrollWidth <= window.innerWidth)).toBe(true);
+      await expect(header.getByRole('button', { name: 'Sign out' })).toBeVisible();
+    }
+    const theme = header.getByRole('button', { name: /Switch to .* theme/ });
+    await theme.click();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+    await theme.click();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
   });
 });

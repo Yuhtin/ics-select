@@ -2,6 +2,9 @@
 
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
+import Image from 'next/image';
+import { BrandLockup } from '../../components/shell/brand-lockup';
+import { Card } from '../../components/ui/card';
 import { Info, ShieldCheck, AlertCircle, Lock } from 'lucide-react';
 
 export default function LoginPage() {
@@ -9,124 +12,71 @@ export default function LoginPage() {
   const loginUrl = `${apiBase}/auth/google`;
 
   return (
-    <main
-      data-theme="dark"
-      className="relative min-h-screen overflow-hidden bg-bg"
-    >
-      {/* Ambient gradient backdrop — theme-aware, pure token-driven */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background: `
-            radial-gradient(60% 50% at 18% 14%, hsl(var(--primary) / 0.12), transparent 60%),
-            radial-gradient(55% 45% at 86% 92%, hsl(var(--reflect) / 0.10), transparent 60%),
-            radial-gradient(40% 35% at 50% 8%, hsl(var(--success) / 0.06), transparent 60%)
-          `,
-        }}
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-[0.35]"
-        style={{
-          backgroundImage:
-            'radial-gradient(hsl(var(--border)) 0.6px, transparent 0.6px)',
-          backgroundSize: '22px 22px',
-          maskImage:
-            'radial-gradient(ellipse at center, black 40%, transparent 80%)',
-          WebkitMaskImage:
-            'radial-gradient(ellipse at center, black 40%, transparent 80%)',
-        }}
-      />
+    <main className="min-h-[100dvh] bg-bg text-fg">
+      <div className="mx-auto grid min-h-[100dvh] max-w-[1400px] grid-cols-1 gap-8 px-4 py-8 sm:px-8 lg:grid-cols-2 lg:items-center lg:gap-16 lg:px-12 lg:py-12">
+        <div className="mx-auto w-full max-w-[440px]">
+          <BrandLockup size="lg" className="mb-10" />
 
-      <div className="relative flex min-h-screen items-center justify-center px-5 py-10">
-        <div className="w-full max-w-[440px]">
-          {/* Logo */}
-          <div className="mb-8 flex items-center justify-center gap-2.5">
-            <div className="relative h-[36px] w-[36px] overflow-hidden rounded-[10px] bg-fg text-bg grid place-items-center font-bold text-[12px]">
-              <span className="relative z-10">ICS</span>
-              <span
-                className="absolute inset-[-10%] rounded-full"
-                style={{
-                  background:
-                    'radial-gradient(circle at 30% 30%, hsl(var(--primary) / 0.65), transparent 55%)',
-                  mixBlendMode: 'screen',
-                }}
-              />
-            </div>
-            <span className="font-sans text-[15px] font-semibold tracking-[-0.01em] text-fg">
-              ICS Select
-            </span>
-          </div>
-
-          {/* Reject banner — shown when email wasn't in the allowlist */}
           <Suspense fallback={null}>
             <LoginErrorBanner />
           </Suspense>
 
-          {/* Card */}
-          <div className="rounded-[14px] border border-border-token bg-surface/85 p-8 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.20)] backdrop-blur-md sm:p-10">
-            <div className="mb-6 text-center">
-              <h1 className="font-serif text-[28px] font-semibold leading-[1.15] tracking-tight text-fg">
-                Bem-vindo de volta
-              </h1>
-              <p className="mt-2 font-sans text-sm text-fg-mute">
-                Entre com sua conta institucional para acessar sua semana.
-              </p>
-            </div>
-
-            <a
-              href={loginUrl}
-              className="group flex w-full items-center justify-center gap-3 rounded-input border border-border-token bg-surface px-6 py-3 font-sans text-[14px] font-semibold text-fg transition-all hover:-translate-y-[1px] hover:border-border-strong hover:bg-bg-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-bg active:scale-[0.99]"
-            >
-              <GoogleIcon />
-              <span>Entrar com Google</span>
-            </a>
-
-            <div
-              className="mt-6 flex items-start gap-3 rounded-[10px] border px-4 py-3"
-              style={{
-                borderColor: 'hsl(var(--primary) / 0.22)',
-                background: 'hsl(var(--primary) / 0.06)',
-              }}
-            >
-              <ShieldCheck
-                className="mt-[1px] h-4 w-4 shrink-0 text-primary"
-                strokeWidth={1.8}
-              />
-              <div className="min-w-0">
-                <p className="font-sans text-[13px] font-semibold text-fg">
-                  Uso institucional
-                </p>
-                <p className="mt-0.5 font-sans text-[12px] leading-relaxed text-fg-soft">
-                  Use seu e-mail{' '}
-                  <span className="font-mono text-[12px] text-fg">
-                    @sou.inteli.edu.br
-                  </span>{' '}
-                  para entrar.
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-6 flex items-start gap-3 border-t border-border-token/70 pt-5">
-              <Lock className="mt-[2px] h-3.5 w-3.5 shrink-0 text-fg-mute" strokeWidth={1.8} />
-              <p className="font-sans text-[11px] leading-relaxed text-fg-mute">
-                Só você enxerga seu Calendar. A gente lê apenas os slots
-                marcados como <span className="text-fg-soft">ocupados</span> pra
-                agendar estudos nos horários livres — nunca vemos o título,
-                descrição ou convidados dos seus eventos.
-              </p>
-            </div>
+          <div className="mb-8">
+            <h1 className="font-sans text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">
+              Bem-vindo de volta
+            </h1>
+            <p className="mt-3 text-sm leading-relaxed text-fg-soft">
+              Entre com sua conta institucional para acessar sua semana.
+            </p>
           </div>
 
-          {/* Below-card sub-note */}
-          <p className="mt-6 text-center font-mono text-[10px] font-semibold uppercase tracking-eyebrow text-fg-faint">
-            <Info
-              className="mr-1.5 inline h-3 w-3 -translate-y-[1px]"
-              strokeWidth={1.8}
-            />
-            Sem conta? Esta plataforma é privada à ICS.
+          <a
+            href={loginUrl}
+            className="flex min-h-12 w-full items-center justify-center gap-3 whitespace-nowrap rounded-pill bg-primary px-6 py-3 text-sm font-semibold text-primary-fg transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+          >
+            <span className="grid h-6 w-6 place-items-center rounded-full bg-white">
+              <GoogleIcon />
+            </span>
+            <span>Entrar com Google</span>
+          </a>
+
+          <Card className="mt-8 flex items-start gap-3 p-4">
+            <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" strokeWidth={1.8} />
+            <div className="min-w-0">
+              <p className="text-sm font-semibold">Uso institucional</p>
+              <p className="mt-1 text-xs leading-relaxed text-fg-soft">
+                Use seu e-mail{' '}
+                <span className="font-mono text-fg">@sou.inteli.edu.br</span>{' '}
+                para entrar.
+              </p>
+            </div>
+          </Card>
+
+          <div className="mt-6 flex items-start gap-3">
+            <Lock className="mt-0.5 h-4 w-4 shrink-0 text-fg-mute" strokeWidth={1.8} />
+            <p className="text-xs leading-relaxed text-fg-mute">
+              Só você enxerga seu Calendar. A gente lê apenas os slots
+              marcados como <span className="text-fg-soft">ocupados</span> pra
+              agendar estudos nos horários livres — nunca vemos o título,
+              descrição ou convidados dos seus eventos.
+            </p>
+          </div>
+
+          <p className="mt-8 text-xs leading-relaxed text-fg-mute">
+            <Info className="mr-1.5 inline h-3.5 w-3.5" strokeWidth={1.8} />
+            Sem conta? Esta plataforma é privada ao Academy Fellow.
           </p>
+        </div>
+
+        <div className="relative aspect-[4/3] overflow-hidden rounded-card lg:aspect-auto lg:h-[min(720px,calc(100dvh-6rem))] lg:min-h-[520px]">
+          <Image
+            src="/brand/academy/academy-community.webp"
+            alt="Comunidade Inteli Academy reunida no campus do Inteli"
+            fill
+            priority
+            sizes="(min-width: 1400px) 600px, (min-width: 1024px) 50vw, 100vw"
+            className="object-cover"
+          />
         </div>
       </div>
     </main>
@@ -143,7 +93,7 @@ function LoginErrorBanner() {
       ? {
           title: 'Acesso encerrado',
           body:
-            'Sua participação no ICS Select foi encerrada, então esta conta não entra mais na plataforma. Se acha que é engano, fale com o diretor educacional.',
+            'Sua participação no Academy Fellow foi encerrada. Se acha que é engano, fale com o diretor educacional.',
         }
       : error === 'auth_retry'
       ? {
@@ -154,12 +104,12 @@ function LoginErrorBanner() {
       : {
           title: 'Email não autorizado',
           body:
-            'Sua conta ainda não foi convidada para o ICS Select. Peça ao diretor educacional para adicionar seu email.',
+            'Sua conta ainda não foi convidada para o Academy Fellow. Peça ao diretor educacional para adicionar seu email.',
         };
   return (
     <div
       role="alert"
-      className="mb-5 flex items-start gap-3 rounded-[10px] border px-4 py-3"
+      className="mb-6 flex items-start gap-3 rounded-card border px-4 py-4"
       style={{
         borderColor: 'hsl(var(--danger) / 0.35)',
         background: 'hsl(var(--danger) / 0.08)',

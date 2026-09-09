@@ -1,5 +1,58 @@
 import { expect, test } from '@playwright/test';
 
+test('login uses Academy Fellow branding', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/login');
+  await page.addStyleTag({ content: 'nextjs-portal { display: none !important; }' });
+  await expect(page.getByText('Academy Fellow', { exact: true })).toBeVisible();
+  await expect(page.getByRole('link', { name: /(?:entrar|continuar) com google/i })).toBeVisible();
+  await expect(page.getByText(/ICS Select|Inteli Consulting Society/)).toHaveCount(0);
+  await expect(page).toHaveScreenshot('academy-login-desktop.png', {
+    animations: 'disabled',
+    fullPage: true,
+  });
+});
+
+for (const theme of ['light', 'dark'] as const) {
+  test(`login fits mobile in ${theme} with a keyboard-accessible OAuth link`, async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.addInitScript((value) => localStorage.setItem('ics-theme', value), theme);
+    await page.goto('/login');
+    await page.addStyleTag({ content: 'nextjs-portal { display: none !important; }' });
+    const login = page.getByRole('link', { name: 'Entrar com Google' });
+    await expect(login).toHaveAttribute('href', 'http://localhost:3001/auth/google');
+    await page.keyboard.press('Tab');
+    await expect(login).toBeFocused();
+    await expect(login).not.toHaveCSS('box-shadow', 'none');
+    expect((await login.boundingBox())?.height).toBeGreaterThanOrEqual(44);
+    await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    const image = page.getByAltText('Comunidade Inteli Academy reunida no campus do Inteli');
+    await expect.poll(() => image.evaluate((element) => (element as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+    await expect(page).toHaveScreenshot(`academy-login-mobile-${theme}.png`, { fullPage: true, animations: 'disabled' });
+  });
+}
+
+for (const [error, title, body] of [
+  ['account_disabled', 'Acesso encerrado', 'Sua participação no Academy Fellow foi encerrada.'],
+  ['not_invited', 'Email não autorizado', 'Sua conta ainda não foi convidada para o Academy Fellow.'],
+  ['auth_retry', 'Login falhou — tenta de novo', 'O Google rejeitou esse login'],
+] as const) {
+  test(`login preserves the ${error} announcement`, async ({ page }) => {
+    await page.goto(`/login?error=${error}`);
+    await expect(page.getByRole('main').getByRole('alert')).toContainText(title);
+    await expect(page.getByRole('main').getByRole('alert')).toContainText(body);
+    await expect(page.getByRole('link', { name: 'Entrar com Google' })).toHaveAttribute('href', 'http://localhost:3001/auth/google');
+    await expect(page.getByText(/ICS Select|Inteli Consulting Society/)).toHaveCount(0);
+  });
+}
+
+test('unknown login errors do not create an announcement', async ({ page }) => {
+  await page.goto('/login?error=unknown');
+  await expect(page.getByRole('link', { name: 'Entrar com Google' })).toBeVisible();
+  await expect(page.getByRole('main').getByRole('alert')).toHaveCount(0);
+});
+
 for (const theme of ['light', 'dark'] as const) {
   for (const width of [390, 1440]) {
     test(`design system is coherent in ${theme} at ${width}px`, async ({ page }) => {

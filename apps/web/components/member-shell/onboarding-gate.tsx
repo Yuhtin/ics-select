@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { useAuth } from '../../lib/auth/auth-context';
+import { Card } from '../ui/card';
 
 const ONBOARDING_PATH = '/me/onboarding';
 
@@ -37,11 +38,11 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
   // don't flash the real UI to a member that needs onboarding.
   if (!isLoading && user && needsOnboarding && !onOnboardingPath) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="font-mono text-[10px] uppercase tracking-eyebrow text-fg-mute">
+      <Card className="flex min-h-[60dvh] items-center justify-center p-6">
+        <p role="status" className="font-sans text-sm text-fg-mute">
           Redirecting…
         </p>
-      </div>
+      </Card>
     );
   }
 

@@ -101,6 +101,8 @@ test.describe('settings tabs', () => {
   }) => {
     await page.goto('/me/settings');
     await expect(page).toHaveURL(/\/me\/settings\/profile$/);
+    await expect(page.getByText('Academy Fellow', { exact: true }).first()).toBeVisible();
+    await expect(page.getByText('ICS Select', { exact: true })).toHaveCount(0);
     await expect(page.getByText('WhatsApp phone')).toBeVisible();
   });
 
@@ -137,12 +139,68 @@ test.describe('settings tabs', () => {
     await page.getByRole('button', { name: 'Minute 00' }).click();
 
     await page.getByRole('button', { name: 'Mon end' }).last().click();
-    await page.getByRole('button', { name: 'Hour 20' }).click();
-    await page.getByRole('button', { name: 'Minute 00' }).click();
+    const endPicker = page.getByRole('dialog', { name: 'Mon end picker' });
+    await endPicker.getByRole('button', { name: 'Hour 20' }).click();
+    await endPicker.getByRole('button', { name: 'Minute 00' }).click();
 
     // Inline overlap warning inside the row.
     await expect(page.getByText(/faixas se sobrepõem/i)).toBeVisible();
     // GlobalSaveIndicator switches to overlap state.
     await expect(page.getByText(/Fix overlap to save/i)).toBeVisible();
+  });
+
+  test('member shell preserves desktop and mobile destinations, theme and focus', async ({ page }) => {
+    await page.goto('/me/settings/profile');
+    const header = page.locator('header');
+    await expect(header.getByText('Academy Fellow', { exact: true })).toBeVisible();
+    for (const [name, href] of [['Today', '/me'], ['Calendar', '/me/calendar'], ['Cohort', '/me/cohort'], ['Settings', '/me/settings']]) {
+      await expect(header.getByRole('link', { name, exact: true })).toHaveAttribute('href', href);
+    }
+    const theme = header.getByRole('button', { name: /Switch to .* theme/ });
+    await theme.focus();
+    await expect(theme).toBeFocused();
+    await expect(theme).not.toHaveCSS('box-shadow', 'none');
+    await theme.click();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+    await expect.poll(() => page.evaluate(() => localStorage.getItem('ics-theme'))).toBe('dark');
+    await theme.click();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+    await expect(header.getByRole('button', { name: 'Sign out' })).toBeVisible();
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    const navigation = page.getByRole('navigation', { name: 'Main navigation' });
+    await expect(navigation.getByRole('link', { name: 'Profile' })).toHaveAttribute('aria-current', 'page');
+    for (const [name, href] of [['Today', '/me'], ['Calendar', '/me/calendar'], ['Cohort', '/me/cohort'], ['Profile', '/me/settings']]) {
+      const link = navigation.getByRole('link', { name: new RegExp(`${name}$`) });
+      await expect(link).toHaveAttribute('href', href);
+      expect((await link.boundingBox())?.height).toBeGreaterThanOrEqual(44);
+    }
+    await navigation.getByRole('link', { name: 'Profile' }).click();
+    await expect(page).toHaveURL(/\/me\/settings\/profile$/);
+    await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  });
+
+  test('reconnect gate uses Academy Fellow and preserves the OAuth destination', async ({ page }) => {
+    await page.route(new RegExp(`^${API_BASE}/me$`), (route) => route.fulfill({
+      json: { ...MOCK_USER, googleConnected: false },
+    }));
+    await page.goto('/me/settings/profile');
+    await expect(page.getByRole('heading', { name: 'Reconnect your Google Calendar' })).toBeVisible();
+    await expect(page.getByText(/We updated how Academy Fellow/)).toBeVisible();
+    const reconnect = page.getByRole('link', { name: 'Reconnect Google' });
+    await expect(reconnect).toHaveAttribute('href', '/auth/google');
+    await reconnect.focus();
+    await expect(reconnect).not.toHaveCSS('box-shadow', 'none');
+    await expect(page.getByText('WhatsApp phone')).toHaveCount(0);
+  });
+
+  test('onboarding still takes precedence over the reconnect gate', async ({ page }) => {
+    await page.route(new RegExp(`^${API_BASE}/me$`), (route) => route.fulfill({
+      json: { ...MOCK_USER, targetTrack: null, googleConnected: false },
+    }));
+    await page.goto('/me/settings/profile');
+    await expect(page).toHaveURL(/\/me\/onboarding$/);
+    await expect(page.getByRole('link', { name: 'Reconnect Google' })).toHaveCount(0);
+    await expect(page.getByRole('navigation', { name: 'Main navigation' })).toHaveCount(0);
   });
 });

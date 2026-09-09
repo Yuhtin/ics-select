@@ -37,7 +37,7 @@ export function BottomTabBar() {
 
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-border-token bg-bg/95 backdrop-blur md:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-border-token bg-surface pb-[env(safe-area-inset-bottom)] md:hidden"
       aria-label="Main navigation"
     >
       <ul className="mx-auto flex max-w-xl">
@@ -51,16 +51,17 @@ export function BottomTabBar() {
             <li key={href} className="flex-1">
               <Link
                 href={href}
+                aria-current={active ? 'page' : undefined}
                 className={clsx(
-                  'flex h-14 flex-col items-center justify-center gap-0.5 font-mono text-[10px] uppercase tracking-eyebrow',
-                  active ? 'text-fg' : 'text-fg-mute',
+                  'flex h-16 flex-col items-center justify-center gap-1 border-t-2 font-sans text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary',
+                  active ? 'border-primary bg-primary-soft text-primary' : 'border-transparent text-fg-mute hover:bg-surface-hover hover:text-fg',
                 )}
               >
                 {isProfile && user ? (
                   <span
                     className={clsx(
                       'inline-grid h-5 w-5 place-items-center overflow-hidden rounded-full border bg-bg-subtle font-sans text-[9px] font-semibold text-fg-soft',
-                      active ? 'border-fg' : 'border-border-token',
+                      active ? 'border-primary' : 'border-border-token',
                     )}
                   >
                     {user.pictureUrl ? (
@@ -76,7 +77,7 @@ export function BottomTabBar() {
                   </span>
                 ) : (
                   <Icon
-                    className={clsx('h-5 w-5', active ? 'stroke-fg' : 'stroke-fg-mute')}
+                    className="h-5 w-5"
                     strokeWidth={active ? 2 : 1.5}
                   />
                 )}
