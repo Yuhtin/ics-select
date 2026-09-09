@@ -34,17 +34,18 @@ export function TrackPicker({ value, onChange }: TrackPickerProps) {
             key={t}
             type="button"
             onClick={() => onChange(t)}
+            aria-pressed={active}
             className={clsx(
-              'group relative flex h-full flex-col items-start gap-1.5 rounded-tile border px-4 py-3.5 text-left transition-all',
+              'group relative flex h-full flex-col items-start gap-1.5 rounded-card border px-4 py-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg',
               active
-                ? 'border-primary bg-primary-soft ring-2 ring-primary/30'
-                : 'border-border-token bg-surface hover:-translate-y-[1px] hover:border-border-strong',
+                ? 'border-primary bg-primary-soft'
+                : 'border-border-token bg-surface hover:border-border-strong hover:bg-surface-hover',
             )}
           >
             <span
               className={clsx(
-                'font-sans text-sm font-semibold',
-                active ? 'text-primary' : 'text-fg',
+                'pr-6 font-sans text-sm font-semibold',
+                active ? 'text-primary dark:text-primary-fg' : 'text-fg',
               )}
             >
               {TRACK_LABELS[t] ?? t}

@@ -53,7 +53,7 @@ function PresetButton({ onClick, children }: { onClick: () => void; children: Re
     <button
       type="button"
       onClick={onClick}
-      className="rounded-pill border border-border-token bg-surface px-3 py-1 font-sans text-[12px] text-fg-soft hover:border-border-strong hover:text-fg"
+      className="min-h-11 rounded-input border border-border-token bg-surface px-3 py-2 font-sans text-xs text-fg-soft hover:border-border-strong hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
     >
       {children}
     </button>

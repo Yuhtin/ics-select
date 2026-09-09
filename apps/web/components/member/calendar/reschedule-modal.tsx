@@ -60,7 +60,7 @@ export function RescheduleModal({
   return (
     <Modal isOpen={!!event} onClose={onClose} placement="center">
       <ModalContent className="rounded-card border border-border-token bg-surface">
-        <ModalHeader className="font-serif text-lg text-fg">
+        <ModalHeader className="font-sans text-xl font-semibold text-fg">
           Reagendar
         </ModalHeader>
         <ModalBody className="space-y-4">
@@ -73,7 +73,7 @@ export function RescheduleModal({
               type="datetime-local"
               value={start}
               onChange={(e) => setStart(e.target.value)}
-              className="w-full rounded-input border border-border-token bg-surface px-3 py-2 font-sans text-sm text-fg"
+              className="min-h-11 w-full rounded-input border border-border-token bg-surface px-3 py-2 font-sans text-sm text-fg focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </label>
           <label className="block space-y-1">
@@ -84,7 +84,7 @@ export function RescheduleModal({
               type="datetime-local"
               value={end}
               onChange={(e) => setEnd(e.target.value)}
-              className="w-full rounded-input border border-border-token bg-surface px-3 py-2 font-sans text-sm text-fg"
+              className="min-h-11 w-full rounded-input border border-border-token bg-surface px-3 py-2 font-sans text-sm text-fg focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </label>
           {error && (
@@ -94,10 +94,10 @@ export function RescheduleModal({
           )}
         </ModalBody>
         <ModalFooter>
-          <Button variant="light" onPress={onClose}>
+          <Button variant="light" onPress={onClose} className="min-h-11 rounded-input text-fg hover:bg-surface-hover">
             Cancelar
           </Button>
-          <Button color="primary" onPress={handleSubmit}>
+          <Button color="primary" onPress={handleSubmit} className="min-h-11 rounded-input bg-primary font-semibold text-primary-fg">
             Reagendar
           </Button>
         </ModalFooter>

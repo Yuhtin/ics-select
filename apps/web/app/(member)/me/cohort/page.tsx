@@ -9,7 +9,7 @@ export default function MeCohortPage() {
   const { data, isLoading } = useMeCohort();
   if (isLoading || !data) {
     return (
-      <p className="font-mono text-xs uppercase tracking-eyebrow text-fg-mute">
+      <p className="font-sans text-sm text-fg-mute">
         Loading…
       </p>
     );
@@ -20,7 +20,7 @@ export default function MeCohortPage() {
     <div className="max-w-6xl space-y-10">
       <div>
         <Eyebrow>{`Cohort · ${data.cycleName || 'active cycle'}`}</Eyebrow>
-        <h1 className="mt-2 font-serif text-4xl font-medium tracking-tight">
+        <h1 className="mt-2 font-sans text-[30px] font-semibold leading-tight tracking-tight sm:text-[36px]">
           {data.memberCount === 0
             ? 'No cohort yet.'
             : `${data.memberCount} classmates this cycle`}

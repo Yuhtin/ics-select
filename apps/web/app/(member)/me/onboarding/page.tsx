@@ -128,10 +128,10 @@ export default function MemberOnboardingPage() {
   return (
     <div className="mx-auto max-w-2xl px-5 py-10 md:py-16">
       <header className="mb-10 space-y-3">
-        <p className="font-mono text-[10px] font-semibold uppercase tracking-eyebrow text-fg-mute">
+        <p className="font-sans text-xs font-medium text-fg-mute">
           Welcome{user?.name ? `, ${firstName}` : ''}
         </p>
-        <h1 className="font-serif text-[44px] font-medium leading-[1.05] tracking-tight text-fg md:text-[52px]">
+        <h1 className="font-sans text-[36px] font-semibold leading-[1.1] tracking-tight text-fg md:text-[44px]">
           Four small things.
         </h1>
         <p className="max-w-prose font-sans text-[15px] leading-relaxed text-fg-soft">
@@ -192,7 +192,7 @@ export default function MemberOnboardingPage() {
                 <AvailabilityPresets value={availability} onChange={setAvailability} />
 
                 <div className="mt-6">
-                  <p className="font-mono text-[10px] font-semibold uppercase tracking-eyebrow text-fg-mute">
+                  <p className="font-sans text-xs font-medium text-fg-mute">
                     Preferred session length
                   </p>
                   <p className="mt-1 font-sans text-[13px] text-fg-soft">
@@ -244,7 +244,7 @@ export default function MemberOnboardingPage() {
           onClick={() => goTo(Math.max(0, step - 1) as StepId)}
           disabled={step === 0}
           className={clsx(
-            'inline-flex h-10 items-center gap-2 rounded-input px-3 font-sans text-sm font-medium transition-colors',
+            'inline-flex min-h-11 items-center gap-2 rounded-input px-3 font-sans text-sm font-medium transition-colors',
             step === 0
               ? 'invisible'
               : 'text-fg-soft hover:bg-bg-subtle hover:text-fg',
@@ -260,9 +260,9 @@ export default function MemberOnboardingPage() {
             onClick={() => canAdvance && goTo((step + 1) as StepId)}
             disabled={!canAdvance}
             className={clsx(
-              'inline-flex h-10 items-center gap-2 rounded-input px-4 font-sans text-sm font-semibold transition-all',
+              'inline-flex min-h-11 items-center gap-2 rounded-input px-4 font-sans text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg',
               canAdvance
-                ? 'bg-fg text-bg hover:bg-fg-soft'
+                ? 'bg-primary text-primary-fg hover:bg-primary/90'
                 : 'cursor-not-allowed bg-bg-subtle text-fg-mute',
             )}
           >
@@ -280,7 +280,7 @@ export default function MemberOnboardingPage() {
             className={clsx(
               'inline-flex h-12 items-center gap-2 rounded-input px-6 font-sans text-[15px] font-bold uppercase tracking-[0.04em] transition-colors',
               canAdvance && !submitting
-                ? 'bg-primary text-primary-fg shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_10px_30px_-10px_hsl(var(--primary)/0.5)] hover:bg-primary/95'
+                ? 'bg-primary text-primary-fg hover:bg-primary/95'
                 : 'cursor-not-allowed bg-bg-subtle text-fg-mute',
             )}
           >
@@ -313,10 +313,10 @@ function Progress({ step }: { step: StepId }) {
                   state === 'current'
                     ? 'hsl(var(--primary))'
                     : state === 'done'
-                      ? 'hsl(var(--fg))'
+                      ? 'hsl(var(--success))'
                       : 'hsl(var(--bg-subtle))',
                 color:
-                  state === 'pending' ? 'hsl(var(--fg-mute))' : 'hsl(var(--primary-fg))',
+                  state === 'pending' ? 'hsl(var(--fg-mute))' : state === 'done' ? 'hsl(var(--bg))' : 'hsl(var(--primary-fg))',
                 scale: state === 'current' ? 1.05 : 1,
               }}
               transition={{ duration: 0.3, ease: EASE }}
@@ -333,7 +333,7 @@ function Progress({ step }: { step: StepId }) {
                 initial={false}
                 animate={{
                   backgroundColor:
-                    i < step ? 'hsl(var(--fg))' : 'hsl(var(--bg-subtle))',
+                    i < step ? 'hsl(var(--success))' : 'hsl(var(--bg-subtle))',
                 }}
                 transition={{ duration: 0.3, ease: EASE }}
                 className="h-px w-6 sm:w-10"
@@ -359,10 +359,10 @@ function StepCard({
 }) {
   return (
     <section>
-      <p className="font-mono text-[10px] font-semibold uppercase tracking-eyebrow text-fg-mute">
+      <p className="font-sans text-xs font-medium text-fg-mute">
         {eyebrow}
       </p>
-      <h2 className="mt-2 font-serif text-[30px] font-medium leading-tight tracking-tight text-fg md:text-[34px]">
+      <h2 className="mt-2 font-sans text-[26px] font-semibold leading-tight tracking-tight text-fg md:text-[30px]">
         {title}
       </h2>
       <p className="mt-2 max-w-prose font-sans text-[14px] leading-relaxed text-fg-soft">

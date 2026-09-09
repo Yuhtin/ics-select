@@ -64,7 +64,7 @@ export function PhoneInput({
       {label && (
         <label
           htmlFor={id}
-          className="font-mono text-[10px] font-semibold uppercase tracking-eyebrow text-fg-mute"
+          className="font-sans text-xs font-medium text-fg-mute"
         >
           {label}
         </label>
@@ -79,13 +79,14 @@ export function PhoneInput({
         onChange={(e) => onChange(toE164(e.target.value))}
         onBlur={onBlur}
         placeholder={placeholder}
+        aria-invalid={hasError || undefined}
         className={clsx(
-          'w-full rounded-input border bg-surface px-4 py-3 font-sans text-base text-fg transition-colors placeholder:text-fg-faint focus:outline-none focus:ring-2',
+          'w-full rounded-input border bg-surface px-4 py-3 font-sans text-base text-fg transition-colors placeholder:text-fg-mute focus:outline-none focus:ring-2',
           hasError
             ? 'border-danger focus:border-danger focus:ring-danger/15'
             : value.length === 0
               ? 'border-border-strong focus:border-primary focus:ring-primary/15'
-              : 'border-success focus:border-success focus:ring-success/15',
+              : 'border-border-token focus:border-primary focus:ring-primary/25',
         )}
       />
     </div>

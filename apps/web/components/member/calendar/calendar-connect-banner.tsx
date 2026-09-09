@@ -11,11 +11,11 @@ export function CalendarConnectBanner({ variant }: CalendarConnectBannerProps) {
       : 'Your Google Calendar session expired. Reconnect to continue.';
   const cta = variant === 'not_connected' ? 'Connect Google Calendar' : 'Reconnect';
   return (
-    <div className="flex items-center justify-between gap-4 rounded-card border border-border-token bg-bg-subtle px-4 py-3">
+    <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center rounded-card border border-border-token bg-bg-subtle px-4 py-3">
       <p className="font-sans text-sm text-fg-soft">{copy}</p>
       <a
         href={`${API_URL}/auth/google`}
-        className="rounded-input bg-fg px-3 py-1.5 font-sans text-sm font-medium text-bg transition-opacity hover:opacity-90"
+        className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-input bg-primary px-4 font-sans text-sm font-semibold text-primary-fg transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
       >
         {cta}
       </a>

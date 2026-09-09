@@ -21,7 +21,7 @@ export function SettingsNav() {
       {/* Desktop sidebar */}
       <nav
         aria-label="Settings sections"
-        className="hidden md:flex md:w-52 md:flex-col md:gap-0.5 md:border-r md:border-rule md:pr-4"
+        className="hidden md:flex md:w-52 md:flex-col md:gap-0.5 md:border-r md:border-border-token md:pr-4"
       >
         {TABS.map((t) => {
           const active = t.href === activeHref;
@@ -32,10 +32,10 @@ export function SettingsNav() {
               href={t.href}
               aria-current={active ? 'page' : undefined}
               className={clsx(
-                'flex h-10 items-center gap-3 rounded-input px-3 font-sans text-sm',
+                'flex min-h-11 items-center gap-3 rounded-input px-3 font-sans text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg',
                 active
-                  ? 'bg-paper-warm text-fg'
-                  : 'text-fg-soft hover:bg-paper-warm hover:text-fg',
+                  ? 'bg-primary-soft font-medium text-primary dark:text-primary-fg'
+                  : 'text-fg-soft hover:bg-bg-subtle hover:text-fg',
               )}
             >
               <Icon className="h-4 w-4" strokeWidth={1.5} />
@@ -48,7 +48,7 @@ export function SettingsNav() {
       {/* Mobile pills */}
       <nav
         aria-label="Settings sections"
-        className="sticky top-0 z-10 -mx-6 mb-6 flex gap-2 overflow-x-auto border-b border-rule bg-paper px-6 py-3 md:hidden"
+        className="flex gap-2 overflow-x-auto pb-1 md:hidden"
       >
         {TABS.map((t) => {
           const active = t.href === activeHref;
@@ -58,7 +58,7 @@ export function SettingsNav() {
               href={t.href}
               aria-current={active ? 'page' : undefined}
               className={clsx(
-                'whitespace-nowrap rounded-pill border px-4 py-1.5 font-sans text-sm transition-colors',
+                'inline-flex min-h-11 items-center whitespace-nowrap rounded-input border px-3 font-sans text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg',
                 active
                   ? 'border-primary bg-primary text-primary-fg'
                   : 'border-border-token bg-surface text-fg-soft hover:border-border-strong hover:text-fg',

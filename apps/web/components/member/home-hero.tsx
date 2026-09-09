@@ -17,16 +17,16 @@ interface HomeHeroProps {
 type Accent = 'neutral' | 'now' | 'late' | 'done';
 
 const EYEBROW_CLASS: Record<Accent, string> = {
-  neutral: '',
-  now: '!text-focus',
-  late: '!text-outcome-stuck',
-  done: '!text-outcome-done-easy',
+  neutral: '!text-primary dark:!text-primary-fg',
+  now: '!text-primary dark:!text-primary-fg',
+  late: '!text-fg',
+  done: '!text-fg',
 };
 
 const BORDER_CLASS: Record<Accent, string> = {
   neutral: '',
-  now: 'border-l-4 border-focus pl-5 md:pl-6',
-  late: 'border-l-4 border-outcome-stuck pl-5 md:pl-6',
+  now: 'border-primary/40',
+  late: 'border-warn/40',
   done: '',
 };
 
@@ -45,14 +45,14 @@ function HeroItemLayout({
 }) {
   const platform = detectPlatform(item.url, item.format);
   return (
-    <section className={clsx('max-w-3xl', BORDER_CLASS[accent])}>
+    <section className={clsx('max-w-3xl rounded-card border border-border-token bg-surface p-6 sm:p-8', BORDER_CLASS[accent])}>
       <Eyebrow className={EYEBROW_CLASS[accent]}>{eyebrow}</Eyebrow>
-      <h1 className="mt-3 font-serif text-[40px] font-medium leading-[1.05] tracking-tight">
+      <h1 className="mt-3 font-sans text-[30px] font-semibold leading-[1.15] tracking-tight md:text-[36px]">
         {item.title}
       </h1>
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <Pill>{platformLabel(platform)}</Pill>
-        <span className="font-mono text-xs text-ink-mute">{item.estimatedMinutes} MIN</span>
+        <span className="font-mono text-xs text-fg-mute">{item.estimatedMinutes} MIN</span>
         {item.topic && <Pill variant="soft">{item.topic.label}</Pill>}
       </div>
       <div className="mt-6 flex gap-2">
@@ -72,12 +72,12 @@ function HeroItemLayout({
 export function HomeHero({ hero }: HomeHeroProps) {
   if (!hero) {
     return (
-      <section className="max-w-3xl">
+      <section className="max-w-3xl rounded-card border border-border-token bg-surface p-6 sm:p-8">
         <Eyebrow>No active plan</Eyebrow>
-        <h1 className="mt-3 font-serif text-[36px] font-medium leading-tight tracking-tight">
+        <h1 className="mt-3 font-sans text-[36px] font-medium leading-tight tracking-tight">
           Waiting for the next plan.
         </h1>
-        <p className="mt-3 font-sans text-sm text-ink-soft">
+        <p className="mt-3 font-sans text-sm text-fg-soft">
           The program director hasn&apos;t published your plan yet.
         </p>
       </section>
@@ -119,15 +119,15 @@ export function HomeHero({ hero }: HomeHeroProps) {
   }
   if (hero.state === 'all_done') {
     return (
-      <section className="max-w-3xl">
+      <section className="max-w-3xl rounded-card border border-border-token bg-surface p-6 sm:p-8">
         <div className="flex items-center gap-2">
           <OutcomeDot outcome="DONE_EASY" size="sm" />
-          <Eyebrow className="!text-outcome-done-easy">All done today</Eyebrow>
+          <Eyebrow className="!text-fg">All done today</Eyebrow>
         </div>
-        <h1 className="mt-3 font-serif text-[36px] font-medium leading-tight tracking-tight">
+        <h1 className="mt-3 font-sans text-[36px] font-medium leading-tight tracking-tight">
           Nothing more scheduled today.
         </h1>
-        <p className="mt-3 font-sans text-sm text-ink-soft">
+        <p className="mt-3 font-sans text-sm text-fg-soft">
           {hero.nextAt ? `Next up: ${formatDateLocal(hero.nextAt)} at ${formatTimeLocal(hero.nextAt)}.` : 'See you soon.'}
         </p>
       </section>
@@ -135,12 +135,12 @@ export function HomeHero({ hero }: HomeHeroProps) {
   }
   // free_day
   return (
-    <section className="max-w-3xl">
+    <section className="max-w-3xl rounded-card border border-border-token bg-surface p-6 sm:p-8">
       <Eyebrow>Free day</Eyebrow>
-      <h1 className="mt-3 font-serif text-[36px] font-medium leading-tight tracking-tight">
+      <h1 className="mt-3 font-sans text-[36px] font-medium leading-tight tracking-tight">
         No study scheduled today.
       </h1>
-      <p className="mt-3 font-sans text-sm text-ink-soft">
+      <p className="mt-3 font-sans text-sm text-fg-soft">
         {hero.nextAt ? `Next up: ${formatDateLocal(hero.nextAt)} at ${formatTimeLocal(hero.nextAt)}.` : 'Rest up.'}
       </p>
     </section>

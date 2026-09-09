@@ -10,7 +10,7 @@ export default function SettingsLayout({ children }: { children: ReactNode }) {
       <div className="space-y-8">
         <div>
           <Eyebrow>Settings</Eyebrow>
-          <h1 className="mt-3 font-serif text-4xl font-medium tracking-tight text-fg">
+          <h1 className="mt-3 font-sans text-[30px] font-semibold leading-tight tracking-tight sm:text-[36px] text-fg">
             Your preferences.
           </h1>
         </div>
@@ -20,7 +20,7 @@ export default function SettingsLayout({ children }: { children: ReactNode }) {
           <div className="min-w-0 flex-1 space-y-10">{children}</div>
         </div>
 
-        <div className="flex justify-end border-t border-rule pt-4 md:pt-6">
+        <div className="flex justify-end border-t border-border-token pt-4 md:pt-6">
           <GlobalSaveIndicator />
         </div>
       </div>

@@ -57,7 +57,7 @@ export default function MeCalendarPage() {
   const handleToday = useCallback(() => setWeekStart(startOfSundayWeek(new Date())), []);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <CalendarHeader
         weekStart={weekStart}
         weekEnd={weekEnd}
@@ -71,9 +71,9 @@ export default function MeCalendarPage() {
       ) : (
         <>
           {!data.hasGoogleConnection && <CalendarConnectBanner variant="not_connected" />}
-          <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
+          <div className="grid gap-6 lg:grid-cols-[240px_minmax(0,1fr)]">
             <CalendarSidebar events={data.events} timezone={data.timezone} />
-            <div className="space-y-4">
+            <div className="space-y-6">
               <CalendarApp
                 weekStart={weekStart}
                 timezone={data.timezone}

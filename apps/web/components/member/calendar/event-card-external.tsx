@@ -13,7 +13,7 @@ export function EventCardExternal({ event, timeLabel }: EventCardExternalProps) 
   const LinkIcon = event.meetLink ? Video : event.htmlLink ? ExternalLink : null;
 
   return (
-    <div className="flex h-full w-full flex-col overflow-hidden rounded-input border border-dashed border-border-token px-2 py-1">
+    <div className="flex h-full w-full flex-col overflow-hidden rounded-input border border-dashed border-border-strong bg-bg-subtle/60 px-2 py-1">
       <span className="truncate font-sans text-[11px] font-medium text-fg-soft">
         {event.title}
       </span>
@@ -30,7 +30,7 @@ export function EventCardExternal({ event, timeLabel }: EventCardExternalProps) 
             href={link}
             target="_blank"
             rel="noreferrer"
-            className="ml-auto text-fg-mute hover:text-fg"
+            className="ml-auto rounded-sm text-fg-mute hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
             onClick={(e) => e.stopPropagation()}
             aria-label="Open external link"
           >

@@ -119,18 +119,18 @@ export function AvailabilityGrid({ initial }: Props) {
   return (
     <div className="space-y-8">
       <div>
-        <div className="flex items-start justify-between gap-4 rounded-md border border-border-token bg-paper-warm px-4 py-3">
+        <div className="flex items-start justify-between gap-4 rounded-card border border-border-token bg-surface px-4 py-3">
           <div className="flex-1">
             <div className="flex items-center gap-1.5">
               <SectionLabel className="mb-0">Block calendar as Busy</SectionLabel>
               <Tooltip
                 content={
                   <div className="max-w-xs font-sans text-xs leading-snug">
-                    When <strong>on</strong> (default), study events created by ICS show as
+                    When <strong>on</strong> (default), study events created by Academy Fellow show as
                     <em> Busy</em> on Google Calendar, so people scheduling meetings see the block.
                     <br />
                     <br />
-                    Turn <strong>off</strong> if you'd rather keep ICS sessions as <em>Free</em> —
+                    Turn <strong>off</strong> if you'd rather keep Academy Fellow sessions as <em>Free</em> —
                     useful when others (mentors, peers) book 1:1s directly on your calendar and
                     those should win over study time.
                   </div>
@@ -141,7 +141,7 @@ export function AvailabilityGrid({ initial }: Props) {
                 <button
                   type="button"
                   aria-label="What does this do?"
-                  className="text-ink-mute hover:text-ink-soft focus:outline-none focus:ring-1 focus:ring-primary rounded-full"
+                  className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-input text-fg-mute hover:text-fg-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
                 >
                   <HelpCircle size={14} strokeWidth={1.5} />
                 </button>
@@ -218,7 +218,7 @@ export function AvailabilityGrid({ initial }: Props) {
           onChange={(e) => timezoneField.onChange(e.target.value)}
           onBlur={timezoneField.onBlur}
           placeholder="America/Sao_Paulo"
-          className="mt-2 w-full max-w-xs rounded-input border border-border-token bg-surface px-3 py-1.5 font-sans text-sm text-fg placeholder:text-fg-faint focus:outline-none focus:ring-2 focus:ring-primary"
+          className="mt-2 min-h-11 w-full max-w-xs rounded-input border border-border-token bg-surface px-3 py-1.5 font-sans text-sm text-fg placeholder:text-fg-mute focus:outline-none focus:ring-2 focus:ring-primary"
         />
       </div>
     </div>

@@ -111,7 +111,7 @@ export function TimePill({
         aria-haspopup="dialog"
         aria-expanded={open}
         className={clsx(
-          'inline-flex h-9 min-w-[84px] items-center justify-between gap-1.5 rounded-input border bg-surface px-3 font-mono text-[13px] tabular-nums text-fg transition-colors',
+          'inline-flex h-11 min-w-[84px] items-center justify-between gap-1.5 rounded-input border bg-surface px-3 font-mono text-[13px] tabular-nums text-fg transition-colors',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
           open
             ? 'border-primary shadow-[0_0_0_3px_hsl(var(--primary)/0.15)]'
@@ -147,10 +147,10 @@ export function TimePill({
                   width: coords.width,
                   zIndex: 50,
                 }}
-                className="origin-top rounded-card border border-border-token bg-surface p-3 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.25)]"
+                className="origin-top rounded-card border border-border-token bg-surface p-3 shadow-lg"
               >
                 <div>
-                  <p className="mb-2 font-mono text-[10px] font-semibold uppercase tracking-eyebrow text-fg-mute">
+                  <p className="mb-2 font-sans text-xs font-medium text-fg-mute">
                     Hour
                   </p>
                   <div className="grid grid-cols-6 gap-1">
@@ -175,10 +175,10 @@ export function TimePill({
                             }
                           }}
                           className={clsx(
-                            'h-8 rounded-[6px] font-mono text-[12px] tabular-nums transition-colors',
+                            'h-9 rounded-input font-mono text-[12px] tabular-nums transition-colors',
                             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
-                            !allowed && 'cursor-not-allowed text-fg-faint',
-                            allowed && isSelected && 'bg-fg text-bg',
+                            !allowed && 'cursor-not-allowed text-fg-mute',
+                            allowed && isSelected && 'bg-primary text-primary-fg',
                             allowed && !isSelected &&
                               'text-fg-soft hover:bg-bg-subtle hover:text-fg',
                           )}
@@ -191,7 +191,7 @@ export function TimePill({
                 </div>
 
                 <div className="mt-4">
-                  <p className="mb-2 font-mono text-[10px] font-semibold uppercase tracking-eyebrow text-fg-mute">
+                  <p className="mb-2 font-sans text-xs font-medium text-fg-mute">
                     Minute
                   </p>
                   <div className="grid grid-cols-2 gap-1.5">
@@ -207,12 +207,12 @@ export function TimePill({
                           aria-label={`Minute ${String(m).padStart(2, '0')}`}
                           onClick={() => commit(total)}
                           className={clsx(
-                            'h-10 rounded-[8px] border font-mono text-[13px] font-semibold tabular-nums transition-colors',
+                            'h-11 rounded-input border font-mono text-[13px] font-semibold tabular-nums transition-colors',
                             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
                             !allowed &&
-                              'cursor-not-allowed border-border-token/60 text-fg-faint',
+                              'cursor-not-allowed border-border-token/60 text-fg-mute',
                             allowed && isSelected &&
-                              'border-fg bg-fg text-bg',
+                              'border-primary bg-primary text-primary-fg',
                             allowed && !isSelected &&
                               'border-border-token bg-surface text-fg-soft hover:border-border-strong hover:text-fg',
                           )}
@@ -233,9 +233,9 @@ export function TimePill({
                       'mt-4 flex w-full items-center justify-between rounded-[8px] border px-3 py-2 font-sans text-[12px] transition-colors',
                       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
                       !isTimeAllowed(1440)
-                        ? 'cursor-not-allowed border-border-token/60 text-fg-faint'
+                        ? 'cursor-not-allowed border-border-token/60 text-fg-mute'
                         : value === 1440
-                          ? 'border-fg bg-fg text-bg'
+                          ? 'border-primary bg-primary text-primary-fg'
                           : 'border-border-token text-fg-soft hover:border-border-strong hover:text-fg',
                     )}
                   >

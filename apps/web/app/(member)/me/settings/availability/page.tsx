@@ -8,7 +8,7 @@ export default function AvailabilityPage() {
 
   if (isLoading) {
     return (
-      <p className="font-mono text-xs uppercase tracking-eyebrow text-fg-mute">
+      <p className="font-sans text-sm text-fg-mute">
         Loading…
       </p>
     );

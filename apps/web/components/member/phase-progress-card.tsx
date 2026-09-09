@@ -15,7 +15,7 @@ export function PhaseProgressCard({ topics, limit = 4 }: Props) {
 
   return (
     <section className="rounded-tile border border-border-token bg-surface p-6">
-      <p className="font-mono text-[10px] font-semibold uppercase tracking-eyebrow text-fg-mute">
+      <p className="font-sans text-xs font-medium text-fg-mute">
         Cycle progress
       </p>
       {visible.length === 0 ? (
@@ -23,7 +23,7 @@ export function PhaseProgressCard({ topics, limit = 4 }: Props) {
           Your cycle has no planned items yet.
         </p>
       ) : (
-        <div className="mt-3 flex flex-col gap-3">
+        <div className="mt-4 flex flex-col gap-4">
           {visible.map((t) => {
             const pct = t.itemsPlanned === 0 ? 0 : t.itemsDone / t.itemsPlanned;
             const tone =

@@ -44,8 +44,8 @@ function Initials({
 }
 
 function scoreColor(score: number): string {
-  if (score >= 66) return 'text-outcome-done-easy';
-  if (score >= 33) return 'text-outcome-done-hard';
+  if (score >= 66) return 'text-fg';
+  if (score >= 33) return 'text-fg-soft';
   return 'text-outcome-stuck';
 }
 
@@ -75,9 +75,9 @@ export function CohortRoster({ members, ranking }: Props) {
         .map((m) => ({ ...m, score: null as number | null }));
 
   return (
-    <section className="rounded-tile border border-border-token bg-surface">
+    <section className="overflow-hidden rounded-card border border-border-token bg-surface">
       <header className="border-b border-border-token px-5 py-4">
-        <p className="font-mono text-[10px] font-semibold uppercase tracking-eyebrow text-fg-mute">
+        <p className="font-sans text-xs font-medium text-fg-mute">
           {useRanking ? 'Cohort ranking' : 'Classmates'}
         </p>
         <p className="mt-0.5 font-sans text-sm text-fg-soft">
@@ -89,7 +89,7 @@ export function CohortRoster({ members, ranking }: Props) {
           <li
             key={row.userId}
             className={clsx(
-              'flex items-center gap-4 px-5 py-3',
+              'flex items-center gap-3 px-4 py-4 sm:gap-4 sm:px-5',
               row.isMe && 'bg-primary-soft',
             )}
           >
@@ -100,10 +100,10 @@ export function CohortRoster({ members, ranking }: Props) {
             )}
             <Initials name={row.name} pictureUrl={row.pictureUrl} />
             <div className="flex-1 min-w-0">
-              <p className="flex items-center gap-2 font-sans text-sm font-medium text-fg">
+              <p className="flex flex-wrap items-center gap-2 font-sans text-sm font-medium text-fg">
                 {row.name}
                 {row.isMe && (
-                  <span className="inline-flex h-[18px] items-center rounded-pill bg-primary px-2 font-mono text-[10px] font-semibold uppercase tracking-eyebrow text-primary-fg">
+                  <span className="inline-flex h-[18px] items-center rounded-pill bg-primary px-2 font-sans text-xs font-medium text-primary-fg">
                     You
                   </span>
                 )}

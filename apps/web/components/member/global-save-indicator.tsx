@@ -61,8 +61,8 @@ export function GlobalSaveIndicator() {
   return (
     <div
       className={clsx(
-        'flex items-center gap-2 rounded-pill px-3 py-1 font-mono text-[11px] font-semibold',
-        status === 'idle' && 'text-success',
+        'flex min-h-11 flex-wrap items-center gap-2 rounded-input px-3 py-1 font-sans text-xs font-medium',
+        status === 'idle' && 'text-fg-soft',
         status === 'saving' && 'text-fg-mute',
         status === 'error' && 'text-danger',
         status === 'overlap' && 'text-outcome-stuck',
@@ -88,7 +88,7 @@ export function GlobalSaveIndicator() {
           <button
             type="button"
             onClick={handleRetry}
-            className="underline underline-offset-2 hover:text-fg"
+            className="min-h-11 rounded-input underline underline-offset-2 hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
           >
             Save failed — Retry
           </button>

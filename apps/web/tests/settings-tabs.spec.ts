@@ -106,6 +106,54 @@ test.describe('settings tabs', () => {
     await expect(page.getByText('WhatsApp phone')).toBeVisible();
   });
 
+  for (const theme of ['light', 'dark'] as const) {
+    test(`all settings tabs fit mobile in ${theme}`, async ({ page }) => {
+      await page.setViewportSize({ width: 390, height: 844 });
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      await page.addInitScript((value) => localStorage.setItem('ics-theme', value), theme);
+      for (const [tab, label] of [['profile', 'WhatsApp phone'], ['appearance', 'Your choice syncs across devices.'], ['availability', 'Available time slots']]) {
+        await page.goto(`/me/settings/${tab}`);
+        await page.addStyleTag({ content: 'nextjs-portal { display: none !important; }' });
+        await expect(page.getByText(label, { exact: true })).toBeVisible();
+        await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+        await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+        await expect(page).toHaveScreenshot(`academy-settings-${tab}-${theme}-mobile.png`, { fullPage: true, animations: 'disabled' });
+      }
+      await page.keyboard.press('Tab');
+      await page.getByRole('button', { name: 'What does this do?' }).focus();
+      await expect(page.getByRole('tooltip')).toContainText('study events created by Academy Fellow');
+      await page.getByRole('button', { name: 'Mon start' }).click();
+      const picker = page.getByRole('dialog', { name: 'Mon start picker' });
+      await expect(picker).toBeVisible();
+      await expect(picker).toHaveScreenshot(`academy-time-picker-${theme}.png`, { animations: 'disabled' });
+      await page.keyboard.press('Escape');
+      await expect(picker).toBeHidden();
+    });
+
+    test(`onboarding steps stay readable in ${theme}`, async ({ page }) => {
+      await page.setViewportSize({ width: 390, height: 844 });
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      await page.addInitScript((value) => localStorage.setItem('ics-theme', value), theme);
+      await page.route(new RegExp(`^${API_BASE}/me$`), (route) => route.fulfill({ json: { ...MOCK_USER, targetTrack: null } }));
+      await page.goto('/me/onboarding');
+      await page.addStyleTag({ content: 'nextjs-portal { display: none !important; }' });
+      await expect(page.getByRole('heading', { name: 'Where should we reach you?' })).toBeVisible();
+      await page.getByRole('textbox').fill('+55');
+      await expect(page.getByText('E.164 format:', { exact: false })).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
+      await page.getByRole('textbox').fill('+5511987654321');
+      await page.getByRole('button', { name: 'Next' }).click();
+      await page.getByRole('button', { name: /^Big Tech/ }).click();
+      await expect(page).toHaveScreenshot(`academy-onboarding-track-${theme}.png`, { fullPage: true, animations: 'disabled' });
+      await page.getByRole('button', { name: 'Next' }).click();
+      await expect(page.getByRole('heading', { name: 'How much time per day?' })).toBeVisible();
+      await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+      await page.getByRole('button', { name: 'Next' }).click();
+      await expect(page.getByRole('heading', { name: 'Dark or light?' })).toBeVisible();
+      await expect(page.getByRole('button', { name: "LET'S GOOOO" })).toBeEnabled();
+    });
+  }
+
   test('navigating to Availability renders the grid and indicator shows Saved', async ({
     page,
   }) => {

@@ -94,3 +94,24 @@ test('submit posts the linked ids', async ({ page }) => {
   await expect.poll(() => captured).not.toBeNull();
   expect(captured.nextWeekWish).toBe('mais SD');
 });
+
+for (const theme of ['light', 'dark'] as const) {
+  test(`retro open and closed states stay readable in ${theme}`, async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.addInitScript((value) => localStorage.setItem('ics-theme', value), theme);
+    await page.goto('/me/retro');
+    await page.addStyleTag({ content: 'nextjs-portal { display: none !important; }' });
+    await expect(page.getByRole('heading', { name: 'How was this week?' })).toBeVisible();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+    await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await expect(page).toHaveScreenshot(`academy-retro-open-${theme}-mobile.png`, { fullPage: true, animations: 'disabled' });
+    await page.route(`${API_BASE}/me/retro/current`, (route) => route.fulfill({ json: { ...MOCK_RETRO_CURRENT, open: false } }));
+    await page.reload();
+    await page.addStyleTag({ content: 'nextjs-portal { display: none !important; }' });
+    await expect(page.getByText('Retro closed', { exact: false })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Submit retro' })).toBeDisabled();
+    for (const textarea of await page.locator('textarea').all()) await expect(textarea).toBeDisabled();
+    await expect(page).toHaveScreenshot(`academy-retro-closed-${theme}-mobile.png`, { fullPage: true, animations: 'disabled' });
+  });
+}

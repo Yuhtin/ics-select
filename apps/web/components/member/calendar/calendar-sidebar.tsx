@@ -50,7 +50,7 @@ export function CalendarSidebar({ events, timezone }: CalendarSidebarProps) {
   if (ics.length === 0) {
     return (
       <aside className="space-y-4">
-        <Eyebrow>This week · 0 ICS</Eyebrow>
+        <Eyebrow>This week · 0 Academy Fellow</Eyebrow>
         <p className="font-sans text-sm text-fg-mute">No study blocks this week.</p>
       </aside>
     );
@@ -66,10 +66,10 @@ export function CalendarSidebar({ events, timezone }: CalendarSidebarProps) {
 
   return (
     <aside className="space-y-6">
-      <Eyebrow>This week · {ics.length} ICS</Eyebrow>
+      <Eyebrow>This week · {ics.length} Academy Fellow</Eyebrow>
       {[...byDay.entries()].map(([day, items]) => (
         <div key={day} className="space-y-2">
-          <p className="font-mono text-[10px] font-semibold uppercase tracking-eyebrow text-fg-mute">
+          <p className="font-sans text-xs font-medium text-fg-mute">
             {day}
           </p>
           <ul className="space-y-1">
@@ -80,11 +80,11 @@ export function CalendarSidebar({ events, timezone }: CalendarSidebarProps) {
                 <li key={item.id}>
                   <Link
                     href={`/me/item/${item.ics?.itemId}`}
-                    className="group flex items-center gap-2 rounded-input py-1.5 pl-0 pr-2 transition-colors hover:bg-bg-subtle"
+                    className="group flex min-h-11 items-center gap-2 rounded-input py-2 pl-0 pr-2 transition-colors hover:bg-bg-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
                   >
                     <span className={`h-[28px] w-[3px] rounded-sm ${PLATFORM_CLASS[platform]}`} />
                     <span className={`h-2 w-2 rounded-full ${OUTCOME_CLASS[outcome]}`} />
-                    <span className="flex-1 truncate font-serif text-[13px] text-fg">
+                    <span className="min-w-0 flex-1 truncate font-sans text-[13px] text-fg">
                       {item.title}
                     </span>
                     <span className="font-sans text-[10px] tabular-nums text-fg-mute">

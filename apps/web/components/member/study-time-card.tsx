@@ -21,7 +21,7 @@ export function StudyTimeCard({ studyTime, className }: StudyTimeCardProps) {
 
   return (
     <section className={clsx('rounded-tile border border-border-token bg-surface p-6', className)}>
-      <p className="font-mono text-[10px] font-semibold uppercase tracking-eyebrow text-fg-mute">
+      <p className="font-sans text-xs font-medium text-fg-mute">
         Study time this week
       </p>
 
@@ -36,7 +36,7 @@ export function StudyTimeCard({ studyTime, className }: StudyTimeCardProps) {
         <div
           className={clsx(
             'h-full transition-[width]',
-            overrun ? 'bg-reflect' : 'bg-fg',
+            overrun ? 'bg-reflect' : 'bg-primary',
           )}
           style={{ width: `${barWidth}%` }}
         />
@@ -46,7 +46,7 @@ export function StudyTimeCard({ studyTime, className }: StudyTimeCardProps) {
       </p>
 
       {overrun && (
-        <p className="mt-3 font-sans text-[11px] text-reflect">
+        <p className="mt-3 font-sans text-xs leading-relaxed text-fg-soft">
           Taking longer than estimated. The program director sees this.
         </p>
       )}

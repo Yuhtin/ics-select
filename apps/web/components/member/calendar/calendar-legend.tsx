@@ -8,8 +8,8 @@ const ITEMS: { label: string; cls: string }[] = [
 
 export function CalendarLegend() {
   return (
-    <div className="border-t border-border-token pt-4 font-mono text-[10px] uppercase tracking-eyebrow text-fg-mute">
-      <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+    <div className="border-t border-border-token pt-4 font-sans text-xs text-fg-mute">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
         <span className="font-semibold">Outcomes</span>
         {ITEMS.map(({ label, cls }) => (
           <span key={label} className="inline-flex items-center gap-1.5">

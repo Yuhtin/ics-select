@@ -18,14 +18,14 @@ export default function MeHomePage() {
 
   if (isLoading) {
     return (
-      <p className="font-mono text-[10px] font-semibold uppercase tracking-eyebrow text-fg-mute">
+      <p className="font-sans text-xs font-medium text-fg-mute">
         Loading…
       </p>
     );
   }
   if (error || !data) {
     return (
-      <p className="font-mono text-[10px] font-semibold uppercase tracking-eyebrow text-fg-mute">
+      <p className="font-sans text-xs font-medium text-fg-mute">
         Could not load your home.
       </p>
     );
@@ -51,12 +51,12 @@ export default function MeHomePage() {
   );
 
   return (
-    <div className="grid gap-5 lg:grid-cols-[minmax(0,1.8fr)_minmax(0,1fr)]">
+    <div className="grid gap-8 lg:grid-cols-[minmax(0,1.8fr)_minmax(0,1fr)]">
       <div className="flex min-w-0 flex-col gap-6">
         <HeroScene hero={data.hero} />
         {lateItems.length > 0 && (
           <section>
-            <div className="mb-2 flex items-baseline justify-between px-1">
+            <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2 px-1">
               <h2 className="font-sans text-sm font-semibold tracking-tight text-fg">
                 Earlier this week
               </h2>
@@ -68,7 +68,7 @@ export default function MeHomePage() {
           </section>
         )}
         <section>
-          <div className="mb-2 flex items-baseline justify-between px-1">
+          <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2 px-1">
             <h2 className="font-sans text-sm font-semibold tracking-tight text-fg">
               Today
             </h2>
@@ -89,11 +89,11 @@ export default function MeHomePage() {
         )}
         {(data.unscheduled?.length ?? 0) > 0 && (
           <section>
-            <div className="mb-2 flex items-baseline justify-between px-1">
+            <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2 px-1">
               <h2 className="font-sans text-sm font-semibold tracking-tight text-fg">
                 Unscheduled
               </h2>
-              <span className="font-mono text-[10px] font-semibold uppercase tracking-eyebrow text-fg-mute">
+              <span className="font-sans text-xs font-medium text-fg-mute">
                 Sem horário no calendário
               </span>
             </div>
@@ -115,7 +115,7 @@ export default function MeHomePage() {
         )}
         {data.topicCoverage.length > 0 && (
           <section className="rounded-tile border border-border-token bg-surface p-6">
-            <p className="font-mono text-[10px] font-semibold uppercase tracking-eyebrow text-fg-mute">
+            <p className="font-sans text-xs font-medium text-fg-mute">
               Topic coverage
             </p>
             <div className="mt-4">

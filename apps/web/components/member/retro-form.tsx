@@ -62,14 +62,14 @@ export function RetroForm({ data }: RetroFormProps) {
     <form className="max-w-3xl space-y-8" onSubmit={handleSubmit}>
       <header>
         <Eyebrow>Weekly retro</Eyebrow>
-        <h1 className="mt-2 font-serif text-4xl font-medium tracking-tight">
+        <h1 className="mt-2 font-sans text-[30px] font-semibold leading-tight tracking-tight sm:text-[36px]">
           How was this week?
         </h1>
-        <p className="mt-3 font-sans text-sm text-ink-soft">
+        <p className="mt-3 font-sans text-sm text-fg-soft">
           Your notes help shape next week&apos;s plan. Only the program director sees them.
         </p>
         {!data.open && (
-          <p className="mt-3 border-l-4 border-outcome-done-hard pl-4 font-mono text-xs uppercase tracking-label text-outcome-done-hard">
+          <p className="mt-3 rounded-card border border-warn/40 bg-warn-soft p-4 font-sans text-sm leading-relaxed text-fg">
             Retro closed — reopens Fri 18:00 local (window runs through Wed 23:59 of the next week).
           </p>
         )}
@@ -78,10 +78,11 @@ export function RetroForm({ data }: RetroFormProps) {
       {recap && <RetroRecap recap={recap} />}
 
       {showStuckQuestion && (
-        <fieldset className="space-y-3" disabled={disabled}>
+        <fieldset className="space-y-4" disabled={disabled}>
           <SectionLabel>Qual item dessa semana travou ou ficou com dúvida?</SectionLabel>
           <Select
             aria-label="Item travado"
+            classNames={{ trigger: 'min-h-11 rounded-input border border-border-token bg-surface shadow-none', value: 'text-fg', popoverContent: 'border border-border-token bg-surface text-fg' }}
             placeholder="Escolha um item…"
             selectedKeys={stuckItemId ? [stuckItemId] : []}
             onSelectionChange={(keys) => {
@@ -103,10 +104,11 @@ export function RetroForm({ data }: RetroFormProps) {
       )}
 
       {showValuedQuestion && (
-        <fieldset className="space-y-3" disabled={disabled}>
+        <fieldset className="space-y-4" disabled={disabled}>
           <SectionLabel>Qual item dessa semana mais valeu a pena?</SectionLabel>
           <Select
             aria-label="Item que mais valeu a pena"
+            classNames={{ trigger: 'min-h-11 rounded-input border border-border-token bg-surface shadow-none', value: 'text-fg', popoverContent: 'border border-border-token bg-surface text-fg' }}
             placeholder="Escolha um item…"
             selectedKeys={valuedItemId ? [valuedItemId] : ['__none__']}
             onSelectionChange={(keys) => {
@@ -134,18 +136,18 @@ export function RetroForm({ data }: RetroFormProps) {
         </fieldset>
       )}
 
-      <fieldset className="space-y-3" disabled={disabled}>
+      <fieldset className="space-y-4" disabled={disabled}>
         <SectionLabel>1 coisa que você quer no próximo plano</SectionLabel>
         <textarea
           value={nextWeekWish}
           onChange={(e) => setNextWeekWish(e.target.value)}
           placeholder="ex: 'menos LeetCode, mais system design' / 'item Y específico' / 'só 4 itens, essa semana foi pesada' / 'mais conteúdo em pt-BR'"
           disabled={disabled}
-          className="w-full min-h-[120px] rounded-input border border-rule bg-surface p-3 font-sans text-sm text-ink placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-ink disabled:cursor-not-allowed disabled:opacity-60"
+          className="w-full min-h-[120px] rounded-input border border-border-token bg-surface p-3 font-sans text-sm text-fg placeholder:text-fg-mute focus:outline-none focus:ring-2 focus:ring-primary disabled:cursor-not-allowed disabled:bg-bg-subtle disabled:text-fg-mute"
         />
       </fieldset>
 
-      <Button type="submit" disabled={disabled || submit.isPending}>
+      <Button type="submit" disabled={disabled || submit.isPending} className="[&:disabled]:bg-bg-subtle [&:disabled]:text-fg-mute [&:disabled]:opacity-100">
         {submit.isPending ? 'Saving…' : data.retro ? 'Update retro' : 'Submit retro'}
       </Button>
     </form>
@@ -162,14 +164,14 @@ function RetroTextarea({
 }) {
   return (
     <div>
-      <p className="font-mono text-[10px] font-semibold uppercase tracking-eyebrow text-fg-mute mb-2">
+      <p className="font-sans text-xs font-medium text-fg-mute mb-2">
         {label}
       </p>
       <textarea
         value={value}
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
-        className="w-full min-h-[100px] rounded-input border border-rule bg-surface p-3 font-sans text-sm text-ink placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-ink disabled:cursor-not-allowed disabled:opacity-60"
+        className="w-full min-h-[100px] rounded-input border border-border-token bg-surface p-3 font-sans text-sm text-fg placeholder:text-fg-mute focus:outline-none focus:ring-2 focus:ring-primary disabled:cursor-not-allowed disabled:bg-bg-subtle disabled:text-fg-mute"
       />
     </div>
   );

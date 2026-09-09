@@ -37,10 +37,10 @@ export function DayList({ label, hint, items, activeItemId, now }: DayListProps)
   const router = useRouter();
   const ref = now ?? new Date();
   return (
-    <div>
+    <div className="min-w-0">
       {label && <DayHeader label={label} hint={hint} />}
       {items.length === 0 ? (
-        <p className="py-4 font-sans text-sm text-fg-mute">Nothing scheduled.</p>
+        <p className="rounded-card border border-dashed border-border-token px-4 py-6 font-sans text-sm text-fg-mute">Nothing scheduled.</p>
       ) : (
         items.map((item) => {
           const platform = detectPlatform(item.url, item.format);
@@ -50,6 +50,7 @@ export function DayList({ label, hint, items, activeItemId, now }: DayListProps)
           return (
             <ListRow
               key={item.id}
+              className={activeItemId === item.id ? 'bg-primary-soft/60' : undefined}
               time={formatTimeLocal(item.scheduledAt) ?? undefined}
               outcome={item.outcome}
               active={activeItemId === item.id}

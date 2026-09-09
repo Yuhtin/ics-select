@@ -66,17 +66,17 @@ export function AvailabilitySlotEditor({ slots, onChange }: Props) {
           <div
             key={day}
             className={clsx(
-              'rounded-input border bg-surface px-4 py-3',
+              'rounded-card border bg-surface px-3 py-3 sm:px-4',
               overlap ? 'border-outcome-stuck' : 'border-border-token',
             )}
           >
-            <div className="flex items-start gap-4">
-              <span className="mt-2 w-12 shrink-0 font-mono text-[11px] font-semibold uppercase tracking-eyebrow text-fg-mute">
+            <div className="flex flex-col items-start gap-2 sm:flex-row sm:gap-4">
+              <span className="mt-2 w-12 shrink-0 font-sans text-xs font-medium text-fg-mute">
                 {label}
               </span>
-              <div className="flex-1 space-y-2">
+              <div className="min-w-0 flex-1 space-y-2">
                 {daySlots.length === 0 && (
-                  <p className="pt-1.5 font-sans text-[13px] text-fg-faint">
+                  <p className="pt-1.5 font-sans text-[13px] text-fg-mute">
                     indisponível
                   </p>
                 )}
@@ -99,7 +99,7 @@ export function AvailabilitySlotEditor({ slots, onChange }: Props) {
                     <button
                       type="button"
                       onClick={() => removeSlot(day, idx)}
-                      className="ml-1 inline-flex h-8 w-8 items-center justify-center rounded-pill border border-transparent text-fg-mute transition-colors hover:border-border-token hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                      className="ml-1 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-pill border border-transparent text-fg-mute transition-colors hover:border-border-token hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                       aria-label={`Remove ${label} slot ${idx + 1}`}
                     >
                       <X className="h-4 w-4" strokeWidth={1.5} />
@@ -109,7 +109,7 @@ export function AvailabilitySlotEditor({ slots, onChange }: Props) {
                 <button
                   type="button"
                   onClick={() => addSlot(day)}
-                  className="inline-flex items-center gap-1.5 rounded-input px-2 py-1 font-sans text-[13px] text-fg-mute transition-colors hover:bg-bg-subtle hover:text-fg"
+                  className="inline-flex min-h-11 items-center gap-1.5 rounded-input px-2 font-sans text-[13px] text-fg-mute transition-colors hover:bg-bg-subtle hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
                 >
                   <Plus className="h-3.5 w-3.5" strokeWidth={1.5} />
                   adicionar faixa
@@ -117,7 +117,7 @@ export function AvailabilitySlotEditor({ slots, onChange }: Props) {
               </div>
             </div>
             {overlap && (
-              <p className="mt-2 pl-[64px] font-mono text-[11px] text-outcome-stuck">
+              <p className="mt-2 font-sans text-xs text-outcome-stuck sm:pl-[64px]">
                 faixas se sobrepõem — ajuste pra salvar
               </p>
             )}

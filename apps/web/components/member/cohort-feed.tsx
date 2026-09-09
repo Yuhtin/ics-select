@@ -14,14 +14,14 @@ function Avatar({ name, pictureUrl }: { name: string; pictureUrl: string | null 
         src={pictureUrl}
         alt=""
         aria-hidden
-        className="mt-0.5 h-8 w-8 flex-none rounded-full border border-rule object-cover"
+        className="mt-0.5 h-8 w-8 flex-none rounded-full border border-border-token object-cover"
       />
     );
   }
   return (
     <div
       aria-hidden
-      className="mt-0.5 flex h-8 w-8 flex-none items-center justify-center rounded-full bg-paper-warm font-serif text-xs font-semibold text-ink"
+      className="mt-0.5 flex h-8 w-8 flex-none items-center justify-center rounded-full bg-bg-subtle font-sans text-xs font-semibold text-fg"
     >
       {initials(name)}
     </div>
@@ -55,22 +55,22 @@ interface CohortFeedProps {
 export function CohortFeed({ feed, className }: CohortFeedProps) {
   const events = feed ?? [];
   if (events.length === 0) {
-    return <p className={clsx('font-sans text-sm text-ink-mute', className)}>No activity in the last 7 days.</p>;
+    return <p className={clsx('font-sans text-sm text-fg-mute', className)}>No activity in the last 7 days.</p>;
   }
   return (
-    <ul className={clsx('divide-y divide-rule', className)}>
+    <ul className={clsx('space-y-1', className)}>
       {events.map((event) => (
-        <li key={event.id} className="flex items-start gap-3 py-3">
+        <li key={event.id} className="flex items-start gap-3 py-4">
           <Avatar name={event.member.name} pictureUrl={event.member.pictureUrl} />
           <div className="min-w-0 flex-1">
             <p className="font-sans text-sm leading-snug">
-              <span className="font-semibold text-ink">{event.member.name}</span>
-              <span className="text-ink-soft"> {verb(event.kind)} </span>
+              <span className="font-semibold text-fg">{event.member.name}</span>
+              <span className="text-fg-soft"> {verb(event.kind)} </span>
               {event.itemTitle && (
-                <span className="font-serif italic text-ink">{event.itemTitle}</span>
+                <span className="font-sans leading-relaxed text-fg">{event.itemTitle}</span>
               )}
             </p>
-            <p className="mt-0.5 font-mono text-[10px] uppercase tracking-label text-ink-mute">
+            <p className="mt-0.5 font-mono text-[10px] uppercase tracking-label text-fg-mute">
               {relative(event.at)}
             </p>
           </div>

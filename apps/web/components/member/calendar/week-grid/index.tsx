@@ -60,7 +60,7 @@ function CompactEventPill({
       className={clsx(
         'flex h-full w-full items-center gap-1 overflow-hidden rounded-[6px] px-1.5',
         isIcs
-          ? 'border border-border-token bg-surface'
+          ? 'border border-primary/25 bg-primary-soft/35'
           : 'border border-dashed border-border-token',
       )}
       title={event.title}
@@ -156,7 +156,7 @@ export function WeekGrid({
   }, [events, timezone]);
 
   return (
-    <div className="rounded-[12px] border border-border-token bg-surface overflow-hidden">
+    <div className="rounded-card border border-border-token bg-surface overflow-hidden">
       {/* Day header */}
       <div
         className="grid border-b border-border-token bg-surface"
@@ -168,7 +168,7 @@ export function WeekGrid({
           return (
             <div
               key={d.toISOString()}
-              className="flex items-center justify-center gap-2 py-2 font-mono text-[11px] uppercase tracking-label text-fg-mute"
+              className="flex flex-col items-center justify-center gap-1 py-3 sm:flex-row sm:gap-2 font-mono text-[11px] uppercase tracking-label text-fg-mute"
             >
               <span>{WEEKDAY_LABELS[d.getDay()]}</span>
               <span
@@ -196,7 +196,7 @@ export function WeekGrid({
             minHeight: '32px',
           }}
         >
-          <div className="flex items-center justify-end pr-2 font-mono text-[9px] uppercase tracking-label text-fg-faint">
+          <div className="flex items-center justify-end pr-2 font-mono text-[9px] uppercase tracking-label text-fg-mute">
             all-day
           </div>
           {days.map((d) => {
@@ -278,8 +278,8 @@ export function WeekGrid({
                     className="pointer-events-none absolute left-0 right-0 z-10"
                     style={{ top: `${nowTopPx}px` }}
                   >
-                    <div className="relative h-0 border-t-2 border-danger">
-                      <span className="absolute -left-[5px] -top-[5px] h-[10px] w-[10px] rounded-full bg-danger" />
+                    <div className="relative h-0 border-t-2 border-primary">
+                      <span className="absolute -left-[5px] -top-[5px] h-[10px] w-[10px] rounded-full bg-primary" />
                     </div>
                   </div>
                 )}

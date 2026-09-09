@@ -70,7 +70,7 @@ export function ItemFocus({ item }: ItemFocusProps) {
     return 'Pending';
   })();
 
-  const eyebrowClass = isRunningLate ? '!text-outcome-stuck' : '';
+  const eyebrowClass = isRunningLate ? '!text-fg' : isDone ? '' : '!text-primary dark:!text-primary-fg';
 
   const requiresTime = outcome !== null && TIME_REQUIRED_OUTCOMES.has(outcome);
   const parsedMinutes = (() => {
@@ -107,32 +107,32 @@ export function ItemFocus({ item }: ItemFocusProps) {
     <div className="max-w-3xl space-y-8">
       <Link
         href="/me"
-        className="inline-flex items-center gap-1.5 font-mono text-xs uppercase tracking-label text-ink-mute hover:text-ink"
+        className="inline-flex min-h-11 items-center gap-1.5 rounded-input font-sans text-sm text-fg-mute hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
       >
         <ArrowLeft className="h-3.5 w-3.5" strokeWidth={1.5} /> Back
       </Link>
 
       <header
         className={clsx(
-          'relative pl-4 md:pl-5',
-          isRunningLate && 'border-l-[3px] border-outcome-stuck',
+          'relative rounded-card border border-border-token bg-surface p-6 sm:p-8',
+          isRunningLate && 'border-warn/50',
         )}
       >
         {!isRunningLate && (
           <span
             aria-hidden
             className={clsx(
-              'absolute left-0 top-1 bottom-1 w-[3px] rounded-[2px]',
-              PLATFORM_STRIPE[platform],
+              'absolute left-0 top-6 bottom-6 w-[2px] rounded-full',
+              isDone ? PLATFORM_STRIPE[platform] : 'bg-primary',
             )}
           />
         )}
         <Eyebrow className={eyebrowClass}>{eyebrowText}</Eyebrow>
-        <h1 className="mt-3 font-serif text-[40px] font-medium leading-[1.05] tracking-tight md:text-[48px]">
+        <h1 className="mt-3 font-sans text-[30px] font-semibold leading-[1.15] tracking-tight md:text-[40px]">
           {item.libraryItem.title}
         </h1>
-        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 font-mono text-xs text-ink-mute">
-          <span className="uppercase tracking-label text-ink-soft">{platformLabel(platform)}</span>
+        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 font-mono text-xs text-fg-mute">
+          <span className="uppercase tracking-label text-fg-soft">{platformLabel(platform)}</span>
           <span aria-hidden>·</span>
           <span>{item.libraryItem.estimatedMinutes} min</span>
           {item.libraryItem.topic && (
@@ -149,7 +149,7 @@ export function ItemFocus({ item }: ItemFocusProps) {
           href={item.libraryItem.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-pill bg-ink px-6 text-sm font-semibold text-paper hover:bg-ink-soft md:w-auto"
+          className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-input bg-primary px-6 text-sm font-semibold text-primary-fg hover:bg-primary/90 md:w-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
         >
           Open on {platformLabel(platform)}
           <ExternalLink className="h-4 w-4" strokeWidth={1.75} />
@@ -159,21 +159,21 @@ export function ItemFocus({ item }: ItemFocusProps) {
       {item.libraryItem.description && (
         <section>
           <Eyebrow>About this study</Eyebrow>
-          <p className="mt-2 font-sans text-base text-ink-soft leading-relaxed">
+          <p className="mt-2 font-sans text-base text-fg-soft leading-relaxed">
             {item.libraryItem.description}
           </p>
         </section>
       )}
 
       {item.carriedFrom && (
-        <section className="border-l-4 border-accent pl-5 md:pl-6">
+        <section className="rounded-card border border-reflect/30 bg-reflect-soft/40 p-5 md:p-6">
           <Eyebrow className="!text-accent">Carried from last week · your note</Eyebrow>
           {item.carriedFrom.reflection ? (
-            <p className="mt-2 font-serif italic text-ink-soft">&ldquo;{item.carriedFrom.reflection}&rdquo;</p>
+            <p className="mt-2 font-sans leading-relaxed text-fg-soft">&ldquo;{item.carriedFrom.reflection}&rdquo;</p>
           ) : (
-            <p className="mt-2 font-sans text-sm text-ink-mute">(no reflection on the previous attempt)</p>
+            <p className="mt-2 font-sans text-sm text-fg-mute">(no reflection on the previous attempt)</p>
           )}
-          <p className="mt-2 font-mono text-xs uppercase tracking-label text-ink-mute">
+          <p className="mt-2 font-sans text-sm text-fg-mute">
             Marked {item.carriedFrom.outcome.replace('_', ' ')} · week of {item.carriedFrom.weekStart}
           </p>
         </section>
@@ -193,13 +193,13 @@ export function ItemFocus({ item }: ItemFocusProps) {
                 value={reflection}
                 onChange={(e) => setReflection(e.target.value)}
                 placeholder="Escreve em pt-BR se quiser — é sua nota"
-                className="w-full min-h-[96px] rounded-input border border-rule bg-surface p-3 font-sans text-sm text-ink placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-ink"
+                className="w-full min-h-[96px] rounded-input border border-border-token bg-surface p-3 font-sans text-sm text-fg placeholder:text-fg-mute focus:outline-none focus:ring-2 focus:ring-primary"
               />
             )}
             {requiresTime && (
               <div className="space-y-2">
                 <label className="block">
-                  <p className="font-mono text-[11px] uppercase tracking-[0.1em] text-ink-mute">
+                  <p className="font-mono text-[11px] uppercase tracking-[0.1em] text-fg-mute">
                     Tempo gasto (min)
                   </p>
                   <input
@@ -211,7 +211,7 @@ export function ItemFocus({ item }: ItemFocusProps) {
                     value={actualMinutesInput}
                     onChange={(e) => setActualMinutesInput(e.target.value)}
                     placeholder="Ex: 45"
-                    className="mt-1 w-32 rounded-input border border-rule bg-surface px-3 py-2 font-mono text-sm tabular-nums text-ink placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-ink"
+                    className="mt-1 w-32 rounded-input border border-border-token bg-surface px-3 py-2 font-mono text-sm tabular-nums text-fg placeholder:text-fg-mute focus:outline-none focus:ring-2 focus:ring-primary"
                   />
                 </label>
                 {actualMinutesInput.trim() !== '' && parsedMinutes === null && (
@@ -224,6 +224,7 @@ export function ItemFocus({ item }: ItemFocusProps) {
             <Button
               onClick={handleSave}
               disabled={!canSave || mutation.isPending}
+              className="[&:disabled]:bg-bg-subtle [&:disabled]:text-fg-mute [&:disabled]:opacity-100"
             >
               {mutation.isPending ? 'Saving…' : 'Save outcome'}
             </Button>
@@ -239,18 +240,18 @@ export function ItemFocus({ item }: ItemFocusProps) {
                 setOutcome(null);
                 setEditing(true);
               }}
-              className="text-xs underline"
+              className="min-h-11 rounded-input px-2 text-xs underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
             >
               Undo
             </button>
           </div>
         ) : (
           <div className="mt-3 space-y-3">
-            <p className="font-mono text-xs uppercase tracking-label text-ink">
+            <p className="font-sans text-sm text-fg">
               {item.outcome.replace('_', ' ')}
             </p>
             {item.reflection && (
-              <p className="font-serif italic text-ink-soft">&ldquo;{item.reflection}&rdquo;</p>
+              <p className="font-sans leading-relaxed text-fg-soft">&ldquo;{item.reflection}&rdquo;</p>
             )}
             <Button variant="ghost" onClick={() => setEditing(true)}>
               Edit
@@ -260,11 +261,11 @@ export function ItemFocus({ item }: ItemFocusProps) {
       </section>
 
       {item.outcome === 'STUCK' && (
-        <aside className="border-l-4 border-outcome-stuck pl-5 py-2 md:pl-6">
+        <aside className="rounded-card border border-danger/40 bg-danger-soft p-5 md:p-6">
           <p className="font-mono text-[10px] uppercase tracking-eyebrow font-semibold text-outcome-stuck">
             Stuck — help requested
           </p>
-          <p className="mt-1 font-sans text-sm text-ink-soft">
+          <p className="mt-1 font-sans text-sm text-fg-soft">
             The program director has been notified. Talk to them when you can.
           </p>
         </aside>

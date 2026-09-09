@@ -111,8 +111,9 @@ test.describe('availability slot editor', () => {
     await page.getByRole('button', { name: 'Minute 00' }).click();
 
     await allMonEnds.last().click();
-    await page.getByRole('button', { name: 'Hour 20' }).click();
-    await page.getByRole('button', { name: 'Minute 00' }).click();
+    const endPicker = page.getByRole('dialog', { name: 'Mon end picker' });
+    await endPicker.getByRole('button', { name: 'Hour 20' }).click();
+    await endPicker.getByRole('button', { name: 'Minute 00' }).click();
 
     // The overlap warning must appear in the Mon row.
     await expect(page.getByText(/faixas se sobrepõem/i)).toBeVisible();

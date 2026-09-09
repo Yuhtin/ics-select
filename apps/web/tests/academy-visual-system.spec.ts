@@ -1,4 +1,181 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
+
+test.use({ timezoneId: 'America/Sao_Paulo' });
+
+const MEMBER_API = 'http://localhost:3001';
+const memberUser = {
+  id: 'academy-member', name: 'Eduardo Santos', email: 'eduardo@example.com',
+  role: 'MEMBER', pictureUrl: null, privacyAcceptedAt: '2026-01-01T00:00:00Z',
+  whatsappPhone: '+5511999999999', targetTrack: 'BIG_TECH', googleConnected: true,
+};
+const memberItem = {
+  id: 'binary-search', planId: 'plan-1', order: 1, title: 'Binary search patterns',
+  format: 'PROBLEM', estimatedMinutes: 45, url: 'https://leetcode.com/problems/binary-search',
+  topic: { slug: 'binary-search', label: 'Binary Search' }, outcome: 'PENDING',
+  skippable: true, scheduledAt: '2026-04-17T19:00:00Z', scheduledMinutes: 45,
+  carriedFromItemId: null,
+};
+const memberHome = {
+  hero: { state: 'now', item: memberItem }, today: [memberItem], late: [], days: [],
+  unscheduled: [], streak: { current: 7, last7: [true, true, true, true, true, true, true] },
+  carryOverReflection: null, topicCoverage: [],
+};
+const memberDetail = {
+  ...memberItem, reflection: null, completedAt: null,
+  libraryItem: { ...memberItem, description: 'Practice classic, lower-bound, and upper-bound binary search.' },
+  carriedFrom: { outcome: 'STUCK', reflection: 'Revisar o invariante antes de começar.', completedAt: '2026-04-10T19:00:00Z', weekStart: '2026-04-06' },
+};
+const memberCalendar = {
+  weekStart: '2026-04-12', weekEnd: '2026-04-18', timezone: 'America/Sao_Paulo', hasGoogleConnection: true,
+  events: [
+    { id: 'study-1', kind: 'ICS', title: memberItem.title, start: '2026-04-17T19:00:00Z', end: '2026-04-17T19:45:00Z', allDay: false, ics: { ...memberItem, itemId: memberItem.id } },
+    { id: 'external-1', kind: 'EXTERNAL', title: 'Mentor office hours', start: '2026-04-16T17:00:00Z', end: '2026-04-16T18:00:00Z', allDay: false, meetLink: 'https://meet.google.com/example', location: 'Campus' },
+  ],
+};
+
+async function mockMemberProduct(page: Page, theme: 'light' | 'dark') {
+  // Freeze only Date: Playwright's Intl shim conflicts with temporal-polyfill/global.
+  await page.addInitScript(() => {
+    const NativeDate = Date;
+    const fixed = NativeDate.parse('2026-04-17T19:00:00Z');
+    window.Date = class extends NativeDate {
+      constructor(...args: ConstructorParameters<typeof Date>) {
+        super(...(args.length ? args : [fixed]));
+      }
+      static now() { return fixed; }
+    } as DateConstructor;
+  });
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.addInitScript((value) => {
+    localStorage.setItem('ics_access_token', 'fake-member-token');
+    localStorage.setItem('ics-theme', value);
+  }, theme);
+  const responses: Record<string, unknown> = {
+    '/me': memberUser,
+    '/me/home': memberHome,
+    '/me/item/binary-search': memberDetail,
+    '/me/calendar': memberCalendar,
+    '/me/cohort': {
+      cycleName: '2026.1', memberCount: 2, weekEndsAt: null,
+      members: [
+        { userId: memberUser.id, ...memberUser, isMe: true },
+        { userId: 'maria', name: 'Maria Oliveira', email: 'maria@example.com', pictureUrl: null, isMe: false },
+      ],
+      ranking: [
+        { userId: 'maria', name: 'Maria Oliveira', pictureUrl: null, score: 92, isMe: false },
+        { userId: memberUser.id, name: memberUser.name, pictureUrl: null, score: 88, isMe: true },
+      ],
+      feed: [{ id: 'activity-1', kind: 'finished', at: '2026-04-17T18:00:00Z', member: { id: 'maria', name: 'Maria Oliveira', pictureUrl: null }, itemTitle: 'Recursion intro', itemId: 'recursion' }],
+    },
+    '/me/retro/current': { open: false, retro: null, weekRecap: null, windowOpensAt: '2026-04-17T21:00:00Z', windowClosesAt: '2026-04-22T23:59:00Z' },
+  };
+  await page.route(`${MEMBER_API}/**`, (route) => route.fulfill({ json: responses[new URL(route.request().url()).pathname] ?? {} }));
+}
+
+for (const theme of ['light', 'dark'] as const) {
+  test(`member routes and actions remain usable in ${theme}`, async ({ page }) => {
+    await mockMemberProduct(page, theme);
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await page.goto('/me');
+    await page.addStyleTag({ content: 'nextjs-portal { display: none !important; }' });
+    await expect(page.getByRole('heading', { name: memberItem.title })).toBeVisible();
+    await expect(page).toHaveScreenshot(`academy-home-route-${theme}.png`, { fullPage: true, animations: 'disabled' });
+    await page.getByRole('link', { name: 'Start study' }).click();
+    await expect(page).toHaveURL(/\/me\/item\/binary-search$/);
+    await expect(page.getByRole('link', { name: 'Open on LeetCode' })).toHaveAttribute('href', memberItem.url);
+    await expect(page.getByText('Revisar o invariante antes de começar.', { exact: false })).toBeVisible();
+    await page.getByRole('button', { name: /Nailed it$/ }).click();
+    const minutes = page.getByRole('spinbutton');
+    await expect(page.getByRole('button', { name: 'Save outcome' })).toBeDisabled();
+    await minutes.fill('0');
+    await expect(page.getByText('Use um número inteiro entre 1 e 1440.')).toBeVisible();
+    await minutes.fill('45');
+    await expect(page).toHaveScreenshot(`academy-item-route-${theme}.png`, { fullPage: true, animations: 'disabled' });
+    const outcomeRequest = page.waitForRequest((request) => request.url().endsWith('/plans/plan-1/items/binary-search/outcome') && request.method() === 'PATCH');
+    await page.getByRole('button', { name: 'Save outcome' }).click();
+    expect((await outcomeRequest).postDataJSON()).toEqual({ outcome: 'DONE_EASY', reflection: undefined, actualMinutes: 45 });
+
+    await page.goto('/me/plan');
+    await page.addStyleTag({ content: 'nextjs-portal { display: none !important; }' });
+    await expect(page).toHaveURL(/\/me\/calendar$/);
+    await expect(page.getByText('This week · 1 Academy Fellow')).toBeVisible();
+    await expect(page.getByText('Mentor office hours')).toBeVisible();
+    await expect(page).toHaveScreenshot(`academy-calendar-route-${theme}.png`, { fullPage: true, animations: 'disabled' });
+    await page.getByText(memberItem.title, { exact: true }).last().click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+    await dialog.getByLabel('Início').fill('2026-04-17T17:00');
+    await dialog.getByLabel('Fim', { exact: true }).fill('2026-04-17T16:00');
+    await dialog.getByRole('button', { name: 'Reagendar', exact: true }).click();
+    await expect(dialog.getByRole('alert')).toHaveText('O fim precisa ser depois do início.');
+    await dialog.getByLabel('Fim', { exact: true }).fill('2026-04-17T17:45');
+    const rescheduleRequest = page.waitForRequest((request) => request.url().endsWith('/me/calendar/events/study-1') && request.method() === 'PATCH');
+    await dialog.getByRole('button', { name: 'Reagendar', exact: true }).click();
+    expect((await rescheduleRequest).postDataJSON()).toEqual({ start: '2026-04-17T20:00:00Z', end: '2026-04-17T20:45:00Z' });
+    await expect(dialog).toBeHidden();
+
+    await page.goto('/me/cohort');
+    await page.addStyleTag({ content: 'nextjs-portal { display: none !important; }' });
+    await expect(page.getByRole('heading', { name: '2 classmates this cycle' })).toBeVisible();
+    await expect(page.getByText('Recursion intro')).toBeVisible();
+    await expect(page).toHaveScreenshot(`academy-cohort-route-${theme}.png`, { fullPage: true, animations: 'disabled' });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  });
+
+  test(`member empty, loading and failure states in ${theme}`, async ({ page }) => {
+    await mockMemberProduct(page, theme);
+    await page.route(`${MEMBER_API}/me/home`, (route) => route.fulfill({ json: { ...memberHome, hero: null, today: [] } }));
+    await page.goto('/me');
+    await expect(page.getByRole('heading', { name: 'Waiting for the next plan.' })).toBeVisible();
+    await expect(page.getByText('Nothing scheduled.')).toBeVisible();
+    for (const state of ['all_done', 'free_day'] as const) {
+      await page.route(`${MEMBER_API}/me/home`, (route) => route.fulfill({ json: { ...memberHome, hero: { state, nextAt: null }, today: [] } }));
+      await page.reload();
+      await expect(page.getByRole('heading', { name: state === 'all_done' ? 'Nothing more scheduled today.' : 'No study scheduled today.' })).toBeVisible();
+    }
+    for (const state of ['up_next', 'running_late'] as const) {
+      await page.route(`${MEMBER_API}/me/home`, (route) => route.fulfill({ json: { ...memberHome, hero: { state, item: memberItem, minutesUntil: 30, minutesLate: 30 } } }));
+      await page.reload();
+      await expect(page.getByRole('heading', { name: memberItem.title })).toBeVisible();
+      await expect(page.getByRole('link', { name: state === 'up_next' ? 'Open' : 'Catch up', exact: true })).toHaveAttribute('href', '/me/item/binary-search');
+    }
+    await page.route(`${MEMBER_API}/me/home`, (route) => route.fulfill({ status: 500, json: { message: 'Unavailable' } }));
+    await page.reload();
+    await expect(page.getByText('Could not load your home.')).toBeVisible({ timeout: 15000 });
+    await page.route(`${MEMBER_API}/me/calendar?*`, (route) => route.fulfill({ json: { ...memberCalendar, events: [], hasGoogleConnection: false } }));
+    await page.goto('/me/calendar');
+    await expect(page.getByText('No study blocks this week.')).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Connect Google Calendar' })).toHaveAttribute('href', '/auth/google');
+    await page.route(`${MEMBER_API}/me/cohort`, (route) => route.fulfill({ json: { cycleName: '', memberCount: 0, members: [], feed: [] } }));
+    await page.goto('/me/cohort');
+    await expect(page.getByRole('heading', { name: 'No cohort yet.' })).toBeVisible();
+    await expect(page.getByText('No activity in the last 7 days.')).toBeVisible();
+    await page.route(`${MEMBER_API}/me/item/binary-search`, async (route) => { await new Promise((resolve) => setTimeout(resolve, 700)); await route.fulfill({ status: 404, json: {} }); });
+    await page.goto('/me/item/binary-search');
+    await expect(page.getByText('Loading…', { exact: true })).toBeVisible();
+    await expect(page.getByText('Item not found.')).toBeVisible({ timeout: 15000 });
+  });
+}
+
+for (const theme of ['light', 'dark'] as const) {
+  for (const width of [390, 1440]) {
+    test(`member reference ${theme} at ${width}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 1000 });
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      await page.addInitScript((selectedTheme) => localStorage.setItem('ics-theme', selectedTheme), theme);
+      await page.goto('/dev/me-preview');
+      await page.addStyleTag({ content: 'nextjs-portal { display: none !important; }' });
+      await expect(page.getByTestId('academy-member-preview')).toBeVisible();
+      await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+      await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+      await expect(page).toHaveScreenshot(`academy-member-${theme}-${width}.png`, {
+        animations: 'disabled',
+        fullPage: true,
+      });
+    });
+  }
+}
 
 test('login uses Academy Fellow branding', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });

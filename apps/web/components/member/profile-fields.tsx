@@ -39,7 +39,7 @@ export function ProfileFields({ initialPhone, initialTrack }: ProfileFieldsProps
   );
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
       <div>
         <SectionLabel>WhatsApp phone</SectionLabel>
         <p className="mt-1 font-sans text-sm text-fg-soft">
@@ -54,7 +54,7 @@ export function ProfileFields({ initialPhone, initialTrack }: ProfileFieldsProps
           />
         </div>
         {phoneInvalidDisplay && (
-          <p className="mt-2 font-mono text-[11px] text-danger">
+          <p className="mt-2 font-sans text-xs leading-relaxed text-danger">
             Formato inválido. Inclua o código do país (ex: +5511999999999).
           </p>
         )}

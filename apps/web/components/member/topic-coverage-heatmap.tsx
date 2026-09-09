@@ -34,10 +34,10 @@ function tierOf(planned: number, done: number): MasteryTier {
 }
 
 const TIER_BG: Record<MasteryTier, string> = {
-  none: 'bg-paper-warm',
-  started: 'bg-ink/20',
-  'on-track': 'bg-ink/60',
-  complete: 'bg-ink',
+  none: 'bg-bg-subtle',
+  started: 'bg-primary/25',
+  'on-track': 'bg-primary/65',
+  complete: 'bg-success',
 };
 
 interface Props {
@@ -86,14 +86,14 @@ export function TopicCoverageHeatmap({
           ).length;
           return (
             <div key={phase.key}>
-              <div className="mb-1.5 flex items-baseline justify-between gap-3">
-                <p className="font-mono text-[10px] font-semibold uppercase tracking-eyebrow text-ink-mute">
+              <div className="mb-1.5 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                <p className="font-sans text-xs font-medium text-fg-mute">
                   {phase.label}
                 </p>
-                <p className="font-mono text-[10px] tabular-nums text-ink-faint">
-                  <span className="text-ink-mute">{phaseCovered}</span>
+                <p className="font-mono text-[10px] tabular-nums text-fg-mute">
+                  <span className="text-fg-mute">{phaseCovered}</span>
                   <span>/{phase.topics.length} covered · </span>
-                  <span className="text-ink-mute">{phaseDone}</span>
+                  <span className="text-fg-mute">{phaseDone}</span>
                   <span>/{phasePlanned}</span>
                 </p>
               </div>
@@ -116,7 +116,7 @@ export function TopicCoverageHeatmap({
                         'rounded-[3px] border transition-all',
                         TIER_BG[tier],
                         isSelected
-                          ? 'scale-110 border-ink shadow-sm'
+                          ? 'scale-110 border-primary shadow-sm'
                           : 'border-transparent',
                       )}
                     />
@@ -130,7 +130,7 @@ export function TopicCoverageHeatmap({
 
       {showLegend && (
         <div className="flex items-center gap-2 pt-1">
-          <span className="font-mono text-[9px] uppercase tracking-label text-ink-faint">
+          <span className="font-mono text-[9px] uppercase tracking-label text-fg-mute">
             less
           </span>
           <div className="flex gap-[3px]">
@@ -146,7 +146,7 @@ export function TopicCoverageHeatmap({
               ),
             )}
           </div>
-          <span className="font-mono text-[9px] uppercase tracking-label text-ink-faint">
+          <span className="font-mono text-[9px] uppercase tracking-label text-fg-mute">
             more
           </span>
         </div>

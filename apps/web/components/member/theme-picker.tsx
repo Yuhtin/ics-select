@@ -46,11 +46,11 @@ function ThemeCard({ variant, active, onClick, padding }: CardProps) {
       onClick={onClick}
       aria-pressed={active}
       className={clsx(
-        'group relative flex flex-col gap-3 rounded-tile border text-left transition-all',
+        'group relative flex flex-col gap-3 rounded-card border text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg',
         padding,
         active
-          ? 'border-primary bg-primary-soft ring-2 ring-primary/30'
-          : 'border-border-token bg-surface hover:-translate-y-[1px] hover:border-border-strong',
+          ? 'border-primary bg-primary-soft'
+          : 'border-border-token bg-surface hover:border-border-strong hover:bg-surface-hover',
       )}
     >
       <ThemePreviewSvg variant={variant} />
@@ -59,14 +59,14 @@ function ThemeCard({ variant, active, onClick, padding }: CardProps) {
           aria-hidden
           className={clsx(
             'h-2 w-2 rounded-full',
-            variant === 'light' ? 'bg-[#14181F]' : 'bg-[#F1F3F9]',
+            variant === 'light' ? 'bg-[#17171b]' : 'bg-[#f4f4f1]',
             variant === 'dark' && 'ring-1 ring-border-token',
           )}
         />
         <span
           className={clsx(
             'font-sans text-sm font-semibold',
-            active ? 'text-primary' : 'text-fg',
+            active ? 'text-primary dark:text-primary-fg' : 'text-fg',
           )}
         >
           {label}
@@ -91,8 +91,8 @@ function ThemeCard({ variant, active, onClick, padding }: CardProps) {
 function ThemePreviewSvg({ variant }: { variant: 'light' | 'dark' }) {
   const palette =
     variant === 'light'
-      ? { bg: '#F7F8FA', subtle: '#F1F3F6', ink: '#14181F', inkSoft: '#4B525C', accent: '#4F46E5', rule: '#E4E7EC', surface: '#FFFFFF' }
-      : { bg: '#161A23', subtle: '#1C202B', ink: '#F1F3F9', inkSoft: '#9AA0AB', accent: '#7B72F5', rule: '#2A2F3B', surface: '#1F242F' };
+      ? { bg: '#f3f3f1', subtle: '#edeef2', ink: '#17171b', inkSoft: '#46464e', accent: '#2f00ff', rule: '#dadbe2', surface: '#fdfdfc' }
+      : { bg: '#101013', subtle: '#17171c', ink: '#f4f4f1', inkSoft: '#a0a0ab', accent: '#7052ff', rule: '#31323a', surface: '#1e1e24' };
 
   return (
     <svg
