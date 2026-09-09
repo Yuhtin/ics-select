@@ -38,7 +38,10 @@ export function MemberRail() {
       data-testid="member-rail"
       className="sticky top-0 hidden h-[100dvh] w-[94px] shrink-0 bg-[hsl(var(--member-rail-bg))] md:flex md:flex-col"
     >
-      <nav aria-label="Main navigation" className="flex min-h-0 flex-1 flex-col px-2 py-3">
+      <nav
+        aria-label="Main navigation"
+        className="flex min-h-0 flex-1 flex-col overflow-y-auto px-2 py-3"
+      >
         <Link
           href="/me"
           aria-label="Academy Fellow home"

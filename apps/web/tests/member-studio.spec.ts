@@ -60,3 +60,52 @@ test('Studio uses bottom navigation and a Retro action on mobile', async ({ page
   await expect(page.getByRole('link', { name: /Retro open/i })).toHaveAttribute('href', '/me/retro');
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
+
+test('Studio keeps mobile content clear of the Retro action and bottom navigation', async ({ page }) => {
+  await mockStudioMember(page);
+  await page.setViewportSize({ width: 390, height: 500 });
+  await page.goto('/me');
+
+  const content = page.locator('main > div');
+  const retro = page.getByRole('link', { name: /Retro open/i });
+  const bottom = page.getByRole('navigation', { name: 'Main navigation' });
+  await expect(page.getByRole('heading', { name: 'Binary search patterns' })).toBeVisible();
+  await expect(retro).toBeVisible();
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+  const [contentBox, retroBox, bottomBox] = await Promise.all([
+    content.boundingBox(),
+    retro.boundingBox(),
+    bottom.boundingBox(),
+  ]);
+
+  expect(contentBox).not.toBeNull();
+  expect(retroBox).not.toBeNull();
+  expect(bottomBox).not.toBeNull();
+  expect(contentBox!.y + contentBox!.height).toBeLessThanOrEqual(retroBox!.y);
+  expect(retroBox!.y + retroBox!.height).toBeLessThanOrEqual(bottomBox!.y);
+});
+
+test('Studio keeps every rail action reachable in a short 200%-zoom desktop layout', async ({ page }) => {
+  await mockStudioMember(page);
+  // Models a 1600x900 display reduced to an 800x450 CSS viewport at 200% browser zoom.
+  await page.setViewportSize({ width: 800, height: 450 });
+  await page.goto('/me');
+
+  const rail = page.getByTestId('member-rail');
+  const navigation = rail.getByRole('navigation', { name: 'Main navigation' });
+  const signOut = navigation.getByRole('button', { name: 'Sign out' });
+  const targets = await navigation.locator('a, button').all();
+  for (const target of targets) {
+    expect(await target.evaluate((element) => element.getBoundingClientRect().height)).toBeGreaterThanOrEqual(44);
+    await target.evaluate((element) => element.scrollIntoView({ block: 'nearest' }));
+    const reachable = await target.evaluate((element) => {
+      const targetRect = element.getBoundingClientRect();
+      const navigationRect = element.closest('nav')!.getBoundingClientRect();
+      return targetRect.top >= navigationRect.top && targetRect.bottom <= navigationRect.bottom;
+    });
+    expect.soft(reachable, (await target.textContent())?.trim()).toBe(true);
+  }
+
+  expect(await navigation.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+  await expect(signOut).toBeVisible();
+});
