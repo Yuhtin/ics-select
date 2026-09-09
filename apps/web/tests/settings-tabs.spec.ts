@@ -341,14 +341,15 @@ test.describe('settings tabs', () => {
 
   test('member shell preserves desktop and mobile destinations, theme and focus', async ({ page }) => {
     await page.goto('/me/settings/profile');
-    const header = page.locator('header');
-    await expect(header.getByText('Academy Fellow', { exact: true })).toBeVisible();
-    const brandLink = header.getByRole('link', { name: 'Academy Fellow', exact: true });
+    const rail = page.getByTestId('member-rail');
+    await expect(rail).toBeVisible();
+    const brandLink = rail.getByRole('link', { name: 'Academy Fellow home', exact: true });
     expect((await brandLink.boundingBox())?.height).toBeGreaterThanOrEqual(44);
+    const desktopNavigation = rail.getByRole('navigation', { name: 'Main navigation' });
     for (const [name, href] of [['Today', '/me'], ['Calendar', '/me/calendar'], ['Cohort', '/me/cohort'], ['Settings', '/me/settings']]) {
-      await expect(header.getByRole('link', { name, exact: true })).toHaveAttribute('href', href);
+      await expect(desktopNavigation.getByRole('link', { name, exact: true })).toHaveAttribute('href', href);
     }
-    const theme = header.getByRole('button', { name: /Switch to .* theme/ });
+    const theme = rail.getByRole('button', { name: /Switch to .* theme/ });
     await theme.focus();
     await expect(theme).toBeFocused();
     await expect(theme).not.toHaveCSS('box-shadow', 'none');
@@ -357,7 +358,7 @@ test.describe('settings tabs', () => {
     await expect.poll(() => page.evaluate(() => localStorage.getItem('ics-theme'))).toBe('dark');
     await theme.click();
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
-    await expect(header.getByRole('button', { name: 'Sign out' })).toBeVisible();
+    await expect(rail.getByRole('button', { name: 'Sign out' })).toBeVisible();
 
     await page.setViewportSize({ width: 390, height: 844 });
     const navigation = page.getByRole('navigation', { name: 'Main navigation' });

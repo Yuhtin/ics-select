@@ -2,23 +2,17 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { CalendarDays, Compass, User, Users } from 'lucide-react';
+import { User } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useAuth } from '../../lib/auth/auth-context';
+import { isMemberNavActive, MEMBER_NAV_ITEMS, type MemberNavItem } from './member-nav';
 
-type Tab = {
-  href: string;
-  label: string;
-  icon: typeof Compass;
-  exact?: boolean;
+const PROFILE_ITEM: MemberNavItem = {
+  href: '/me/settings',
+  label: 'Profile',
+  icon: User,
+  mobile: true,
 };
-
-const TABS: readonly Tab[] = [
-  { href: '/me', label: 'Today', icon: Compass, exact: true },
-  { href: '/me/calendar', label: 'Calendar', icon: CalendarDays },
-  { href: '/me/cohort', label: 'Cohort', icon: Users },
-  { href: '/me/settings', label: 'Profile', icon: User },
-];
 
 function initialsOf(name: string): string {
   return (
@@ -41,11 +35,9 @@ export function BottomTabBar() {
       aria-label="Main navigation"
     >
       <ul className="mx-auto flex max-w-xl">
-        {TABS.map(({ href, label, icon: Icon, exact }) => {
-          const active =
-            exact === true
-              ? pathname === href
-              : pathname === href || pathname?.startsWith(href + '/') === true;
+        {[...MEMBER_NAV_ITEMS.filter((item) => item.mobile), PROFILE_ITEM].map((item) => {
+          const { href, label, icon: Icon } = item;
+          const active = isMemberNavActive(pathname, item);
           const isProfile = href === '/me/settings';
           return (
             <li key={href} className="flex-1">
@@ -59,6 +51,7 @@ export function BottomTabBar() {
               >
                 {isProfile && user ? (
                   <span
+                    aria-hidden="true"
                     className={clsx(
                       'inline-grid h-5 w-5 place-items-center overflow-hidden rounded-full border bg-bg-subtle font-sans text-[9px] font-semibold text-fg-soft',
                       active ? 'border-primary' : 'border-border-token',
@@ -77,6 +70,7 @@ export function BottomTabBar() {
                   </span>
                 ) : (
                   <Icon
+                    aria-hidden="true"
                     className="h-5 w-5"
                     strokeWidth={active ? 2 : 1.5}
                   />

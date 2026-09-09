@@ -20,6 +20,10 @@
   --surface-strong: 231 14% 90%;
   --surface-hover: 228 16% 96%;
 
+  --member-rail-bg: 240 8% 11%;
+  --member-rail-fg: 240 6% 70%;
+  --member-rail-hover: 240 7% 17%;
+
   /* Ink scale */
   --fg: 240 8% 10%;
   --fg-soft: 233 6% 29%;
