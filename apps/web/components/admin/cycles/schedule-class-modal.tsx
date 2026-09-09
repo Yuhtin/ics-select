@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useScheduleClass } from '../../../lib/queries/admin-classes';
 
 const INPUT =
-  'w-full rounded-input border border-rule bg-paper px-3 py-2 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-focus/40';
+  'w-full min-h-10 rounded-input border border-border-token bg-surface px-3 py-2 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-primary/50';
 
 export function ScheduleClassModal({
   cycleId,
@@ -43,8 +43,8 @@ export function ScheduleClassModal({
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4">
-      <div className="w-full max-w-md rounded-card bg-surface border border-rule p-6 shadow-modal">
-        <h3 className="font-serif-tool text-xl font-semibold text-ink">
+      <div className="w-full max-w-md rounded-card bg-surface border border-border-token p-6 shadow-modal max-h-[90dvh] overflow-y-auto">
+        <h3 className="font-sans text-xl font-semibold text-fg">
           Schedule class
         </h3>
         <div className="mt-4 space-y-3">
@@ -64,7 +64,7 @@ export function ScheduleClassModal({
               className={INPUT}
             />
           </Field>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_120px]">
             <Field label="When">
               <input
                 type="datetime-local"
@@ -93,7 +93,7 @@ export function ScheduleClassModal({
             />
           </Field>
           {schedule.error && (
-            <p className="font-mono text-[10px] text-outcome-stuck">
+            <p className="font-sans text-xs text-outcome-stuck">
               {(schedule.error as Error).message}
             </p>
           )}
@@ -101,14 +101,14 @@ export function ScheduleClassModal({
         <div className="mt-6 flex justify-end gap-3">
           <button
             onClick={onClose}
-            className="font-mono text-xs uppercase tracking-label px-4 py-2 text-ink-soft hover:bg-paper-warm rounded-pill"
+            className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface font-sans text-xs font-medium px-4 py-2 text-fg-soft hover:bg-bg-subtle rounded-pill"
           >
             Cancel
           </button>
           <button
             onClick={submit}
             disabled={!title.trim() || !scheduledAt || schedule.isPending}
-            className="font-mono text-xs uppercase tracking-label px-4 py-2 bg-ink text-paper rounded-pill disabled:opacity-40"
+            className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface font-sans text-xs font-medium px-4 py-2 bg-primary text-primary-fg rounded-pill disabled:opacity-40"
           >
             {schedule.isPending ? 'Scheduling…' : 'Schedule'}
           </button>
@@ -127,7 +127,7 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="font-mono text-[10px] uppercase tracking-label text-ink-mute">
+      <span className="font-sans text-xs font-medium text-fg-mute">
         {label}
       </span>
       <div className="mt-1">{children}</div>

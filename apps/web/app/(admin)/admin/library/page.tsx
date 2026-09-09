@@ -275,7 +275,7 @@ export default function AdminLibraryPage() {
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <Eyebrow>Library</Eyebrow>
-          <h1 className="mt-2 font-serif text-3xl font-semibold tracking-tight">
+          <h1 className="mt-2 font-sans text-3xl font-semibold tracking-tight">
             Acervo
           </h1>
           <p className="mt-1 font-mono text-xs text-fg-mute">
@@ -289,14 +289,14 @@ export default function AdminLibraryPage() {
             <button
               type="button"
               onClick={() => setTopicsOpen(true)}
-              className="inline-flex items-center gap-2 rounded-pill bg-bg-subtle px-4 py-2 font-mono text-xs uppercase tracking-label text-fg-soft hover:bg-border-token"
+              className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface inline-flex items-center gap-2 rounded-pill bg-bg-subtle px-4 py-2 font-sans text-xs font-medium text-fg-soft hover:bg-border-token"
             >
               <Layers className="h-3.5 w-3.5" strokeWidth={1.5} /> Manage topics
             </button>
             <button
               type="button"
               onClick={openCreate}
-              className="inline-flex items-center gap-2 rounded-pill bg-fg px-4 py-2 font-mono text-xs uppercase tracking-label text-bg hover:opacity-90"
+              className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface inline-flex min-h-10 items-center gap-2 rounded-pill bg-primary px-4 py-2 font-sans text-xs font-semibold text-primary-fg hover:bg-primary/90"
             >
               <Plus className="h-3.5 w-3.5" strokeWidth={1.5} /> New item
             </button>
@@ -322,7 +322,7 @@ export default function AdminLibraryPage() {
               type="button"
               onClick={() => setSearchInput('')}
               aria-label="Clear search"
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-fg-mute hover:text-fg"
+              className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface absolute right-3 top-1/2 -translate-y-1/2 text-fg-mute hover:text-fg"
             >
               <X className="h-4 w-4" strokeWidth={1.5} />
             </button>
@@ -359,7 +359,7 @@ export default function AdminLibraryPage() {
             <button
               type="button"
               onClick={clearAll}
-              className="inline-flex items-center gap-1 font-mono text-[10px] uppercase tracking-label text-fg-mute hover:text-fg"
+              className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface inline-flex items-center gap-1 font-sans text-xs font-medium text-fg-mute hover:text-fg"
             >
               <X className="h-3 w-3" strokeWidth={1.5} /> clear all
             </button>
@@ -368,17 +368,17 @@ export default function AdminLibraryPage() {
       </div>
 
       {isLoading ? (
-        <p className="font-mono text-xs uppercase tracking-label text-fg-mute">
+        <p className="font-sans text-xs font-medium text-fg-mute">
           Loading…
         </p>
       ) : filtered.length === 0 ? (
-        <div className="space-y-3 rounded-card border border-dashed border-border-token py-16 text-center font-mono text-xs text-fg-mute">
+        <div className="space-y-3 rounded-card border border-dashed border-border-token py-16 text-center font-sans text-xs text-fg-mute">
           <p>No items match.</p>
           {anyFilterActive && (
             <button
               type="button"
               onClick={clearAll}
-              className="font-mono text-[11px] uppercase tracking-label text-primary hover:underline"
+              className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface font-sans text-xs font-medium text-primary hover:underline"
             >
               Clear filters
             </button>
@@ -418,7 +418,7 @@ export default function AdminLibraryPage() {
         description={
           deleteTarget ? (
             <>
-              Delete <span className="font-semibold text-ink">{deleteTarget.title}</span>? Members
+              Delete <span className="font-semibold text-fg">{deleteTarget.title}</span>? Members
               still finish items they already had in active plans.
             </>
           ) : null

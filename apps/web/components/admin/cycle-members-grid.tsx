@@ -18,7 +18,7 @@ function Initials({
       <img
         src={pictureUrl}
         alt=""
-        className="rounded-full object-cover border border-rule"
+        className="rounded-full object-cover border border-border-token"
         style={{ width: size, height: size }}
       />
     );
@@ -31,7 +31,7 @@ function Initials({
     .join('');
   return (
     <span
-      className="inline-flex items-center justify-center rounded-full bg-paper-warm border border-rule font-serif text-ink text-sm font-semibold"
+      className="inline-flex items-center justify-center rounded-full bg-bg-subtle border border-border-token font-sans text-fg text-sm font-semibold"
       style={{ width: size, height: size }}
     >
       {initials || '—'}
@@ -48,7 +48,7 @@ function AvailabilityLine({
   if (itemsCount === 0) return null;
   if (budgetMinutes === 0) {
     return (
-      <span className="font-mono text-[11px] text-ink-mute">
+      <span className="font-sans text-xs text-fg-mute">
         No availability declared yet.
       </span>
     );
@@ -77,24 +77,24 @@ const TRACK_LABELS: Record<string, string> = {
 
 export function CycleMembersGrid({ members }: { members: CycleOverviewMember[] }) {
   if (members.length === 0) {
-    return <p className="font-mono text-xs text-ink-mute">No members yet.</p>;
+    return <p className="font-sans text-xs text-fg-mute">No members yet.</p>;
   }
   return (
-    <div className="grid gap-4 grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {members.map((m) => (
         <Link
           key={m.userId}
           href={`/admin/member/${m.userId}`}
-          className="group flex flex-col gap-3 border border-rule rounded-card bg-surface p-4 transition-colors hover:bg-paper-warm"
+          className="group flex flex-col gap-3 border border-border-token rounded-card bg-surface p-4 transition-colors hover:bg-bg-subtle"
         >
           <div className="flex items-start gap-3">
             <Initials name={m.name} pictureUrl={m.pictureUrl} />
             <div className="flex-1 min-w-0">
-              <p className="font-serif-tool text-base font-semibold text-ink leading-tight truncate">
+              <p className="font-sans text-base font-semibold text-fg leading-tight truncate">
                 {m.name}
               </p>
               {m.track && (
-                <span className="mt-1 inline-block font-mono text-[10px] uppercase tracking-label text-ink-mute">
+                <span className="mt-1 inline-block font-sans text-xs font-medium text-fg-mute">
                   {TRACK_LABELS[m.track] ?? m.track}
                 </span>
               )}
@@ -110,13 +110,13 @@ export function CycleMembersGrid({ members }: { members: CycleOverviewMember[] }
             <span
               className={clsx(
                 'font-mono text-xl tabular-nums',
-                m.percentThisWeek >= 80 ? 'text-ink' : 'text-ink-soft',
+                m.percentThisWeek >= 80 ? 'text-fg' : 'text-fg-soft',
               )}
             >
               {m.percentThisWeek}
-              <span className="text-ink-mute text-xs">%</span>
+              <span className="text-fg-mute text-xs">%</span>
             </span>
-            <span className="font-mono text-[11px] text-ink-mute">
+            <span className="font-mono text-[11px] text-fg-mute">
               {m.done}/{m.total} this week
             </span>
           </div>

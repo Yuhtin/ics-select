@@ -16,10 +16,10 @@ export default function AdminConfigPage() {
     <div className="mx-auto max-w-[1200px] space-y-6">
       <header>
         <Eyebrow>Settings</Eyebrow>
-        <h1 className="mt-2 font-serif text-3xl font-semibold tracking-tight">Config</h1>
+        <h1 className="mt-2 font-sans text-3xl font-semibold tracking-tight">Config</h1>
       </header>
 
-      <nav className="flex gap-1 border-b border-rule">
+      <nav className="flex gap-1 border-b border-border-token">
         {TABS.map(({ key, label, icon: Icon }) => {
           const active = tab === key;
           return (
@@ -28,13 +28,13 @@ export default function AdminConfigPage() {
               type="button"
               onClick={() => setTab(key)}
               className={
-                'inline-flex items-center gap-2 px-4 py-2 font-mono text-xs uppercase tracking-label border-b-2 -mb-px transition-colors ' +
+                'inline-flex items-center gap-2 px-4 py-2 font-sans text-xs font-medium border-b-2 -mb-px transition-colors ' +
                 (active
-                  ? 'border-ink text-ink'
-                  : 'border-transparent text-ink-mute hover:text-ink')
+                  ? 'border-border-strong text-fg'
+                  : 'border-transparent text-fg-mute hover:text-fg')
               }
             >
-              <Icon className="h-4 w-4" strokeWidth={1.5} />
+              <Icon className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface h-4 w-4" strokeWidth={1.5} />
               {label}
             </button>
           );

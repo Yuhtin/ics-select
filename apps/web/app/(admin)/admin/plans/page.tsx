@@ -77,14 +77,14 @@ function PlansPageInner() {
     <div className="max-w-5xl space-y-8">
       <header>
         <Eyebrow>Plans</Eyebrow>
-        <h1 className="mt-2 font-serif-tool text-3xl font-semibold tracking-tight">Plans</h1>
-        <p className="mt-1 font-mono text-xs text-ink-mute">
+        <h1 className="mt-2 font-sans text-3xl font-semibold tracking-tight">Plans</h1>
+        <p className="mt-1 font-sans text-xs text-fg-mute">
           Every plan in a cycle, drafts and published.
         </p>
       </header>
 
       <div className="flex flex-wrap items-center gap-3">
-        <label htmlFor="cycle-filter" className="font-mono text-[10px] uppercase tracking-label text-ink-mute">
+        <label htmlFor="cycle-filter" className="font-sans text-xs font-medium text-fg-mute">
           Cycle
         </label>
         <select
@@ -92,7 +92,7 @@ function PlansPageInner() {
           value={cycleId ?? ''}
           onChange={(e) => update({ cycleId: e.target.value || null })}
           disabled={cyclesLoading}
-          className="rounded-input border border-rule bg-paper px-3 py-2 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-focus/40"
+          className="min-h-10 rounded-input border border-border-token bg-surface px-3 py-2 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
         >
           <option value="">— Select a cycle —</option>
           {(cycles ?? []).map((c) => (
@@ -102,14 +102,14 @@ function PlansPageInner() {
           ))}
         </select>
 
-        <label htmlFor="status-filter" className="ml-4 font-mono text-[10px] uppercase tracking-label text-ink-mute">
+        <label htmlFor="status-filter" className="ml-4 font-sans text-xs font-medium text-fg-mute">
           Status
         </label>
         <select
           id="status-filter"
           value={status}
           onChange={(e) => update({ status: e.target.value as PlansOverviewStatus })}
-          className="rounded-input border border-rule bg-paper px-3 py-2 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-focus/40"
+          className="min-h-10 rounded-input border border-border-token bg-surface px-3 py-2 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
         >
           {STATUS_OPTIONS.map((o) => (
             <option key={o.value} value={o.value}>
@@ -120,53 +120,53 @@ function PlansPageInner() {
       </div>
 
       {!cycleId ? (
-        <p className="font-mono text-xs text-ink-mute py-12 text-center border border-dashed border-rule rounded-card">
+        <p className="font-sans text-xs text-fg-mute py-12 text-center border border-dashed border-border-token rounded-card">
           Select a cycle to view its plans.
         </p>
       ) : isLoading ? (
-        <p className="font-mono text-xs uppercase tracking-label text-ink-mute">Loading…</p>
+        <p className="font-sans text-xs font-medium text-fg-mute">Loading…</p>
       ) : error ? (
-        <p className="inline-flex items-center gap-2 rounded-pill bg-outcome-stuck/10 px-3 py-1.5 font-mono text-xs uppercase tracking-label text-outcome-stuck">
+        <p className="inline-flex items-center gap-2 rounded-pill bg-outcome-stuck/10 px-3 py-1.5 font-sans text-xs font-medium text-outcome-stuck">
           Failed to load · {(error as Error).message}
         </p>
       ) : !data || data.weeks.length === 0 ? (
-        <p className="font-mono text-xs text-ink-mute py-12 text-center border border-dashed border-rule rounded-card">
+        <p className="font-sans text-xs text-fg-mute py-12 text-center border border-dashed border-border-token rounded-card">
           No plans yet for this cycle.
         </p>
       ) : (
         <div className="space-y-8">
           {data.weeks.map((week) => (
             <section key={week.weekStart}>
-              <p className="font-mono text-[10px] uppercase tracking-label text-ink-mute">
+              <p className="font-mono text-[10px] uppercase tracking-label text-fg-mute">
                 Week of {formatWeekRange(week.weekStart, week.weekEnd)}
               </p>
-              <ul className="mt-2 divide-y divide-rule border border-rule rounded-card bg-surface">
+              <ul className="mt-2 divide-y divide-border-token border border-border-token rounded-card bg-surface">
                 {week.plans.map((plan) => (
                   <li key={plan.id}>
                     <Link
                       href={`/admin/member/${plan.user.id}/plan/${plan.id}`}
-                      className="flex items-center gap-4 px-4 py-3 hover:bg-paper-warm/60 transition-colors"
+                      className="flex items-center gap-4 px-4 py-3 hover:bg-bg-subtle/60 transition-colors"
                     >
-                      <span className="flex-1 font-serif-tool text-base font-semibold text-ink truncate">
+                      <span className="flex-1 font-sans text-base font-semibold text-fg truncate">
                         {plan.user.name}
                       </span>
                       <span
                         className={clsx(
-                          'font-mono text-[10px] uppercase tracking-label px-2 py-0.5 rounded-pill border',
+                          'font-sans text-xs font-medium px-2 py-0.5 rounded-pill border',
                           plan.status === 'PUBLISHED'
-                            ? 'bg-ink/5 text-ink border-ink/20'
-                            : 'bg-paper-warm text-ink-mute border-rule',
+                            ? 'bg-fg/5 text-fg border-border-strong/20'
+                            : 'bg-bg-subtle text-fg-mute border-border-token',
                         )}
                       >
                         {plan.status}
                       </span>
-                      <span className="font-mono text-[11px] text-ink-mute tabular-nums w-24 text-right">
+                      <span className="font-mono text-[11px] text-fg-mute tabular-nums w-24 text-right">
                         {plan.items.done}/{plan.items.total} done
                       </span>
-                      <span className="font-mono text-[11px] text-ink-mute w-20 text-right">
+                      <span className="font-mono text-[11px] text-fg-mute w-20 text-right">
                         {formatRelativeFromIso(plan.lastActivityAt)}
                       </span>
-                      <span className="font-mono text-xs text-ink-mute">→</span>
+                      <span className="font-sans text-xs text-fg-mute">→</span>
                     </Link>
                   </li>
                 ))}
@@ -183,7 +183,7 @@ export default function AdminPlansPage() {
   return (
     <Suspense
       fallback={
-        <p className="font-mono text-xs uppercase tracking-label text-ink-mute">Loading…</p>
+        <p className="font-sans text-xs font-medium text-fg-mute">Loading…</p>
       }
     >
       <PlansPageInner />

@@ -17,10 +17,10 @@ export default function AdminWaitlistPage() {
 
   return (
     <div className="max-w-6xl space-y-8">
-      <header className="flex items-end justify-between gap-4">
+      <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <Eyebrow>Waitlist · {cycleLabel}</Eyebrow>
-          <h1 className="mt-3 font-serif-tool text-4xl font-semibold tracking-tight leading-tight">
+          <h1 className="mt-3 font-sans text-4xl font-semibold tracking-tight leading-tight">
             Inscritos
           </h1>
         </div>
@@ -33,13 +33,13 @@ export default function AdminWaitlistPage() {
 
       <section>
         {isLoading ? (
-          <p className="font-mono text-xs uppercase tracking-label text-ink-mute">Loading…</p>
+          <p className="font-sans text-xs font-medium text-fg-mute">Loading…</p>
         ) : (
           <>
             <WaitlistTable rows={data?.items ?? []} />
             {data && data.total > data.pageSize && (
-              <div className="flex items-center justify-between pt-4 font-mono text-xs text-ink-mute">
-                <span>
+              <div className="flex items-center justify-between pt-4 font-sans text-xs text-fg-mute">
+                <span className="font-mono tabular-nums">
                   {((filters.page ?? 1) - 1) * (filters.pageSize ?? 50) + 1}
                   –
                   {Math.min((filters.page ?? 1) * (filters.pageSize ?? 50), data.total)}
@@ -49,14 +49,14 @@ export default function AdminWaitlistPage() {
                   <button
                     onClick={() => setFilters({ ...filters, page: Math.max(1, (filters.page ?? 1) - 1) })}
                     disabled={(filters.page ?? 1) <= 1}
-                    className="px-3 py-1 border border-rule rounded-full disabled:opacity-40 hover:border-ink transition-colors"
+                    className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface px-3 py-1 border border-border-token rounded-full disabled:opacity-40 hover:border-border-strong transition-colors"
                   >
                     Prev
                   </button>
                   <button
                     onClick={() => setFilters({ ...filters, page: (filters.page ?? 1) + 1 })}
                     disabled={(filters.page ?? 1) * (filters.pageSize ?? 50) >= data.total}
-                    className="px-3 py-1 border border-rule rounded-full disabled:opacity-40 hover:border-ink transition-colors"
+                    className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface px-3 py-1 border border-border-token rounded-full disabled:opacity-40 hover:border-border-strong transition-colors"
                   >
                     Next
                   </button>

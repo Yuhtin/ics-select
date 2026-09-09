@@ -35,7 +35,7 @@ export function GlossaryPanel({ lesson }: { lesson: Lesson }) {
     <section className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="font-mono text-[10px] uppercase tracking-eyebrow text-fg-mute">
+          <p className="font-sans text-xs font-medium text-fg-mute">
             Glossário · {count} termos
           </p>
           <p className="mt-2 max-w-2xl font-sans text-sm leading-snug text-fg-soft">
@@ -47,16 +47,16 @@ export function GlossaryPanel({ lesson }: { lesson: Lesson }) {
           type="button"
           onClick={copy}
           className={clsx(
-            'inline-flex items-center gap-2 rounded-card border px-4 py-2.5 text-left transition-colors',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface inline-flex items-center gap-2 rounded-card border px-4 py-2.5 text-left transition-colors',
             copied
-              ? 'border-fg bg-fg text-bg'
+              ? 'border-primary bg-primary text-primary-fg'
               : 'border-border-token bg-surface hover:border-border-strong hover:bg-surface-hover',
           )}
         >
           <span
             className={clsx(
               'inline-grid h-7 w-7 place-items-center rounded-full',
-              copied ? 'bg-bg/15 text-bg' : 'bg-bg-subtle text-fg-soft',
+              copied ? 'bg-primary-fg/15 text-primary-fg' : 'bg-bg-subtle text-fg-soft',
             )}
           >
             {copied ? (
@@ -71,8 +71,8 @@ export function GlossaryPanel({ lesson }: { lesson: Lesson }) {
             </span>
             <span
               className={clsx(
-                'mt-1 block font-mono text-[10px] uppercase tracking-eyebrow',
-                copied ? 'text-bg/70' : 'text-fg-faint',
+                'mt-1 block font-sans text-xs font-medium',
+                copied ? 'text-primary-fg/90' : 'text-fg-mute',
               )}
             >
               para whatsapp
@@ -99,8 +99,8 @@ function GlossaryGroupBlock({
 }) {
   return (
     <div>
-      <h3 className="flex items-baseline gap-2.5 font-serif text-lg font-semibold text-fg">
-        <span className="font-mono text-[11px] font-normal text-fg-faint">
+      <h3 className="flex items-baseline gap-2.5 font-sans text-lg font-semibold text-fg">
+        <span className="font-mono text-xs font-normal text-fg-mute">
           {String(index).padStart(2, '0')}
         </span>
         {group.title}
@@ -109,7 +109,7 @@ function GlossaryGroupBlock({
         {group.terms.map((t) => (
           <li key={t.term} className="font-sans text-sm leading-snug text-fg-soft">
             <span className="font-semibold text-fg">{t.term}</span>
-            <span className="text-fg-faint"> · </span>
+            <span className="text-fg-mute"> · </span>
             {t.definition}
           </li>
         ))}
@@ -132,9 +132,9 @@ export function GlossaryTabButton({
       type="button"
       onClick={onClick}
       className={clsx(
-        'inline-flex items-center gap-2 rounded-card border px-4 py-2.5 text-left transition-colors',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface inline-flex items-center gap-2 rounded-card border px-4 py-2.5 text-left transition-colors',
         active
-          ? 'border-fg bg-fg text-bg'
+          ? 'border-primary bg-primary text-primary-fg'
           : 'border-border-token bg-surface hover:border-border-strong hover:bg-surface-hover',
       )}
       title="Glossário da aula, pronto pra mandar no WhatsApp"
@@ -142,7 +142,7 @@ export function GlossaryTabButton({
       <span
         className={clsx(
           'inline-grid h-7 w-7 place-items-center rounded-full',
-          active ? 'bg-bg/15 text-bg' : 'bg-bg-subtle text-fg-soft',
+          active ? 'bg-primary-fg/15 text-primary-fg' : 'bg-bg-subtle text-fg-soft',
         )}
       >
         <ListTree className="h-3.5 w-3.5" strokeWidth={1.8} />
@@ -153,8 +153,8 @@ export function GlossaryTabButton({
         </span>
         <span
           className={clsx(
-            'mt-1 block font-mono text-[10px] uppercase tracking-eyebrow',
-            active ? 'text-bg/70' : 'text-fg-faint',
+            'mt-1 block font-sans text-xs font-medium',
+            active ? 'text-primary-fg/90' : 'text-fg-mute',
           )}
         >
           {count} termos

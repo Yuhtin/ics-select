@@ -48,7 +48,7 @@ export function ClassesSection({
           <SectionLabel>Classes · {sorted.length}</SectionLabel>
           <button
             onClick={() => setScheduleOpen(true)}
-            className="ml-auto inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-label px-2.5 py-1 text-ink-soft hover:text-ink"
+            className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface ml-auto inline-flex items-center gap-1.5 font-sans text-xs font-medium px-2.5 py-1 text-fg-soft hover:text-fg"
           >
             <Plus className="h-3 w-3" strokeWidth={1.75} />
             Schedule
@@ -56,38 +56,38 @@ export function ClassesSection({
         </div>
 
         {sorted.length === 0 ? (
-          <p className="mt-2 font-mono text-[11px] text-ink-mute py-4 text-center border border-dashed border-rule rounded-card">
+          <p className="mt-2 font-sans text-xs text-fg-mute py-4 text-center border border-dashed border-border-token rounded-card">
             No classes scheduled yet.
           </p>
         ) : (
-          <ul className="mt-2 divide-y divide-rule border border-rule rounded-card bg-surface">
+          <ul className="mt-2 divide-y divide-border-token border border-border-token rounded-card bg-surface">
             {sorted.map((c) => {
               const past = new Date(c.scheduledAt) < new Date();
               return (
                 <li
                   key={c.id}
                   className={clsx(
-                    'flex items-center gap-3 px-3 py-2 hover:bg-paper-warm/60 transition-colors',
-                    past && 'text-ink-soft',
+                    'flex items-center gap-3 px-3 py-2 hover:bg-bg-subtle/60 transition-colors',
+                    past && 'text-fg-soft',
                   )}
                 >
-                  <span className="font-mono text-[10px] uppercase tracking-label text-ink-mute w-28 flex-none truncate">
+                  <span className="font-mono text-[10px] uppercase tracking-label text-fg-mute w-28 flex-none truncate">
                     {formatShort(c.scheduledAt)}
                   </span>
-                  <span className="font-sans text-sm font-medium text-ink truncate flex-1 min-w-0">
+                  <span className="font-sans text-sm font-medium text-fg truncate flex-1 min-w-0">
                     {c.title}
                     {c.topic && (
-                      <span className="ml-2 font-mono text-[10px] uppercase tracking-label text-ink-mute">
+                      <span className="ml-2 font-sans text-xs font-medium text-fg-mute">
                         · {c.topic}
                       </span>
                     )}
                   </span>
-                  <span className="font-mono text-[10px] text-ink-mute w-10 flex-none text-right">
+                  <span className="font-mono text-[10px] text-fg-mute w-10 flex-none text-right">
                     {c.durationMin}m
                   </span>
                   <button
                     onClick={() => setAttendanceFor(c)}
-                    className="inline-flex items-center gap-1 font-mono text-[10px] uppercase tracking-label text-focus hover:underline flex-none"
+                    className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface inline-flex items-center gap-1 font-sans text-xs font-medium text-primary hover:underline flex-none"
                     aria-label={`Attendance for ${c.title}`}
                     title="Take attendance"
                   >

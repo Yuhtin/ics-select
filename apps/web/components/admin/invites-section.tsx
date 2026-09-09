@@ -85,14 +85,14 @@ export function InvitesSection() {
     <section className="space-y-4">
       <header>
         <Eyebrow>Pending invites</Eyebrow>
-        <p className="mt-1 font-mono text-xs text-ink-mute">
+        <p className="mt-1 font-mono text-xs text-fg-mute">
           {invites ? `${invites.length} pending` : 'Loading…'}
         </p>
       </header>
 
       <form
         onSubmit={handleCreate}
-        className="flex flex-wrap items-start gap-3 rounded-card border border-rule bg-surface px-4 py-3"
+        className="flex flex-wrap items-start gap-3 rounded-card border border-border-token bg-surface px-4 py-3"
       >
         <div className="flex-1 min-w-[220px]">
           <input
@@ -100,7 +100,7 @@ export function InvitesSection() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="email@sou.inteli.edu.br"
-            className="w-full rounded-input border border-rule bg-paper px-3 py-1.5 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-focus/40"
+            className="w-full min-h-10 rounded-input border border-border-token bg-surface px-3 py-1.5 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
           />
         </div>
         <select
@@ -110,7 +110,7 @@ export function InvitesSection() {
             setRole(next);
             if (next === 'ADMIN') setCycleId('');
           }}
-          className="rounded-input border border-rule bg-paper px-3 py-1.5 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-focus/40"
+          className="min-h-10 rounded-input border border-border-token bg-surface px-3 py-1.5 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
         >
           <option value="MEMBER">Member</option>
           <option value="ADMIN">Admin</option>
@@ -120,7 +120,7 @@ export function InvitesSection() {
           onChange={(e) => setCycleId(e.target.value)}
           disabled={role === 'ADMIN'}
           className={clsx(
-            'rounded-input border border-rule bg-paper px-3 py-1.5 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-focus/40 min-w-[180px]',
+            'min-h-10 rounded-input border border-border-token bg-surface px-3 py-1.5 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 min-w-[180px]',
             role === 'ADMIN' && 'cursor-not-allowed opacity-50',
           )}
         >
@@ -137,35 +137,35 @@ export function InvitesSection() {
           type="submit"
           disabled={!submitOk}
           className={clsx(
-            'rounded-input px-3 py-1.5 font-sans text-sm font-medium transition-colors',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface rounded-input px-3 py-1.5 font-sans text-sm font-medium transition-colors',
             submitOk
-              ? 'bg-ink text-paper hover:bg-ink-soft'
-              : 'cursor-not-allowed bg-paper-warm text-ink-mute',
+              ? 'bg-primary text-primary-fg hover:bg-primary/90'
+              : 'cursor-not-allowed bg-bg-subtle text-fg-mute',
           )}
         >
           {create.isPending ? 'Invitando…' : 'Convidar'}
         </button>
       </form>
       {formError && (
-        <p className="font-mono text-[11px] text-outcome-stuck">{formError}</p>
+        <p className="font-sans text-xs text-outcome-stuck">{formError}</p>
       )}
 
       {isLoading ? null : !invites || invites.length === 0 ? (
-        <p className="rounded-card border border-dashed border-rule py-8 text-center font-mono text-xs text-ink-mute">
+        <p className="rounded-card border border-dashed border-border-token py-8 text-center font-sans text-xs text-fg-mute">
           Nenhum convite pendente.
         </p>
       ) : (
-        <ul className="divide-y divide-rule rounded-card border border-rule bg-surface">
+        <ul className="divide-y divide-border-token rounded-card border border-border-token bg-surface">
           {invites.map((inv) => (
             <li
               key={inv.id}
               className="flex items-center gap-4 px-4 py-3"
             >
               <div className="flex-1 min-w-0">
-                <p className="font-sans text-sm font-semibold text-ink">
+                <p className="font-sans text-sm font-semibold text-fg">
                   {inv.email}
                 </p>
-                <p className="mt-0.5 font-mono text-[10px] uppercase tracking-label text-ink-mute">
+                <p className="mt-0.5 font-mono text-[10px] uppercase tracking-label text-fg-mute">
                   Invited {new Date(inv.createdAt).toLocaleDateString()}
                   {inv.createdBy ? ` · by ${inv.createdBy.name.split(' ')[0]}` : null}
                   {inv.cycle ? ` · ${inv.cycle.name}` : ' · no cycle'}
@@ -173,10 +173,10 @@ export function InvitesSection() {
               </div>
               <span
                 className={clsx(
-                  'rounded-pill border px-2 py-0.5 font-mono text-[10px] uppercase tracking-label',
+                  'rounded-pill border px-2 py-0.5 font-sans text-xs font-medium',
                   inv.role === 'ADMIN'
-                    ? 'border-accent/40 text-accent'
-                    : 'border-rule text-ink-mute',
+                    ? 'border-primary/40 text-primary'
+                    : 'border-border-token text-fg-mute',
                 )}
               >
                 {inv.role}
@@ -186,7 +186,7 @@ export function InvitesSection() {
                 onClick={() => setRevokeTarget(inv)}
                 disabled={remove.isPending}
                 aria-label={`Revoke invite for ${inv.email}`}
-                className="rounded-input p-1.5 text-ink-mute transition-colors hover:bg-paper-warm hover:text-outcome-stuck"
+                className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface rounded-input p-1.5 text-fg-mute transition-colors hover:bg-bg-subtle hover:text-outcome-stuck"
               >
                 <Trash2 className="h-4 w-4" strokeWidth={1.5} />
               </button>
@@ -211,7 +211,7 @@ export function InvitesSection() {
           revokeTarget ? (
             <>
               Revogar o convite de{' '}
-              <span className="font-semibold text-ink">{revokeTarget.email}</span>? Se quiser
+              <span className="font-semibold text-fg">{revokeTarget.email}</span>? Se quiser
               convidar de novo, crie um novo convite.
             </>
           ) : null

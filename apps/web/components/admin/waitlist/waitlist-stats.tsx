@@ -5,7 +5,7 @@ import { useWaitlistStats } from '../../../lib/queries/waitlist';
 export function WaitlistStats() {
   const { data, isLoading } = useWaitlistStats();
   if (isLoading || !data) {
-    return <p className="font-mono text-xs uppercase tracking-label text-ink-mute">Loading stats…</p>;
+    return <p className="font-sans text-xs font-medium text-fg-mute">Loading stats…</p>;
   }
   const distinctCourses = new Set(data.byCourse.filter((c) => c.count > 0).map((c) => c.course)).size;
   const cards = [
@@ -14,11 +14,11 @@ export function WaitlistStats() {
     { label: 'Cursos distintos', value: distinctCourses },
   ];
   return (
-    <div className="grid grid-cols-3 gap-px bg-rule border border-rule">
+    <div className="grid gap-px overflow-hidden rounded-card bg-border-token border border-border-token sm:grid-cols-3">
       {cards.map((c) => (
         <div key={c.label} className="bg-surface p-5">
-          <p className="font-mono text-[11px] uppercase tracking-label text-ink-mute">{c.label}</p>
-          <p className="mt-2 font-serif-tool text-3xl tabular-nums text-ink">{c.value}</p>
+          <p className="font-sans text-xs font-medium text-fg-mute">{c.label}</p>
+          <p className="mt-2 font-mono text-3xl tabular-nums text-fg">{c.value}</p>
         </div>
       ))}
     </div>

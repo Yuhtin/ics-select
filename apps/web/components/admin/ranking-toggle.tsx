@@ -12,8 +12,8 @@ export function RankingToggle({
   const toggle = useToggleRanking();
   const optimistic = toggle.isPending ? !checked : checked;
   return (
-    <div className="flex items-center gap-3">
-      <span className="font-mono text-[11px] uppercase tracking-eyebrow text-ink-mute font-semibold">
+    <div className="flex flex-wrap items-center gap-3">
+      <span className="font-sans text-xs text-fg-mute font-semibold">
         Cohort ranking
       </span>
       <button
@@ -23,8 +23,8 @@ export function RankingToggle({
         }
         disabled={toggle.isPending}
         className={clsx(
-          'relative inline-flex h-6 w-10 items-center rounded-full border border-rule transition-colors',
-          optimistic ? 'bg-paper-warm' : 'bg-paper',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface relative inline-flex h-6 w-10 items-center rounded-full border border-border-token transition-colors',
+          optimistic ? 'bg-primary' : 'bg-bg-subtle',
           toggle.isPending && 'opacity-60',
         )}
         aria-pressed={optimistic}
@@ -33,11 +33,11 @@ export function RankingToggle({
         <span
           className={clsx(
             'inline-block h-4 w-4 rounded-full transition-transform',
-            optimistic ? 'translate-x-5 bg-ink' : 'translate-x-1 bg-ink-faint',
+            optimistic ? 'translate-x-5 bg-primary-fg' : 'translate-x-1 bg-fg-mute',
           )}
         />
       </button>
-      <span className="font-mono text-[11px] text-ink-mute">
+      <span className="font-sans text-xs text-fg-mute">
         {optimistic ? 'visible to members' : 'hidden from members'}
       </span>
     </div>

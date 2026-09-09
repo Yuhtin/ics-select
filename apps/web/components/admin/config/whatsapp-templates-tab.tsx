@@ -37,7 +37,7 @@ export function WhatsappTemplatesTab() {
 
   if (isLoading) {
     return (
-      <p className="font-mono text-xs uppercase tracking-label text-ink-mute py-12 text-center">
+      <p className="font-sans text-xs font-medium text-fg-mute py-12 text-center">
         Loading…
       </p>
     );
@@ -45,9 +45,9 @@ export function WhatsappTemplatesTab() {
 
   return (
     <div className="space-y-3">
-      <p className="font-sans text-sm text-ink-soft">
+      <p className="font-sans text-sm text-fg-soft">
         Edite as mensagens enviadas via WhatsApp. Use{' '}
-        <code className="font-mono text-[11px] bg-paper-warm px-1 py-0.5 rounded">{'{firstName}'}</code>{' '}
+        <code className="font-mono text-[11px] bg-bg-subtle px-1 py-0.5 rounded">{'{firstName}'}</code>{' '}
         e outras variáveis listadas em cada card. Desabilitar pula o envio sem deletar a mensagem.
       </p>
       {(data ?? []).map((tpl) => (
@@ -91,16 +91,16 @@ function TemplateCard({ template }: { template: WhatsappTemplate }) {
   };
 
   return (
-    <article className="rounded-card border border-rule bg-surface p-5 space-y-3">
+    <article className="rounded-card border border-border-token bg-surface p-5 space-y-3">
       <header className="flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <h3 className="font-serif-tool text-lg font-semibold text-ink">
+          <h3 className="font-sans text-lg font-semibold text-fg">
             {meta.title}
           </h3>
-          <p className="mt-0.5 font-mono text-[11px] uppercase tracking-label text-ink-mute">
+          <p className="mt-0.5 font-mono text-[11px] uppercase tracking-label text-fg-mute">
             {template.kind}
           </p>
-          <p className="mt-1 font-sans text-sm text-ink-soft">{meta.subtitle}</p>
+          <p className="mt-1 font-sans text-sm text-fg-soft">{meta.subtitle}</p>
         </div>
         <label className="flex items-center gap-2 cursor-pointer shrink-0">
           <input
@@ -110,9 +110,9 @@ function TemplateCard({ template }: { template: WhatsappTemplate }) {
               setEnabled(e.target.checked);
               setDirty(true);
             }}
-            className="accent-ink"
+            className="accent-primary"
           />
-          <span className="font-mono text-[11px] uppercase tracking-label text-ink-soft">
+          <span className="font-sans text-xs font-medium text-fg-soft">
             Enabled
           </span>
         </label>
@@ -122,12 +122,12 @@ function TemplateCard({ template }: { template: WhatsappTemplate }) {
         <SectionLabel>Variáveis disponíveis</SectionLabel>
         <div className="mt-2 flex flex-wrap gap-1.5">
           {template.variables.length === 0 ? (
-            <span className="font-mono text-[10px] text-ink-mute">— sem variáveis</span>
+            <span className="font-sans text-xs text-fg-mute">— sem variáveis</span>
           ) : (
             template.variables.map((v) => (
               <code
                 key={v}
-                className="font-mono text-[10px] bg-paper-warm border border-rule px-1.5 py-0.5 rounded text-ink-soft"
+                className="font-mono text-[10px] bg-bg-subtle border border-border-token px-1.5 py-0.5 rounded text-fg-soft"
               >
                 {`{${v}}`}
               </code>
@@ -143,11 +143,11 @@ function TemplateCard({ template }: { template: WhatsappTemplate }) {
           setDirty(true);
         }}
         rows={3}
-        className="w-full rounded-input border border-rule bg-paper p-3 font-sans text-sm resize-vertical focus:outline-none focus:ring-2 focus:ring-focus/40"
+        className="w-full rounded-input border border-border-token bg-surface p-3 font-sans text-sm resize-vertical focus:outline-none focus:ring-2 focus:ring-primary/50"
       />
 
       <footer className="flex items-center justify-between gap-3">
-        <p className="font-mono text-[10px] text-ink-mute">
+        <p className="font-mono text-[10px] text-fg-mute">
           {template.updatedAt
             ? `last edit · ${new Date(template.updatedAt).toLocaleString('pt-BR')}`
             : 'never edited (using default)'}
@@ -156,7 +156,7 @@ function TemplateCard({ template }: { template: WhatsappTemplate }) {
           type="button"
           onClick={handleSave}
           disabled={!dirty || update.isPending || text.trim().length === 0}
-          className="inline-flex items-center gap-2 bg-ink text-paper rounded-pill px-4 py-2 font-mono text-xs uppercase tracking-label hover:opacity-90 disabled:opacity-40"
+          className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface inline-flex items-center gap-2 bg-primary text-primary-fg rounded-pill px-4 py-2 font-sans text-xs font-medium hover:opacity-90 disabled:opacity-40"
         >
           <Save className="h-3.5 w-3.5" strokeWidth={1.5} />
           {update.isPending ? 'Saving…' : 'Save'}

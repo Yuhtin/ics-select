@@ -14,9 +14,9 @@ type Member = {
 };
 
 const STATUS_TONE: Record<AttendanceStatus, string> = {
-  PRESENT: 'bg-outcome-done-easy text-paper border-outcome-done-easy',
-  LATE: 'bg-outcome-done-hard text-paper border-outcome-done-hard',
-  ABSENT: 'bg-outcome-stuck text-paper border-outcome-stuck',
+  PRESENT: 'bg-success-soft text-fg border-success',
+  LATE: 'bg-warn-soft text-fg border-warn',
+  ABSENT: 'bg-danger-soft text-fg border-danger',
 };
 
 function Initials({
@@ -33,7 +33,7 @@ function Initials({
       <img
         src={pictureUrl}
         alt=""
-        className="rounded-full object-cover border border-rule"
+        className="rounded-full object-cover border border-border-token"
         style={{ width: size, height: size }}
       />
     );
@@ -46,7 +46,7 @@ function Initials({
     .join('');
   return (
     <span
-      className="inline-flex items-center justify-center rounded-full bg-paper-warm border border-rule font-serif text-ink text-xs font-semibold"
+      className="inline-flex items-center justify-center rounded-full bg-bg-subtle border border-border-token font-sans text-fg text-xs font-semibold"
       style={{ width: size, height: size }}
     >
       {initials || '—'}
@@ -97,11 +97,11 @@ export function AttendanceModal({
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4">
-      <div className="w-full max-w-xl rounded-card bg-surface border border-rule p-6 shadow-modal max-h-[85vh] overflow-y-auto">
-        <h3 className="font-serif-tool text-xl font-semibold text-ink">
+      <div className="w-full max-w-xl rounded-card bg-surface border border-border-token p-6 shadow-modal max-h-[85vh] overflow-y-auto">
+        <h3 className="font-sans text-xl font-semibold text-fg">
           Attendance · {session.title}
         </h3>
-        <p className="mt-1 font-mono text-xs text-ink-mute">
+        <p className="mt-1 font-mono text-xs text-fg-mute">
           {new Date(session.scheduledAt).toLocaleString('en-US', {
             month: 'short',
             day: 'numeric',
@@ -115,10 +115,10 @@ export function AttendanceModal({
             return (
               <li
                 key={m.userId}
-                className="flex items-center gap-3 border border-rule rounded-card px-3 py-2 bg-paper"
+                className="flex items-center gap-3 border border-border-token rounded-card px-3 py-2 bg-surface"
               >
                 <Initials name={m.name} pictureUrl={m.pictureUrl} />
-                <p className="flex-1 font-serif-tool text-sm font-semibold text-ink truncate">
+                <p className="flex-1 font-sans text-sm font-semibold text-fg truncate">
                   {m.name}
                 </p>
                 <div className="flex gap-1">
@@ -128,10 +128,10 @@ export function AttendanceModal({
                         key={s}
                         onClick={() => set(m.userId, s)}
                         className={clsx(
-                          'font-mono text-[10px] uppercase tracking-label px-3 py-1 rounded-pill border transition-colors',
+                          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface font-sans text-xs font-medium px-3 py-1 rounded-pill border transition-colors',
                           cur === s
                             ? STATUS_TONE[s]
-                            : 'bg-paper text-ink-mute border-rule hover:bg-paper-warm',
+                            : 'bg-surface text-fg-mute border-border-token hover:bg-bg-subtle',
                         )}
                       >
                         {s.toLowerCase()}
@@ -146,14 +146,14 @@ export function AttendanceModal({
         <div className="mt-6 flex justify-end gap-3">
           <button
             onClick={onClose}
-            className="font-mono text-xs uppercase tracking-label px-4 py-2 text-ink-soft hover:bg-paper-warm rounded-pill"
+            className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface font-sans text-xs font-medium px-4 py-2 text-fg-soft hover:bg-bg-subtle rounded-pill"
           >
             Cancel
           </button>
           <button
             onClick={save}
             disabled={submit.isPending}
-            className="font-mono text-xs uppercase tracking-label px-4 py-2 bg-ink text-paper rounded-pill disabled:opacity-40"
+            className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface font-sans text-xs font-medium px-4 py-2 bg-primary text-primary-fg rounded-pill disabled:opacity-40"
           >
             {submit.isPending ? 'Saving…' : 'Save attendance'}
           </button>

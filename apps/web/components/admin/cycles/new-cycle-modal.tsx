@@ -30,15 +30,15 @@ export function NewCycleModal({
   };
 
   const INPUT =
-    'w-full rounded-input border border-rule bg-paper px-3 py-2 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-focus/40';
+    'w-full min-h-10 rounded-input border border-border-token bg-surface px-3 py-2 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-primary/50';
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4">
-      <div className="w-full max-w-md rounded-card bg-surface border border-rule p-6 shadow-modal">
-        <h3 className="font-serif-tool text-xl font-semibold text-ink">New cycle</h3>
+      <div className="w-full max-w-md rounded-card bg-surface border border-border-token p-6 shadow-modal max-h-[90dvh] overflow-y-auto">
+        <h3 className="font-sans text-xl font-semibold text-fg">New cycle</h3>
         <div className="mt-4 space-y-3">
           <label className="block">
-            <span className="font-mono text-[10px] uppercase tracking-label text-ink-mute">
+            <span className="font-sans text-xs font-medium text-fg-mute">
               Name
             </span>
             <input
@@ -50,7 +50,7 @@ export function NewCycleModal({
           </label>
           <div className="grid grid-cols-2 gap-3">
             <label className="block">
-              <span className="font-mono text-[10px] uppercase tracking-label text-ink-mute">
+              <span className="font-sans text-xs font-medium text-fg-mute">
                 Starts at
               </span>
               <input
@@ -61,7 +61,7 @@ export function NewCycleModal({
               />
             </label>
             <label className="block">
-              <span className="font-mono text-[10px] uppercase tracking-label text-ink-mute">
+              <span className="font-sans text-xs font-medium text-fg-mute">
                 Ends at
               </span>
               <input
@@ -73,7 +73,7 @@ export function NewCycleModal({
             </label>
           </div>
           {create.error && (
-            <p className="font-mono text-[10px] text-outcome-stuck">
+            <p className="font-sans text-xs text-outcome-stuck">
               {(create.error as Error).message}
             </p>
           )}
@@ -81,7 +81,7 @@ export function NewCycleModal({
         <div className="mt-6 flex justify-end gap-3">
           <button
             onClick={onClose}
-            className="font-mono text-xs uppercase tracking-label px-4 py-2 text-ink-soft hover:bg-paper-warm rounded-pill"
+            className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface font-sans text-xs font-medium px-4 py-2 text-fg-soft hover:bg-bg-subtle rounded-pill"
           >
             Cancel
           </button>
@@ -90,7 +90,7 @@ export function NewCycleModal({
             disabled={
               !name.trim() || !startsAt || !endsAt || create.isPending
             }
-            className="font-mono text-xs uppercase tracking-label px-4 py-2 bg-ink text-paper rounded-pill disabled:opacity-40"
+            className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface font-sans text-xs font-medium px-4 py-2 bg-primary text-primary-fg rounded-pill disabled:opacity-40"
           >
             {create.isPending ? 'Creating…' : 'Create cycle'}
           </button>

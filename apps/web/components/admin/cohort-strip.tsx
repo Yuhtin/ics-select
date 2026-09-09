@@ -17,7 +17,7 @@ function Initials({
       <img
         src={pictureUrl}
         alt=""
-        className="rounded-full object-cover border border-rule"
+        className="rounded-full object-cover border border-border-token"
         style={{ width: size, height: size }}
       />
     );
@@ -30,7 +30,7 @@ function Initials({
     .join('');
   return (
     <span
-      className="inline-flex items-center justify-center rounded-full bg-paper-warm border border-rule font-serif text-ink text-xs font-semibold"
+      className="inline-flex items-center justify-center rounded-full bg-bg-subtle border border-border-token font-sans text-fg text-xs font-semibold"
       style={{ width: size, height: size }}
     >
       {initials || '—'}
@@ -52,15 +52,15 @@ export function CohortStrip({ entries }: { entries: CohortStripEntry[] }) {
             <Initials name={e.name} pictureUrl={e.pictureUrl} size={40} />
             <span
               className={clsx(
-                'absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border border-paper',
-                e.hasAlert ? 'bg-outcome-stuck' : 'bg-ink-faint',
+                'absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border border-surface',
+                e.hasAlert ? 'bg-outcome-stuck' : 'bg-fg-faint',
               )}
             />
           </div>
-          <span className="font-sans text-xs text-ink-soft truncate max-w-[86px]">
+          <span className="font-sans text-xs text-fg-soft truncate max-w-[86px]">
             {e.name.split(' ')[0]}
           </span>
-          <span className="font-mono text-[10px] text-ink-mute">{e.percentThisWeek}%</span>
+          <span className="font-mono text-[10px] text-fg-mute">{e.percentThisWeek}%</span>
         </Link>
       ))}
     </div>

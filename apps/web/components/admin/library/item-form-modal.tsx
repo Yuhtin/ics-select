@@ -11,7 +11,7 @@ const FORMATS = ['VIDEO', 'ARTICLE', 'BOOK', 'PROBLEM', 'OTHER'] as const;
 const DIFFICULTIES = ['EASY', 'MEDIUM', 'HARD'] as const;
 
 const INPUT_CLASS =
-  'w-full rounded-input border border-rule bg-paper px-3 py-2 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-focus/40';
+  'w-full min-h-10 rounded-input border border-border-token bg-surface px-3 py-2 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-primary/50';
 
 type Tab = 'manual' | 'import';
 
@@ -114,21 +114,21 @@ export function ItemFormModal({ open, initial, onClose }: ItemFormModalProps) {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4">
-      <div className="w-full max-w-xl rounded-card bg-surface border border-rule p-6 shadow-modal max-h-[90vh] overflow-y-auto">
-        <h3 className="font-serif-tool text-xl font-semibold text-ink">
+      <div className="w-full max-w-xl rounded-card bg-surface border border-border-token p-6 shadow-modal max-h-[90vh] overflow-y-auto">
+        <h3 className="font-sans text-xl font-semibold text-fg">
           {isEdit ? 'Edit library item' : 'New library item'}
         </h3>
         {!isEdit && (
-          <nav className="mt-4 border-b border-rule flex gap-6">
+          <nav className="mt-4 border-b border-border-token flex gap-6">
             {(['manual', 'import'] as const).map((t) => (
               <button
                 key={t}
                 type="button"
                 onClick={() => setTab(t)}
-                className={`pb-2 font-mono text-xs uppercase tracking-label ${
+                className={`focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface pb-2 font-sans text-xs font-medium ${
                   tab === t
-                    ? 'text-ink font-semibold border-b-2 border-ink -mb-[1px]'
-                    : 'text-ink-mute hover:text-ink'
+                    ? 'text-fg font-semibold border-b-2 border-border-strong -mb-[1px]'
+                    : 'text-fg-mute hover:text-fg'
                 }`}
               >
                 {t === 'manual' ? 'Manual' : 'Import URL'}
@@ -140,7 +140,7 @@ export function ItemFormModal({ open, initial, onClose }: ItemFormModalProps) {
         {!isEdit && tab === 'import' && (
           <div className="mt-4 space-y-3">
             <label className="block">
-              <span className="font-mono text-[10px] uppercase tracking-label text-ink-mute">
+              <span className="font-sans text-xs font-medium text-fg-mute">
                 URL
               </span>
               <input
@@ -155,16 +155,16 @@ export function ItemFormModal({ open, initial, onClose }: ItemFormModalProps) {
               type="button"
               onClick={handleImport}
               disabled={importer.isPending || importUrl.trim().length === 0}
-              className="font-mono text-xs uppercase tracking-label px-4 py-2 bg-ink text-paper rounded-pill disabled:opacity-40"
+              className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface font-sans text-xs font-medium px-4 py-2 bg-primary text-primary-fg rounded-pill disabled:opacity-40"
             >
               {importer.isPending ? 'Fetching…' : 'Fetch metadata'}
             </button>
             {importer.error && (
-              <p className="font-mono text-[10px] text-outcome-stuck">
+              <p className="font-sans text-xs text-outcome-stuck">
                 {(importer.error as Error).message}
               </p>
             )}
-            <p className="font-mono text-[10px] text-ink-mute">
+            <p className="font-sans text-xs text-fg-mute">
               After fetching, review the prefilled fields in the Manual tab and
               click Save.
             </p>
@@ -251,7 +251,7 @@ export function ItemFormModal({ open, initial, onClose }: ItemFormModalProps) {
               </Field>
             </div>
             {saveError && (
-              <p className="font-mono text-[10px] text-outcome-stuck">
+              <p className="font-sans text-xs text-outcome-stuck">
                 {(saveError as Error).message}
               </p>
             )}
@@ -262,7 +262,7 @@ export function ItemFormModal({ open, initial, onClose }: ItemFormModalProps) {
           <button
             type="button"
             onClick={handleCancel}
-            className="font-mono text-xs uppercase tracking-label px-4 py-2 text-ink-soft hover:bg-paper-warm rounded-pill"
+            className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface font-sans text-xs font-medium px-4 py-2 text-fg-soft hover:bg-bg-subtle rounded-pill"
           >
             Cancel
           </button>
@@ -270,7 +270,7 @@ export function ItemFormModal({ open, initial, onClose }: ItemFormModalProps) {
             type="button"
             onClick={handleSave}
             disabled={form.title.trim().length === 0 || saving}
-            className="font-mono text-xs uppercase tracking-label px-4 py-2 bg-ink text-paper rounded-pill disabled:opacity-40"
+            className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface font-sans text-xs font-medium px-4 py-2 bg-primary text-primary-fg rounded-pill disabled:opacity-40"
           >
             {saving ? 'Saving…' : 'Save'}
           </button>
@@ -289,7 +289,7 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="font-mono text-[10px] uppercase tracking-label text-ink-mute">
+      <span className="font-sans text-xs font-medium text-fg-mute">
         {label}
       </span>
       <div className="mt-1">{children}</div>

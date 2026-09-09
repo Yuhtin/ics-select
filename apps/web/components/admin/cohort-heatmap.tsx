@@ -7,11 +7,11 @@ import type {
 } from '../../lib/queries/admin-cycle';
 
 function cellShade(v: number): string {
-  if (v === 0) return 'bg-rule/60';
-  if (v <= 25) return 'bg-ink/20';
-  if (v <= 50) return 'bg-ink/40';
-  if (v <= 80) return 'bg-ink/70';
-  return 'bg-ink';
+  if (v === 0) return 'bg-bg-subtle';
+  if (v <= 25) return 'bg-primary/20';
+  if (v <= 50) return 'bg-primary/40';
+  if (v <= 80) return 'bg-primary/70';
+  return 'bg-primary';
 }
 
 export function CohortHeatmap({
@@ -22,10 +22,10 @@ export function CohortHeatmap({
   rows: CycleOverviewHeatmapRow[];
 }) {
   if (rows.length === 0) {
-    return <p className="font-mono text-xs text-ink-mute">No data yet.</p>;
+    return <p className="font-sans text-xs text-fg-mute">No data yet.</p>;
   }
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto rounded-card border border-border-token bg-surface p-4">
       <div
         className="inline-grid gap-y-2 gap-x-2"
         style={{
@@ -37,7 +37,7 @@ export function CohortHeatmap({
         {weeks.map((w) => (
           <div
             key={w.index}
-            className="font-mono text-[10px] uppercase tracking-label text-ink-mute text-center"
+            className="font-mono text-[10px] text-fg-mute text-center"
           >
             {w.label}
           </div>
@@ -45,7 +45,7 @@ export function CohortHeatmap({
         {/* Data rows */}
         {rows.map((row) => (
           <Fragment key={row.userId}>
-            <div className="font-serif-tool text-sm font-semibold text-ink truncate pr-2 self-center">
+            <div className="font-sans text-sm font-semibold text-fg truncate pr-2 self-center">
               {row.name}
             </div>
             {row.cells.map((value, idx) => (
@@ -53,7 +53,7 @@ export function CohortHeatmap({
                 key={idx}
                 title={`${weeks[idx]?.label ?? ''} · ${value}%`}
                 className={clsx(
-                  'h-7 w-7 rounded-sm border border-rule',
+                  'h-7 w-7 rounded-sm border border-border-token',
                   cellShade(value),
                 )}
               />

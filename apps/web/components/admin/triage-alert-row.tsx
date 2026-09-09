@@ -18,7 +18,7 @@ function Initials({
       <img
         src={pictureUrl}
         alt=""
-        className="rounded-full object-cover border border-rule"
+        className="rounded-full object-cover border border-border-token"
         style={{ width: size, height: size }}
       />
     );
@@ -31,7 +31,7 @@ function Initials({
     .join('');
   return (
     <span
-      className="inline-flex items-center justify-center rounded-full bg-paper-warm border border-rule font-serif text-ink text-xs font-semibold"
+      className="inline-flex items-center justify-center rounded-full bg-bg-subtle border border-border-token font-sans text-fg text-xs font-semibold"
       style={{ width: size, height: size }}
     >
       {initials || '—'}
@@ -104,7 +104,7 @@ function actionsFor(alert: TriageAlert): Array<{ label: string; href: string; di
 const BORDER_BY_SEVERITY = {
   urgent: 'border-outcome-stuck',
   attention: 'border-outcome-done-hard',
-  scheduled: 'border-rule',
+  scheduled: 'border-border-token',
 } as const;
 
 export function TriageAlertRow({
@@ -118,28 +118,28 @@ export function TriageAlertRow({
   return (
     <div
       className={clsx(
-        'flex items-start gap-4 border-l-[3px] border-b border-b-rule py-4 pl-4 transition-colors hover:bg-paper-warm/60',
+        'flex flex-wrap items-start gap-4 border-l-[3px] border-b border-b-border-token py-4 pl-4 transition-colors hover:bg-surface-hover',
         BORDER_BY_SEVERITY[alert.severity],
       )}
     >
       <Initials name={alert.member.name} pictureUrl={alert.member.pictureUrl} />
       <div className="flex-1 min-w-0">
-        <p className="font-serif-tool text-[15px] font-semibold text-ink leading-tight">
+        <p className="font-sans text-[15px] font-semibold text-fg leading-tight">
           {alert.member.name}
-          <span className="mx-1.5 text-ink-faint">·</span>
-          <span className="font-sans text-sm font-normal text-ink-soft">{alert.summary}</span>
+          <span className="mx-1.5 text-fg-faint">·</span>
+          <span className="font-sans text-sm font-normal text-fg-soft">{alert.summary}</span>
         </p>
-        <p className="mt-1 font-mono text-[11px] text-ink-mute">
+        <p className="mt-1 font-mono text-[11px] text-fg-mute">
           {formatRelativeTime(alert.occurredAt)}
         </p>
       </div>
-      <div className="flex items-center gap-4 font-mono text-[11px]">
+      <div className="flex flex-wrap items-center gap-4 font-sans text-xs">
         {actions.map((a) => {
           if (a.disabled) {
             return (
               <span
                 key={a.label}
-                className="text-ink-faint cursor-not-allowed"
+                className="text-fg-faint cursor-not-allowed"
                 title="No WhatsApp phone on file"
               >
                 {a.label}
@@ -153,7 +153,7 @@ export function TriageAlertRow({
                 href={a.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-ink underline-offset-2 hover:underline hover:text-focus"
+                className="text-fg underline-offset-2 hover:underline hover:text-primary"
               >
                 {a.label}
               </a>
@@ -163,7 +163,7 @@ export function TriageAlertRow({
             <Link
               key={a.label}
               href={a.href}
-              className="text-ink underline-offset-2 hover:underline hover:text-focus"
+              className="text-fg underline-offset-2 hover:underline hover:text-primary"
             >
               {a.label}
             </Link>
@@ -173,7 +173,7 @@ export function TriageAlertRow({
           type="button"
           onClick={onDismiss}
           aria-label="Dismiss alert"
-          className="inline-flex items-center gap-1 text-ink-mute hover:text-ink"
+          className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface inline-flex items-center gap-1 text-fg-mute hover:text-fg"
         >
           <X className="h-3 w-3" strokeWidth={2} />
           dismiss

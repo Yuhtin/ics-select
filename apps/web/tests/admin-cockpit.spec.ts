@@ -12,6 +12,7 @@
 import { test, expect, type Page } from '@playwright/test';
 
 const API_BASE = 'http://localhost:3001';
+const FIXED_NOW = new Date('2026-09-09T12:00:00.000Z').getTime();
 
 const MOCK_ADMIN = {
   id: 'admin-1',
@@ -160,7 +161,7 @@ function buildResponse(state: 'AT_RISK' | 'WATCH' | 'ON_TRACK') {
     return {
       ...BASE_COCKPIT,
       itemsCompleted: { ...BASE_COCKPIT.itemsCompleted, total: 11, completionPct: 46, needsAttention: { total: 1, stuck: 0, doubts: 1 } },
-      behavior: { ...BASE_COCKPIT.behavior, sessions: { value: 14, cohortMedian: 16, perWeek: [3, 3, 3, 3, 2] }, lastSeen: { occurredAt: new Date(Date.now() - 4 * 86400_000).toISOString(), surface: '/me/plan' } },
+      behavior: { ...BASE_COCKPIT.behavior, sessions: { value: 14, cohortMedian: 16, perWeek: [3, 3, 3, 3, 2] }, lastSeen: { occurredAt: new Date(FIXED_NOW - 4 * 86400_000).toISOString(), surface: '/me/plan' } },
       risk: { status: 'WATCH', reasons: ['4 days no session', '46% items completed'] },
       engagement: {
         score: 55,
@@ -184,7 +185,7 @@ function buildResponse(state: 'AT_RISK' | 'WATCH' | 'ON_TRACK') {
       sessions: { value: 22, cohortMedian: 16, perWeek: [4, 5, 4, 5, 4] },
       retros:   { submitted: 4, expected: 4 },
       carryOver:{ value: 0, cohortMedian: 1, perWeek: [0, 0, 0, 0, 0] },
-      lastSeen: { occurredAt: new Date(Date.now() - 1 * 86400_000).toISOString(), surface: '/me/plan' },
+      lastSeen: { occurredAt: new Date(FIXED_NOW - 1 * 86400_000).toISOString(), surface: '/me/plan' },
     },
     risk: { status: 'ON_TRACK', reasons: [] },
     engagement: {
@@ -202,6 +203,7 @@ function buildResponse(state: 'AT_RISK' | 'WATCH' | 'ON_TRACK') {
 }
 
 async function setupMocks(page: Page, state: 'AT_RISK' | 'WATCH' | 'ON_TRACK') {
+  await page.clock.setFixedTime(FIXED_NOW);
   await page.addInitScript(() => {
     window.localStorage.setItem('ics_access_token', 'fake-admin-token');
   });
@@ -216,6 +218,72 @@ async function setupMocks(page: Page, state: 'AT_RISK' | 'WATCH' | 'ON_TRACK') {
     return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(MOCK_ADMIN_MEMBER) });
   });
 }
+
+test.describe('Academy admin operations', () => {
+  for (const theme of ['light', 'dark'] as const) {
+    test(`AI usage chart renders daily values in ${theme}`, async ({ page }) => {
+      await setupMocks(page, 'ON_TRACK');
+      await page.addInitScript((value) => localStorage.setItem('ics-theme', value), theme);
+      await page.route(`${API_BASE}/ai/usage?*`, (route) => route.fulfill({ json: {
+        totalCost: 0.12,
+        rows: [1, 2].map((day) => ({
+          id: `usage-${day}`, userId: 'u1', purpose: 'Plan generation', model: 'gpt-4.1',
+          promptTokens: 1024, responseTokens: 247, costUsd: String(day * 0.04),
+          createdAt: `2026-09-0${day}T12:00:00Z`, metadata: null,
+        })),
+      } }));
+      await page.goto('/admin/ai-usage');
+      const bars = page.locator('[title*="calls"]');
+      await expect(bars).toHaveCount(2);
+      const heights = await bars.evaluateAll((elements) => elements.map((element) => element.getBoundingClientRect().height));
+      expect(heights[0]).toBeGreaterThan(0);
+      expect(heights[1]).toBeCloseTo(heights[0] * 2, 0);
+      const request = page.waitForRequest(`${API_BASE}/ai/usage?sinceDays=7`);
+      await page.getByRole('button', { name: '7d', exact: true }).click();
+      await request;
+      await expect(bars).toHaveCount(2);
+    });
+
+    for (const width of [1440, 768]) {
+      test(`members remain dense and operable in ${theme} at ${width}px`, async ({ page }) => {
+        await setupMocks(page, 'ON_TRACK');
+        await page.addInitScript((value) => localStorage.setItem('ics-theme', value), theme);
+        await page.setViewportSize({ width, height: 960 });
+        await page.route(`${API_BASE}/admin/dashboard`, (route) => route.fulfill({ json: [
+          { ...MOCK_ADMIN, stats: { plansCount: 6, doneItems: 18, skippedItems: 1, stuckItems: 0 } },
+          { ...BASE_COCKPIT.member, role: 'MEMBER', stats: { plansCount: 4, doneItems: 11, skippedItems: 0, stuckItems: 2 } },
+        ] }));
+        await page.route(`${API_BASE}/admin/invites`, (route) => route.fulfill({ json: [
+          { id: 'invite-1', email: 'rafael.lima@sou.inteli.edu.br', role: 'MEMBER', createdAt: '2026-09-01T12:00:00Z', createdBy: MOCK_ADMIN, cycle: { id: 'cy1', name: '2026.2' } },
+        ] }));
+        await page.route(`${API_BASE}/cycles`, (route) => route.fulfill({ json: [
+          { ...BASE_COCKPIT.cycle, status: 'ACTIVE', startsAt: '2026-08-01T00:00:00Z', endsAt: '2099-12-01T00:00:00Z' },
+        ] }));
+        await page.goto('/admin/members');
+        await page.addStyleTag({ content: 'nextjs-portal { display: none !important; }' });
+        await expect(page.getByRole('link', { name: 'Academy Fellow Admin', exact: true })).toBeVisible();
+        await expect(page.getByText('rafael.lima@sou.inteli.edu.br', { exact: true })).toBeVisible();
+        await expect(page.getByRole('link', { name: /Maria Clara/ })).toBeVisible();
+        await page.evaluate(() => document.fonts.ready);
+        const navigation = page.getByRole('navigation', { name: 'Admin navigation' });
+        expect(await navigation.getByRole('link').evaluateAll((links) =>
+          new Set(links.map((link) => Math.round(link.getBoundingClientRect().top))).size,
+        )).toBe(1);
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+        await expect(page).toHaveScreenshot(`academy-admin-members-${theme}-${width}.png`, { fullPage: true });
+        await page.getByPlaceholder('Search by name or email…').fill('maria');
+        await expect(page.getByRole('link', { name: /Maria Clara/ })).toBeVisible();
+        await expect(page.getByRole('main').getByRole('link', { name: /Davi Admin/ })).toHaveCount(0);
+        await page.getByRole('button', { name: 'Revoke invite for rafael.lima@sou.inteli.edu.br' }).click();
+        const dialog = page.getByRole('dialog');
+        await expect(dialog).toBeVisible();
+        await expect(dialog.getByText('Revogar convite?', { exact: true })).toBeVisible();
+        await page.keyboard.press('Escape');
+        await expect(dialog).toHaveCount(0);
+      });
+    }
+  }
+});
 
 test.describe('Member cockpit', () => {
   for (const width of [1280, 390]) {

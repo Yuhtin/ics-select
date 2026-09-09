@@ -39,7 +39,7 @@ export function CycleOverviewView({ data }: { data: CycleOverviewResponse }) {
       <header className="flex flex-wrap items-start gap-x-8 gap-y-4">
         <div className="flex-1 min-w-0">
           <Eyebrow>Cycle · {data.cycle.status}</Eyebrow>
-          <h1 className="mt-3 font-serif-tool text-4xl font-semibold tracking-tight leading-tight">
+          <h1 className="mt-3 font-sans text-3xl font-semibold tracking-tight leading-tight">
             {data.cycle.name}
             {data.cycle.weekNumber > 0 ? (
               <> · week {data.cycle.weekNumber} of {data.cycle.weeksTotal}</>
@@ -47,7 +47,7 @@ export function CycleOverviewView({ data }: { data: CycleOverviewResponse }) {
               <> · upcoming · {data.cycle.weeksTotal} weeks</>
             )}
           </h1>
-          <p className="mt-2 font-mono text-xs text-ink-mute">
+          <p className="mt-2 font-mono text-xs text-fg-mute">
             {data.members.length} members
             {data.cycle.weekNumber === 0 && (
               <>
@@ -60,10 +60,10 @@ export function CycleOverviewView({ data }: { data: CycleOverviewResponse }) {
             )}
           </p>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-4">
           <Link
             href={`/admin/plans?cycleId=${data.cycle.id}`}
-            className="inline-flex items-center gap-1.5 font-mono text-xs uppercase tracking-label text-ink-soft hover:text-ink"
+            className="inline-flex items-center gap-1.5 font-sans text-xs font-medium text-fg-soft hover:text-fg"
           >
             All plans →
           </Link>
@@ -81,7 +81,7 @@ export function CycleOverviewView({ data }: { data: CycleOverviewResponse }) {
             const notStarted = new Date(data.cycle.startsAt) > new Date();
             return notStarted ? (
               <span
-                className="inline-flex items-center gap-2 border border-dashed border-rule px-3 py-1.5 font-mono text-xs uppercase tracking-label text-ink-faint"
+                className="inline-flex items-center gap-2 border border-dashed border-border-token px-3 py-1.5 font-sans text-xs font-medium text-fg-faint"
                 title="Cycle hasn't started yet"
               >
                 <Receipt className="h-3.5 w-3.5" strokeWidth={1.5} />
@@ -90,18 +90,18 @@ export function CycleOverviewView({ data }: { data: CycleOverviewResponse }) {
             ) : (
               <Link
                 href={`/admin/cycle/${data.cycle.id}/receipt`}
-                className="group inline-flex items-center gap-2 border border-dashed border-rule px-3 py-1.5 font-mono text-xs uppercase tracking-label text-ink-soft hover:border-ink hover:text-ink"
+                className="group inline-flex items-center gap-2 border border-dashed border-border-token px-3 py-1.5 font-sans text-xs font-medium text-fg-soft hover:border-border-strong hover:text-fg"
               >
                 <Receipt className="h-3.5 w-3.5" strokeWidth={1.5} />
                 Receipt
-                <span className="text-ink-faint group-hover:text-ink">→</span>
+                <span className="text-fg-faint group-hover:text-fg">→</span>
               </Link>
             );
           })()}
           <button
             type="button"
             onClick={() => setRosterOpen(true)}
-            className="group inline-flex items-center gap-2 border border-dashed border-rule px-3 py-1.5 font-mono text-xs uppercase tracking-label text-ink-soft hover:border-ink hover:text-ink"
+            className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface group inline-flex items-center gap-2 border border-dashed border-border-token px-3 py-1.5 font-sans text-xs font-medium text-fg-soft hover:border-border-strong hover:text-fg"
           >
             <UserPlus className="h-3.5 w-3.5" strokeWidth={1.5} />
             Manage roster
@@ -121,7 +121,7 @@ export function CycleOverviewView({ data }: { data: CycleOverviewResponse }) {
       {/* Left column stacks Engagement ranking → Triage → Heatmap so the
           admin lands on cohort engagement first; Activity is a tall column
           on the right anchored across the section. */}
-      <section className="grid gap-8 md:grid-cols-[minmax(0,1fr)_320px]">
+      <section className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_320px]">
         <div className="min-w-0 space-y-10">
           {data.ranking.length > 0 && (
             <div className="space-y-3">
@@ -134,7 +134,7 @@ export function CycleOverviewView({ data }: { data: CycleOverviewResponse }) {
             <div className="space-y-6">
               <div className="flex items-baseline justify-between gap-3">
                 <SectionLabel>Triage</SectionLabel>
-                <p className="font-mono text-xs text-ink-mute">
+                <p className="font-sans text-xs text-fg-mute">
                   {focusCount === 0
                     ? `You're all caught up.`
                     : `${focusCount} thing${focusCount === 1 ? '' : 's'} need${focusCount === 1 ? 's' : ''} your attention today.`}
@@ -144,7 +144,7 @@ export function CycleOverviewView({ data }: { data: CycleOverviewResponse }) {
               {urgent.length > 0 && (
                 <div>
                   <SectionLabel>URGENT · {urgent.length}</SectionLabel>
-                  <div className="border-t border-rule">
+                  <div className="border-t border-border-token">
                     {urgent.map((alert) => (
                       <TriageAlertRow
                         key={alert.id}
@@ -159,7 +159,7 @@ export function CycleOverviewView({ data }: { data: CycleOverviewResponse }) {
               {attention.length > 0 && (
                 <div>
                   <SectionLabel>NEEDS ATTENTION · {attention.length}</SectionLabel>
-                  <div className="border-t border-rule">
+                  <div className="border-t border-border-token">
                     {attention.map((alert) => (
                       <TriageAlertRow
                         key={alert.id}
@@ -174,7 +174,7 @@ export function CycleOverviewView({ data }: { data: CycleOverviewResponse }) {
               {scheduled.length > 0 && (
                 <div>
                   <SectionLabel>SCHEDULED · {scheduled.length}</SectionLabel>
-                  <div className="border-t border-rule">
+                  <div className="border-t border-border-token">
                     {scheduled.map((alert) => (
                       <TriageAlertRow
                         key={alert.id}
