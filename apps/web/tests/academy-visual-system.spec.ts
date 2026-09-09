@@ -21,6 +21,19 @@ async function mockLanding(page: Page) {
   } }));
 }
 
+test('landing brand and login have mobile touch targets', async ({ page }) => {
+  await mockLanding(page);
+  await page.setViewportSize({ width: 390, height: 600 });
+  await page.goto('/');
+  for (const name of ['Academy Fellow', 'Sou fellow']) {
+    const control = page.getByRole('banner').getByRole('link', { name, exact: true });
+    await expect(control).toBeVisible();
+    const box = await control.boundingBox();
+    expect.soft(box!.width).toBeGreaterThanOrEqual(44);
+    expect.soft(box!.height).toBeGreaterThanOrEqual(44);
+  }
+});
+
 for (const width of [390, 768, 1440]) {
   test(`landing at ${width}px`, async ({ page }) => {
     await mockLanding(page);

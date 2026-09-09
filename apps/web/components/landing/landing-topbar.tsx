@@ -6,7 +6,7 @@ export function LandingTopbar() {
   return (
     <header className="landing-topbar">
       <div className="landing-container flex h-full items-center justify-between gap-5">
-        <a href="#top" className="shrink-0 whitespace-nowrap">
+        <a href="#top" className="touch-target inline-flex items-center shrink-0 whitespace-nowrap">
           <BrandLockup size="sm" />
         </a>
         <nav aria-label="Navegação principal" className="hidden items-center gap-7 text-[13px] font-medium text-fg-soft md:flex">

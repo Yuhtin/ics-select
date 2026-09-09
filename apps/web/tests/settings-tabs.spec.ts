@@ -107,6 +107,118 @@ test.describe('settings tabs', () => {
   });
 
   for (const theme of ['light', 'dark'] as const) {
+    test(`time picker is immediately static with reduced motion in ${theme}`, async ({ page }) => {
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      await page.addInitScript((value) => localStorage.setItem('ics-theme', value), theme);
+      await page.goto('/me/settings/availability');
+      const trigger = page.getByRole('button', { name: 'Mon end', exact: true });
+      await expect(trigger).toBeVisible();
+      const samples = await trigger.evaluate(async (element) => {
+        const frames: Array<{ transform: string; opacity: string }> = [];
+        const sample = () => {
+          const panel = document.querySelector('[role="dialog"][aria-label="Mon end picker"]');
+          if (panel) {
+            const style = getComputedStyle(panel);
+            frames.push({ transform: style.transform, opacity: style.opacity });
+          }
+        };
+        // Observe insertion itself, then every animation frame. A retrying CSS
+        // assertion would miss the first 160ms of an unwanted Motion transform.
+        const observer = new MutationObserver(sample);
+        observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['style'] });
+        (element as HTMLButtonElement).click();
+        await new Promise<void>((resolve) => {
+          const start = performance.now();
+          const tick = () => {
+            sample();
+            if (performance.now() - start < 250) requestAnimationFrame(tick);
+            else resolve();
+          };
+          requestAnimationFrame(tick);
+        });
+        observer.disconnect();
+        return frames;
+      });
+      expect(samples.length).toBeGreaterThan(0);
+      expect(samples.filter(({ transform, opacity }) => transform !== 'none' || opacity !== '1')).toEqual([]);
+      await page.keyboard.press('Escape');
+      await expect(page.getByRole('dialog')).toBeHidden();
+    });
+
+    for (const zoom of [1, 2]) {
+      test(`time picker fits a centered trigger in a short viewport at ${zoom}x zoom in ${theme}`, async ({ page }) => {
+        await page.emulateMedia({ reducedMotion: 'reduce' });
+        await page.addInitScript((value) => localStorage.setItem('ics-theme', value), theme);
+        await page.setViewportSize({ width: 390, height: 600 });
+        await page.goto('/me/settings/availability');
+        const trigger = page.getByRole('button', { name: 'Mon end', exact: true });
+        await expect(trigger).toBeVisible();
+        if (zoom > 1) {
+          const session = await page.context().newCDPSession(page);
+          await session.send('Emulation.setPageScaleFactor', { pageScaleFactor: zoom });
+        }
+        await trigger.evaluate((element) => {
+          element.scrollIntoView({ block: 'center', inline: 'center' });
+          // Keep the trigger centered in the visible area even at pinch zoom.
+          const rect = element.getBoundingClientRect();
+          window.scrollBy(0, rect.top + rect.height / 2 - window.visualViewport!.height / 2);
+        });
+        await trigger.focus();
+        await page.keyboard.press('Enter');
+        const panel = page.getByRole('dialog', { name: 'Mon end picker' });
+        await expect(panel).toBeVisible();
+        await expect(panel).toHaveCSS('opacity', '1');
+        const bounds = await panel.evaluate((element) => {
+          const rect = element.getBoundingClientRect();
+          const viewport = window.visualViewport!;
+          return { left: rect.left - viewport.offsetLeft, top: rect.top - viewport.offsetTop,
+            right: rect.right - viewport.offsetLeft, bottom: rect.bottom - viewport.offsetTop,
+            width: viewport.width, height: viewport.height, scrollHeight: element.scrollHeight, clientHeight: element.clientHeight };
+        });
+        expect.soft(bounds.left).toBeGreaterThanOrEqual(0);
+        expect.soft(bounds.top).toBeGreaterThanOrEqual(0);
+        expect.soft(bounds.right).toBeLessThanOrEqual(bounds.width);
+        expect.soft(bounds.bottom).toBeLessThanOrEqual(bounds.height);
+        expect.soft(bounds.scrollHeight).toBeGreaterThan(bounds.clientHeight);
+        expect(await panel.evaluate((element) => element.parentElement === document.body)).toBe(true);
+        for (const choice of await panel.locator('button:enabled').all()) {
+          await choice.evaluate((element) => element.scrollIntoView({ block: 'nearest', inline: 'nearest' }));
+          const reachable = await choice.evaluate((element) => {
+            const rect = element.getBoundingClientRect();
+            const panel = element.closest('[role="dialog"]')!.getBoundingClientRect();
+            const viewport = window.visualViewport!;
+            return rect.top >= Math.max(panel.top, viewport.offsetTop) && rect.bottom <= Math.min(panel.bottom, viewport.offsetTop + viewport.height)
+              && rect.left >= Math.max(panel.left, viewport.offsetLeft) && rect.right <= Math.min(panel.right, viewport.offsetLeft + viewport.width);
+          });
+          expect.soft(reachable, await choice.getAttribute('aria-label') ?? 'End of day').toBe(true);
+        }
+        const choose = async (name: string | RegExp) => {
+          const choice = panel.getByRole('button', { name, exact: true });
+          if (zoom > 1) {
+            // Chromium's emulated pinch zoom does not remap Playwright mouse
+            // coordinates. Exercise native focus/Enter after measured scrolling.
+            await choice.focus();
+            await page.keyboard.press('Enter');
+          } else {
+            await choice.click();
+          }
+        };
+        await choose('Hour 23');
+        await choose('Minute 30');
+        await expect(trigger).toHaveText('23:30');
+        await expect(panel).toBeHidden();
+        await trigger.focus();
+        await page.keyboard.press('Enter');
+        await choose(/End of day/);
+        await expect(trigger).toHaveText('24:00');
+        await trigger.focus();
+        await page.keyboard.press('Enter');
+        await page.keyboard.press('Escape');
+        await expect(panel).toBeHidden();
+        await expect(trigger).toBeFocused();
+      });
+    }
+
     test(`all settings tabs fit mobile in ${theme}`, async ({ page }) => {
       await page.setViewportSize({ width: 390, height: 844 });
       await page.emulateMedia({ reducedMotion: 'reduce' });

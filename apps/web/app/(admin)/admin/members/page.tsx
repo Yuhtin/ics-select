@@ -77,7 +77,7 @@ export default function AdminMembersPage() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search by name or email…"
-          className="w-full rounded-input border border-border-token bg-surface pl-9 pr-3 py-2 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+          className="touch-target w-full rounded-input border border-border-token bg-surface pl-9 pr-3 py-2 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
         />
       </div>
 
@@ -110,7 +110,7 @@ export default function AdminMembersPage() {
                   className={clsx(
                     'font-sans text-xs font-medium px-2 py-0.5 rounded-pill border',
                     m.role === 'ADMIN'
-                      ? 'text-primary border-primary/40'
+                      ? 'text-primary dark:text-fg-soft border-primary/40'
                       : 'text-fg-mute border-border-token',
                   )}
                 >

@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { clsx } from 'clsx';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 import { minutesToHHMM } from '../../lib/format/time';
 
@@ -30,9 +30,10 @@ export function TimePill({
   ariaLabel,
 }: Props) {
   const [open, setOpen] = useState(false);
+  const reduceMotion = useReducedMotion();
   const [mounted, setMounted] = useState(false);
   const [draftHour, setDraftHour] = useState<number>(Math.floor(value / 60));
-  const [coords, setCoords] = useState<{ left: number; top: number; width: number } | null>(null);
+  const [coords, setCoords] = useState<{ left: number; top: number; width: number; maxHeight: number } | null>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
 
@@ -43,23 +44,51 @@ export function TimePill({
     if (open) setDraftHour(Math.floor(value / 60));
   }, [open, value]);
 
-  // Position popover below (or above if no room) button
+  // Use the visible viewport, including pinch zoom and the on-screen keyboard.
+  // When neither side fits, use the larger side and scroll within the panel.
   useLayoutEffect(() => {
     if (!open || !buttonRef.current) return;
-    const rect = buttonRef.current.getBoundingClientRect();
-    const POPOVER_MAX_H = allowEndOfDay ? 384 : 324;
-    const POPOVER_W = 312;
-    const spaceBelow = window.innerHeight - rect.bottom;
-    const top =
-      spaceBelow < POPOVER_MAX_H + 12 && rect.top > POPOVER_MAX_H + 12
-        ? rect.top - POPOVER_MAX_H - 8
-        : rect.bottom + 6;
-    let left = rect.left;
-    if (left + POPOVER_W > window.innerWidth - 8) {
-      left = Math.max(8, window.innerWidth - POPOVER_W - 8);
-    }
-    setCoords({ left, top, width: POPOVER_W });
-  }, [open, allowEndOfDay]);
+    const viewport = window.visualViewport;
+    const position = () => {
+      const rect = buttonRef.current!.getBoundingClientRect();
+      const margin = 8;
+      const gap = 6;
+      const viewportLeft = viewport?.offsetLeft ?? 0;
+      const viewportTop = viewport?.offsetTop ?? 0;
+      const viewportWidth = viewport?.width ?? window.innerWidth;
+      const viewportHeight = viewport?.height ?? window.innerHeight;
+      const width = Math.min(312, viewportWidth - margin * 2);
+      const fullHeight = popoverRef.current
+        ? popoverRef.current.scrollHeight + 2
+        : allowEndOfDay ? 384 : 324;
+      const spaceBelow = viewportTop + viewportHeight - margin - rect.bottom - gap;
+      const spaceAbove = rect.top - viewportTop - margin - gap;
+      const below = spaceBelow >= fullHeight || spaceBelow >= spaceAbove;
+      const maxHeight = Math.min(viewportHeight - margin * 2, Math.max(44, below ? spaceBelow : spaceAbove));
+      const height = Math.min(fullHeight, maxHeight);
+      const top = Math.max(viewportTop + margin, Math.min(
+        below ? rect.bottom + gap : rect.top - gap - height,
+        viewportTop + viewportHeight - margin - height,
+      ));
+      const left = Math.max(viewportLeft + margin, Math.min(rect.left, viewportLeft + viewportWidth - margin - width));
+      setCoords({ left, top, width, maxHeight });
+    };
+    const onScroll = (event: Event) => {
+      if (event.target instanceof Node && popoverRef.current?.contains(event.target)) return;
+      position();
+    };
+    position();
+    window.addEventListener('resize', position);
+    window.addEventListener('scroll', onScroll, true);
+    viewport?.addEventListener('resize', position);
+    viewport?.addEventListener('scroll', position);
+    return () => {
+      window.removeEventListener('resize', position);
+      window.removeEventListener('scroll', onScroll, true);
+      viewport?.removeEventListener('resize', position);
+      viewport?.removeEventListener('scroll', position);
+    };
+  }, [open, allowEndOfDay, coords?.width]);
 
   // Close on outside click or Escape
   useEffect(() => {
@@ -136,24 +165,25 @@ export function TimePill({
                 ref={popoverRef}
                 role="dialog"
                 aria-label={`${ariaLabel} picker`}
-                initial={{ opacity: 0, y: -4, scale: 0.98 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -4, scale: 0.98 }}
-                transition={{ duration: 0.16, ease: EASE }}
+                initial={reduceMotion ? false : { opacity: 0, y: -4, scale: 0.98 }}
+                animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
+                exit={reduceMotion ? { opacity: 1 } : { opacity: 0, y: -4, scale: 0.98 }}
+                transition={{ duration: reduceMotion ? 0 : 0.16, ease: EASE }}
                 style={{
                   position: 'fixed',
                   left: coords.left,
                   top: coords.top,
                   width: coords.width,
+                  maxHeight: coords.maxHeight,
                   zIndex: 50,
                 }}
-                className="origin-top rounded-card border border-border-token bg-surface p-3 shadow-lg"
+                className="origin-top overflow-y-auto overscroll-contain rounded-card border border-border-token bg-surface p-3 shadow-lg"
               >
                 <div>
                   <p className="mb-2 font-sans text-xs font-medium text-fg-mute">
                     Hour
                   </p>
-                  <div className="grid grid-cols-6 gap-1">
+                  <div className="grid grid-cols-[repeat(auto-fit,minmax(44px,1fr))] gap-1">
                     {Array.from({ length: 24 }, (_, h) => {
                       const allowed = isHourAllowed(h);
                       const isSelected = h === draftHour;

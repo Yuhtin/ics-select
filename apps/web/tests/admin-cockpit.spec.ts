@@ -9,7 +9,12 @@
  * Three states snapshotted: ON_TRACK, WATCH, AT_RISK.
  */
 
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page, type Locator } from '@playwright/test';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import ts from 'typescript';
 
 const API_BASE = 'http://localhost:3001';
 const FIXED_NOW = new Date('2026-09-09T12:00:00.000Z').getTime();
@@ -223,6 +228,115 @@ async function setupMocks(page: Page, state: 'AT_RISK' | 'WATCH' | 'ON_TRACK') {
 
 test.describe('Academy admin operations', () => {
   for (const theme of ['light', 'dark'] as const) {
+    async function mockReviewedMembers(page: Page) {
+      await setupMocks(page, 'ON_TRACK');
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      await page.addInitScript((value) => localStorage.setItem('ics-theme', value), theme);
+      await page.route(`${API_BASE}/admin/dashboard`, (route) => route.fulfill({ json: [
+        { ...MOCK_ADMIN, stats: { plansCount: 6, doneItems: 18, skippedItems: 1, stuckItems: 0 } },
+      ] }));
+      await page.route(`${API_BASE}/admin/invites`, (route) => route.fulfill({ json: [
+        { id: 'invite-admin', email: 'new.admin@sou.inteli.edu.br', role: 'ADMIN', createdAt: '2026-09-01T12:00:00Z', createdBy: MOCK_ADMIN, cycle: null },
+      ] }));
+      await page.route(`${API_BASE}/cycles`, (route) => route.fulfill({ json: [
+        { ...BASE_COCKPIT.cycle, status: 'ACTIVE', endsAt: '2099-12-01T00:00:00Z' },
+      ] }));
+    }
+
+    test(`reviewed admin labels meet AA contrast in ${theme}`, async ({ page }) => {
+      await mockReviewedMembers(page);
+      await page.goto('/admin/members');
+      const memberBadge = page.getByRole('link', { name: /Davi Admin.*ADMIN/ }).getByText('ADMIN', { exact: true });
+      const inviteBadge = page.getByRole('listitem').filter({ hasText: 'new.admin@sou.inteli.edu.br' }).getByText('ADMIN', { exact: true });
+      const assertContrast = async (control: Locator) => {
+        await expect(control).toBeVisible();
+        const colors = await control.evaluate((element) => {
+          const rgba = (color: string) => color.match(/[\d.]+/g)!.map(Number);
+          const over = (front: number[], back: number[]) => front.slice(0, 3).map((value, i) => value * (front[3] ?? 1) + back[i] * (1 - (front[3] ?? 1)));
+          const ancestors: Element[] = [];
+          for (let node: Element | null = element; node; node = node.parentElement) ancestors.push(node);
+          const background = ancestors.reverse().reduce((back, node) => over(rgba(getComputedStyle(node).backgroundColor), back), [255, 255, 255]);
+          const foreground = over(rgba(getComputedStyle(element).color), background);
+          const luminance = (rgb: number[]) => rgb.map((value) => {
+            const channel = value / 255;
+            return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+          }).reduce((sum, value, i) => sum + value * [0.2126, 0.7152, 0.0722][i], 0);
+          const values = [luminance(foreground), luminance(background)];
+          return { foreground, background, ratio: (Math.max(...values) + 0.05) / (Math.min(...values) + 0.05) };
+        });
+        expect.soft(colors.ratio, JSON.stringify(colors)).toBeGreaterThanOrEqual(4.5);
+      };
+      await assertContrast(memberBadge);
+      await assertContrast(inviteBadge);
+      await page.route(`${API_BASE}/admin/cycle/active`, (route) => route.fulfill({ json: {
+        cycle: { ...BASE_COCKPIT.cycle, status: 'ACTIVE', rankingVisibleToMembers: true },
+        members: [], heatmap: { weeks: [], rows: [] }, feed: [], ranking: [],
+      } }));
+      await page.route(`${API_BASE}/admin/triage?*`, (route) => route.fulfill({ json: { alerts: [] } }));
+      await page.route(`${API_BASE}/cycles/cy1/classes`, (route) => route.fulfill({ json: [{
+        id: 'class-1', cycleId: 'cy1', title: 'System design', topic: null,
+        scheduledAt: '2026-09-08T18:00:00Z', durationMin: 60, notes: null, attendances: [],
+      }] }));
+      await page.goto('/admin/cycle/active');
+      await assertContrast(page.getByRole('button', { name: 'Attendance for System design' }));
+    });
+
+    test(`reviewed admin touch targets measure at least 44px in ${theme}`, async ({ page }) => {
+      await mockReviewedMembers(page);
+      await page.setViewportSize({ width: 390, height: 600 });
+      await page.goto('/admin/members');
+      const controls = [
+        page.getByPlaceholder('Search by name or email…'),
+        page.getByPlaceholder('email@sou.inteli.edu.br'),
+        page.getByRole('combobox').nth(0), page.getByRole('combobox').nth(1),
+        page.getByRole('button', { name: 'Convidar', exact: true }),
+        page.getByRole('button', { name: 'Revoke invite for new.admin@sou.inteli.edu.br' }),
+      ];
+      for (const control of controls) {
+        await expect(control).toBeVisible();
+        const box = await control.boundingBox();
+        expect.soft(box!.width).toBeGreaterThanOrEqual(44);
+        expect.soft(box!.height).toBeGreaterThanOrEqual(44);
+      }
+      await controls[0].fill('missing');
+      await expect(page.getByText('No members match.')).toBeVisible();
+      await controls[5].click();
+      await expect(page.getByRole('dialog')).toBeVisible();
+      await page.keyboard.press('Escape');
+      await expect(page.getByRole('dialog')).toBeHidden();
+    });
+
+    test(`library pagination specimen has mobile touch targets in ${theme}`, async ({ page }) => {
+      await mockReviewedMembers(page);
+      await page.setViewportSize({ width: 390, height: 600 });
+      await page.goto('/admin/members');
+      await expect(page.getByRole('heading', { name: 'Members', exact: true })).toBeVisible();
+      // Pagination is currently unused by LibraryGrid. Render the real component
+      // against the app stylesheet without adding a new production route or flow.
+      // Compile with React's JSX runtime: Playwright's own JSX transform creates
+      // component-test descriptors, which React's server renderer cannot use.
+      const compiled = ts.transpileModule(readFileSync(join(__dirname, '../components/admin/library/pagination.tsx'), 'utf8'), {
+        compilerOptions: { jsx: ts.JsxEmit.ReactJSX, module: ts.ModuleKind.CommonJS, esModuleInterop: true },
+      });
+      const specimen = { exports: {} as { Pagination: React.ComponentType<{ page: number; totalPages: number; onChange: (page: number) => void }> } };
+      new Function('require', 'module', 'exports', compiled.outputText)(require, specimen, specimen.exports);
+      const markup = renderToStaticMarkup(createElement(specimen.exports.Pagination, { page: 5, totalPages: 10, onChange: () => {} }));
+      await page.getByRole('main').evaluate((element, html) => { element.innerHTML = html; }, markup);
+      const navigation = page.getByRole('navigation', { name: 'Pagination' });
+      const boxes = await navigation.getByRole('button').evaluateAll((buttons) => buttons.map((button) => {
+        const { width, height, left, right } = button.getBoundingClientRect();
+        return { label: button.getAttribute('aria-label'), width, height, left, right };
+      }));
+      expect(boxes).toHaveLength(7);
+      for (const box of boxes) {
+        expect.soft(box.width, box.label!).toBeGreaterThanOrEqual(44);
+        expect.soft(box.height, box.label!).toBeGreaterThanOrEqual(44);
+        expect.soft(box.left).toBeGreaterThanOrEqual(0);
+        expect.soft(box.right).toBeLessThanOrEqual(390);
+      }
+      await expect(navigation.getByRole('button', { name: 'Page 5', exact: true })).toHaveAttribute('aria-current', 'page');
+    });
+
     test(`plans keep member names readable from mobile to desktop in ${theme}`, async ({ page }) => {
       await setupMocks(page, 'ON_TRACK');
       await page.addInitScript((value) => localStorage.setItem('ics-theme', value), theme);

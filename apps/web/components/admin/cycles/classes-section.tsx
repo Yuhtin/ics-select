@@ -87,11 +87,11 @@ export function ClassesSection({
                   </span>
                   <button
                     onClick={() => setAttendanceFor(c)}
-                    className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface inline-flex items-center gap-1 font-sans text-xs font-medium text-primary hover:underline flex-none"
+                    className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface inline-flex items-center gap-1 font-sans text-xs font-medium text-primary dark:text-fg-soft hover:underline flex-none"
                     aria-label={`Attendance for ${c.title}`}
                     title="Take attendance"
                   >
-                    <Users className="h-3 w-3" strokeWidth={1.75} />
+                    <Users className="h-3 w-3 text-primary" strokeWidth={1.75} />
                     Attendance
                   </button>
                 </li>

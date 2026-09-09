@@ -100,7 +100,7 @@ export function InvitesSection() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="email@sou.inteli.edu.br"
-            className="w-full min-h-10 rounded-input border border-border-token bg-surface px-3 py-1.5 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+            className="touch-target w-full min-h-10 rounded-input border border-border-token bg-surface px-3 py-1.5 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
           />
         </div>
         <select
@@ -110,7 +110,7 @@ export function InvitesSection() {
             setRole(next);
             if (next === 'ADMIN') setCycleId('');
           }}
-          className="min-h-10 rounded-input border border-border-token bg-surface px-3 py-1.5 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+          className="touch-target min-h-10 rounded-input border border-border-token bg-surface px-3 py-1.5 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
         >
           <option value="MEMBER">Member</option>
           <option value="ADMIN">Admin</option>
@@ -120,7 +120,7 @@ export function InvitesSection() {
           onChange={(e) => setCycleId(e.target.value)}
           disabled={role === 'ADMIN'}
           className={clsx(
-            'min-h-10 rounded-input border border-border-token bg-surface px-3 py-1.5 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 min-w-[180px]',
+            'touch-target min-h-10 rounded-input border border-border-token bg-surface px-3 py-1.5 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 min-w-[180px]',
             role === 'ADMIN' && 'cursor-not-allowed opacity-50',
           )}
         >
@@ -137,7 +137,7 @@ export function InvitesSection() {
           type="submit"
           disabled={!submitOk}
           className={clsx(
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface rounded-input px-3 py-1.5 font-sans text-sm font-medium transition-colors',
+            'touch-target focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface rounded-input px-3 py-1.5 font-sans text-sm font-medium transition-colors',
             submitOk
               ? 'bg-primary text-primary-fg hover:bg-primary/90'
               : 'cursor-not-allowed bg-bg-subtle text-fg-mute',
@@ -178,7 +178,7 @@ export function InvitesSection() {
                 className={clsx(
                   'rounded-pill border px-2 py-0.5 font-sans text-xs font-medium',
                   inv.role === 'ADMIN'
-                    ? 'border-primary/40 text-primary'
+                    ? 'border-primary/40 text-primary dark:text-fg-soft'
                     : 'border-border-token text-fg-mute',
                 )}
               >
@@ -189,7 +189,7 @@ export function InvitesSection() {
                 onClick={() => setRevokeTarget(inv)}
                 disabled={remove.isPending}
                 aria-label={`Revoke invite for ${inv.email}`}
-                className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface rounded-input p-1.5 text-fg-mute transition-colors hover:bg-bg-subtle hover:text-outcome-stuck"
+                className="touch-target inline-flex shrink-0 items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface rounded-input p-1.5 text-fg-mute transition-colors hover:bg-bg-subtle hover:text-outcome-stuck"
               >
                 <Trash2 className="h-4 w-4" strokeWidth={1.5} />
               </button>

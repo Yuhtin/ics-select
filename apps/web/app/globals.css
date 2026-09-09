@@ -143,6 +143,14 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+/* Compact desktop controls keep a full hit area on narrow or touch screens. */
+@media (max-width: 767px), (pointer: coarse) {
+  .touch-target {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
 /* JetBrains Mono refinements */
 .font-mono {
   font-feature-settings: 'zero', 'ss02';
