@@ -4,7 +4,7 @@ main: com.ics.lab.OpAuthPlugin
 api-version: '1.21'
 load: STARTUP
 description: Senha individual por OP — OP é revogado no join e só restaurado via /opauth.
-author: ICS Select
+author: Academy Fellow
 commands:
   opauth:
     description: Autentica como OP com a senha pessoal

@@ -2,8 +2,8 @@ name: IcsEssentials
 version: 1.0.0
 main: com.ics.lab.IcsEssentials
 api-version: '1.21'
-description: Essentials minimalista do ICS Lab — spawn, home, tpa, msg, gm, fly, broadcast.
-author: ICS Select
+description: Essentials minimalista do Academy Fellow Lab — spawn, home, tpa, msg, gm, fly, broadcast.
+author: Academy Fellow
 commands:
   spawn:
     description: Teleporta pro spawn do mundo

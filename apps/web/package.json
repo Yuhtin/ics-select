@@ -8,6 +8,7 @@
     "start": "next start -p 3000",
     "lint": "echo \"(web) lint deferred; next lint is deprecated — configure eslint flat config in a future phase\"",
     "typecheck": "tsc --noEmit",
+    "brand:audit": "node scripts/audit-academy-brand.mjs",
     "test": "playwright test",
     "test:unit": "vitest run",
     "test:update": "playwright test --update-snapshots"
