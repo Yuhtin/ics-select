@@ -1,20 +1,23 @@
 'use client';
+import { clsx } from 'clsx';
 import type { WeekRecap, WeekRecapItem } from '../../lib/queries/me-retro';
 import { formatMinutes } from '../../lib/format/time';
 import { detectPlatform, platformLabel } from '../../lib/format/platform';
 
 interface RetroRecapProps {
   recap: WeekRecap;
+  presentation?: 'full' | 'context';
 }
 
-export function RetroRecap({ recap }: RetroRecapProps) {
+export function RetroRecap({ recap, presentation = 'full' }: RetroRecapProps) {
   const { stats, items } = recap;
+  const contextual = presentation === 'context';
   return (
-    <section className="border-t border-border-token pt-6">
+    <section aria-label="This week" className={clsx(contextual ? 'min-w-0 border-b border-border-token pb-4 lg:border-b-0 lg:border-r lg:pb-0 lg:pr-7' : 'border-t border-border-token pt-6')}>
       <p className="font-sans text-xs font-medium text-fg-mute">
         This week
       </p>
-      <div className="mt-3 flex flex-wrap items-baseline gap-x-5 gap-y-1 font-mono text-[12px] tabular-nums text-fg-mute">
+      <div className={clsx('mt-3 flex flex-wrap items-baseline gap-y-1 font-mono text-[12px] tabular-nums text-fg-mute', contextual ? 'gap-x-3' : 'gap-x-5')}>
         <Stat label="nailed" value={stats.nailed} />
         <Stat label="hard"   value={stats.hard} />
         <Stat label="doubts" value={stats.doubts} />
@@ -29,7 +32,7 @@ export function RetroRecap({ recap }: RetroRecapProps) {
       <ul className="mt-5 divide-y divide-border-token">
         {items.map((it) => (
           <li key={it.id}>
-            <RecapRow item={it} />
+            <RecapRow item={it} contextual={contextual} />
           </li>
         ))}
       </ul>
@@ -46,8 +49,19 @@ function Stat({ label, value }: { label: string; value: number }) {
   );
 }
 
-function RecapRow({ item }: { item: WeekRecapItem }) {
+function RecapRow({ item, contextual }: { item: WeekRecapItem; contextual: boolean }) {
   const platform = detectPlatform(item.url, item.format);
+  if (contextual) {
+    return (
+      <div className="grid grid-cols-[68px_minmax(0,1fr)] items-start gap-3 py-2.5">
+        <OutcomeChip outcome={item.outcome} />
+        <div className="min-w-0">
+          <p className="break-words text-sm leading-5 text-fg">{item.title}</p>
+          <p className="mt-1 text-xs text-fg-mute">{platformLabel(platform)} · {formatMinutes(item.estimatedMinutes)}</p>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-2 py-4 sm:flex-nowrap">
       <OutcomeChip outcome={item.outcome} />
