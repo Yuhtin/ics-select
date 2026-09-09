@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-09
 
-**Status:** Draft for user review
+**Status:** Approved
 
 **Figma source:** [ID Academy copy](https://www.figma.com/design/jZFcepE7ZQJbaipCR2pYpO/ID-Academy--Copy-?node-id=0-1&p=f&t=xv5VWF2VMmMSoaHX-0)
 
