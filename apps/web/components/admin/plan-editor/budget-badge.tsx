@@ -41,7 +41,7 @@ export function BudgetBadge({
   daysRemaining,
 }: BudgetBadgeProps) {
   if (budgetMinutes === 0) {
-    return <span className="font-mono text-xs text-ink-mute">No availability declared yet.</span>;
+    return <span className="font-sans text-xs text-fg-mute">No availability declared yet.</span>;
   }
 
   const plannedPct = Math.round((plannedMinutes / budgetMinutes) * 100);
@@ -57,7 +57,7 @@ export function BudgetBadge({
     const label =
       plannedPct <= 80 ? 'Fits availability' : plannedPct <= 100 ? 'Near limit' : 'Over budget';
     return (
-      <span className={clsx('font-mono text-xs tabular-nums', tone)}>
+      <span className={clsx('font-sans text-xs tabular-nums', tone)}>
         {label} · {plannedMinutes} / {budgetMinutes} min ({plannedPct}%)
       </span>
     );
@@ -72,7 +72,7 @@ export function BudgetBadge({
   if (pendingMinutes === 0 && daysRemaining === 0) {
     chipLabel = 'Week complete';
     chipDetail = '';
-    tone = 'text-ink-mute';
+    tone = 'text-fg-mute';
   } else if (pendingMinutes === 0) {
     chipLabel = 'All caught up';
     chipDetail = `${remainingMinutes} min open · ${daysRemaining} days left`;
@@ -93,10 +93,10 @@ export function BudgetBadge({
 
   return (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-      <span className="font-mono text-xs tabular-nums text-ink-mute">
+      <span className="font-sans text-xs tabular-nums text-fg-mute">
         Planned {plannedMinutes} / {budgetMinutes} min ({plannedPct}%)
       </span>
-      <span className={clsx('font-mono text-xs tabular-nums', tone)}>
+      <span className={clsx('font-sans text-xs tabular-nums', tone)}>
         {chipLabel}
         {chipDetail ? ` · ${chipDetail}` : ''}
       </span>

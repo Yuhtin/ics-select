@@ -48,7 +48,7 @@ export function ThermalReceiptView({ data }: { data: CycleReceiptResponse }) {
       )}
 
       <div className="text-center">
-        <div className="text-2xl font-semibold tracking-wide">ICS · SELECT</div>
+        <div className="text-2xl font-semibold tracking-wide">ACADEMY · FELLOW</div>
         <div className="mb-2 text-[11px] text-ink-soft">───────────────</div>
         <div className="text-sm uppercase tracking-wider">
           COHORT RECEIPT · {data.cycle.name.toUpperCase()}
@@ -59,7 +59,7 @@ export function ThermalReceiptView({ data }: { data: CycleReceiptResponse }) {
         </div>
       </div>
 
-      <div className="my-5 text-center text-ink-faint">{divider}</div>
+      <div className="my-5 overflow-hidden whitespace-nowrap text-center text-ink-faint">{divider}</div>
 
       <ThermalRow label="members in cohort" value={String(t.members)} />
       <ThermalRow label="total hours studied" value={fmtHours(t.totalMinutes)} />
@@ -69,10 +69,10 @@ export function ThermalReceiptView({ data }: { data: CycleReceiptResponse }) {
       <ThermalRow label="classes held" value={`${t.classesHeld} / ${t.classesTotal}`} />
       <ThermalRow label="attendance rate" value={fmtPct(t.attendanceRate)} />
 
-      <div className="my-5 text-center text-ink-faint">{divider}</div>
+      <div className="my-5 overflow-hidden whitespace-nowrap text-center text-ink-faint">{divider}</div>
 
       <div className="mb-1 text-sm uppercase tracking-wider">By topic</div>
-      <div className="mb-3 text-ink-faint">{dashed}</div>
+      <div className="mb-3 overflow-hidden whitespace-nowrap text-ink-faint">{dashed}</div>
       {data.byTopic.length === 0 && (
         <div className="text-[12px] text-ink-mute">nothing studied yet</div>
       )}
@@ -90,10 +90,10 @@ export function ThermalReceiptView({ data }: { data: CycleReceiptResponse }) {
         <div className="mt-1 text-[12px] text-ink-mute">+{remainingTopics} more topics</div>
       )}
 
-      <div className="my-5 text-center text-ink-faint">{divider}</div>
+      <div className="my-5 overflow-hidden whitespace-nowrap text-center text-ink-faint">{divider}</div>
 
       <div className="mb-1 text-sm uppercase tracking-wider">Knowledge grid</div>
-      <div className="mb-3 text-ink-faint">{dashed}</div>
+      <div className="mb-3 overflow-hidden whitespace-nowrap text-ink-faint">{dashed}</div>
       <CohortKnowledgeGrid
         members={data.knowledgeGrid.members}
         topics={data.knowledgeGrid.topics}
@@ -103,9 +103,9 @@ export function ThermalReceiptView({ data }: { data: CycleReceiptResponse }) {
 
       {data.topMovers.length > 0 && (
         <>
-          <div className="my-5 text-center text-ink-faint">{divider}</div>
+          <div className="my-5 overflow-hidden whitespace-nowrap text-center text-ink-faint">{divider}</div>
           <div className="mb-1 text-sm uppercase tracking-wider">Top movers · last 7 days</div>
-          <div className="mb-3 text-ink-faint">{dashed}</div>
+          <div className="mb-3 overflow-hidden whitespace-nowrap text-ink-faint">{dashed}</div>
           {data.topMovers.map((m) => (
             <div key={m.userId} className="mb-2 text-[13px] leading-5">
               <div>
@@ -121,10 +121,10 @@ export function ThermalReceiptView({ data }: { data: CycleReceiptResponse }) {
         </>
       )}
 
-      <div className="my-5 text-center text-ink-faint">{divider}</div>
+      <div className="my-5 overflow-hidden whitespace-nowrap text-center text-ink-faint">{divider}</div>
 
       <div className="mb-1 text-sm uppercase tracking-wider">Hall of fame</div>
-      <div className="mb-3 text-ink-faint">{dashed}</div>
+      <div className="mb-3 overflow-hidden whitespace-nowrap text-ink-faint">{dashed}</div>
       {(() => {
         const rows = [
           data.engagementLeader && {
@@ -195,7 +195,7 @@ export function ThermalReceiptView({ data }: { data: CycleReceiptResponse }) {
         </div>
       )}
 
-      <div className="my-5 text-center text-ink-faint">{divider}</div>
+      <div className="my-5 overflow-hidden whitespace-nowrap text-center text-ink-faint">{divider}</div>
 
       <div className="text-center text-[13px]">
         <div className="uppercase tracking-wider">Thank you for studying</div>

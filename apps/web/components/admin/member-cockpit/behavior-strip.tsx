@@ -22,16 +22,16 @@ function deltaTxt(
 
 export function BehaviorStrip({ behavior }: { behavior: CockpitResponse['behavior'] }) {
   return (
-    <section className="bg-surface border border-rule rounded-lg overflow-hidden">
-      <div className="flex items-center justify-between px-6 py-3 border-b border-rule">
-        <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-mute font-medium">
+    <section className="bg-surface border border-border-token rounded-card overflow-hidden">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-5 py-3 border-b border-border-token">
+        <p className="font-sans text-xs text-fg-mute font-medium">
           Behavior · this cycle
         </p>
-        <p className="font-mono text-[10px] uppercase tracking-[0.1em] text-ink-faint">
+        <p className="font-sans text-xs text-fg-mute">
           vs cohort median
         </p>
       </div>
-      <div className="grid grid-cols-6 divide-x divide-rule">
+      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 [&>div]:border-r [&>div]:border-border-token">
         <KpiCell
           label="Sessions"
           value={String(behavior.sessions.value)}

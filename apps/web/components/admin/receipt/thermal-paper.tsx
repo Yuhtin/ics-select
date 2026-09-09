@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 
 export function ThermalPaper({ children }: { children: ReactNode }) {
   return (
-    <div className="relative mx-auto my-8" style={{ width: 720 }}>
+    <div data-theme="light" className="relative mx-auto my-8" style={{ width: 720, colorScheme: 'light' }}>
       <div
         aria-hidden
         className="pointer-events-none absolute -left-3 top-0 flex h-full flex-col justify-between text-ink-faint"

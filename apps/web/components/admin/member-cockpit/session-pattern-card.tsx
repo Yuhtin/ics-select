@@ -10,22 +10,22 @@ export function SessionPatternCard({ behavior }: { behavior: CockpitResponse['be
   const isCold = daysSince !== null && daysSince >= 7;
 
   return (
-    <section className="col-span-4 bg-surface border border-rule rounded-lg p-6 flex flex-col">
+    <section className="min-w-0 bg-surface border border-border-token rounded-card p-5 flex flex-col">
       <div className="flex items-baseline justify-between">
-        <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-mute font-medium">
+        <p className="font-sans text-xs text-fg-mute font-medium">
           Session pattern
         </p>
         {isCold && (
-          <p className="font-mono text-[10px] uppercase tracking-[0.1em] text-outcome-stuck font-semibold border border-outcome-stuck/40 bg-outcome-stuck/[0.04] rounded-pill px-2 py-0.5">
+          <p className="font-sans text-xs text-outcome-stuck font-semibold border border-outcome-stuck/40 bg-outcome-stuck/[0.04] rounded-pill px-2 py-0.5">
             {daysSince}d cold
           </p>
         )}
       </div>
-      <p className="font-serif-tool text-base text-ink mt-4">
+      <p className="font-sans text-base text-fg mt-4">
         <span className="font-semibold tabular-nums text-xl">{behavior.sessions.value}</span>{' '}
-        <span className="text-ink-mute text-sm">sessions across</span>{' '}
+        <span className="text-fg-mute text-sm">sessions across</span>{' '}
         <span className="font-semibold tabular-nums text-xl">{behavior.daysActive.value}</span>{' '}
-        <span className="text-ink-mute text-sm">days</span>
+        <span className="text-fg-mute text-sm">days</span>
       </p>
       {data.length > 0 && (
         <>
@@ -38,7 +38,7 @@ export function SessionPatternCard({ behavior }: { behavior: CockpitResponse['be
             showTooltip={false}
             className="h-20 mt-4"
           />
-          <div className="flex items-baseline justify-between mt-2 font-mono text-[10px] text-ink-faint">
+          <div className="flex items-baseline justify-between mt-2 font-sans text-xs text-fg-mute">
             <span>cycle start</span>
             {behavior.lastSeen.occurredAt && (
               <span className={isCold ? 'text-outcome-stuck' : ''}>last seen {daysSince}d ago</span>

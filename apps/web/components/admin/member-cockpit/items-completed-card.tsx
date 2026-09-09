@@ -25,37 +25,37 @@ export function ItemsCompletedCard({ itemsCompleted }: Props) {
     itemsCompleted.planned > itemsCompleted.cohortMedianPlanned;
 
   return (
-    <section className="col-span-6 bg-surface border border-rule rounded-lg p-6">
+    <section className="min-w-0 lg:col-span-6 bg-surface border border-border-token rounded-card p-5">
       <div className="flex items-baseline justify-between flex-wrap gap-3">
         <div>
-          <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-mute font-medium">
+          <p className="font-sans text-xs text-fg-mute font-medium">
             Items completed
           </p>
           <p className="mt-1.5 flex items-baseline gap-3">
             <span
-              className="font-serif-tool tabular-nums font-semibold text-ink"
-              style={{ fontSize: 48 }}
+              className="font-sans tabular-nums font-semibold text-fg"
+              style={{ fontSize: 40 }}
             >
               {itemsCompleted.total}
             </span>
-            <span className="font-serif-tool tabular-nums text-ink-mute text-base">
+            <span className="font-sans tabular-nums text-fg-mute text-base">
               of {itemsCompleted.planned} planned
             </span>
           </p>
           {deltaCohort !== 0 && (
-            <p className={`font-mono text-[11px] mt-1 ${deltaCohort < 0 ? 'text-outcome-stuck' : 'text-outcome-done-easy'}`}>
+            <p className={`font-sans text-xs mt-1 ${deltaCohort < 0 ? 'text-outcome-stuck' : 'text-outcome-done-easy'}`}>
               {deltaCohort < 0 ? '↓' : '↑'} {Math.abs(deltaCohort)} items vs cohort median {itemsCompleted.cohortMedian}
             </p>
           )}
           {oversizedPlan && (
-            <p className="font-mono text-[11px] mt-1 text-ink-mute">
+            <p className="font-sans text-xs mt-1 text-fg-mute">
               Plan size above cohort norm ({itemsCompleted.cohortMedianPlanned}) — engagement score uses cohort-relative rate, not raw %.
             </p>
           )}
         </div>
       </div>
 
-      <div className="grid grid-cols-[1fr_180px] gap-6 mt-4">
+      <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_150px] gap-4 mt-4">
         <BarChart
           data={data}
           index="week"
@@ -66,8 +66,8 @@ export function ItemsCompletedCard({ itemsCompleted }: Props) {
           showLegend={false}
           showTooltip={false}
         />
-        <div className="border-l border-rule pl-6">
-          <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-ink-mute mb-3">By outcome</p>
+        <div className="border-t border-border-token pt-4 sm:border-l sm:border-t-0 sm:pl-4 sm:pt-0">
+          <p className="font-sans text-xs text-fg-mute mb-3">By outcome</p>
           <ul className="space-y-2.5">
             {[
               { label: 'Nailed it',     count: itemsCompleted.byOutcome.DONE_EASY ?? 0, color: 'bg-outcome-done-easy' },
@@ -77,22 +77,22 @@ export function ItemsCompletedCard({ itemsCompleted }: Props) {
             ].map((row) => (
               <li key={row.label} className="flex items-center gap-2">
                 <span className={`w-2.5 h-2.5 rounded-sm shrink-0 ${row.color}`} />
-                <span className="font-mono text-[11px] text-ink-soft">{row.label}</span>
-                <span className="ml-auto font-serif-tool tabular-nums text-ink text-base">{row.count}</span>
+                <span className="font-sans text-xs text-fg-soft">{row.label}</span>
+                <span className="ml-auto font-sans tabular-nums text-fg text-base">{row.count}</span>
               </li>
             ))}
-            <li className="border-t border-rule pt-2.5 flex items-center gap-2">
+            <li className="border-t border-border-token pt-2.5 flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-sm bg-outcome-pending shrink-0" />
-              <span className="font-mono text-[11px] text-ink-mute">Pending</span>
-              <span className="ml-auto font-serif-tool tabular-nums text-ink-mute text-base">
+              <span className="font-sans text-xs text-fg-mute">Pending</span>
+              <span className="ml-auto font-sans tabular-nums text-fg-mute text-base">
                 {itemsCompleted.byOutcome.PENDING ?? 0}
               </span>
             </li>
           </ul>
           {itemsCompleted.needsAttention.total > 0 && (
-            <div className="mt-4 pt-3 border-t border-rule">
-              <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-ink-mute">Needs attention</p>
-              <p className="font-mono text-[11px] text-outcome-stuck font-semibold mt-1">
+            <div className="mt-4 pt-3 border-t border-border-token">
+              <p className="font-sans text-xs text-fg-mute">Needs attention</p>
+              <p className="font-sans text-xs text-outcome-stuck font-semibold mt-1">
                 {itemsCompleted.needsAttention.total} items · {itemsCompleted.needsAttention.stuck} stuck, {itemsCompleted.needsAttention.doubts} doubts
               </p>
             </div>

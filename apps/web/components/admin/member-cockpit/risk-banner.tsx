@@ -7,19 +7,19 @@ type Props = {
 };
 
 const STYLES = {
-  AT_RISK: { border: 'border-outcome-stuck', bg: 'bg-outcome-stuck/[0.04]', text: 'text-outcome-stuck', label: 'AT RISK' },
-  WATCH:   { border: 'border-accent', bg: 'bg-accent/[0.04]', text: 'text-accent', label: 'WATCH' },
+  AT_RISK: { border: 'border-l-danger', bg: 'bg-danger-soft', icon: 'text-danger', label: 'AT RISK' },
+  WATCH:   { border: 'border-l-warn', bg: 'bg-warn-soft', icon: 'text-warn', label: 'WATCH' },
 } as const;
 
 export function RiskBanner({ status, reasons }: Props) {
   const s = STYLES[status];
   return (
-    <div className={clsx('border-l-[3px] px-5 py-3 flex items-center gap-5', s.border, s.bg)}>
-      <div className={clsx('inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.14em] font-semibold', s.text)}>
-        <AlertTriangle className="w-3.5 h-3.5" strokeWidth={2} />
+    <div role="status" aria-label="Member risk" className={clsx('rounded-input border border-border-token border-l-[3px] px-4 py-3 flex flex-wrap items-center gap-x-5 gap-y-2', s.border, s.bg)}>
+      <div className="inline-flex shrink-0 items-center gap-2 font-sans text-xs font-semibold text-fg">
+        <AlertTriangle aria-hidden="true" className={clsx('w-4 h-4', s.icon)} strokeWidth={2} />
         {s.label}
       </div>
-      <div className="flex-1 font-mono text-[11px] text-ink-soft tabular-nums">
+      <div className="min-w-[200px] flex-1 font-sans text-sm text-fg-soft tabular-nums">
         {reasons.join(' · ')}
       </div>
     </div>

@@ -1,5 +1,5 @@
 'use client';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { AlertTriangle, Calendar, Check, Loader2, X } from 'lucide-react';
 import { clsx } from 'clsx';
 import type { WeeklyPlanItem, SchedulingPlacement } from '../../../lib/queries/admin-plan-editor';
@@ -50,6 +50,7 @@ export function SchedulingModal({
   onClose,
   onForce,
 }: SchedulingModalProps) {
+  const reduceMotion = useReducedMotion();
   if (!open) return null;
 
   const placementByItem = new Map(placements.map((p) => [p.itemId, p]));
@@ -74,7 +75,7 @@ export function SchedulingModal({
     phase === 'overflow' && 'text-outcome-stuck',
     phase === 'done' && sessionsFailed === 0 && 'text-outcome-done-easy',
     phase === 'done' && sessionsFailed > 0 && 'text-outcome-done-hard',
-    phase === 'pending' && 'text-ink',
+    phase === 'pending' && 'text-fg',
   );
 
   return (
@@ -83,26 +84,29 @@ export function SchedulingModal({
       onClick={phase === 'pending' ? undefined : onClose}
     >
       <motion.div
-        initial={{ opacity: 0, y: 8 }}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="scheduling-title"
+        initial={reduceMotion ? false : { opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-        className="w-full max-w-2xl rounded-card bg-surface border border-rule overflow-hidden flex flex-col max-h-[85vh]"
+        className="w-full max-w-2xl rounded-card bg-surface border border-border-token overflow-hidden flex flex-col max-h-[85vh]"
         onClick={(e) => e.stopPropagation()}
       >
-        <header className="flex items-start justify-between gap-4 border-b border-rule px-6 py-4">
+        <header className="flex items-start justify-between gap-4 border-b border-border-token px-6 py-4">
           <div>
             <p
               className={clsx(
-                'font-mono text-[10px] uppercase tracking-eyebrow',
+                'font-sans text-xs',
                 headerAccentClass,
               )}
             >
               {headerEyebrow}
             </p>
-            <h3 className={clsx('mt-1 font-serif-tool text-xl font-semibold', headerAccentClass)}>
+            <h3 id="scheduling-title" className={clsx('mt-1 font-sans text-xl font-semibold', headerAccentClass)}>
               {headerTitle}
             </h3>
-            <p className="mt-1 font-mono text-[11px] text-ink-mute">
+            <p className="mt-1 font-sans text-xs text-fg-mute">
               {items.length} item{items.length === 1 ? '' : 's'} · timezone {timezone}
               {hasOverflow && ` · ${overflowMinutes} min sem janela`}
             </p>
@@ -112,7 +116,7 @@ export function SchedulingModal({
               type="button"
               onClick={onClose}
               aria-label="Fechar"
-              className="grid h-8 w-8 place-items-center rounded-pill text-ink-mute hover:bg-paper-warm hover:text-ink"
+              className="grid h-8 w-8 place-items-center rounded-pill text-fg-mute hover:bg-bg-subtle hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
             >
               <X className="h-4 w-4" strokeWidth={1.5} />
             </button>
@@ -120,7 +124,7 @@ export function SchedulingModal({
         </header>
 
         <div className="flex-1 overflow-y-auto px-6 py-4">
-          <ul className="divide-y divide-rule">
+          <ul className="divide-y divide-border-token">
             {items.map((item, index) => {
               const placement = placementByItem.get(item.id);
               const overflowEntry = overflowByItem.get(item.id);
@@ -134,11 +138,11 @@ export function SchedulingModal({
                       : 'pending';
               return (
                 <li key={item.id} className="py-2.5 flex items-center gap-3">
-                  <span className="font-mono text-[11px] tabular-nums text-ink-mute w-6 text-right">
+                  <span className="font-sans text-xs tabular-nums text-fg-mute w-6 text-right">
                     {index + 1}.
                   </span>
                   <div className="flex-1 min-w-0">
-                    <p className="font-sans text-sm text-ink truncate">
+                    <p className="font-sans text-sm text-fg truncate">
                       {item.libraryItem.title}
                     </p>
                     <SchedulingRowStatus
@@ -158,8 +162,8 @@ export function SchedulingModal({
           </ul>
         </div>
 
-        <footer className="border-t border-rule px-6 py-3 flex items-center justify-between gap-3">
-          <div className="font-mono text-[10px] uppercase tracking-label text-ink-mute">
+        <footer className="border-t border-border-token px-6 py-3 flex items-center justify-between gap-3">
+          <div className="font-sans text-xs text-fg-mute">
             {phase === 'pending' && (
               <span className="inline-flex items-center gap-2">
                 <Loader2 className="h-3.5 w-3.5 animate-spin" strokeWidth={1.5} />
@@ -193,7 +197,7 @@ export function SchedulingModal({
                   type="button"
                   onClick={onClose}
                   disabled={pendingForce}
-                  className="font-mono text-xs uppercase tracking-label px-4 py-2 text-ink-soft hover:bg-paper-warm rounded-pill disabled:opacity-40"
+                  className="font-sans text-xs px-4 py-2 text-fg-soft hover:bg-bg-subtle rounded-pill disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
                 >
                   Ajustar plano
                 </button>
@@ -201,7 +205,7 @@ export function SchedulingModal({
                   type="button"
                   onClick={onForce}
                   disabled={pendingForce}
-                  className="font-mono text-xs uppercase tracking-label px-4 py-2 bg-outcome-stuck text-paper rounded-pill disabled:opacity-40"
+                  className="font-sans text-xs px-4 py-2 bg-outcome-stuck text-primary-fg rounded-pill disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
                 >
                   {pendingForce ? 'Forçando…' : 'Forçar publicação'}
                 </button>
@@ -211,7 +215,7 @@ export function SchedulingModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="inline-flex items-center gap-2 bg-ink text-paper rounded-pill px-4 py-2 font-mono text-xs uppercase tracking-label hover:opacity-90"
+                className="inline-flex items-center gap-2 bg-primary text-primary-fg rounded-pill px-4 py-2 font-sans text-xs hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
               >
                 Concluir
               </button>
@@ -234,27 +238,28 @@ function SchedulingRowStatus({
   overflowMinutes: number | null;
   revealDelaySec: number;
 }) {
+  const reduceMotion = useReducedMotion();
   return (
     <AnimatePresence mode="wait">
       {state === 'pending' && (
         <motion.p
           key="pending"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 0.6 }}
+          initial={reduceMotion ? false : { opacity: 0 }}
+          animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="font-mono text-[10px] uppercase tracking-label text-ink-mute inline-flex items-center gap-1.5"
+          className="font-sans text-xs text-fg-mute inline-flex items-center gap-1.5"
         >
-          <span className="inline-block h-1.5 w-1.5 rounded-full bg-ink-faint animate-pulse" />
+          <span className="inline-block h-1.5 w-1.5 rounded-full bg-fg-faint animate-pulse" />
           alocando…
         </motion.p>
       )}
       {state === 'placed' && (
         <motion.p
           key="placed"
-          initial={{ opacity: 0, x: -6 }}
+          initial={reduceMotion ? false : { opacity: 0, x: -6 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: revealDelaySec, duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-          className="font-mono text-[11px] tabular-nums text-outcome-done-easy inline-flex items-center gap-1.5"
+          transition={{ delay: reduceMotion ? 0 : revealDelaySec, duration: reduceMotion ? 0 : 0.22, ease: [0.16, 1, 0.3, 1] }}
+          className="font-sans text-xs tabular-nums text-outcome-done-easy inline-flex items-center gap-1.5"
         >
           <Calendar className="h-3 w-3" strokeWidth={1.75} />
           {placementLabel}
@@ -263,10 +268,10 @@ function SchedulingRowStatus({
       {state === 'overflow' && (
         <motion.p
           key="overflow"
-          initial={{ opacity: 0, x: -6 }}
+          initial={reduceMotion ? false : { opacity: 0, x: -6 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: revealDelaySec, duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-          className="font-mono text-[11px] tabular-nums text-outcome-stuck inline-flex items-center gap-1.5"
+          transition={{ delay: reduceMotion ? 0 : revealDelaySec, duration: reduceMotion ? 0 : 0.22, ease: [0.16, 1, 0.3, 1] }}
+          className="font-sans text-xs tabular-nums text-outcome-stuck inline-flex items-center gap-1.5"
         >
           <AlertTriangle className="h-3 w-3" strokeWidth={1.75} />
           Não coube · {overflowMinutes} min faltando

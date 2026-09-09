@@ -22,12 +22,13 @@ export function WrappedView({ data }: { data: CycleReceiptResponse }) {
   )[0];
 
   return (
-    <div id="receipt-capture-root">
+    <div id="receipt-capture-root" data-theme="light">
       <WrappedBlock gradient="cover">
-        <div className="font-mono text-xs uppercase tracking-label opacity-70">
+        <div className="mb-8 font-sans text-sm font-semibold tracking-wide">ACADEMY · FELLOW</div>
+        <div className="font-sans text-xs uppercase tracking-label opacity-70">
           {data.cycle.weeksTotal} weeks · {data.totals.members} minds
         </div>
-        <h1 className="font-serif mt-6 text-[64px] leading-none font-semibold">
+        <h1 className="font-sans mt-6 text-5xl sm:text-[64px] leading-tight font-semibold tracking-tight">
           {data.cycle.name}
         </h1>
         <div className="mt-4 font-mono text-xs uppercase tracking-label opacity-80">
@@ -36,26 +37,26 @@ export function WrappedView({ data }: { data: CycleReceiptResponse }) {
       </WrappedBlock>
 
       <WrappedBlock gradient="hours">
-        <div className="font-mono text-xs uppercase tracking-label opacity-80">
+        <div className="font-sans text-xs uppercase tracking-label opacity-80">
           together you studied
         </div>
-        <div className="font-serif mt-6 text-[112px] leading-none font-semibold">
+        <div className="font-sans mt-6 text-5xl sm:text-[80px] lg:text-[112px] leading-none font-semibold tabular-nums tracking-tight">
           {fmtHours(data.totals.totalMinutes)}
         </div>
-        <div className="mt-6 font-mono text-sm opacity-90">
+        <div className="mt-6 font-sans text-sm opacity-90">
           that's roughly an entire work month each.
         </div>
       </WrappedBlock>
 
       {topTopic && (
         <WrappedBlock gradient="topic">
-          <div className="font-mono text-xs uppercase tracking-label opacity-80">
+          <div className="font-sans text-xs uppercase tracking-label opacity-80">
             most-grokked topic
           </div>
-          <div className="font-serif mt-6 text-[80px] leading-none font-semibold">
+          <div className="font-sans mt-6 text-5xl sm:text-[80px] leading-tight font-semibold tracking-tight">
             {topTopic.label}
           </div>
-          <div className="mt-6 font-mono text-sm opacity-90">
+          <div className="mt-6 font-sans text-sm opacity-90">
             {topTopic.membersReached} of {data.totals.members} reached it ·{' '}
             {topTopic.itemsCompleted} items completed
           </div>
@@ -64,13 +65,13 @@ export function WrappedView({ data }: { data: CycleReceiptResponse }) {
 
       {data.cycleTopMover && (
         <WrappedBlock gradient="mover">
-          <div className="font-mono text-xs uppercase tracking-label opacity-80">
+          <div className="font-sans text-xs uppercase tracking-label opacity-80">
             this cycle's mover
           </div>
-          <div className="font-serif mt-6 text-[64px] leading-none font-semibold">
+          <div className="font-sans mt-6 text-5xl sm:text-[64px] leading-tight font-semibold tracking-tight">
             {data.cycleTopMover.name}
           </div>
-          <div className="mt-6 font-mono text-sm opacity-90">
+          <div className="mt-6 font-sans text-sm opacity-90">
             +{data.cycleTopMover.deltaItems} items ·{' '}
             {data.cycleTopMover.topTopics.join(', ').toLowerCase()}
           </div>
@@ -78,7 +79,7 @@ export function WrappedView({ data }: { data: CycleReceiptResponse }) {
       )}
 
       <WrappedBlock gradient="grid">
-        <div className="mb-4 font-mono text-xs uppercase tracking-label opacity-80">
+        <div className="mb-4 font-sans text-xs uppercase tracking-label opacity-80">
           the cohort
         </div>
         <div className="flex justify-center">
@@ -92,7 +93,7 @@ export function WrappedView({ data }: { data: CycleReceiptResponse }) {
       </WrappedBlock>
 
       <WrappedBlock gradient="fame">
-        <div className="font-mono text-xs uppercase tracking-label opacity-80 mb-8">
+        <div className="font-sans text-xs uppercase tracking-label opacity-80 mb-8">
           hall of fame
         </div>
         <div className="space-y-6 text-left">
@@ -149,21 +150,21 @@ export function WrappedView({ data }: { data: CycleReceiptResponse }) {
             ].filter(Boolean) as Array<{ k: string; eyebrow: string; name: string; detail: string }>
           ).map((row) => (
             <div key={row.k}>
-              <div className="font-mono text-[11px] uppercase tracking-label opacity-70">
+              <div className="font-sans text-[11px] uppercase tracking-label opacity-70">
                 {row.eyebrow}
               </div>
               <div className="font-serif text-[40px] leading-none font-semibold">
                 {row.name}
               </div>
-              <div className="font-mono text-xs opacity-80">{row.detail}</div>
+              <div className="font-sans text-xs opacity-80">{row.detail}</div>
             </div>
           ))}
           {data.perfectAttendance.length > 0 && (
             <div>
-              <div className="font-mono text-[11px] uppercase tracking-label opacity-70">
+              <div className="font-sans text-[11px] uppercase tracking-label opacity-70">
                 perfect attendance
               </div>
-              <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 font-mono text-sm opacity-90">
+              <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 font-sans text-sm opacity-90">
                 {data.perfectAttendance.map((m) => (
                   <span key={m.userId} className="whitespace-nowrap">
                     {m.name}
@@ -176,14 +177,14 @@ export function WrappedView({ data }: { data: CycleReceiptResponse }) {
       </WrappedBlock>
 
       <WrappedBlock gradient="close">
-        <div className="font-mono text-xs uppercase tracking-label opacity-70">
+        <div className="font-sans text-xs uppercase tracking-label opacity-70">
           {data.cycle.name}
         </div>
         <div className="font-serif mt-6 text-[64px] leading-none font-semibold">
           closed
         </div>
         <div className="mt-8 text-2xl">★ ★ ★ ★ ★</div>
-        <div className="mt-8 font-mono text-xs uppercase tracking-label opacity-70">
+        <div className="mt-8 font-sans text-xs uppercase tracking-label opacity-70">
           see you in the next cycle
         </div>
         <div className="mt-12 font-mono text-[10px] uppercase tracking-label opacity-50">

@@ -157,7 +157,7 @@ export function WeekPreview(props: WeekPreviewProps) {
     <section>
       <div className="mb-3 flex items-baseline justify-between">
         <SectionLabel>Semana · preview</SectionLabel>
-        <div className="flex items-center gap-3 font-mono text-[10px] uppercase tracking-label text-ink-mute">
+        <div className="flex items-center gap-3 font-sans text-xs text-fg-mute">
           <span>
             Total: {Math.floor(totalMinutes / 60)}h {totalMinutes % 60}m
           </span>

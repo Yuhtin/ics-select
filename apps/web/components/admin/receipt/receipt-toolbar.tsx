@@ -48,7 +48,7 @@ export function ReceiptToolbar({
   const handleDownload = useCallback(async () => {
     const target = document.getElementById('receipt-capture-root');
     if (!target) return;
-    const dataUrl = await toPng(target, { pixelRatio: 2, backgroundColor: '#FAFAF7' });
+    const dataUrl = await toPng(target, { pixelRatio: 2, backgroundColor: '#FCFCFB' });
     const a = document.createElement('a');
     a.href = dataUrl;
     a.download = `cycle-${cycle.id.slice(-6)}-receipt-${asOfValue}.png`;
@@ -56,17 +56,17 @@ export function ReceiptToolbar({
   }, [cycle.id, asOfValue]);
 
   return (
-    <div className="sticky top-0 z-50 flex flex-wrap items-center justify-between gap-3 border-b border-rule bg-paper px-6 py-3">
+    <div className="sticky top-0 z-40 flex flex-wrap items-center justify-between gap-3 border-b border-border-token bg-surface px-6 py-3 print:hidden">
       <Link
         href={`/admin/cycle/${cycle.id}`}
-        className="inline-flex items-center gap-1 font-mono text-xs uppercase tracking-label text-ink-soft hover:text-ink"
+        className="inline-flex min-h-10 items-center gap-1 font-sans text-sm text-fg-soft hover:text-fg rounded-input focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
       >
         <ChevronLeft className="h-3.5 w-3.5" strokeWidth={1.5} />
         Back to cycle
       </Link>
 
       <div className="flex flex-wrap items-center gap-3">
-        <label className="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-label text-ink-mute">
+        <label className="inline-flex items-center gap-2 font-sans text-sm text-fg-mute">
           As of
           <input
             type="date"
@@ -74,7 +74,7 @@ export function ReceiptToolbar({
             min={minDate}
             max={maxDate}
             onChange={(e) => updateParam('asOf', e.target.value)}
-            className="border border-rule bg-surface px-2 py-1 font-mono text-xs text-ink"
+            className="min-h-10 rounded-input border border-border-token bg-bg px-3 py-2 font-mono text-xs text-fg focus:outline-none focus:ring-2 focus:ring-primary"
           />
         </label>
 
@@ -82,7 +82,7 @@ export function ReceiptToolbar({
           <button
             type="button"
             onClick={() => updateParam('mode', mode === 'wrapped' ? 'thermal' : 'wrapped')}
-            className="border border-rule px-3 py-1 font-mono text-xs uppercase tracking-label text-ink-soft hover:text-ink"
+            className="min-h-10 rounded-pill border border-border-token px-4 py-2 font-sans text-sm text-fg-soft hover:bg-bg-subtle hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
             {mode === 'wrapped' ? 'Switch to thermal' : 'Switch to wrapped'}
           </button>
@@ -91,7 +91,7 @@ export function ReceiptToolbar({
         <button
           type="button"
           onClick={handleDownload}
-          className="inline-flex items-center gap-1 border border-ink bg-ink px-3 py-1 font-mono text-xs uppercase tracking-label text-paper hover:bg-ink-soft"
+          className="inline-flex min-h-10 items-center gap-2 rounded-pill bg-primary px-4 py-2 font-sans text-sm font-medium text-primary-fg hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
         >
           <Download className="h-3.5 w-3.5" strokeWidth={1.5} />
           Download PNG

@@ -31,7 +31,7 @@ export function UnscheduledSection({
     );
 
   return (
-    <section className="mt-8 rounded-card border border-outcome-stuck/40 p-4">
+    <section className="mt-6 rounded-card border border-outcome-stuck/40 p-4">
       <div className="mb-2 flex items-baseline justify-between">
         <SectionLabel>
           <AlertTriangle
@@ -45,14 +45,14 @@ export function UnscheduledSection({
             type="button"
             onClick={onReorganize}
             disabled={reorganizing}
-            className="inline-flex items-center gap-1.5 rounded-pill border border-ink/30 bg-ink px-3 py-1 font-mono text-[10px] uppercase tracking-label text-paper hover:opacity-90 disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 rounded-pill border border-primary/30 bg-primary px-3 py-1 font-sans text-xs text-primary-fg hover:opacity-90 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
           >
             <Shuffle className="h-3 w-3" strokeWidth={1.5} />
             {reorganizing ? 'Reorganizando…' : 'Reorganizar pra encaixar'}
           </button>
         )}
       </div>
-      <p className="mb-3 font-sans text-sm italic text-ink-soft">
+      <p className="mb-3 font-sans text-sm italic text-fg-soft">
         Não cabem na disponibilidade declarada esta semana.
       </p>
       <ul className="mb-3 space-y-2">
@@ -65,10 +65,10 @@ export function UnscheduledSection({
             <li
               key={o.itemId}
               className="border-l-[3px] py-0.5 pl-2"
-              style={{ borderLeftColor: `var(--platform-${platform})` }}
+              style={{ borderLeftColor: `hsl(var(--platform-${platform}, var(--border-strong)))` }}
             >
-              <p className="font-sans text-sm text-ink">{item.libraryItem.title}</p>
-              <p className="font-mono text-[10px] uppercase tracking-label text-ink-mute">
+              <p className="font-sans text-sm text-fg">{item.libraryItem.title}</p>
+              <p className="font-sans text-xs text-fg-mute">
                 {platformLabel(platform)} ·{' '}
                 {formatMinutes(item.libraryItem.estimatedMinutes)} · faltam{' '}
                 {o.minutesRequired}min
@@ -77,13 +77,13 @@ export function UnscheduledSection({
           );
         })}
       </ul>
-      <div className="space-y-1 font-mono text-[10px] uppercase tracking-label text-ink-mute">
+      <div className="space-y-1 font-sans text-xs text-fg-mute">
         <p>Possíveis soluções:</p>
         <ul className="ml-3 space-y-0.5">
           <li>
             • Aumentar cap diário ou adicionar slot ·{' '}
             <a
-              className="text-focus hover:underline"
+              className="text-focus hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
               href={`/admin/member/${memberId}/availability`}
               target="_blank"
               rel="noreferrer"

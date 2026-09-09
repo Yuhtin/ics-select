@@ -147,23 +147,23 @@ export function MocksTab({ memberId, cycleId }: Props) {
   return (
     <div className="space-y-6">
       {!cycleId && (
-        <p className="font-mono text-xs text-outcome-stuck">
+        <p className="font-sans text-xs text-outcome-stuck">
           Select a cycle to log mock interviews.
         </p>
       )}
 
-      <fieldset className="border border-rule rounded-card bg-paper-warm/40 p-4 space-y-3">
-        <legend className="font-mono text-[10px] uppercase tracking-label text-ink-mute px-2">
+      <fieldset className="border border-border-token rounded-card bg-bg-subtle/40 p-4 space-y-3">
+        <legend className="font-sans text-xs text-fg-mute px-2">
           {editingId ? 'Edit mock' : 'New mock'}
         </legend>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <label className="block">
-            <span className="font-mono text-[10px] uppercase tracking-label text-ink-mute">Type</span>
+            <span className="font-sans text-xs text-fg-mute">Type</span>
             <select
               value={draft.type}
               onChange={(e) => setDraft({ ...draft, type: e.target.value as MockType })}
-              className="mt-1 w-full rounded-input border border-rule bg-surface p-2 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-focus/40"
+              className="mt-1 w-full rounded-input border border-border-token bg-surface p-2 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
             >
               {MOCK_TYPES.map((t) => (
                 <option key={t} value={t}>{TYPE_LABEL[t]}</option>
@@ -172,10 +172,10 @@ export function MocksTab({ memberId, cycleId }: Props) {
           </label>
 
           <label className="block">
-            <span className="font-mono text-[10px] uppercase tracking-label text-ink-mute">
+            <span className="font-sans text-xs text-fg-mute">
               Score · {SCORE_TOOLTIPS[draft.score]}
             </span>
-            <div className="mt-1 inline-flex rounded-pill bg-surface border border-rule p-1">
+            <div className="mt-1 inline-flex rounded-pill bg-surface border border-border-token p-1">
               {[1, 2, 3, 4, 5].map((n) => (
                 <button
                   key={n}
@@ -184,8 +184,8 @@ export function MocksTab({ memberId, cycleId }: Props) {
                   onClick={() => setDraft({ ...draft, score: n })}
                   className={
                     draft.score === n
-                      ? 'px-3 py-1 rounded-pill bg-ink text-paper font-mono text-xs tabular-nums'
-                      : 'px-3 py-1 rounded-pill text-ink-mute hover:text-ink font-mono text-xs tabular-nums'
+                      ? 'px-3 py-1 rounded-pill bg-primary text-primary-fg font-sans text-xs tabular-nums'
+                      : 'px-3 py-1 rounded-pill text-fg-mute hover:text-fg font-sans text-xs tabular-nums'
                   }
                 >
                   {n}
@@ -194,29 +194,29 @@ export function MocksTab({ memberId, cycleId }: Props) {
             </div>
           </label>
 
-          <label className="block">
-            <span className="font-mono text-[10px] uppercase tracking-label text-ink-mute">Date</span>
+          <label className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface">
+            <span className="font-sans text-xs text-fg-mute">Date</span>
             <input
               type="date"
               value={draft.conductedAt}
               onChange={(e) => setDraft({ ...draft, conductedAt: e.target.value })}
-              className="mt-1 w-full rounded-input border border-rule bg-surface p-2 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-focus/40"
+              className="mt-1 w-full rounded-input border border-border-token bg-surface p-2 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
             />
           </label>
 
           <label className="block">
-            <span className="font-mono text-[10px] uppercase tracking-label text-ink-mute">Conducted by</span>
+            <span className="font-sans text-xs text-fg-mute">Conducted by</span>
             <input
               type="text"
               value={draft.conductedBy}
               onChange={(e) => setDraft({ ...draft, conductedBy: e.target.value })}
               placeholder="Nome do mentor (opcional)"
-              className="mt-1 w-full rounded-input border border-rule bg-surface p-2 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-focus/40"
+              className="mt-1 w-full rounded-input border border-border-token bg-surface p-2 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
             />
           </label>
 
           <label className="md:col-span-2 block">
-            <span className="font-mono text-[10px] uppercase tracking-label text-ink-mute">
+            <span className="font-sans text-xs text-fg-mute">
               Topics (comma-separated)
             </span>
             <input
@@ -224,19 +224,19 @@ export function MocksTab({ memberId, cycleId }: Props) {
               value={draft.topicsInput}
               onChange={(e) => setDraft({ ...draft, topicsInput: e.target.value })}
               placeholder="tree, recursion, base-cases"
-              className="mt-1 w-full rounded-input border border-rule bg-surface p-2 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-focus/40"
+              className="mt-1 w-full rounded-input border border-border-token bg-surface p-2 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
             />
           </label>
         </div>
 
         <label className="block">
-          <span className="font-mono text-[10px] uppercase tracking-label text-ink-mute">Feedback</span>
+          <span className="font-sans text-xs text-fg-mute">Feedback</span>
           <textarea
             value={draft.feedback}
             onChange={(e) => setDraft({ ...draft, feedback: e.target.value })}
             rows={3}
             placeholder="O que funcionou, o que travou, padrões observados…"
-            className="mt-1 w-full rounded-input border border-rule bg-surface p-3 font-sans text-sm resize-vertical focus:outline-none focus:ring-2 focus:ring-focus/40"
+            className="mt-1 w-full rounded-input border border-border-token bg-surface p-3 font-sans text-sm resize-vertical focus:outline-none focus:ring-2 focus:ring-primary/40"
           />
         </label>
 
@@ -245,7 +245,7 @@ export function MocksTab({ memberId, cycleId }: Props) {
             <button
               type="button"
               onClick={cancelEdit}
-              className="font-mono text-xs uppercase tracking-label px-3 py-1.5 text-ink-soft hover:bg-paper-warm rounded-pill"
+              className="font-sans text-xs px-3 py-1.5 text-fg-soft hover:bg-bg-subtle rounded-pill focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
             >
               Cancel
             </button>
@@ -254,7 +254,7 @@ export function MocksTab({ memberId, cycleId }: Props) {
             type="button"
             onClick={submit}
             disabled={!canSubmit || pending}
-            className="font-mono text-xs uppercase tracking-label px-4 py-2 bg-ink text-paper rounded-pill hover:opacity-90 disabled:opacity-40"
+            className="font-sans text-xs px-4 py-2 bg-primary text-primary-fg rounded-pill hover:opacity-90 disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
           >
             {pending ? 'Saving…' : editingId ? 'Save changes' : 'Add mock'}
           </button>
@@ -262,34 +262,34 @@ export function MocksTab({ memberId, cycleId }: Props) {
       </fieldset>
 
       {(!mocks || mocks.length === 0) ? (
-        <p className="font-mono text-xs text-ink-mute">No mocks logged yet.</p>
+        <p className="font-sans text-xs text-fg-mute">No mocks logged yet.</p>
       ) : (
         <ul className="space-y-3">
           {mocks.map((m) => (
-            <li key={m.id} className="border border-rule rounded-card bg-surface p-4">
+            <li key={m.id} className="border border-border-token rounded-card bg-surface p-4">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="font-mono text-[10px] uppercase tracking-label text-ink-mute">
+                  <p className="font-sans text-xs text-fg-mute">
                     {formatDate(m.conductedAt)} · {TYPE_LABEL[m.type]}
                     {m.conductedBy && ` · ${m.conductedBy}`}
                   </p>
-                  <p className="mt-1 font-serif-tool text-lg text-ink tabular-nums font-semibold">
-                    {m.score}<span className="text-ink-faint text-sm">/5</span>
-                    <span className="ml-2 text-xs font-mono text-ink-mute">
+                  <p className="mt-1 font-sans text-lg text-fg tabular-nums font-semibold">
+                    {m.score}<span className="text-fg-mute text-sm">/5</span>
+                    <span className="ml-2 text-xs font-sans text-fg-mute">
                       {SCORE_TOOLTIPS[m.score]?.split('·')[1]?.trim()}
                     </span>
                   </p>
                 </div>
-                <div className="flex items-center gap-2 font-mono text-[11px]">
+                <div className="flex items-center gap-2 font-sans text-xs">
                   <button
                     onClick={() => startEdit(m)}
-                    className="text-ink-soft hover:text-ink inline-flex items-center gap-1"
+                    className="text-fg-soft hover:text-fg inline-flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
                   >
                     <Pencil className="h-3 w-3" strokeWidth={1.5} /> edit
                   </button>
                   <button
                     onClick={() => setDeleteTarget(m)}
-                    className="text-ink-soft hover:text-outcome-stuck inline-flex items-center gap-1"
+                    className="text-fg-soft hover:text-outcome-stuck inline-flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
                   >
                     <Trash2 className="h-3 w-3" strokeWidth={1.5} /> delete
                   </button>
@@ -300,7 +300,7 @@ export function MocksTab({ memberId, cycleId }: Props) {
                   {m.topics.map((t) => (
                     <span
                       key={t}
-                      className="font-mono text-[10px] uppercase tracking-label px-2 py-0.5 rounded-pill bg-paper-warm text-ink-soft border border-rule"
+                      className="font-sans text-xs px-2 py-0.5 rounded-pill bg-bg-subtle text-fg-soft border border-border-token"
                     >
                       {t}
                     </span>
@@ -308,7 +308,7 @@ export function MocksTab({ memberId, cycleId }: Props) {
                 </div>
               )}
               {m.feedback && (
-                <p className="mt-2 font-serif-tool text-sm text-ink leading-relaxed whitespace-pre-wrap">
+                <p className="mt-2 font-sans text-sm text-fg leading-relaxed whitespace-pre-wrap">
                   {m.feedback}
                 </p>
               )}

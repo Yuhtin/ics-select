@@ -213,6 +213,8 @@ async function setupMocks(page: Page, state: 'AT_RISK' | 'WATCH' | 'ON_TRACK') {
   await page.route(new RegExp(`^${API_BASE}/admin/member/[^/]+/cockpit`), (r) =>
     r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(buildResponse(state)) }),
   );
+  await page.route(new RegExp(`^${API_BASE}/admin/member/[^/]+/mocks`), (r) => r.fulfill({ json: [] }));
+  await page.route(new RegExp(`^${API_BASE}/admin/member/[^/]+/notes`), (r) => r.fulfill({ json: [] }));
   await page.route(new RegExp(`^${API_BASE}/admin/member/[^/?]+(\\?.*)?$`), (r) => {
     if (r.request().url().includes('/cockpit')) return r.continue();
     return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(MOCK_ADMIN_MEMBER) });
@@ -319,6 +321,59 @@ test.describe('Academy admin operations', () => {
 });
 
 test.describe('Member cockpit', () => {
+  for (const theme of ['light', 'dark'] as const) {
+    for (const state of ['AT_RISK', 'WATCH', 'ON_TRACK'] as const) {
+      test(`${state} keeps readable text and risk signals in ${theme}`, async ({ page }) => {
+        await setupMocks(page, state);
+        await page.addInitScript((value) => localStorage.setItem('ics-theme', value), theme);
+        await page.setViewportSize({ width: 1440, height: 960 });
+        await page.goto('/admin/member/u1');
+        await page.addStyleTag({ content: 'nextjs-portal { display: none !important; }' });
+        const indicator = page.getByRole('status', { name: 'Engagement risk' });
+        await expect(indicator).toContainText(state.replace('_', ' '));
+        await expect(indicator.locator('svg')).toBeVisible();
+        const headingFont = await page.getByRole('heading', { name: 'Maria Clara' })
+          .evaluate((element) => getComputedStyle(element).fontFamily);
+        await expect(page.getByText('Items completed', { exact: true })).toHaveCSS('font-family', headingFont);
+        await expect(page.getByText('Plan week', { exact: true })).toHaveCSS('font-family', headingFont);
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+        await expect.soft(page).toHaveScreenshot(`academy-cockpit-${state.toLowerCase()}-${theme}.png`, { fullPage: true });
+      });
+    }
+
+    test(`detail tabs and week picker remain usable on mobile in ${theme}`, async ({ page }) => {
+      await setupMocks(page, 'WATCH');
+      await page.addInitScript((value) => localStorage.setItem('ics-theme', value), theme);
+      await page.setViewportSize({ width: 390, height: 844 });
+      await page.goto('/admin/member/u1');
+      await page.addStyleTag({ content: 'nextjs-portal { display: none !important; }' });
+      await expect(page.getByRole('status', { name: 'Member risk' })).toContainText('WATCH');
+      await page.setViewportSize({ width: 768, height: 960 });
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+      await page.setViewportSize({ width: 390, height: 844 });
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+      const rangeRequest = page.waitForRequest((request) => request.url().includes('/cockpit?') && request.url().includes('range=7d'));
+      await page.getByRole('button', { name: '7d', exact: true }).click();
+      await rangeRequest;
+      await expect(page.getByRole('button', { name: '7d', exact: true })).toHaveAttribute('aria-pressed', 'true');
+      await page.locator('summary').filter({ hasText: 'Raw data' }).click();
+      const tabs = page.getByRole('navigation', { name: 'Member detail' });
+      for (const [tab, empty] of [['Timeline', 'No plans yet.'], ['Retros', 'No retros submitted yet.'], ['Notes', 'No notes yet.'], ['Attendance', 'No classes scheduled in this cycle yet.']]) {
+        await tabs.getByRole('button', { name: tab, exact: true }).click();
+        await expect(tabs.getByRole('button', { name: tab, exact: true })).toHaveAttribute('aria-pressed', 'true');
+        await expect(page.getByText(empty, { exact: true })).toBeVisible();
+      }
+      await expect.soft(page).toHaveScreenshot(`academy-cockpit-tabs-${theme}-390.png`, { fullPage: true });
+      await page.getByRole('button', { name: 'Plan week', exact: true }).click();
+      const dialog = page.getByRole('dialog');
+      await expect(dialog).toBeVisible();
+      await expect(dialog.getByRole('button', { name: /Current week/ })).toBeEnabled();
+      await expect.soft(dialog).toHaveScreenshot(`academy-plan-week-${theme}-390.png`);
+      await page.keyboard.press('Escape');
+      await expect(dialog).toHaveCount(0);
+    });
+  }
+
   for (const width of [1280, 390]) {
     test(`dark admin active navigation meets AA contrast at ${width}px`, async ({ page }) => {
       await setupMocks(page, 'ON_TRACK');
@@ -357,8 +412,12 @@ test.describe('Member cockpit', () => {
     await page.goto('/admin/member/u1');
     await page.addStyleTag({ content: 'nextjs-portal { display: none !important; }' });
     await expect(page.getByText('AT RISK', { exact: true }).first()).toBeVisible();
+    const riskBanner = page.getByRole('status', { name: 'Member risk' });
+    await expect(riskBanner).toContainText('AT RISK');
+    await expect(riskBanner.locator('svg')).toBeVisible();
+    await expect(riskBanner).toContainText('14 days no session');
     await page.waitForTimeout(400);
-    await expect(page).toHaveScreenshot('cockpit-at-risk.png', { fullPage: true });
+    await expect.soft(page).toHaveScreenshot('cockpit-at-risk.png', { fullPage: true });
   });
 
   test('WATCH state', async ({ page }) => {
@@ -366,8 +425,12 @@ test.describe('Member cockpit', () => {
     await page.goto('/admin/member/u1');
     await page.addStyleTag({ content: 'nextjs-portal { display: none !important; }' });
     await expect(page.getByText('WATCH', { exact: true }).first()).toBeVisible();
+    const riskBanner = page.getByRole('status', { name: 'Member risk' });
+    await expect(riskBanner).toContainText('WATCH');
+    await expect(riskBanner.locator('svg')).toBeVisible();
+    await expect(riskBanner).toContainText('4 days no session');
     await page.waitForTimeout(400);
-    await expect(page).toHaveScreenshot('cockpit-watch.png', { fullPage: true });
+    await expect.soft(page).toHaveScreenshot('cockpit-watch.png', { fullPage: true });
   });
 
   test('ON_TRACK state', async ({ page }) => {
@@ -375,8 +438,12 @@ test.describe('Member cockpit', () => {
     await page.goto('/admin/member/u1');
     await page.addStyleTag({ content: 'nextjs-portal { display: none !important; }' });
     await expect(page.getByText('Maria Clara')).toBeVisible();
+    const riskIndicator = page.getByRole('status', { name: 'Engagement risk' });
+    await expect(riskIndicator).toContainText('ON TRACK');
+    await expect(riskIndicator.locator('svg')).toBeVisible();
+    await expect(page.getByRole('status', { name: 'Member risk' })).toHaveCount(0);
     await page.waitForTimeout(400);
-    await expect(page).toHaveScreenshot('cockpit-on-track.png', { fullPage: true });
+    await expect.soft(page).toHaveScreenshot('cockpit-on-track.png', { fullPage: true });
   });
 
   test('admin shell keeps all destinations accessible at desktop and mobile widths', async ({ page }) => {
