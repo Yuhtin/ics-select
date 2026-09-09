@@ -74,7 +74,7 @@ export function TopbarAdmin() {
                 className={clsx(
                   'inline-flex min-h-11 shrink-0 items-center gap-2 whitespace-nowrap rounded-input px-3 py-2 font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary',
                   active
-                    ? 'bg-primary-soft text-primary'
+                    ? 'bg-primary-soft text-primary dark:text-fg'
                     : 'text-fg-mute hover:bg-bg-subtle hover:text-fg',
                 )}
               >

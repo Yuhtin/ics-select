@@ -274,6 +274,41 @@ test.describe('settings tabs', () => {
     await expect(page.getByText('WhatsApp phone')).toHaveCount(0);
   });
 
+  for (const width of [1280, 390]) {
+    test(`dark member active navigation meets AA contrast at ${width}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 844 });
+      await page.addInitScript(() => localStorage.setItem('ics-theme', 'dark'));
+      await page.route(`${API_BASE}/me/retro/current`, (route) => route.fulfill({
+        json: { open: true, retro: null },
+      }));
+      await page.goto('/me');
+      await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+      const active = page.getByRole('navigation', { name: 'Main navigation' })
+        .getByRole('link', { name: 'Today', exact: true });
+      await expect(active).toHaveAttribute('aria-current', 'page');
+      const controls = width >= 768
+        ? [page.getByRole('link', { name: 'Retro open' }), active]
+        : [active];
+      for (const control of controls) {
+        await expect(control).toBeVisible();
+        const contrast = await control.evaluate((element) => {
+          const luminance = (color: string) => {
+            const [r, g, b] = color.match(/[\d.]+/g)!.slice(0, 3).map((value) => {
+              const channel = Number(value) / 255;
+              return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+            });
+            return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+          };
+          const style = getComputedStyle(element);
+          const text = luminance(style.color);
+          const background = luminance(style.backgroundColor);
+          return (Math.max(text, background) + 0.05) / (Math.min(text, background) + 0.05);
+        });
+        expect(contrast).toBeGreaterThanOrEqual(4.5);
+      }
+    });
+  }
+
   test('onboarding still takes precedence over the reconnect gate', async ({ page }) => {
     await page.route(new RegExp(`^${API_BASE}/me$`), (route) => route.fulfill({
       json: { ...MOCK_USER, targetTrack: null, googleConnected: false },

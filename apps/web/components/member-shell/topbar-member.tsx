@@ -62,7 +62,7 @@ export function TopbarMember() {
                 className={clsx(
                   'inline-flex min-h-11 items-center gap-2 whitespace-nowrap rounded-input px-3 py-2 font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg',
                   active
-                    ? 'bg-primary-soft text-primary'
+                    ? 'bg-primary-soft text-primary dark:text-fg'
                     : 'text-fg-mute hover:bg-bg-subtle hover:text-fg',
                 )}
               >
@@ -76,7 +76,7 @@ export function TopbarMember() {
           {retroOpen && (
             <Link
               href="/me/retro"
-              className="inline-flex min-h-11 items-center whitespace-nowrap rounded-input bg-reflect-soft px-2.5 font-mono text-[10px] font-semibold uppercase tracking-eyebrow text-reflect hover:bg-reflect-soft/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              className="inline-flex min-h-11 items-center whitespace-nowrap rounded-input bg-reflect-soft px-2.5 font-mono text-[10px] font-semibold uppercase tracking-eyebrow text-reflect hover:bg-reflect-soft/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:text-fg"
             >
               {retroLabel}
             </Link>

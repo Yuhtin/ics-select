@@ -54,7 +54,7 @@ export function BottomTabBar() {
                 aria-current={active ? 'page' : undefined}
                 className={clsx(
                   'flex h-16 flex-col items-center justify-center gap-1 border-t-2 font-sans text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary',
-                  active ? 'border-primary bg-primary-soft text-primary' : 'border-transparent text-fg-mute hover:bg-surface-hover hover:text-fg',
+                  active ? 'border-primary bg-primary-soft text-primary dark:text-fg' : 'border-transparent text-fg-mute hover:bg-surface-hover hover:text-fg',
                 )}
               >
                 {isProfile && user ? (

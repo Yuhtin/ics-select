@@ -218,6 +218,34 @@ async function setupMocks(page: Page, state: 'AT_RISK' | 'WATCH' | 'ON_TRACK') {
 }
 
 test.describe('Member cockpit', () => {
+  for (const width of [1280, 390]) {
+    test(`dark admin active navigation meets AA contrast at ${width}px`, async ({ page }) => {
+      await setupMocks(page, 'ON_TRACK');
+      await page.route(`${API_BASE}/admin/members`, (route) => route.fulfill({ json: [] }));
+      await page.setViewportSize({ width, height: 844 });
+      await page.addInitScript(() => localStorage.setItem('ics-theme', 'dark'));
+      await page.goto('/admin/members');
+      await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+      const active = page.getByRole('navigation', { name: 'Admin navigation' })
+        .getByRole('link', { name: 'Members', exact: true });
+      await expect(active).toHaveAttribute('aria-current', 'page');
+      const contrast = await active.evaluate((element) => {
+        const luminance = (color: string) => {
+          const [r, g, b] = color.match(/[\d.]+/g)!.slice(0, 3).map((value) => {
+            const channel = Number(value) / 255;
+            return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+          });
+          return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+        };
+        const style = getComputedStyle(element);
+        const text = luminance(style.color);
+        const background = luminance(style.backgroundColor);
+        return (Math.max(text, background) + 0.05) / (Math.min(text, background) + 0.05);
+      });
+      expect(contrast).toBeGreaterThanOrEqual(4.5);
+    });
+  }
+
   test.afterEach(async ({ page }) => {
     await expect(page.getByText('Academy Fellow', { exact: true }).first()).toBeVisible();
     await expect(page.getByText('ICS Select', { exact: true })).toHaveCount(0);
