@@ -23,7 +23,7 @@ export function WaitlistFilters({ value, onChange }: Props) {
             className={`focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface font-sans text-xs font-medium px-3 py-1.5 rounded-full border transition-colors ${
               value.course === c
                 ? 'bg-primary text-primary-fg border-primary'
-                : 'bg-surface text-fg-soft border-border-token hover:border-border-strong-soft'
+                : 'bg-surface text-fg-soft border-border-token hover:border-border-strong'
             }`}
           >
             {courseToLabel(c)}

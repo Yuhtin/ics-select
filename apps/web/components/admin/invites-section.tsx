@@ -165,8 +165,11 @@ export function InvitesSection() {
                 <p className="font-sans text-sm font-semibold text-fg">
                   {inv.email}
                 </p>
-                <p className="mt-0.5 font-mono text-[10px] uppercase tracking-label text-fg-mute">
-                  Invited {new Date(inv.createdAt).toLocaleDateString()}
+                <p className="mt-0.5 font-sans text-xs text-fg-mute">
+                  Invited{' '}
+                  <time dateTime={inv.createdAt} className="font-mono text-[10px] tabular-nums">
+                    {new Date(inv.createdAt).toLocaleDateString()}
+                  </time>
                   {inv.createdBy ? ` · by ${inv.createdBy.name.split(' ')[0]}` : null}
                   {inv.cycle ? ` · ${inv.cycle.name}` : ' · no cycle'}
                 </p>

@@ -28,13 +28,13 @@ export default function AdminConfigPage() {
               type="button"
               onClick={() => setTab(key)}
               className={
-                'inline-flex items-center gap-2 px-4 py-2 font-sans text-xs font-medium border-b-2 -mb-px transition-colors ' +
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface inline-flex items-center gap-2 px-4 py-2 font-sans text-xs font-medium border-b-2 -mb-px transition-colors ' +
                 (active
                   ? 'border-border-strong text-fg'
                   : 'border-transparent text-fg-mute hover:text-fg')
               }
             >
-              <Icon className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface h-4 w-4" strokeWidth={1.5} />
+              <Icon className="h-4 w-4" strokeWidth={1.5} />
               {label}
             </button>
           );

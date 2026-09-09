@@ -221,6 +221,34 @@ async function setupMocks(page: Page, state: 'AT_RISK' | 'WATCH' | 'ON_TRACK') {
 
 test.describe('Academy admin operations', () => {
   for (const theme of ['light', 'dark'] as const) {
+    test(`waitlist course filters show hover feedback in ${theme}`, async ({ page }) => {
+      await setupMocks(page, 'ON_TRACK');
+      await page.addInitScript((value) => localStorage.setItem('ics-theme', value), theme);
+      await page.route(`${API_BASE}/waitlist/config`, (route) => route.fulfill({ json: { cycleTarget: '2026.2', startsAt: null } }));
+      await page.route(`${API_BASE}/admin/waitlist?*`, (route) => route.fulfill({ json: { items: [], total: 0, page: 1, pageSize: 50 } }));
+      await page.route(`${API_BASE}/admin/waitlist/stats`, (route) => route.fulfill({ json: { total: 0, last7d: 0, byCourse: [], bySkill: [] } }));
+      await page.goto('/admin/waitlist');
+      const course = page.getByRole('button', { name: 'Ciência da Computação', exact: true });
+      await expect(course).toHaveAttribute('aria-pressed', 'false');
+      const restingBorder = await course.evaluate((element) => getComputedStyle(element).borderColor);
+      await course.hover();
+      await expect(course).not.toHaveCSS('border-color', restingBorder);
+      await course.click();
+      await expect(course).toHaveAttribute('aria-pressed', 'true');
+    });
+
+    test(`configuration tab shows keyboard focus in ${theme}`, async ({ page }) => {
+      await setupMocks(page, 'ON_TRACK');
+      await page.addInitScript((value) => localStorage.setItem('ics-theme', value), theme);
+      await page.route(`${API_BASE}/admin/whatsapp/templates`, (route) => route.fulfill({ json: [] }));
+      await page.goto('/admin/config');
+      const tab = page.getByRole('button', { name: 'WhatsApp messages', exact: true });
+      await page.keyboard.press('Tab');
+      await tab.focus();
+      await expect(tab).toBeFocused();
+      await expect(tab).not.toHaveCSS('box-shadow', 'none');
+    });
+
     test(`AI usage chart renders daily values in ${theme}`, async ({ page }) => {
       await setupMocks(page, 'ON_TRACK');
       await page.addInitScript((value) => localStorage.setItem('ics-theme', value), theme);
@@ -263,6 +291,11 @@ test.describe('Academy admin operations', () => {
         await page.addStyleTag({ content: 'nextjs-portal { display: none !important; }' });
         await expect(page.getByRole('link', { name: 'Academy Fellow Admin', exact: true })).toBeVisible();
         await expect(page.getByText('rafael.lima@sou.inteli.edu.br', { exact: true })).toBeVisible();
+        const invitation = page.getByText(/^Invited /);
+        await expect(invitation).toHaveCSS('text-transform', 'none');
+        const headingFont = await page.getByRole('heading', { name: 'Members', exact: true })
+          .evaluate((element) => getComputedStyle(element).fontFamily);
+        await expect(invitation).toHaveCSS('font-family', headingFont);
         await expect(page.getByRole('link', { name: /Maria Clara/ })).toBeVisible();
         await page.evaluate(() => document.fonts.ready);
         const navigation = page.getByRole('navigation', { name: 'Admin navigation' });
