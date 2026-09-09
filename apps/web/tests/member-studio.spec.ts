@@ -38,9 +38,20 @@ async function mockStudioMember(page: Page, retroOpen = true) {
         ],
         studyTime: { actualMinutes: 90, estimatedMinutes: 120, itemsWithTime: 2, itemsTotal: 3 },
       },
-      '/me/cohort': { cycleName: '2026.2', memberCount: 0, members: [], ranking: [
-        { userId: member.id, name: member.name, pictureUrl: null, score: 88, isMe: true },
-      ], feed: [] },
+      '/me/cohort': {
+        cycleName: '2026.2', memberCount: 2,
+        members: [
+          { userId: member.id, name: member.name, email: member.email, pictureUrl: null, isMe: true },
+          { userId: 'maria', name: 'Maria Oliveira', email: 'maria@example.com', pictureUrl: null, isMe: false },
+        ],
+        ranking: [
+          { userId: 'maria', name: 'Maria Oliveira', pictureUrl: null, score: 92, isMe: false },
+          { userId: member.id, name: member.name, pictureUrl: null, score: 88, isMe: true },
+        ],
+        feed: [
+          { id: 'activity-1', kind: 'finished', at: '2026-04-17T18:00:00Z', member: { id: 'maria', name: 'Maria Oliveira', pictureUrl: null }, itemTitle: 'Recursion intro', itemId: 'recursion' },
+        ],
+      },
       '/me/retro/current': {
         open: retroOpen, retro: null, weekRecap: null,
         windowOpensAt: '2026-04-17T21:00:00Z', windowClosesAt: '2026-04-22T23:59:00Z',
@@ -142,6 +153,24 @@ test('Today uses an open focus band and divided context rail', async ({ page }) 
   await expect(context.getByText('Top 3 · Cohort')).toBeVisible();
   await expect(context.getByText('Study time this week')).toBeVisible();
   await expect(page.locator('[data-metadata-pill]')).toHaveCount(0);
+});
+
+test('Cohort separates roster and activity without a card grid', async ({ page }) => {
+  await mockStudioMember(page);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/me/cohort');
+  await expect(page.getByTestId('cohort-roster')).toBeVisible();
+  await expect(page.getByTestId('studio-context-rail')).toHaveCSS('border-left-width', '1px');
+  await expect(page.getByTestId('cohort-member-me')).toHaveCSS('border-left-width', '3px');
+  await expect(page.getByText('Recursion intro')).toBeVisible();
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  const rosterBox = await page.getByTestId('cohort-roster').boundingBox();
+  const activityBox = await page.getByTestId('cohort-activity').boundingBox();
+  expect(rosterBox).not.toBeNull();
+  expect(activityBox).not.toBeNull();
+  expect(rosterBox!.y + rosterBox!.height).toBeLessThanOrEqual(activityBox!.y);
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
 for (const theme of ['light', 'dark'] as const) {

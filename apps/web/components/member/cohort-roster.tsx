@@ -75,48 +75,36 @@ export function CohortRoster({ members, ranking }: Props) {
         .map((m) => ({ ...m, score: null as number | null }));
 
   return (
-    <section className="overflow-hidden rounded-card border border-border-token bg-surface">
-      <header className="border-b border-border-token px-5 py-4">
-        <p className="font-sans text-xs font-medium text-fg-mute">
-          {useRanking ? 'Cohort ranking' : 'Classmates'}
-        </p>
-        <p className="mt-0.5 font-sans text-sm text-fg-soft">
-          {members.length} {members.length === 1 ? 'classmate' : 'classmates'} this cycle
-        </p>
-      </header>
-      <ol role="list" className="divide-y divide-border-token">
-        {rows.map((row, idx) => (
-          <li
-            key={row.userId}
-            className={clsx(
-              'flex items-center gap-3 px-4 py-4 sm:gap-4 sm:px-5',
-              row.isMe && 'bg-primary-soft',
-            )}
-          >
-            {useRanking && (
-              <span className="w-6 font-mono text-xs tabular-nums font-semibold text-fg-mute">
-                {String(idx + 1).padStart(2, '0')}
-              </span>
-            )}
-            <Initials name={row.name} pictureUrl={row.pictureUrl} />
-            <div className="flex-1 min-w-0">
-              <p className="flex flex-wrap items-center gap-2 font-sans text-sm font-medium text-fg">
-                {row.name}
-                {row.isMe && (
-                  <span className="inline-flex h-[18px] items-center rounded-pill bg-primary px-2 font-sans text-xs font-medium text-primary-fg">
-                    You
-                  </span>
-                )}
-              </p>
-            </div>
-            {useRanking && row.score !== null && (
-              <span className={clsx('font-mono text-sm tabular-nums', scoreColor(row.score))}>
-                {row.score}/100
-              </span>
-            )}
-          </li>
-        ))}
-      </ol>
-    </section>
+    <ol data-testid="cohort-roster" role="list" className="border-t border-border-token">
+      {rows.map((row, idx) => (
+        <li
+          key={row.userId}
+          data-testid={row.isMe ? 'cohort-member-me' : undefined}
+          className={clsx(
+            'grid min-h-16 items-center gap-3 border-b border-border-token py-3 last:border-b-0',
+            useRanking
+              ? 'grid-cols-[32px_44px_minmax(0,1fr)_auto]'
+              : 'grid-cols-[44px_minmax(0,1fr)]',
+            row.isMe && 'border-l-[3px] border-l-primary bg-primary-soft/60 pl-3',
+          )}
+        >
+          {useRanking && (
+            <span className="w-8 font-mono text-xs tabular-nums text-fg-mute">
+              {String(idx + 1).padStart(2, '0')}
+            </span>
+          )}
+          <Initials name={row.name} pictureUrl={row.pictureUrl} />
+          <p className="min-w-0 truncate text-sm font-semibold text-fg">
+            {row.name}
+            {row.isMe && <span className="ml-2 text-xs text-primary dark:text-primary-fg">You</span>}
+          </p>
+          {useRanking && row.score !== null && (
+            <span className={clsx('font-mono text-sm tabular-nums', scoreColor(row.score))}>
+              {row.score}/100
+            </span>
+          )}
+        </li>
+      ))}
+    </ol>
   );
 }

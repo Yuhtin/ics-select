@@ -58,9 +58,9 @@ export function CohortFeed({ feed, className }: CohortFeedProps) {
     return <p className={clsx('font-sans text-sm text-fg-mute', className)}>No activity in the last 7 days.</p>;
   }
   return (
-    <ul className={clsx('space-y-1', className)}>
+    <ul className={clsx('border-t border-border-token', className)}>
       {events.map((event) => (
-        <li key={event.id} className="flex items-start gap-3 py-4">
+        <li key={event.id} className="flex items-start gap-3 border-b border-border-token py-4 last:border-b-0">
           <Avatar name={event.member.name} pictureUrl={event.member.pictureUrl} />
           <div className="min-w-0 flex-1">
             <p className="font-sans text-sm leading-snug">

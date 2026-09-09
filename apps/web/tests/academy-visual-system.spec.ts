@@ -367,6 +367,7 @@ for (const theme of ['light', 'dark'] as const) {
   });
 
   test(`member empty, loading and failure states in ${theme}`, async ({ page }) => {
+    test.setTimeout(60_000);
     await mockMemberProduct(page, theme);
     await page.route(`${MEMBER_API}/me/home`, (route) => route.fulfill({ json: { ...memberHome, hero: null, today: [] } }));
     await page.goto('/me');
@@ -394,6 +395,9 @@ for (const theme of ['light', 'dark'] as const) {
     await page.goto('/me/cohort');
     await expect(page.getByRole('heading', { name: 'No cohort yet.' })).toBeVisible();
     await expect(page.getByText('No activity in the last 7 days.')).toBeVisible();
+    await page.route(`${MEMBER_API}/me/cohort`, (route) => route.fulfill({ status: 500, json: { message: 'Unavailable' } }));
+    await page.reload();
+    await expect(page.getByText('Could not load your cohort.')).toBeVisible({ timeout: 15000 });
     await page.route(`${MEMBER_API}/me/item/binary-search`, async (route) => { await new Promise((resolve) => setTimeout(resolve, 700)); await route.fulfill({ status: 404, json: {} }); });
     await page.goto('/me/item/binary-search');
     await expect(page.getByText('Loading…', { exact: true })).toBeVisible();
