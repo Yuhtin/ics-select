@@ -2,6 +2,193 @@ import { expect, test, type Page } from '@playwright/test';
 
 test.use({ timezoneId: 'America/Sao_Paulo' });
 
+const waitlistSnapshotOptions = {
+  animations: 'disabled' as const,
+  // Isolate the dialog from the blurred page at fractional screenshot edges.
+  style: '.landing-stage, .landing-topbar, footer { visibility: hidden !important; }',
+};
+
+async function mockLanding(page: Page) {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.route('http://localhost:3001/public/cohort', (route) => route.fulfill({ json: {
+    cycle: '2026.2', members: [
+      { name: 'Mariana Costa', avatar: '/landing/av-mp.png' },
+      { name: 'João Lima', avatar: null },
+    ],
+  } }));
+  await page.route('http://localhost:3001/waitlist/config', (route) => route.fulfill({ json: {
+    cycleTarget: '2026.3', startsAt: '2026-07-01T15:00:00Z',
+  } }));
+}
+
+for (const width of [390, 768, 1440]) {
+  test(`landing at ${width}px`, async ({ page }) => {
+    await mockLanding(page);
+    await page.setViewportSize({ width, height: 1000 });
+    await page.goto('/');
+    await page.addStyleTag({ content: 'nextjs-portal { display: none !important; }' });
+    await expect(page.getByText('Academy Fellow', { exact: true }).first()).toBeVisible();
+    await expect(page.getByRole('link', { name: /sou fellow/i })).toHaveAttribute('href', '/login');
+    await expect(page.getByText(/ICS Select|Inteli Consulting Society/)).toHaveCount(0);
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('O caminho disciplinado pra tech de elite');
+    await expect(page.getByText('Sempre 12 ativos.')).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Quero conhecer' })).toBeInViewport();
+    await expect(page.getByText('Ciclo 2026.3 · abre em Julho', { exact: false }).first()).toBeInViewport();
+    if (width >= 1024) {
+      const headline = page.getByRole('heading', { level: 1 });
+      const lines = await headline.evaluate((element) => element.getBoundingClientRect().height / parseFloat(getComputedStyle(element).lineHeight));
+      expect(lines).toBeLessThanOrEqual(2.1);
+      const header = await page.getByRole('banner').boundingBox();
+      expect(header?.height).toBeGreaterThanOrEqual(64);
+      expect(header?.height).toBeLessThanOrEqual(72);
+    }
+    for (const id of ['top', 'como-funciona', 'program', 'cohorts', 'apply']) {
+      await expect(page.locator(`#${id}`)).toHaveCount(1);
+    }
+    await expect(page.getByText('2026.2 · 2 selecionados no ciclo atual')).toBeVisible();
+    await expect(page.getByText('Mariana Costa')).toBeVisible();
+    for (const name of ['Apple', 'Google', 'Amazon', 'Meta', 'Netflix', 'BCG X', 'Brex', 'QuantumBlack', 'xAI', 'Anthropic', 'OpenAI']) {
+      await expect(page.getByRole('img', { name, exact: true })).toHaveCount(1);
+    }
+    await expect(page.getByText('+ 24 outras', { exact: true })).toBeVisible();
+    await expect(page.getByRole('link', { name: /Davi Duarte/ })).toHaveAttribute('href', 'https://www.linkedin.com/in/daviduarte/');
+    for (const asset of await page.locator('main img').all()) {
+      await asset.scrollIntoViewIfNeeded();
+      await expect.poll(() => asset.evaluate((element) => (element as HTMLImageElement).complete && (element as HTMLImageElement).naturalWidth > 0)).toBe(true);
+      await asset.evaluate(async (element) => {
+        const image = element as HTMLImageElement;
+        // Chromium full-page capture can omit offscreen async-decoded images.
+        image.decoding = 'sync';
+        await image.decode();
+      });
+    }
+    await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    for (const section of await page.locator('.reveal').all()) {
+      await expect(section).toHaveCSS('opacity', '1');
+      await expect(section).toHaveCSS('transform', 'none');
+    }
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await expect(page).toHaveScreenshot(`academy-landing-${width}.png`, { fullPage: true, animations: 'disabled' });
+    await page.getByRole('link', { name: 'Quero conhecer' }).click();
+    await expect(page).toHaveURL(/#cohorts$/);
+    await expect(page.getByRole('button', { name: 'Entrar na seleção' })).toBeInViewport();
+    if (width >= 768) {
+      await page.getByRole('link', { name: 'Programa', exact: true }).click();
+      await expect(page).toHaveURL(/#como-funciona$/);
+      await expect(page.getByRole('heading', { name: 'Três coisas. Nada mais.' })).toBeInViewport();
+    }
+  });
+}
+
+test('landing waitlist preserves keyboard flow, validation, payload, failure and success', async ({ page }) => {
+  await mockLanding(page);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  await page.addStyleTag({ content: 'nextjs-portal { display: none !important; }' });
+  await page.evaluate(() => document.fonts.ready);
+  await expect(page.getByText('Mariana Costa')).toBeVisible();
+  const trigger = page.getByRole('button', { name: 'Entrar na seleção' });
+  await trigger.focus();
+  await page.keyboard.press('Enter');
+  const dialog = page.getByRole('dialog', { name: 'Entre na seleção.' });
+  await expect(dialog).toBeVisible();
+  const name = dialog.getByLabel('Qual seu nome?');
+  await expect(name).toBeFocused();
+  await page.keyboard.press('Shift+Tab');
+  await expect(dialog.getByRole('button', { name: 'Fechar' })).toBeFocused();
+  await page.keyboard.press('Shift+Tab');
+  await expect(dialog.getByRole('button', { name: 'Continuar' })).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(dialog.getByText('Preenche teu nome.')).toBeVisible();
+  await page.keyboard.press('Shift+Tab');
+  await expect(name).toBeFocused();
+  await page.keyboard.type('  Ana Silva  ');
+  await page.keyboard.press('Enter');
+  const email = dialog.getByLabel('Seu email Inteli');
+  await expect(email).toBeFocused();
+  await page.keyboard.type('ana@example.com');
+  await page.keyboard.press('Enter');
+  await expect(dialog.getByText('Precisa ser um email @sou.inteli.edu.br')).toBeVisible();
+  await email.fill('ANA@sou.inteli.edu.br');
+  await page.keyboard.press('Enter');
+  const course = dialog.getByRole('button', { name: 'Ciência da Computação', exact: true });
+  await expect(course).toBeFocused();
+  await page.keyboard.press('Enter');
+  for (let i = 0; i < 6; i++) await page.keyboard.press('Tab');
+  await expect(dialog.getByRole('button', { name: '2º', exact: true })).toBeFocused();
+  await page.keyboard.press('Enter');
+  for (let i = 0; i < 5; i++) await page.keyboard.press('Tab');
+  await expect(dialog.getByRole('radio', { name: '3', exact: true })).toBeFocused();
+  await page.keyboard.press('Space');
+  await expect(dialog).toHaveScreenshot('academy-waitlist-context-mobile.png', waitlistSnapshotOptions);
+  for (let i = 0; i < 4; i++) await page.keyboard.press('Tab');
+  await page.keyboard.press('Enter');
+  const github = dialog.getByLabel('GitHub (opcional)');
+  await expect(github).toBeFocused();
+  await page.keyboard.type('https://github.com/ana');
+  await page.keyboard.press('Tab');
+  await page.keyboard.type('https://linkedin.com/in/ana');
+  await expect(dialog).toHaveScreenshot('academy-waitlist-mobile.png', waitlistSnapshotOptions);
+  await page.route('http://localhost:3001/waitlist', async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 250));
+    await route.fulfill({ status: 500, json: {} });
+  });
+  await page.keyboard.press('Tab');
+  await page.keyboard.press('Tab');
+  await page.keyboard.press('Enter');
+  await expect(dialog.getByRole('button', { name: 'Enviando…' })).toBeDisabled();
+  await expect(dialog.getByText('Não foi possível enviar. Tenta de novo em instantes.')).toBeVisible();
+  await page.route('http://localhost:3001/waitlist', (route) => route.fulfill({ json: { ok: true } }));
+  // Disabling a submitting button releases browser focus; Tab re-enters the dialog.
+  await page.keyboard.press('Tab');
+  await page.keyboard.press('Shift+Tab');
+  await expect(dialog.getByRole('button', { name: 'Enviar inscrição' })).toBeFocused();
+  const request = page.waitForRequest((request) => request.url().endsWith('/waitlist') && request.method() === 'POST');
+  await page.keyboard.press('Enter');
+  expect((await request).postDataJSON()).toEqual({
+    name: 'Ana Silva', email: 'ana@sou.inteli.edu.br', course: 'CIENCIA_COMPUTACAO',
+    year: 2, skillLevel: 3, github: 'https://github.com/ana', linkedin: 'https://linkedin.com/in/ana', website: '',
+  });
+  await expect(page.getByRole('heading', { name: 'Inscrição recebida.' })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog')).toBeHidden();
+  await expect(trigger).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(name).toBeFocused();
+  await expect(name).toHaveValue('');
+});
+
+test('landing keeps closed-cycle and unavailable-cohort states usable', async ({ page }) => {
+  await mockLanding(page);
+  await page.route('http://localhost:3001/public/cohort', (route) => route.fulfill({ status: 500, json: {} }));
+  await page.route('http://localhost:3001/waitlist/config', (route) => route.fulfill({ json: { cycleTarget: null, startsAt: null } }));
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Entrar na seleção' }).click();
+  await expect(page.getByText('Próximo ciclo ainda não anunciado')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Aguardando abertura' })).toBeDisabled();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('button', { name: 'Entrar na seleção' })).toBeFocused();
+});
+
+test('landing sections reveal once and remain visible when reduced motion changes', async ({ page }) => {
+  await mockLanding(page);
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.goto('/');
+  const hero = page.locator('.landing-hero-copy');
+  await expect(hero).toHaveCSS('opacity', '1');
+  const pillars = page.locator('#como-funciona .reveal').first();
+  await pillars.scrollIntoViewIfNeeded();
+  await expect(pillars).toHaveCSS('opacity', '1');
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await expect(pillars).toHaveCSS('opacity', '1');
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  for (const section of await page.locator('.reveal').all()) {
+    await expect(section).toHaveCSS('opacity', '1');
+    await expect(section).toHaveCSS('transform', 'none');
+  }
+  await expect.poll(() => page.evaluate(() => document.getAnimations().filter((animation) => animation.playState === 'running').length)).toBe(0);
+});
+
 const MEMBER_API = 'http://localhost:3001';
 const memberUser = {
   id: 'academy-member', name: 'Eduardo Santos', email: 'eduardo@example.com',

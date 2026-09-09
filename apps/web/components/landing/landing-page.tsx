@@ -1,10 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { LandingBigTechs } from './landing-bigtechs';
 import { LandingClosingCta } from './landing-closing-cta';
 import { LandingFooter } from './landing-footer';
-import { LandingFx } from './landing-fx';
 import { LandingHero } from './landing-hero';
 import { LandingPillars } from './landing-pillars';
 import { LandingProduct } from './landing-product';
@@ -13,11 +12,11 @@ import { WaitlistModal } from './waitlist-modal';
 
 export function LandingPage() {
   const [waitlistOpen, setWaitlistOpen] = useState(false);
-  const open = () => setWaitlistOpen(true);
-  const close = () => setWaitlistOpen(false);
+  const open = useCallback(() => setWaitlistOpen(true), []);
+  const close = useCallback(() => setWaitlistOpen(false), []);
 
   // Landing is locked to the light palette — the marketing page is designed
-  // against cream/ivory art direction and would read wrong in dark. We
+  // against the Academy off-white palette. We
   // override the html data-theme for the duration of the landing mount and
   // restore the user's persisted choice on unmount so their dark preference
   // survives navigation to the rest of the app.
@@ -40,17 +39,16 @@ export function LandingPage() {
 
   return (
     <>
-      <LandingFx />
       <LandingTopbar />
-      <div className="landing-stage">
+      <main className="landing-stage">
         <span id="top" aria-hidden className="block" />
         <LandingHero />
         <LandingPillars />
         <LandingBigTechs />
         <LandingProduct />
         <LandingClosingCta onOpenWaitlist={open} />
-        <LandingFooter />
-      </div>
+      </main>
+      <LandingFooter />
       <WaitlistModal open={waitlistOpen} onClose={close} />
     </>
   );

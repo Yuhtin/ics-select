@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { ArrowRight, ArrowUpRight, Check, X } from 'lucide-react';
 import {
   submitWaitlist,
@@ -54,7 +54,9 @@ export function WaitlistModal({
   const [direction, setDirection] = useState<1 | -1>(1);
   const [data, setData] = useState<FormData>(INITIAL);
   const [stepError, setStepError] = useState<string | null>(null);
+  const reduceMotion = useReducedMotion();
 
+  const dialogRef = useRef<HTMLDivElement>(null);
   const honeypotRef = useRef<HTMLInputElement>(null);
   const nameRef = useRef<HTMLInputElement>(null);
   const emailRef = useRef<HTMLInputElement>(null);
@@ -71,17 +73,36 @@ export function WaitlistModal({
       });
   }, [open]);
 
-  // Body scroll lock + Esc close
+  // Keep keyboard navigation inside the open dialog and return to its trigger.
   useEffect(() => {
     if (!open) return;
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
+      if (e.key !== 'Tab') return;
+      const dialog = dialogRef.current;
+      if (!dialog) return;
+      const controls = Array.from(dialog.querySelectorAll<HTMLElement>(
+        'button:not(:disabled), a[href], input:not(:disabled):not([tabindex="-1"])',
+      )).filter((element) => element.getClientRects().length > 0);
+      const first = controls[0];
+      const last = controls.at(-1);
+      if (!first || !last) return;
+      if (!dialog.contains(document.activeElement) || (e.shiftKey && document.activeElement === first)) {
+        e.preventDefault();
+        (e.shiftKey ? last : first).focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
     };
     window.addEventListener('keydown', onKey);
     return () => {
-      document.body.style.overflow = '';
+      document.body.style.overflow = previousOverflow;
       window.removeEventListener('keydown', onKey);
+      previousFocus?.focus({ preventScroll: true });
     };
   }, [open, onClose]);
 
@@ -101,10 +122,11 @@ export function WaitlistModal({
     const timer = window.setTimeout(() => {
       if (step === 1) nameRef.current?.focus();
       else if (step === 2) emailRef.current?.focus();
+      else if (step === 3) dialogRef.current?.querySelector<HTMLButtonElement>('form button')?.focus();
       else if (step === 4) githubRef.current?.focus();
-    }, 320); // after step enter animation
+    }, reduceMotion ? 0 : 320); // after step enter animation
     return () => window.clearTimeout(timer);
-  }, [open, step]);
+  }, [open, step, reduceMotion]);
 
   const advance = () => {
     setDirection(1);
@@ -181,43 +203,44 @@ export function WaitlistModal({
     <AnimatePresence>
       {open && (
         <motion.div
-          className="fixed inset-0 z-[200] grid place-items-center p-6"
+          className="fixed inset-0 z-[200] grid place-items-center p-4 sm:p-6"
           style={{
             background: 'hsl(var(--fg) / 0.4)',
             backdropFilter: 'blur(8px)',
             WebkitBackdropFilter: 'blur(8px)',
           }}
-          initial={{ opacity: 0 }}
+          initial={reduceMotion ? false : { opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.26, ease: EASE }}
+          transition={{ duration: reduceMotion ? 0 : 0.26, ease: EASE }}
           onClick={(e) => {
             if (e.target === e.currentTarget) onClose();
           }}
         >
           <motion.div
+            ref={dialogRef}
             role="dialog"
+            aria-modal="true"
             aria-labelledby="waitlist-title"
-            className="relative w-full max-w-[520px] bg-surface rounded-[24px] p-10 max-h-[calc(100vh-48px)] overflow-y-auto"
+            className="relative w-full max-w-[520px] border border-border-token bg-surface rounded-2xl p-6 sm:p-10 max-h-[calc(100dvh-32px)] overflow-y-auto"
             style={{ boxShadow: '0 40px 80px rgba(20,24,31,.24)' }}
-            initial={{ y: 24, scale: 0.98, opacity: 0 }}
+            initial={reduceMotion ? false : { y: 16, opacity: 0 }}
             animate={{ y: 0, scale: 1, opacity: 1 }}
-            exit={{ y: 24, scale: 0.98, opacity: 0 }}
-            transition={{ duration: 0.36, ease: EASE }}
+            exit={reduceMotion ? { opacity: 0 } : { y: 16, opacity: 0 }}
+            transition={{ duration: reduceMotion ? 0 : 0.26, ease: EASE }}
           >
             <button
               type="button"
               onClick={onClose}
               aria-label="Fechar"
-              className="absolute top-4 right-4 w-9 h-9 rounded-full border border-border-token bg-surface text-fg-soft grid place-items-center hover:bg-bg-subtle hover:text-fg transition-colors"
+              className="absolute top-3 right-3 w-11 h-11 rounded-full border border-border-token bg-surface text-fg-soft grid place-items-center hover:bg-bg-subtle hover:text-fg transition-colors"
             >
               <X className="w-4 h-4" strokeWidth={1.5} />
             </button>
 
             {state !== 'success' && (
               <>
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-success-soft font-mono text-[11px] font-medium tracking-[0.02em] text-fg">
-                  <span className="relative inline-block w-2 h-2 rounded-full bg-success animate-pulse-ring" />
+                <div className="pr-10 text-xs font-medium leading-relaxed text-primary">
                   {config?.cycleTarget
                     ? `Ciclo ${config.cycleTarget} · abre em ${formatStartsAt(config.startsAt)}`
                     : 'Próximo ciclo ainda não anunciado'}
@@ -225,7 +248,7 @@ export function WaitlistModal({
 
                 <h3
                   id="waitlist-title"
-                  className="font-serif text-[34px] font-normal tracking-[-0.025em] leading-[1.05] mt-3.5 mb-2.5 text-fg"
+                  className="text-[32px] font-medium tracking-[-0.04em] leading-[1.1] mt-5 mb-3 text-fg"
                 >
                   Entre na seleção.
                 </h3>
@@ -253,14 +276,14 @@ export function WaitlistModal({
                         key={step}
                         custom={direction}
                         variants={{
-                          enter: (dir: number) => ({ opacity: 0, x: 16 * dir }),
+                          enter: (dir: number) => ({ opacity: reduceMotion ? 1 : 0, x: reduceMotion ? 0 : 16 * dir }),
                           center: { opacity: 1, x: 0 },
-                          exit: (dir: number) => ({ opacity: 0, x: -16 * dir }),
+                          exit: (dir: number) => ({ opacity: 0, x: reduceMotion ? 0 : -16 * dir }),
                         }}
-                        initial="enter"
+                        initial={reduceMotion ? false : 'enter'}
                         animate="center"
                         exit="exit"
-                        transition={{ duration: 0.28, ease: EASE }}
+                        transition={{ duration: reduceMotion ? 0 : 0.28, ease: EASE }}
                         className="flex flex-col gap-3.5"
                       >
                         {step === 1 && (
@@ -301,10 +324,10 @@ export function WaitlistModal({
                   </div>
 
                   {stepError && (
-                    <p className="text-red-600 text-xs text-center -mt-2">{stepError}</p>
+                    <p role="alert" className="text-danger text-xs text-center -mt-2">{stepError}</p>
                   )}
                   {state === 'error' && !stepError && (
-                    <p className="text-red-600 text-xs text-center -mt-2">
+                    <p role="alert" className="text-danger text-xs text-center -mt-2">
                       Não foi possível enviar. Tenta de novo em instantes.
                     </p>
                   )}
@@ -314,7 +337,7 @@ export function WaitlistModal({
                       <button
                         type="button"
                         onClick={goBack}
-                        className="text-[13px] text-fg-mute hover:text-fg transition-colors"
+                        className="min-h-11 text-[13px] text-fg-mute hover:text-fg transition-colors"
                       >
                         ← Voltar
                       </button>
@@ -324,7 +347,7 @@ export function WaitlistModal({
                     <button
                       type="submit"
                       disabled={!canSubmit}
-                      className="inline-flex items-center justify-center gap-2 bg-fg text-bg rounded-full py-3 px-5 text-sm font-medium hover:bg-primary transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                      className="inline-flex min-h-11 items-center justify-center gap-2 bg-primary text-primary-fg rounded-full py-3 px-5 text-sm font-medium hover:bg-fg transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                     >
                       {!config?.cycleTarget
                         ? 'Aguardando abertura'
@@ -351,7 +374,7 @@ export function WaitlistModal({
                 <div className="w-16 h-16 rounded-full bg-success-soft text-success mx-auto mb-4 grid place-items-center">
                   <Check className="w-8 h-8" strokeWidth={2.5} />
                 </div>
-                <h4 className="font-serif text-[26px] font-medium tracking-[-0.02em] mb-2 text-fg">
+                <h4 id="waitlist-title" className="text-[26px] font-medium tracking-[-0.03em] mb-2 text-fg">
                   Inscrição recebida.
                 </h4>
                 <p className="text-fg-mute text-sm leading-[1.5]">
@@ -377,15 +400,15 @@ export function WaitlistModal({
 
 function ProgressDots({ step }: { step: Step }) {
   return (
-    <div className="flex gap-1.5 mb-6 mt-5">
+    <div aria-label={`Etapa ${step} de 4`} className="flex gap-1.5 mb-6 mt-5">
       {[1, 2, 3, 4].map((n) => (
         <span
           key={n}
           className={`h-1.5 rounded-full transition-all duration-300 ${
             n === step
-              ? 'w-6 bg-fg'
+              ? 'w-6 bg-primary'
               : n < step
-                ? 'w-1.5 bg-fg'
+                ? 'w-1.5 bg-primary'
                 : 'w-1.5 bg-border-token'
           }`}
         />
@@ -463,7 +486,8 @@ function StepContext({
 }) {
   return (
     <div className="flex flex-col gap-4">
-      <Field label="Curso">
+      <fieldset className="flex flex-col gap-1.5">
+        <legend className="mb-1.5 text-xs font-medium text-fg-soft">Curso</legend>
         <div className="flex flex-wrap gap-1.5">
           {WAITLIST_COURSES.map((c) => {
             const active = course === c;
@@ -473,9 +497,9 @@ function StepContext({
                 type="button"
                 onClick={() => onCourse(c)}
                 aria-pressed={active}
-                className={`px-3 py-2 rounded-full border font-mono text-[11px] uppercase tracking-[0.04em] transition-colors ${
+                className={`min-h-11 px-3 py-2 rounded-full border text-xs transition-colors ${
                   active
-                    ? 'bg-fg text-bg border-fg'
+                    ? 'bg-primary-soft text-primary border-primary'
                     : 'bg-surface text-fg-soft border-border-token hover:border-fg-soft hover:text-fg'
                 }`}
               >
@@ -484,8 +508,9 @@ function StepContext({
             );
           })}
         </div>
-      </Field>
-      <Field label="Em que ano você tá?">
+      </fieldset>
+      <fieldset className="flex flex-col gap-1.5">
+        <legend className="mb-1.5 text-xs font-medium text-fg-soft">Em que ano você tá?</legend>
         <div className="grid grid-cols-4 gap-1.5">
           {[1, 2, 3, 4].map((n) => {
             const active = year === n;
@@ -495,9 +520,9 @@ function StepContext({
                 type="button"
                 onClick={() => onYear(n)}
                 aria-pressed={active}
-                className={`h-10 rounded-[8px] border font-mono text-sm transition-colors ${
+                className={`h-11 rounded-[10px] border font-mono text-sm transition-colors ${
                   active
-                    ? 'bg-fg text-bg border-fg'
+                    ? 'bg-primary-soft text-primary border-primary'
                     : 'bg-surface text-fg-soft border-border-token hover:border-fg-soft hover:text-fg'
                 }`}
               >
@@ -506,10 +531,11 @@ function StepContext({
             );
           })}
         </div>
-      </Field>
-      <Field label="Nível de conhecimento em programação">
+      </fieldset>
+      <fieldset className="flex flex-col gap-1.5">
+        <legend className="mb-1.5 text-xs font-medium text-fg-soft">Nível de conhecimento em programação</legend>
         <SkillScale value={skillLevel} onChange={onSkill} />
-      </Field>
+      </fieldset>
     </div>
   );
 }
@@ -590,9 +616,9 @@ function SkillScale({
             role="radio"
             aria-checked={active}
             onClick={() => onChange(n)}
-            className={`h-10 rounded-[8px] border font-mono text-sm transition-colors ${
+            className={`h-11 rounded-[10px] border font-mono text-sm transition-colors ${
               active
-                ? 'bg-fg text-bg border-fg'
+                ? 'bg-primary-soft text-primary border-primary'
                 : 'bg-surface text-fg-soft border-border-token hover:border-fg-soft hover:text-fg'
             }`}
           >
