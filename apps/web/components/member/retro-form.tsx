@@ -119,7 +119,8 @@ export function RetroForm({ data }: RetroFormProps) {
         context={recap ? <RetroRecap recap={recap} presentation="context" /> : undefined}
       >
         {activeStep === 'stuck-item' && <GuidedChoice name="stuck-item" labelledBy={headingId}
-          options={stuckOptions.map((item) => ({ value: item.id, label: item.title }))} value={stuckItemId} onChange={setStuckItemId} />}
+          options={[...stuckOptions.map((item) => ({ value: item.id, label: item.title })), { value: '__none__', label: 'Nenhum' }]}
+          value={stuckItemId ?? '__none__'} onChange={(value) => setStuckItemId(value === '__none__' ? null : value)} />}
         {activeStep === 'valued-item' && <GuidedChoice name="valued-item" labelledBy={headingId}
           options={[{ value: '__none__', label: 'Nenhum' }, ...valuedOptions.map((item) => ({ value: item.id, label: item.title }))]}
           value={valuedItemId ?? '__none__'} onChange={(value) => setValuedItemId(value === '__none__' ? null : value)} />}

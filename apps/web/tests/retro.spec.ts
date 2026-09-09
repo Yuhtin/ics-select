@@ -227,6 +227,74 @@ test('closing the window reviews the saved submission, not an unsaved edit', asy
   await expect(page.getByText('An unsaved draft', { exact: true })).toHaveCount(0);
 });
 
+test('a failed background refresh and recovery preserve the active draft', async ({ page }) => {
+  let failRefresh = false;
+  let failures = 0;
+  await page.route(`${API_BASE}/me/retro/current`, async (route) => {
+    if (failRefresh) {
+      failures++;
+      await route.fulfill({ status: 500, json: {} });
+    } else {
+      await route.fulfill({ json: MOCK_RETRO_CURRENT });
+    }
+  });
+  await page.goto('/me/retro');
+  await next(page);
+  const draft = page.getByRole('textbox', { name: UNBLOCK });
+  await draft.fill('Preserve this local reflection.');
+  failRefresh = true;
+  await page.evaluate(() => window.dispatchEvent(new Event('visibilitychange')));
+  await expect.poll(() => failures, { timeout: 15000 }).toBe(4);
+  await expect(draft).toHaveValue('Preserve this local reflection.');
+  failRefresh = false;
+  const recovery = page.waitForResponse((response) => response.url().endsWith('/me/retro/current') && response.status() === 200);
+  await page.evaluate(() => window.dispatchEvent(new Event('visibilitychange')));
+  await recovery;
+  await expect(draft).toHaveValue('Preserve this local reflection.');
+});
+
+test('rapid navigation cannot skip a question or submit before the final panel arrives', async ({ page }) => {
+  let posts = 0;
+  await page.route(`${API_BASE}/me/retro`, (route) => { posts++; return route.fulfill({ json: {} }); });
+  await page.goto('/me/retro');
+  await page.getByRole('button', { name: 'Continue', exact: true }).dblclick();
+  await expect(page.getByRole('heading', { name: UNBLOCK })).toBeFocused();
+  await expect(page.getByText('2 of 5', { exact: true })).toBeVisible();
+  await next(page);
+  await expect(page.getByRole('heading', { name: VALUED })).toBeFocused();
+  await next(page);
+  await expect(page.getByRole('heading', { name: 'Por quê?' })).toBeFocused();
+  await next(page);
+  const finalAction = page.getByRole('button', { name: 'Submit retro', exact: true });
+  // Trigger the button directly while the previous panel is still exiting.
+  const disabledDuringExit = await finalAction.evaluate((button: HTMLButtonElement) => {
+    const disabled = button.disabled;
+    button.click();
+    return disabled;
+  });
+  expect(disabledDuringExit).toBe(true);
+  expect(posts).toBe(0);
+  await expect(page.getByRole('heading', { name: WISH })).toBeFocused();
+  await expect(finalAction).toBeEnabled();
+  await finalAction.click();
+  await expect.poll(() => posts).toBe(1);
+});
+
+test('an existing stuck selection can be cleared and submits a null item ID', async ({ page }) => {
+  await page.route(`${API_BASE}/me/retro/current`, (route) => route.fulfill({ json: { ...MOCK_RETRO_CURRENT, retro: SUBMITTED } }));
+  await page.route(`${API_BASE}/me/retro`, (route) => route.fulfill({ json: {} }));
+  await page.goto('/me/retro');
+  await expect(page.getByRole('radio', { name: 'Query Plan Explained' })).toBeChecked();
+  await page.getByRole('radio', { name: 'Nenhum', exact: true }).check();
+  await reachFinal(page);
+  const request = page.waitForRequest((request) => request.url().endsWith('/me/retro') && request.method() === 'POST');
+  await page.getByRole('button', { name: 'Update retro' }).click();
+  expect((await request).postDataJSON()).toEqual({
+    whatClicked: SUBMITTED.whatClicked, whatStuck: SUBMITTED.whatStuck,
+    nextWeekWish: SUBMITTED.nextWeekWish, valuedItemId: 'wpi-1', stuckItemId: null,
+  });
+});
+
 test('Retro exposes load failure without flashing inputs', async ({ page }) => {
   await page.route(`${API_BASE}/me/retro/current`, (route) => route.fulfill({ status: 500, json: {} }));
   await page.goto('/me/retro');
@@ -244,6 +312,7 @@ for (const theme of ['light', 'dark'] as const) {
     await expect(page.getByRole('heading', { name: STUCK })).toBeFocused();
     await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
     await expect(page).toHaveScreenshot(`academy-retro-open-${theme}-mobile.png`, { fullPage: true, animations: 'disabled' });
     await next(page);
     await expect(page.getByRole('heading', { name: UNBLOCK })).toBeFocused();

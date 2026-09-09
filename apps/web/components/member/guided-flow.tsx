@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { ArrowLeft, ArrowRight, X } from 'lucide-react';
 
@@ -33,6 +33,27 @@ const ACTION = 'inline-flex min-h-11 min-w-11 items-center justify-center gap-2 
 export function GuidedFlow(props: GuidedFlowProps) {
   const reduceMotion = useReducedMotion();
   const headingRef = useRef<HTMLHeadingElement>(null);
+  const currentStepRef = useRef(props.stepKey);
+  currentStepRef.current = props.stepKey;
+  const navigationLock = useRef(false);
+  const [presentedStep, setPresentedStep] = useState(props.stepKey);
+  const [navigationPending, setNavigationPending] = useState(false);
+  const transitioning = navigationPending || presentedStep !== props.stepKey;
+
+  function navigate(action: () => void) {
+    if (navigationLock.current || transitioning || props.submitting) return;
+    // Lock synchronously as well as disabling controls: two activations can arrive
+    // before React renders the next question. Only its completed entrance unlocks.
+    navigationLock.current = true;
+    setNavigationPending(true);
+    action();
+  }
+
+  function continueOrSubmit() {
+    if (!props.canContinue || navigationLock.current || transitioning || props.submitting) return;
+    if (props.final) props.onSubmit();
+    else navigate(props.onContinue);
+  }
   useEffect(() => { headingRef.current?.focus({ preventScroll: true }); }, []);
 
   return (
@@ -67,7 +88,10 @@ export function GuidedFlow(props: GuidedFlowProps) {
             exit="exit"
             transition={{ duration: reduceMotion ? 0.1 : 0.3, ease: EASE }}
             onAnimationComplete={(definition) => {
-              if (definition === 'active' && headingRef.current?.id === props.headingId) {
+              if (definition === 'active' && currentStepRef.current === props.stepKey && headingRef.current?.id === props.headingId) {
+                setPresentedStep(props.stepKey);
+                setNavigationPending(false);
+                navigationLock.current = false;
                 headingRef.current.focus({ preventScroll: true });
               }
             }}
@@ -79,14 +103,14 @@ export function GuidedFlow(props: GuidedFlowProps) {
         </AnimatePresence>
       </div>
       <footer className="flex items-center justify-between gap-3 border-t border-border-token py-5">
-        <button type="button" aria-label="Previous question" onClick={props.onPrevious} disabled={props.index === 0 || props.submitting} className={`${ACTION} text-fg-soft disabled:invisible`}>
+        <button type="button" aria-label="Previous question" onClick={() => navigate(props.onPrevious)} disabled={props.index === 0 || props.submitting || transitioning} className={`${ACTION} text-fg-soft disabled:invisible`}>
           <ArrowLeft aria-hidden className="h-4 w-4" strokeWidth={1.5} />Previous
         </button>
         <motion.button
           type="button"
-          whileTap={reduceMotion || !props.canContinue || props.submitting ? undefined : { scale: 0.98 }}
-          onClick={props.final ? props.onSubmit : props.onContinue}
-          disabled={!props.canContinue || props.submitting}
+          whileTap={reduceMotion || !props.canContinue || props.submitting || transitioning ? undefined : { scale: 0.98 }}
+          onClick={continueOrSubmit}
+          disabled={!props.canContinue || props.submitting || transitioning}
           className={`${ACTION} bg-primary px-5 font-semibold text-primary-fg disabled:bg-bg-subtle disabled:text-fg-mute`}
         >
           {props.final ? (props.submitting ? props.submittingLabel : props.submitLabel) : 'Continue'}

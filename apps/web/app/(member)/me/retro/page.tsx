@@ -4,8 +4,8 @@ import { RetroForm } from '../../../../components/member/retro-form';
 import { StudioPageHeader } from '../../../../components/member/studio-page-header';
 
 export default function MeRetroPage() {
-  const { data, isLoading, isError } = useMeRetroCurrent();
-  if (isLoading || isError || !data) {
+  const { data, isError } = useMeRetroCurrent();
+  if (!data) {
     return (
       <section className="max-w-4xl">
         <StudioPageHeader eyebrow="Weekly retro" title="How was this week?" />
