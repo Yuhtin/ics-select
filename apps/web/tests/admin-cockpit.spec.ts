@@ -257,6 +257,8 @@ test.describe('Member cockpit', () => {
     const header = page.getByRole('banner');
     for (const width of [1280, 1024, 390]) {
       await page.setViewportSize({ width, height: 844 });
+      const brandLink = header.getByRole('link', { name: 'Academy Fellow Admin', exact: true });
+      expect((await brandLink.boundingBox())?.height).toBeGreaterThanOrEqual(44);
       for (const [name, path] of [['Members', 'members'], ['Cycles', 'cycles'], ['Plans', 'plans'], ['Library', 'library'], ['Waitlist', 'waitlist'], ['Meetings', 'meetings'], ['Config', 'config']]) {
         const link = header.getByRole('link', { name, exact: true });
         await expect(link).toHaveAttribute('href', `/admin/${path}`);

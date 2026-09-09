@@ -153,6 +153,8 @@ test.describe('settings tabs', () => {
     await page.goto('/me/settings/profile');
     const header = page.locator('header');
     await expect(header.getByText('Academy Fellow', { exact: true })).toBeVisible();
+    const brandLink = header.getByRole('link', { name: 'Academy Fellow', exact: true });
+    expect((await brandLink.boundingBox())?.height).toBeGreaterThanOrEqual(44);
     for (const [name, href] of [['Today', '/me'], ['Calendar', '/me/calendar'], ['Cohort', '/me/cohort'], ['Settings', '/me/settings']]) {
       await expect(header.getByRole('link', { name, exact: true })).toHaveAttribute('href', href);
     }

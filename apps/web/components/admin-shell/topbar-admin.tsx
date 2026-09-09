@@ -54,7 +54,7 @@ export function TopbarAdmin() {
       <div className="mx-auto grid max-w-[1400px] grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 px-4 pt-2 md:px-6 xl:flex xl:h-16 xl:justify-between xl:py-0">
         <Link
           href="/admin/cycle/active"
-          className="flex min-w-0 shrink-0 items-center gap-2 rounded-input text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+          className="flex min-h-11 min-w-0 shrink-0 items-center gap-2 rounded-input text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
         >
           <BrandLockup size="sm" className="min-w-0" />
           <span className="rounded-input border border-border-token px-2 py-1 text-[10px] font-medium text-fg-mute">Admin</span>

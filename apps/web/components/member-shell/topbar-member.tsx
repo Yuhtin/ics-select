@@ -44,7 +44,7 @@ export function TopbarMember() {
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-6">
         <Link
           href="/me"
-          className="shrink-0 rounded-input text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+          className="flex min-h-11 shrink-0 items-center rounded-input text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
         >
           <BrandLockup size="sm" />
         </Link>
