@@ -23,36 +23,36 @@ interface MemberCardProps {
 
 export function MemberCard({ member, currentPlan, stats, onViewPlan }: MemberCardProps) {
   return (
-    <article className="rounded-xl border border-border bg-surface p-5 shadow-xs hover:shadow-sm hover:border-border-strong transition-all">
+    <article className="rounded-card border border-border-token bg-surface p-5 text-fg hover:border-border-strong transition-colors">
       <header className="flex items-center gap-3">
         <Avatar
           src={member.avatarUrl ?? undefined}
           name={member.name}
           size="md"
-          className="flex-shrink-0"
+          className="flex-shrink-0 bg-surface-strong text-fg"
         />
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-foreground truncate">{member.name}</p>
-          <p className="text-xs text-foreground-muted truncate">{member.email}</p>
+          <p className="font-sans text-sm font-semibold text-fg truncate">{member.name}</p>
+          <p className="text-xs text-fg-mute truncate">{member.email}</p>
         </div>
       </header>
 
-      <div className="border-t border-border my-4" />
+      <div className="border-t border-border-token my-4" />
 
       {currentPlan ? (
         <div>
-          <div className="flex items-center justify-between text-xs mb-2">
-            <span className="text-foreground-muted">
+          <div className="flex items-center justify-between gap-3 text-xs mb-2">
+            <span className="text-fg-mute">
               Plano atual:{' '}
-              <span className="text-foreground font-medium">{currentPlan.label}</span>
+              <span className="text-fg font-medium">{currentPlan.label}</span>
             </span>
-            <span className="text-foreground-muted tabular-nums">
+            <span className="font-mono text-fg-mute tabular-nums">
               {currentPlan.progressPercent}%
             </span>
           </div>
-          <div className="h-1.5 rounded-full bg-surface-subtle overflow-hidden">
+          <div className="h-1.5 rounded-full bg-surface-strong overflow-hidden">
             <div
-              className="h-full rounded-full bg-brand transition-all"
+              className={`h-full rounded-full transition-[width] ${currentPlan.progressPercent >= 100 ? 'bg-success' : 'bg-primary'}`}
               style={{ width: `${Math.min(100, Math.max(0, currentPlan.progressPercent))}%` }}
               role="progressbar"
               aria-valuenow={currentPlan.progressPercent}
@@ -62,16 +62,16 @@ export function MemberCard({ member, currentPlan, stats, onViewPlan }: MemberCar
           </div>
         </div>
       ) : (
-        <p className="text-xs text-foreground-subtle italic">Sem plano ativo</p>
+        <p className="text-xs text-fg-mute">Sem plano ativo</p>
       )}
 
       {stats && (
-        <div className="flex items-center gap-4 mt-4 text-xs text-foreground-muted">
+        <div className="flex flex-wrap items-center gap-4 mt-4 text-xs text-fg-mute">
           <span>
-            Concluídos: <span className="text-foreground font-medium">{stats.done}</span>
+            Concluídos: <span className="font-mono text-fg font-medium">{stats.done}</span>
           </span>
           <span>
-            Travados: <span className="text-foreground font-medium">{stats.stuck}</span>
+            Travados: <span className="font-mono text-fg font-medium">{stats.stuck}</span>
           </span>
         </div>
       )}
@@ -84,6 +84,7 @@ export function MemberCard({ member, currentPlan, stats, onViewPlan }: MemberCar
           fullWidth
           endContent={<ArrowRight className="h-3.5 w-3.5" />}
           onPress={onViewPlan}
+          className="min-h-11 rounded-input border border-border-token bg-bg-subtle text-fg hover:bg-surface-hover focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg data-[focus-visible=true]:outline-primary"
         >
           Ver plano
         </Button>

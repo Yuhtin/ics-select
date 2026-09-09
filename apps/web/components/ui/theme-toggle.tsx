@@ -19,7 +19,7 @@ export function ThemeToggle({ className }: Props) {
       aria-label={isDark ? 'Switch to light theme' : 'Switch to dark theme'}
       title={isDark ? 'Switch to light theme' : 'Switch to dark theme'}
       className={clsx(
-        'inline-flex h-8 w-8 items-center justify-center rounded-input border border-transparent text-fg-mute transition-colors hover:bg-bg-subtle hover:text-fg',
+        'inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-input border border-border-token bg-surface text-fg-mute transition-colors hover:bg-surface-hover hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg',
         className,
       )}
     >

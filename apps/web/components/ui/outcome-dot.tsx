@@ -5,7 +5,7 @@ interface OutcomeDotProps {
   outcome: ItemOutcome;
   size?: 'sm' | 'md' | 'lg';
   className?: string;
-  /** Pulse ring around the dot (for "now" / active). */
+  /** Academy blue ring around the dot (for "now" / active). */
   active?: boolean;
 }
 
@@ -31,7 +31,7 @@ export function OutcomeDot({ outcome, size = 'md', active, className }: OutcomeD
         'inline-block rounded-full',
         SIZE_CLASS[size],
         OUTCOME_CLASS[outcome],
-        active && 'ring-2 ring-rule ring-offset-1 ring-offset-paper',
+        active && 'ring-2 ring-primary ring-offset-2 ring-offset-bg',
         className,
       )}
       aria-label={`outcome ${outcome.toLowerCase()}`}

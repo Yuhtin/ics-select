@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import { Input, Textarea } from '@heroui/react';
+import { CheckCheck } from 'lucide-react';
 import type { ItemOutcome } from '@ics-select/shared';
 import { Button } from '../../../components/ui/button';
 import { Pill } from '../../../components/ui/pill';
@@ -19,6 +20,13 @@ import { ThemeToggle } from '../../../components/ui/theme-toggle';
 import { DataTable } from '../../../components/ui/data-table';
 import { ProgressBar } from '../../../components/ui/progress-bar';
 import { StatusChip, type StatusChipStatus } from '../../../components/ui/status-chip';
+import { AiAssistantCard } from '../../../components/ui/ai-assistant-card';
+import { ConfirmDialog } from '../../../components/ui/confirm-dialog';
+import { LibraryItemRow } from '../../../components/ui/library-item-row';
+import { MemberCard } from '../../../components/ui/member-card';
+import { ProgressRing } from '../../../components/ui/progress-ring';
+import { SegmentedProgress } from '../../../components/ui/segmented-progress';
+import { StatCard } from '../../../components/ui/stat-card';
 
 const swatches = [
   ['bg', 'bg-bg'],
@@ -41,6 +49,8 @@ const statuses: StatusChipStatus[] = ['pending', 'in_progress', 'done_easy', 'do
 
 export default function DesignSystemPage() {
   const [outcome, setOutcome] = useState<ItemOutcome | null>('DONE_HARD');
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [lastAction, setLastAction] = useState('Nenhuma ação selecionada.');
 
   return (
     <main className="mx-auto max-w-5xl space-y-12 px-4 py-10 text-fg sm:px-6">
@@ -146,7 +156,16 @@ export default function DesignSystemPage() {
           <Button variant="ghost">Ghost</Button>
           <Button variant="link">Link button</Button>
           <Button variant="primary" disabled>Disabled</Button>
+          <Button variant="ghost" onClick={() => setDialogOpen(true)}>Abrir confirmação</Button>
         </Card>
+        <ConfirmDialog
+          isOpen={dialogOpen}
+          onClose={() => setDialogOpen(false)}
+          onConfirm={() => { setLastAction('Exemplo confirmado.'); setDialogOpen(false); }}
+          title="Confirmar ação de exemplo?"
+          description="Esta ação demonstra o diálogo de confirmação do Academy Fellow."
+          confirmColor="primary"
+        />
       </section>
 
       <section>
@@ -164,14 +183,14 @@ export default function DesignSystemPage() {
           {(['PENDING', 'DONE_EASY', 'DONE_HARD', 'DOUBTS', 'STUCK', 'SKIPPED'] as ItemOutcome[]).map((o) => (
             <span key={o} className="inline-flex items-center gap-2">
               <OutcomeDot outcome={o} />
-              <span className="font-mono text-[10px] uppercase tracking-label text-ink-mute">
+              <span className="font-sans text-[10px] uppercase tracking-label text-fg-mute">
                 {o}
               </span>
             </span>
           ))}
-          <span className="inline-flex items-center gap-2 ml-6">
+          <span className="inline-flex items-center gap-2">
             <OutcomeDot outcome="PENDING" active />
-            <span className="font-mono text-[10px] uppercase tracking-label text-ink-mute">
+            <span className="font-sans text-[10px] uppercase tracking-label text-fg-mute">
               PENDING · active
             </span>
           </span>
@@ -184,6 +203,11 @@ export default function DesignSystemPage() {
           <ProgressBar value={0.6} tone="primary" label="Plano da semana · exemplo" valueLabel="60%" />
           <ProgressBar value={1} tone="success" label="Concluído · exemplo" valueLabel="100%" />
           <ProgressBar value={0} label="Ainda não iniciado · exemplo" valueLabel="0%" />
+          <div className="flex flex-wrap gap-6">
+            <ProgressRing value={0.6} label="60%" subLabel="Em progresso" />
+            <ProgressRing value={1} tone="success" label="100%" subLabel="Concluído" />
+          </div>
+          <SegmentedProgress segments={['done', 'hard', 'doubts', 'stuck', 'now', 'pending']} />
         </Card>
       </section>
 
@@ -217,10 +241,11 @@ export default function DesignSystemPage() {
       <section>
         <SectionLabel>Outcome picker</SectionLabel>
         <Card className="p-6 space-y-3">
-          <OutcomePicker value={outcome} onChange={setOutcome} />
-          <p className="font-mono text-[11px] text-ink-mute">
-            current: <span className="text-ink">{outcome ?? 'null'}</span>
+          <OutcomePicker value={outcome} onChange={setOutcome} showSkip />
+          <p className="font-sans text-xs text-fg-mute">
+            current: <span className="text-fg">{outcome ?? 'null'}</span>
           </p>
+          <OutcomePicker value="DONE_EASY" onChange={setOutcome} disabled disabledReason="Exemplo de resultado desabilitado." />
         </Card>
       </section>
 
@@ -240,6 +265,7 @@ export default function DesignSystemPage() {
             active
             title="Binary search patterns"
             meta="LEETCODE · 45 MIN · NOW"
+            onClick={() => setLastAction('Atividade selecionada.')}
           />
           <ListRow
             time="21:00"
@@ -252,9 +278,32 @@ export default function DesignSystemPage() {
 
       <section>
         <SectionLabel>Streak card</SectionLabel>
-        <div className="max-w-xs">
+        <div className="grid gap-4 md:grid-cols-3">
           <StreakCard current={12} last7={[true, true, true, false, true, true, true]} />
+          <StreakCard current={14} last7={[true, true, true, true, true, true, true]} />
+          <StreakCard current={30} last7={[true, true, true, true, true, true, true]} />
         </div>
+      </section>
+      <section>
+        <SectionLabel>Library rows</SectionLabel>
+        <div className="space-y-3">
+          <LibraryItemRow title="Binary search patterns" source="LeetCode" estimatedMinutes={45} tags={['Busca binária']} status="in_progress" onClick={() => setLastAction('Detalhes selecionados.')} />
+          <LibraryItemRow title="Recursion intro" source="Vídeo" estimatedMinutes={30} status="done_hard" />
+        </div>
+      </section>
+      <section>
+        <SectionLabel>Members and metrics</SectionLabel>
+        <div className="grid gap-4 md:grid-cols-2">
+          <MemberCard member={{ id: 'example-active', name: 'Fellow de exemplo', email: 'fellow@example.com' }} currentPlan={{ label: 'Semana 2', progressPercent: 60 }} stats={{ done: 12, stuck: 2 }} onViewPlan={() => setLastAction('Plano selecionado.')} />
+          <MemberCard member={{ id: 'example-empty', name: 'Fellow sem plano', email: 'sem-plano@example.com' }} />
+          <StatCard icon={CheckCheck} label="Atividades concluídas" value={12} trend={{ value: '+3', direction: 'up' }} />
+          <StatCard icon={CheckCheck} label="Atividades pendentes" value={4} trend={{ value: '-2', direction: 'down' }} />
+        </div>
+      </section>
+      <section>
+        <SectionLabel>Assistant</SectionLabel>
+        <AiAssistantCard title="Revise seu plano" description="Consulte as atividades e os resultados deste exemplo." ctaLabel="Ver sugestões" onCtaClick={() => setLastAction('Sugestões selecionadas.')} />
+        <p role="status" className="mt-3 text-xs text-fg-mute">{lastAction}</p>
       </section>
       <section>
         <SectionLabel>Composição editorial</SectionLabel>

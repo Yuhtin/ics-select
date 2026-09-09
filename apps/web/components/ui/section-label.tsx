@@ -10,7 +10,7 @@ export function SectionLabel({ children, className }: SectionLabelProps) {
   return (
     <p
       className={clsx(
-        'font-mono text-[9px] uppercase tracking-eyebrow text-ink-mute font-semibold mb-2.5',
+        'font-sans text-[11px] uppercase tracking-eyebrow text-fg-mute font-semibold mb-3',
         className,
       )}
     >

@@ -24,7 +24,7 @@ export function ProgressRing({
   value,
   size = 120,
   thickness = 10,
-  tone = 'success',
+  tone = 'primary',
   label,
   subLabel,
   children,
@@ -42,7 +42,7 @@ export function ProgressRing({
       style={{
         width: size,
         height: size,
-        background: `conic-gradient(hsl(var(--ring-tone)) ${pct}%, hsl(var(--bg-subtle)) 0)`,
+        background: `conic-gradient(hsl(var(--ring-tone)) ${pct}%, hsl(var(--surface-strong)) 0)`,
       }}
       role="img"
       aria-label={`${Math.round(pct)}% complete`}
@@ -56,12 +56,12 @@ export function ProgressRing({
         {children ?? (
           <>
             {label && (
-              <div className="font-sans text-3xl font-semibold leading-none tracking-tight tabular-nums text-fg">
+              <div className="font-mono text-3xl font-semibold leading-none tracking-tight tabular-nums text-fg">
                 {label}
               </div>
             )}
             {subLabel && (
-              <div className="mt-1 font-mono text-[10px] uppercase tracking-eyebrow text-fg-mute">
+              <div className="mt-1 font-sans text-[10px] uppercase tracking-label text-fg-mute">
                 {subLabel}
               </div>
             )}

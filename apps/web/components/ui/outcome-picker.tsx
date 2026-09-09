@@ -31,7 +31,7 @@ export function OutcomePicker({
 }: OutcomePickerProps) {
   return (
     <div className={clsx('space-y-2', className)}>
-      <div className="flex flex-wrap gap-2 md:flex-nowrap md:overflow-x-auto">
+      <div className="flex flex-wrap gap-2 p-1 md:flex-nowrap md:overflow-x-auto">
         {OPTIONS.map(({ outcome, label }) => {
           const selected = value === outcome;
           return (
@@ -39,17 +39,18 @@ export function OutcomePicker({
               key={outcome}
               type="button"
               disabled={disabled}
+              aria-pressed={selected}
               onClick={() => onChange(outcome)}
               className={clsx(
-                'inline-flex items-center gap-2 rounded-pill border px-3 py-2 text-xs font-semibold transition-colors',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 focus-visible:ring-offset-paper',
+                'inline-flex min-h-11 shrink-0 items-center gap-2 whitespace-nowrap rounded-pill border px-3 py-2 font-sans text-xs font-semibold transition-colors',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg',
                 selected
-                  ? 'bg-ink text-paper border-ink'
-                  : 'bg-paper text-ink border-rule hover:bg-paper-warm',
-                disabled && 'opacity-50 cursor-not-allowed hover:bg-paper',
+                  ? 'bg-primary-soft text-fg border-primary'
+                  : 'bg-surface text-fg border-border-token hover:bg-surface-hover',
+                disabled && 'opacity-50 cursor-not-allowed',
               )}
             >
-              <OutcomeDot outcome={outcome} size="sm" className={clsx(selected && 'ring-paper')} />
+              <OutcomeDot outcome={outcome} size="sm" />
               <span>{label}</span>
             </button>
           );
@@ -58,23 +59,24 @@ export function OutcomePicker({
           <button
             type="button"
             disabled={disabled}
+            aria-pressed={value === 'SKIPPED'}
             onClick={() => onChange('SKIPPED')}
             className={clsx(
-              'inline-flex items-center gap-2 rounded-pill border px-3 py-2 text-xs font-semibold transition-colors',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 focus-visible:ring-offset-paper',
+              'inline-flex min-h-11 shrink-0 items-center gap-2 whitespace-nowrap rounded-pill border px-3 py-2 font-sans text-xs font-semibold transition-colors',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg',
               value === 'SKIPPED'
-                ? 'bg-ink text-paper border-ink'
-                : 'bg-paper text-ink-soft border-rule hover:bg-paper-warm',
-              disabled && 'opacity-50 cursor-not-allowed hover:bg-paper',
+                ? 'bg-primary-soft text-fg border-primary'
+                : 'bg-surface text-fg-soft border-border-token hover:bg-surface-hover',
+              disabled && 'opacity-50 cursor-not-allowed',
             )}
           >
-            <OutcomeDot outcome="SKIPPED" size="sm" className={clsx(value === 'SKIPPED' && 'ring-paper')} />
+            <OutcomeDot outcome="SKIPPED" size="sm" />
             <span>Already known</span>
           </button>
         )}
       </div>
       {disabled && disabledReason && (
-        <p className="text-xs text-ink-mute">{disabledReason}</p>
+        <p className="text-xs text-fg-mute">{disabledReason}</p>
       )}
     </div>
   );
