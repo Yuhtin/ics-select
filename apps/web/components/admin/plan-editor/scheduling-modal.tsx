@@ -205,7 +205,7 @@ export function SchedulingModal({
                   type="button"
                   onClick={onForce}
                   disabled={pendingForce}
-                  className="font-sans text-xs px-4 py-2 bg-outcome-stuck text-primary-fg rounded-pill disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
+                  className="font-sans text-xs px-4 py-2 bg-outcome-stuck text-bg rounded-pill disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
                 >
                   {pendingForce ? 'Forçando…' : 'Forçar publicação'}
                 </button>

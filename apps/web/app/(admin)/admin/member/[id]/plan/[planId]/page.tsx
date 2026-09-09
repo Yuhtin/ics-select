@@ -795,7 +795,7 @@ export default function PlanEditorPage({
             <button
               type="button"
               onClick={() => getOrCreate.reset()}
-              className="mt-2 rounded-pill bg-outcome-stuck px-3 py-1 font-sans text-xs text-primary-fg hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
+              className="mt-2 rounded-pill bg-outcome-stuck px-3 py-1 font-sans text-xs text-bg hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
             >
               Retry
             </button>

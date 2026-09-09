@@ -10,7 +10,7 @@
  *   POST /plans/:id/preview-scheduling            → 2 placements
  */
 
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Locator, type Page } from '@playwright/test';
 
 const API_BASE = 'http://localhost:3001';
 
@@ -165,6 +165,22 @@ const LIBRARY_ITEM = {
   createdAt: '2026-05-01T00:00:00.000Z',
 };
 
+async function textContrast(control: Locator) {
+  return control.evaluate((element) => {
+    const luminance = (color: string) => {
+      const [r, g, b] = color.match(/[\d.]+/g)!.slice(0, 3).map((value) => {
+        const channel = Number(value) / 255;
+        return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+      });
+      return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    };
+    const style = getComputedStyle(element);
+    const text = luminance(style.color);
+    const background = luminance(style.backgroundColor);
+    return (Math.max(text, background) + 0.05) / (Math.min(text, background) + 0.05);
+  });
+}
+
 async function setupMocks(page: Page) {
   await page.addInitScript(() => {
     // Freeze Date only: Playwright's Intl clock shim conflicts with the
@@ -239,6 +255,19 @@ test.describe('Plan editor', () => {
   });
 
   for (const theme of ['light', 'dark'] as const) {
+    test(`draft retry meets AA text contrast in ${theme}`, async ({ page }) => {
+      await setupMocks(page);
+      await page.addInitScript((value) => localStorage.setItem('ics-theme', value), theme);
+      await page.setViewportSize({ width: 1440, height: 960 });
+      await page.route(`${API_BASE}/admin/member/u1/plan-drafts`, (route) => route.fulfill({ status: 500, json: {
+        error: { code: 'INTERNAL_ERROR', message: 'Draft could not be created' },
+      } }));
+      await page.goto('/admin/member/u1/plan/new');
+      const retry = page.getByRole('button', { name: 'Retry', exact: true });
+      await expect(retry).toBeEnabled();
+      expect(await textContrast(retry)).toBeGreaterThanOrEqual(4.5);
+    });
+
     test(`library, item order, budget and publish options stay intact in ${theme}`, async ({ page }) => {
       await setupMocks(page);
       await page.addInitScript((value) => localStorage.setItem('ics-theme', value), theme);
@@ -350,6 +379,7 @@ test.describe('Plan editor', () => {
       const modal = page.getByRole('dialog');
       await expect(modal.getByText('1 item não couberam', { exact: true })).toBeVisible();
       await expect(modal.getByRole('button', { name: 'Forçar publicação' })).toBeEnabled();
+      expect(await textContrast(modal.getByRole('button', { name: 'Forçar publicação' }))).toBeGreaterThanOrEqual(4.5);
       await expect(modal.getByRole('button', { name: 'Ajustar plano' })).toBeEnabled();
       await expect.soft(modal).toHaveScreenshot(`academy-scheduling-overflow-${theme}.png`);
       await modal.getByRole('button', { name: 'Ajustar plano' }).click();
