@@ -5,17 +5,23 @@ import type { MemberRank } from '../../lib/queries/me-cohort';
 
 interface Props {
   ranking: MemberRank[];
+  presentation?: 'card' | 'context';
   className?: string;
 }
 
-export function TopRankingCard({ ranking, className }: Props) {
+const PRESENTATION = {
+  card: 'rounded-tile border border-border-token bg-surface p-6',
+  context: 'py-5 first:pt-0 last:pb-0',
+} as const;
+
+export function TopRankingCard({ ranking, presentation = 'card', className }: Props) {
   const top3 = ranking.slice(0, 3);
   if (top3.length === 0) return null;
 
   return (
     <section
       className={clsx(
-        'rounded-tile border border-border-token bg-surface p-6',
+        PRESENTATION[presentation],
         className,
       )}
     >

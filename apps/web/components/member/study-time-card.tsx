@@ -4,12 +4,18 @@ import { formatMinutes } from '../../lib/format/time';
 
 interface StudyTimeCardProps {
   studyTime: StudyTimeSummary;
+  presentation?: 'card' | 'context';
   className?: string;
 }
 
 const OVERRUN_RATIO = 1.2;
 
-export function StudyTimeCard({ studyTime, className }: StudyTimeCardProps) {
+const PRESENTATION = {
+  card: 'rounded-tile border border-border-token bg-surface p-6',
+  context: 'py-5 first:pt-0 last:pb-0',
+} as const;
+
+export function StudyTimeCard({ studyTime, presentation = 'card', className }: StudyTimeCardProps) {
   const { actualMinutes, estimatedMinutes, itemsWithTime, itemsTotal } = studyTime;
 
   const pct =
@@ -20,7 +26,7 @@ export function StudyTimeCard({ studyTime, className }: StudyTimeCardProps) {
   const barWidth = Math.min(100, pct);
 
   return (
-    <section className={clsx('rounded-tile border border-border-token bg-surface p-6', className)}>
+    <section className={clsx(PRESENTATION[presentation], className)}>
       <p className="font-sans text-xs font-medium text-fg-mute">
         Study time this week
       </p>

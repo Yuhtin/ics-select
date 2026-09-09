@@ -13,10 +13,10 @@ interface HeroSceneProps {
 type HeroStyle = 'now' | 'late' | 'done' | 'neutral';
 
 const HERO_BORDER: Record<HeroStyle, string> = {
-  now: 'before:bg-primary',
-  late: 'before:bg-warn',
-  done: 'before:bg-success',
-  neutral: 'before:bg-primary',
+  now: 'border-l-primary',
+  late: 'border-l-warn',
+  done: 'border-l-success',
+  neutral: 'border-l-primary',
 };
 
 const EYEBROW_TONE: Record<HeroStyle, string> = {
@@ -42,58 +42,27 @@ function ItemHero({
   const platform = detectPlatform(item.url, item.format);
   return (
     <article
+      data-testid="current-focus"
       className={clsx(
-        'relative overflow-hidden rounded-tile border border-border-token bg-surface p-6 sm:p-8',
-        // Left accent rail via ::before pseudo-element
-        'before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[2px]',
+        'grid gap-5 border-b border-l-4 border-border-token pb-6 pl-5 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end',
         HERO_BORDER[eyebrowStyle],
       )}
     >
-      <div
-        className={clsx(
-          'flex items-center gap-2 font-sans text-xs font-medium',
-          EYEBROW_TONE[eyebrowStyle],
-        )}
+      <div>
+        <p className={clsx('font-sans text-xs font-semibold', EYEBROW_TONE[eyebrowStyle])}>{eyebrow}</p>
+        <h1 className="mt-3 max-w-[24ch] text-[30px] font-semibold leading-[1.12] tracking-[-0.045em] text-fg sm:text-[38px]">{item.title}</h1>
+        <p className="mt-4 flex flex-wrap gap-x-4 gap-y-1 font-sans text-xs text-fg-mute">
+          <span>{item.estimatedMinutes} min</span>
+          <span>{platformLabel(platform)}</span>
+          {item.topic && <span>{item.topic.label}</span>}
+        </p>
+      </div>
+      <Link
+        href={ctaHref}
+        className="inline-flex min-h-11 items-center justify-center rounded-input bg-primary px-5 font-sans text-sm font-semibold text-primary-fg transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
       >
-        {eyebrowStyle === 'now' && (
-          <span
-            className="inline-block h-[7px] w-[7px] rounded-full bg-primary"
-            aria-hidden="true"
-          />
-        )}
-        {eyebrow}
-      </div>
-      <h1 className="mt-3 max-w-[22ch] font-sans text-[30px] font-semibold leading-[1.15] tracking-tight sm:text-[36px] text-fg">
-        {item.title}
-      </h1>
-      <div className="mt-4 flex flex-wrap items-center gap-2 text-[13px]">
-        <span className="inline-flex h-[22px] items-center gap-1.5 rounded-pill bg-bg-subtle px-2 font-medium text-fg-soft">
-          {item.estimatedMinutes} min
-        </span>
-        <span className="inline-flex h-[22px] items-center gap-1.5 rounded-pill bg-bg-subtle px-2 font-medium text-fg-soft">
-          <span
-            className="h-[6px] w-[6px] rounded-full"
-            style={{ background: `hsl(var(--platform-${platform}))` }}
-          />
-          {platformLabel(platform)}
-        </span>
-        {item.topic && (
-          <span className="inline-flex h-[22px] items-center gap-1.5 rounded-pill bg-bg-subtle px-2 font-medium text-fg-soft">
-            {item.topic.label}
-          </span>
-        )}
-      </div>
-      <div className="mt-5 flex flex-wrap gap-2">
-        <Link
-          href={ctaHref}
-          className={clsx(
-            'inline-flex min-h-11 items-center justify-center rounded-input px-5 font-sans text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg',
-            'bg-primary text-primary-fg hover:bg-primary/90',
-          )}
-        >
-          {ctaLabel}
-        </Link>
-      </div>
+        {ctaLabel}
+      </Link>
     </article>
   );
 }
@@ -101,7 +70,7 @@ function ItemHero({
 export function HeroScene({ hero }: HeroSceneProps) {
   if (!hero) {
     return (
-      <article className="rounded-tile border border-border-token bg-surface p-6 sm:p-8">
+      <article data-testid="current-focus" className="border-b border-l-4 border-border-token pb-6 pl-5">
         <p className="font-sans text-xs font-medium text-fg-mute">
           No active plan
         </p>
@@ -150,7 +119,7 @@ export function HeroScene({ hero }: HeroSceneProps) {
   }
   if (hero.state === 'all_done') {
     return (
-      <article className="relative overflow-hidden rounded-tile border border-border-token bg-surface p-6 sm:p-8 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[2px] before:bg-success">
+      <article data-testid="current-focus" className="border-b border-l-4 border-border-token border-l-success pb-6 pl-5">
         <p className="flex items-center gap-2 font-sans text-xs font-medium text-fg">
           <span className="h-[6px] w-[6px] rounded-full bg-success" />
           All done today
@@ -168,7 +137,7 @@ export function HeroScene({ hero }: HeroSceneProps) {
   }
   // free_day
   return (
-    <article className="rounded-tile border border-border-token bg-surface p-6 sm:p-8">
+    <article data-testid="current-focus" className="border-b border-l-4 border-border-token pb-6 pl-5">
       <p className="font-sans text-xs font-medium text-fg-mute">
         Free day
       </p>

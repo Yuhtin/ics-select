@@ -23,9 +23,12 @@ async function mockStudioMember(page: Page, retroOpen = true) {
       '/me/home': {
         hero: { state: 'now', item }, today: [item], late: [], days: [], unscheduled: [],
         streak: { current: 7, last7: [true, true, true, true, true, true, true] },
-        carryOverReflection: null, topicCoverage: [], studyTime: null,
+        carryOverReflection: null, topicCoverage: [],
+        studyTime: { actualMinutes: 90, estimatedMinutes: 120, itemsWithTime: 2, itemsTotal: 3 },
       },
-      '/me/cohort': { cycleName: '2026.2', memberCount: 0, members: [], ranking: [], feed: [] },
+      '/me/cohort': { cycleName: '2026.2', memberCount: 0, members: [], ranking: [
+        { userId: member.id, name: member.name, pictureUrl: null, score: 88, isMe: true },
+      ], feed: [] },
       '/me/retro/current': {
         open: retroOpen, retro: null, weekRecap: null,
         windowOpensAt: '2026-04-17T21:00:00Z', windowClosesAt: '2026-04-22T23:59:00Z',
@@ -94,6 +97,9 @@ test('Studio keeps every rail action reachable in a short 200%-zoom desktop layo
   const rail = page.getByTestId('member-rail');
   const navigation = rail.getByRole('navigation', { name: 'Main navigation' });
   const signOut = navigation.getByRole('button', { name: 'Sign out' });
+  // Auth and the Retro query add actions after the initial shell render.
+  await expect(signOut).toBeVisible();
+  await expect(navigation.getByRole('link', { name: /Retro open/i })).toBeVisible();
   const targets = await navigation.locator('a, button').all();
   for (const target of targets) {
     expect(await target.evaluate((element) => element.getBoundingClientRect().height)).toBeGreaterThanOrEqual(44);
@@ -108,4 +114,20 @@ test('Studio keeps every rail action reachable in a short 200%-zoom desktop layo
 
   expect(await navigation.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
   await expect(signOut).toBeVisible();
+});
+
+test('Today uses an open focus band and divided context rail', async ({ page }) => {
+  await mockStudioMember(page);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/me');
+  const focus = page.getByTestId('current-focus');
+  await expect(focus).toBeVisible();
+  await expect(focus).toHaveCSS('border-left-width', '4px');
+  await expect(focus).toHaveCSS('border-top-width', '0px');
+  const context = page.getByTestId('studio-context-rail');
+  await expect(context).toHaveCSS('border-left-width', '1px');
+  await expect(page.getByText('LeetCode', { exact: true })).toBeVisible();
+  await expect(context.getByText('Top 3 · Cohort')).toBeVisible();
+  await expect(context.getByText('Study time this week')).toBeVisible();
+  await expect(page.locator('[data-metadata-pill]')).toHaveCount(0);
 });

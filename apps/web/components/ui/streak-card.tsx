@@ -5,6 +5,7 @@ interface StreakCardProps {
   current: number;
   /** Last 7 days — true if the day had a positive outcome. Oldest first. */
   last7: boolean[];
+  presentation?: 'card' | 'context';
   className?: string;
 }
 
@@ -15,17 +16,25 @@ function milestone(current: number): string | null {
   return null;
 }
 
-export function StreakCard({ current, last7, className }: StreakCardProps) {
+const PRESENTATION = {
+  card: 'rounded-card border border-border-token bg-surface p-6',
+  context: 'py-5 first:pt-0 last:pb-0',
+} as const;
+
+export function StreakCard({ current, last7, presentation = 'card', className }: StreakCardProps) {
   const milestoneLabel = milestone(current);
   const todayIdx = last7.length - 1;
   return (
-    <section className={clsx('rounded-card border border-border-token bg-surface p-6', className)}>
+    <section className={clsx(PRESENTATION[presentation], className)}>
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <p className="font-sans text-[10px] font-semibold uppercase tracking-eyebrow text-fg-mute">
           Streak
         </p>
         {milestoneLabel && (
-          <span className="inline-flex min-h-5 items-center rounded-pill bg-success-soft px-2 font-sans text-[10px] font-medium text-fg">
+          <span className={clsx(
+            'font-sans text-[10px] font-medium text-fg',
+            presentation === 'card' && 'inline-flex min-h-5 items-center rounded-pill bg-success-soft px-2',
+          )}>
             {milestoneLabel}
           </span>
         )}

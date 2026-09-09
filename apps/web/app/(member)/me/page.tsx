@@ -10,24 +10,37 @@ import { TopicCoverageHeatmap } from '../../../components/member/topic-coverage-
 import { TopRankingCard } from '../../../components/member/top-ranking-card';
 import { StreakCard } from '../../../components/ui/streak-card';
 import { StudyTimeCard } from '../../../components/member/study-time-card';
+import { useAuth } from '../../../lib/auth/auth-context';
+import { StudioPageHeader } from '../../../components/member/studio-page-header';
+import { StudioContextRail } from '../../../components/member/studio-context-rail';
 import { formatMinutes } from '../../../lib/format/time';
 
 export default function MeHomePage() {
   const { data, isLoading, error } = useMeHome();
   const { data: cohort } = useMeCohort();
 
-  if (isLoading) {
+  const { user } = useAuth();
+  const now = new Date();
+  const firstName = user?.name.split(' ')[0];
+  const partOfDay = now.getHours() < 12 ? 'morning' : now.getHours() < 18 ? 'afternoon' : 'evening';
+  const greeting = firstName ? `Good ${partOfDay}, ${firstName}.` : `Good ${partOfDay}.`;
+  const todayLabel = new Intl.DateTimeFormat('en-US', {
+    weekday: 'long', month: 'long', day: 'numeric',
+  }).format(now);
+
+  if (isLoading || error || !data) {
     return (
-      <p className="font-sans text-xs font-medium text-fg-mute">
-        Loading…
-      </p>
-    );
-  }
-  if (error || !data) {
-    return (
-      <p className="font-sans text-xs font-medium text-fg-mute">
-        Could not load your home.
-      </p>
+      <div data-testid="studio-home" className="space-y-8">
+        <StudioPageHeader eyebrow={todayLabel} title={greeting} />
+        <div className="grid gap-9 lg:grid-cols-[minmax(0,1.7fr)_minmax(240px,0.62fr)]">
+          <section aria-labelledby="today-status-heading" className="min-w-0 border-b border-border-token pb-6">
+            <h2 id="today-status-heading" className="text-sm font-semibold text-fg">Today</h2>
+            <p role={isLoading ? 'status' : 'alert'} className="mt-3 font-sans text-sm text-fg-mute">
+              {isLoading ? 'Loading…' : 'Could not load your home.'}
+            </p>
+          </section>
+        </div>
+      </div>
     );
   }
 
@@ -51,82 +64,37 @@ export default function MeHomePage() {
   );
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[minmax(0,1.8fr)_minmax(0,1fr)]">
-      <div className="flex min-w-0 flex-col gap-6">
-        <HeroScene hero={data.hero} />
-        {lateItems.length > 0 && (
+    <div data-testid="studio-home" className="space-y-8">
+      <StudioPageHeader eyebrow={todayLabel} title={greeting} />
+      <div className="grid gap-9 lg:grid-cols-[minmax(0,1.7fr)_minmax(240px,0.62fr)]">
+        <div className="min-w-0 space-y-7">
+          <HeroScene hero={data.hero} />
+          {lateItems.length > 0 && (
+            <section>
+              <DayList label="Earlier this week" hint={`${lateItems.length} pending · ${formatMinutes(lateMinutes)} total`} items={lateItems} activeItemId={activeItemId} />
+            </section>
+          )}
           <section>
-            <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2 px-1">
-              <h2 className="font-sans text-sm font-semibold tracking-tight text-fg">
-                Earlier this week
-              </h2>
-              <span className="font-mono text-[11px] tabular-nums text-fg-mute">
-                {`${lateItems.length} pending · ${formatMinutes(lateMinutes)} total`}
-              </span>
-            </div>
-            <DayList items={lateItems} activeItemId={activeItemId} />
+            <DayList label="Today" hint={todayHint} items={data.today} activeItemId={activeItemId} />
           </section>
-        )}
-        <section>
-          <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2 px-1">
-            <h2 className="font-sans text-sm font-semibold tracking-tight text-fg">
-              Today
-            </h2>
-            {todayHint && (
-              <span className="font-mono text-[11px] tabular-nums text-fg-mute">
-                {todayHint}
-              </span>
-            )}
-          </div>
-          <DayList items={data.today} activeItemId={activeItemId} />
-        </section>
-        {data.days.length > 0 && (
-          <section className="space-y-4">
-            {data.days.map((day) => (
-              <DayList key={day.date} label={day.label} items={day.items} />
-            ))}
-          </section>
-        )}
-        {(data.unscheduled?.length ?? 0) > 0 && (
-          <section>
-            <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2 px-1">
-              <h2 className="font-sans text-sm font-semibold tracking-tight text-fg">
-                Unscheduled
-              </h2>
-              <span className="font-sans text-xs font-medium text-fg-mute">
-                Sem horário no calendário
-              </span>
-            </div>
-            <DayList items={data.unscheduled ?? []} />
-          </section>
-        )}
-        {data.carryOverReflection && (
-          <CarryOverReflectionCard reflection={data.carryOverReflection} />
-        )}
+          {data.days.map((day) => <DayList key={day.date} label={day.label} items={day.items} />)}
+          {(data.unscheduled?.length ?? 0) > 0 && (
+            <DayList label="Unscheduled" hint="Sem horário no calendário" items={data.unscheduled ?? []} />
+          )}
+          {data.carryOverReflection && <CarryOverReflectionCard reflection={data.carryOverReflection} />}
+        </div>
+        <StudioContextRail>
+          {cohort?.ranking && cohort.ranking.length > 0 && <TopRankingCard ranking={cohort.ranking} presentation="context" />}
+          <StreakCard current={data.streak.current} last7={data.streak.last7} presentation="context" />
+          {data.studyTime && data.studyTime.itemsWithTime > 0 && <StudyTimeCard studyTime={data.studyTime} presentation="context" />}
+          {data.topicCoverage.length > 0 && (
+            <section className="py-5">
+              <p className="text-xs text-fg-mute">Topic coverage</p>
+              <div className="mt-4"><TopicCoverageHeatmap topics={data.topicCoverage} tileSize={18} /></div>
+            </section>
+          )}
+        </StudioContextRail>
       </div>
-
-      <aside className="flex flex-col gap-5">
-        {cohort?.ranking && cohort.ranking.length > 0 && (
-          <TopRankingCard ranking={cohort.ranking} />
-        )}
-        <StreakCard current={data.streak.current} last7={data.streak.last7} />
-        {data.studyTime && data.studyTime.itemsWithTime > 0 && (
-          <StudyTimeCard studyTime={data.studyTime} />
-        )}
-        {data.topicCoverage.length > 0 && (
-          <section className="rounded-tile border border-border-token bg-surface p-6">
-            <p className="font-sans text-xs font-medium text-fg-mute">
-              Topic coverage
-            </p>
-            <div className="mt-4">
-              <TopicCoverageHeatmap
-                topics={data.topicCoverage}
-                tileSize={18}
-              />
-            </div>
-          </section>
-        )}
-      </aside>
     </div>
   );
 }
