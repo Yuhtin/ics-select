@@ -1371,7 +1371,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'YouTube — mycodeschool',
     tags: ['concept', 'dp', 'memoization', 'fibonacci', 'recursion-to-dp'],
-    topicOrder: { 'dp': 2, 'recursion': 2 },
+    topicOrder: { 'dp': 5, 'recursion': 2 },
   },
   {
     title: 'Top 5 Dynamic Programming Patterns for Coding Interviews — For Beginners',
@@ -1385,7 +1385,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'YouTube — NeetCode',
     tags: ['concept', 'dp', 'patterns', 'overview', 'neetcode'],
-    topicOrder: { 'dp': 1 },
+    topicOrder: { 'dp': 4 },
   },
   {
     title: 'The Recursive Staircase — Top Down & Bottom Up Dynamic Programming',
@@ -1399,7 +1399,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'YouTube — Back To Back SWE',
     tags: ['concept', 'dp', 'top-down', 'bottom-up', 'staircase', 'memoization', 'tabulation'],
-    topicOrder: { 'dp': 3, 'recursion': 10 },
+    topicOrder: { 'dp': 6, 'recursion': 10 },
   },
   {
     title: 'The 0/1 Knapsack Problem (Demystifying Dynamic Programming)',
@@ -1413,7 +1413,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'YouTube — Back To Back SWE',
     tags: ['concept', 'dp', '0-1-knapsack', '2d-dp', 'classic'],
-    topicOrder: { 'dp': 15 },
+    topicOrder: { 'dp': 18 },
   },
   {
     title: 'Edit Distance Between 2 Strings — The Levenshtein Distance',
@@ -1427,7 +1427,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'YouTube — Back To Back SWE',
     tags: ['concept', 'dp', 'edit-distance', 'levenshtein', 'string-dp', '2d-dp'],
-    topicOrder: { 'dp': 23 },
+    topicOrder: { 'dp': 26 },
   },
   {
     title: 'Grokking Algorithms — Dynamic Programming (chapter 9)',
@@ -1441,7 +1441,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'Book — Grokking Algorithms',
     tags: ['concept', 'book', 'grokking', 'dp', 'knapsack', 'lcs'],
-    topicOrder: { 'dp': 12 },
+    topicOrder: { 'dp': 15 },
   },
   {
     title: 'O que é replicação de Banco de Dados?',
@@ -4224,7 +4224,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 1-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-70', 'dp-1d'],
-    topicOrder: { 'dp': 5 },
+    topicOrder: { 'dp': 8 },
   },
   {
     title: 'LeetCode 746 — Min Cost Climbing Stairs',
@@ -4238,7 +4238,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 1-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-746', 'dp-1d'],
-    topicOrder: { 'dp': 6 },
+    topicOrder: { 'dp': 9 },
   },
   {
     title: 'LeetCode 322 — Coin Change',
@@ -4252,7 +4252,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 1-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-322', 'dp-1d'],
-    topicOrder: { 'dp': 18 },
+    topicOrder: { 'dp': 21 },
   },
   {
     title: 'LeetCode 91 — Decode Ways',
@@ -4266,7 +4266,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 1-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-91', 'dp-1d'],
-    topicOrder: { 'dp': 9 },
+    topicOrder: { 'dp': 12 },
   },
   {
     title: 'LeetCode 198 — House Robber',
@@ -4280,7 +4280,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 1-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-198', 'dp-1d'],
-    topicOrder: { 'dp': 7 },
+    topicOrder: { 'dp': 10 },
   },
   {
     title: 'LeetCode 213 — House Robber II',
@@ -4294,7 +4294,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 1-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-213', 'dp-1d'],
-    topicOrder: { 'dp': 8 },
+    topicOrder: { 'dp': 11 },
   },
   {
     title: 'LeetCode 300 — Longest Increasing Subsequence',
@@ -4308,7 +4308,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 1-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-300', 'dp-1d'],
-    topicOrder: { 'dp': 20 },
+    topicOrder: { 'dp': 23 },
   },
   {
     title: 'LeetCode 5 — Longest Palindromic Substring',
@@ -4322,7 +4322,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 1-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-5', 'dp-1d'],
-    topicOrder: { 'dp': 21 },
+    topicOrder: { 'dp': 24 },
   },
   {
     title: 'LeetCode 152 — Maximum Product Subarray',
@@ -4336,7 +4336,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 1-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-152', 'dp-1d'],
-    topicOrder: { 'dp': 11 },
+    topicOrder: { 'dp': 14 },
   },
   {
     title: 'LeetCode 647 — Palindromic Substrings',
@@ -4350,7 +4350,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 1-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-647', 'dp-1d'],
-    topicOrder: { 'dp': 22 },
+    topicOrder: { 'dp': 25 },
   },
   {
     title: 'LeetCode 416 — Partition Equal Subset Sum',
@@ -4364,7 +4364,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 1-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-416', 'dp-1d'],
-    topicOrder: { 'dp': 16 },
+    topicOrder: { 'dp': 19 },
   },
   {
     title: 'LeetCode 139 — Word Break',
@@ -4378,7 +4378,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 1-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-139', 'dp-1d'],
-    topicOrder: { 'dp': 10 },
+    topicOrder: { 'dp': 13 },
   },
 
   // ---------------------------------------------------------------------------
@@ -4398,7 +4398,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 2-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-309', 'dp-2d'],
-    topicOrder: { 'dp': 26 },
+    topicOrder: { 'dp': 29 },
   },
   {
     title: 'LeetCode 518 — Coin Change II',
@@ -4412,7 +4412,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 2-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-518', 'dp-2d'],
-    topicOrder: { 'dp': 19 },
+    topicOrder: { 'dp': 22 },
   },
   {
     title: 'LeetCode 72 — Edit Distance',
@@ -4426,7 +4426,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 2-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-72', 'dp-2d'],
-    topicOrder: { 'dp': 24 },
+    topicOrder: { 'dp': 27 },
   },
   {
     title: 'LeetCode 97 — Interleaving String',
@@ -4440,7 +4440,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 2-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-97', 'dp-2d'],
-    topicOrder: { 'dp': 25 },
+    topicOrder: { 'dp': 28 },
   },
   {
     title: 'LeetCode 1143 — Longest Common Subsequence',
@@ -4454,7 +4454,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 2-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-1143', 'dp-2d'],
-    topicOrder: { 'dp': 14 },
+    topicOrder: { 'dp': 17 },
   },
   {
     title: 'LeetCode 494 — Target Sum',
@@ -4468,7 +4468,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 2-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-494', 'dp-2d'],
-    topicOrder: { 'dp': 17 },
+    topicOrder: { 'dp': 20 },
   },
   {
     title: 'LeetCode 62 — Unique Paths',
@@ -4482,7 +4482,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 2-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-62', 'dp-2d'],
-    topicOrder: { 'dp': 13 },
+    topicOrder: { 'dp': 16 },
   },
   {
     title: 'LeetCode 312 — Burst Balloons',
@@ -4496,7 +4496,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 2-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-312', 'dp-2d'],
-    topicOrder: { 'dp': 30 },
+    topicOrder: { 'dp': 33 },
   },
   {
     title: 'LeetCode 115 — Distinct Subsequences',
@@ -4510,7 +4510,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 2-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-115', 'dp-2d'],
-    topicOrder: { 'dp': 28 },
+    topicOrder: { 'dp': 31 },
   },
   {
     title: 'LeetCode 329 — Longest Increasing Path In a Matrix',
@@ -4524,7 +4524,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 2-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-329', 'dp-2d'],
-    topicOrder: { 'dp': 27 },
+    topicOrder: { 'dp': 30 },
   },
   {
     title: 'LeetCode 10 — Regular Expression Matching',
@@ -4538,7 +4538,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 2-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-10', 'dp-2d'],
-    topicOrder: { 'dp': 29 },
+    topicOrder: { 'dp': 32 },
   },
 
   // ---------------------------------------------------------------------------
@@ -6561,6 +6561,53 @@ const ITEMS: ItemSeed[] = [
     source: 'YouTube — IBM Technology',
     tags: ['concept', 'channel-oneoff', 'security', 'confidential-computing', 'tee', 'enclave', 'encryption', 'ibm-technology'],
     topicOrder: { 'security': 17 },
+  },
+  // ---------------------------------------------------------------------------
+  // dp — cabeça da ladder trazida pelo Davi (2026-09-09).
+  // Canais fora da whitelist, aprovados por vídeo (channel-oneoff). Orders 1-3;
+  // os 29 itens antigos de dp foram deslocados +3 pra abrir espaço.
+  // ---------------------------------------------------------------------------
+  {
+    title: "A Beginner's Guide to Dynamic Programming",
+    url: 'https://www.youtube.com/watch?v=oNoILrFOx2k',
+    description:
+      'Matt Guest — os princípios de DP com exemplos passo a passo e como identificar que um problema pede DP. Parte 1 de 3.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 8,
+    topicSlugs: ['dp'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — Matt Guest',
+    tags: ['concept', 'channel-oneoff', 'dp', 'overlapping-subproblems', 'intro'],
+    topicOrder: { 'dp': 1 },
+  },
+  {
+    title: 'What Is Dynamic Programming and How To Use It',
+    url: 'https://www.youtube.com/watch?v=vYquumk4nWw',
+    description:
+      'CS Dojo — DP em cima de Fibonacci: do recursivo que recalcula tudo até a versão com cache.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 15,
+    topicSlugs: ['dp'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — CS Dojo',
+    tags: ['concept', 'channel-oneoff', 'dp', 'memoization', 'fibonacci', 'intro'],
+    topicOrder: { 'dp': 2 },
+  },
+  {
+    title: 'Mastering Dynamic Programming — How to solve any interview problem',
+    url: 'https://www.youtube.com/watch?v=Hdr64lKQ3e4',
+    description:
+      'Tech With Nikola — por que recursão pura estoura, como memoization corta o custo, bottom-up vs top-down, e como reconhecer que um problema é DP.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 20,
+    topicSlugs: ['dp'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — Tech With Nikola',
+    tags: ['concept', 'channel-oneoff', 'dp', 'memoization', 'top-down', 'bottom-up', 'pattern-recognition'],
+    topicOrder: { 'dp': 3 },
   },
 ];
 
