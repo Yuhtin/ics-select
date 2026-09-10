@@ -36,7 +36,7 @@ export default function MeCalendarPage() {
     return d;
   }, [weekStart]);
 
-  const { data, isLoading, isFetching } = useMeCalendarWeek(weekStart);
+  const { data, isLoading, isFetching, isError } = useMeCalendarWeek(weekStart);
   const reschedule = useRescheduleEvent(weekStart);
   const [editing, setEditing] = useState<CalendarEvent | null>(null);
 
@@ -67,7 +67,7 @@ export default function MeCalendarPage() {
         isRefreshing={isFetching && !isLoading}
       />
       {!data ? (
-        <CalendarSkeleton />
+        isError ? <p role="alert" className="py-8 text-sm text-fg-soft">Could not load your calendar.</p> : <CalendarSkeleton />
       ) : (
         <>
           {!data.hasGoogleConnection && <CalendarConnectBanner variant="not_connected" />}
@@ -76,7 +76,7 @@ export default function MeCalendarPage() {
               <CalendarSidebar events={data.events} timezone={data.timezone} />
             </div>
             <div className="min-w-0">
-              <div className="overflow-x-auto">
+              <div data-testid="calendar-grid-scroller" className="overflow-x-auto">
                 <div className="min-w-[840px]">
                   <CalendarApp
                     weekStart={weekStart}

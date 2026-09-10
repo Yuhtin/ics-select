@@ -369,14 +369,27 @@ for (const theme of ['light', 'dark'] as const) {
     await dialog.getByRole('button', { name: 'Reagendar', exact: true }).click();
     await expect(dialog.getByRole('alert')).toHaveText('O fim precisa ser depois do início.');
     await dialog.getByLabel('Fim', { exact: true }).fill('2026-04-17T17:45');
+    const calendarReload = page.waitForResponse((response) => response.url().includes('/me/calendar?') && response.request().method() === 'GET');
     const rescheduleRequest = page.waitForRequest((request) => request.url().endsWith('/me/calendar/events/study-1') && request.method() === 'PATCH');
     await dialog.getByRole('button', { name: 'Reagendar', exact: true }).click();
     expect((await rescheduleRequest).postDataJSON()).toEqual({ start: '2026-04-17T20:00:00Z', end: '2026-04-17T20:45:00Z' });
     await expect(dialog).toBeHidden();
+    await calendarReload;
+    // Wait for the deterministic API fixture to replace the optimistic 17:00 block.
+    await expect(page.getByText('16:00–16:45', { exact: false })).toBeVisible();
 
     await page.setViewportSize({ width: 390, height: 844 });
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-    await page.getByText(memberItem.title, { exact: true }).last().evaluate((element) => element.scrollIntoView({ block: 'center', inline: 'center' }));
+    // Chromium can report the new innerHeight before vh layout catches up.
+    // Wait for the resized grid or scrollTop is clamped against desktop height.
+    const gridBody = page.getByTestId('calendar-grid-scroller').locator('.overflow-y-auto');
+    await expect(gridBody).toHaveCSS('max-height', '604px');
+    // Keep both grid axes deterministic after the optimistic/refetch cycle.
+    await page.getByTestId('calendar-grid-scroller').evaluate((element) => {
+      element.scrollLeft = element.scrollWidth - element.clientWidth;
+      element.querySelector<HTMLElement>('.overflow-y-auto')!.scrollTop = 280;
+    });
+    await expect.poll(() => gridBody.evaluate((element) => element.scrollTop)).toBe(280);
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await page.evaluate(() => window.scrollTo(0, 0));
     await expect(page).toHaveScreenshot(`academy-calendar-mobile-${theme}.png`, { fullPage: true, animations: 'disabled' });

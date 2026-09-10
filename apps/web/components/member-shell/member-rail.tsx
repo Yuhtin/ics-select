@@ -82,7 +82,7 @@ export function MemberRail() {
           </Link>
         )}
         <div className="mt-auto space-y-1">
-          <ThemeToggle presentation="rail" className={itemClass} />
+          <ThemeToggle presentation="rail" className={`${itemClass} w-full`} />
           <Link
             href="/me/settings"
             aria-current={pathname.startsWith('/me/settings') ? 'page' : undefined}

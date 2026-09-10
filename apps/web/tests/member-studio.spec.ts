@@ -28,6 +28,7 @@ const itemDetail: ItemResponse = {
 };
 
 async function mockStudioMember(page: Page, retroOpen = true) {
+  await freezeStudioDate(page);
   await page.addInitScript(() => localStorage.setItem('ics_access_token', 'studio-token'));
   await page.route(`${API_BASE}/**`, (route) => {
     const path = new URL(route.request().url()).pathname;
@@ -81,7 +82,7 @@ test('Studio uses a labeled rail on desktop', async ({ page }) => {
   await page.goto('/me');
   const rail = page.getByRole('navigation', { name: 'Main navigation' });
   await expect(rail).toBeVisible();
-  expect((await rail.boundingBox())?.width).toBe(94);
+  await expect.poll(async () => (await rail.boundingBox())?.width).toBe(94);
   for (const label of ['Today', 'Calendar', 'Cohort', 'Retro', 'Theme', 'Settings', 'Profile', 'Sign out']) {
     await expect(rail.getByText(label, { exact: true })).toBeVisible();
   }
@@ -140,6 +141,7 @@ test('Studio keeps every rail action reachable in a short 200%-zoom desktop layo
   const targets = await navigation.locator('a, button').all();
   for (const target of targets) {
     expect(await target.evaluate((element) => element.getBoundingClientRect().height)).toBeGreaterThanOrEqual(44);
+    expect(await target.evaluate((element) => element.getBoundingClientRect().width)).toBeGreaterThanOrEqual(44);
     await target.evaluate((element) => element.scrollIntoView({ block: 'nearest' }));
     const reachable = await target.evaluate((element) => {
       const targetRect = element.getBoundingClientRect();
@@ -188,7 +190,7 @@ test('Cohort separates roster and activity without a card grid', async ({ page }
 });
 
 for (const theme of ['light', 'dark'] as const) {
-  test(`Today uses neutral aggregate metrics and preserves reference defaults in ${theme}`, async ({ page }) => {
+  test(`Today and the Studio preview use neutral aggregate metrics in ${theme}`, async ({ page }) => {
     await mockStudioMember(page);
     await page.addInitScript((value) => localStorage.setItem('ics-theme', value), theme);
     await page.goto('/me');
@@ -208,9 +210,9 @@ for (const theme of ['light', 'dark'] as const) {
 
     await page.goto('/dev/me-preview');
     const referenceStudy = page.locator('section').filter({ has: page.getByText('Study time this week', { exact: true }) });
-    await expect(referenceStudy.locator('[style]')).toHaveClass(/bg-primary/);
-    await expect(page.getByTitle('Hashing — 1/4')).toHaveClass(/bg-primary\/25/);
-    await expect(page.getByTitle('Arrays — 4/6')).toHaveClass(/bg-primary\/65/);
+    await expect(referenceStudy.locator('[style]')).toHaveClass(/bg-fg-mute/);
+    await expect(page.getByTitle('Hashing — 1/4')).toHaveClass(/bg-fg-mute\/25/);
+    await expect(page.getByTitle('Arrays — 4/6')).toHaveClass(/bg-fg-mute\/65/);
     await expect(page.getByTitle('Recursion — 4/4')).toHaveClass(/bg-success/);
   });
 }
@@ -479,3 +481,291 @@ for (const outcome of ['PENDING', 'DONE_EASY'] as const) {
     await expect(page.getByRole('textbox', { name: /nota/i })).toHaveValue('Keep the existing answer.');
   });
 }
+
+
+test('reconnect gate uses the Studio canvas and keeps the OAuth target', async ({ page }) => {
+  await mockStudioMember(page);
+  await page.route(new RegExp(`^${API_BASE}/me$`), (route) => route.fulfill({ json: { ...member, googleConnected: false } }));
+  await page.goto('/me');
+  const gate = page.getByRole('heading', { name: 'Reconnect your Google Calendar' }).locator('..');
+  await expect(gate).toBeVisible();
+  await expect(gate).toHaveCSS('border-top-width', '0px');
+  await expect(gate.getByRole('link', { name: 'Reconnect Google' })).toHaveAttribute('href', '/auth/google');
+  await expect(page.getByRole('heading', { name: item.title })).toHaveCount(0);
+});
+
+test('guided member motion becomes static with reduced motion', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await mockStudioMember(page);
+  await page.goto('/me/retro');
+  await expect(page.getByRole('textbox')).toBeVisible();
+  await expect.poll(() => page.evaluate(() => document.getAnimations().filter((animation) => animation.playState === 'running').length)).toBe(0);
+});
+
+test('Calendar query failure replaces loading with an open recovery message', async ({ page }) => {
+  await mockStudioMember(page);
+  await page.route(`${API_BASE}/me/calendar?*`, (route) => route.fulfill({ status: 503, json: {} }));
+  await page.goto('/me/calendar');
+  const error = page.getByRole('main').getByRole('alert');
+  await expect(error).toHaveText('Could not load your calendar.', { timeout: 15000 });
+  await expect(page.getByText('Loading calendar')).toHaveCount(0);
+});
+
+test('Studio switches to 32px workspace padding at 1200px', async ({ page }) => {
+  await mockStudioMember(page);
+  await page.setViewportSize({ width: 1200, height: 900 });
+  await page.goto('/me');
+  await expect(page.locator('main > div')).toHaveCSS('padding-left', '32px');
+});
+
+test('preview matches the authenticated navigation geometry without API requests', async ({ page }) => {
+  await page.setViewportSize({ width: 768, height: 900 });
+  const requests: string[] = [];
+  page.on('request', (request) => { if (request.url().startsWith(API_BASE)) requests.push(request.url()); });
+  await page.goto('/dev/me-preview');
+  const rail = page.getByTestId('member-rail');
+  await expect(rail).toBeVisible();
+  await expect.poll(async () => (await rail.boundingBox())?.width).toBe(94);
+  for (const name of ['Today', 'Calendar', 'Cohort']) {
+    const link = rail.getByRole('link', { name, exact: true });
+    expect((await link.boundingBox())?.height).toBe(48);
+  }
+  await page.setViewportSize({ width: 390, height: 900 });
+  await expect(rail).toBeHidden();
+  const nav = page.getByRole('navigation', { name: 'Main navigation' });
+  for (const name of ['Today', 'Calendar', 'Cohort', 'Profile']) {
+    expect((await nav.getByRole('link', { name, exact: true }).boundingBox())?.height).toBe(64);
+  }
+  expect(requests).toEqual([]);
+});
+
+test('short external Calendar events keep their full touch target and focus visible', async ({ page }) => {
+  await mockStudioMember(page);
+  await freezeStudioDate(page);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.route(`${API_BASE}/me/calendar?*`, (route) => route.fulfill({ json: {
+    weekStart: '2026-04-12', weekEnd: '2026-04-18', timezone: 'America/Sao_Paulo', hasGoogleConnection: true,
+    events: [35, 45].map((minutes, index) => ({ id: `short-${minutes}`, kind: 'EXTERNAL', title: `${minutes} minute meeting`, start: `2026-04-${16 + index}T17:00:00Z`, end: `2026-04-${16 + index}T17:${minutes}:00Z`, allDay: false, meetLink: `https://meet.google.com/short-${minutes}` })),
+  } }));
+  await page.goto('/me/calendar');
+  for (const minutes of [35, 45]) {
+    const link = page.locator(`a[href="https://meet.google.com/short-${minutes}"]`);
+    await link.focus();
+    await link.scrollIntoViewIfNeeded();
+    await expect(link).not.toHaveCSS('box-shadow', 'none');
+    const geometry = await link.evaluate((element) => {
+      const box = element.getBoundingClientRect();
+      let top = box.top, bottom = box.bottom, left = box.left, right = box.right;
+      for (let parent = element.parentElement; parent; parent = parent.parentElement) {
+        const style = getComputedStyle(parent);
+        const rect = parent.getBoundingClientRect();
+        if (/(hidden|auto|scroll|clip)/.test(style.overflowY)) { top = Math.max(top, rect.top); bottom = Math.min(bottom, rect.bottom); }
+        if (/(hidden|auto|scroll|clip)/.test(style.overflowX)) { left = Math.max(left, rect.left); right = Math.min(right, rect.right); }
+      }
+      return { width: right - left, height: bottom - top };
+    });
+    expect.soft(geometry.width).toBeGreaterThanOrEqual(44);
+    expect.soft(geometry.height).toBeGreaterThanOrEqual(44);
+  }
+});
+
+async function freezeStudioDate(page: Page) {
+  // Freeze Date alone: temporal-polyfill relies on the native Intl constructors.
+  await page.addInitScript(() => {
+    const NativeDate = Date;
+    const fixed = NativeDate.parse('2026-04-17T19:00:00Z');
+    window.Date = class extends NativeDate {
+      constructor(...args: ConstructorParameters<typeof Date>) { super(...(args.length ? args : [fixed])); }
+      static now() { return fixed; }
+    } as DateConstructor;
+  });
+}
+
+
+test('onboarding uses guided progress and focuses each question in reduced motion', async ({ page }) => {
+  await mockStudioMember(page);
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.route(new RegExp(`^${API_BASE}/me$`), (route) => route.fulfill({ json: { ...member, targetTrack: null } }));
+  await page.goto('/me/onboarding');
+  await page.getByRole('textbox').fill('+5511987654321');
+  await page.getByRole('button', { name: 'Next', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Which one are you shooting for?' })).toBeFocused();
+  await expect(page.getByText('2 of 4', { exact: true })).toBeVisible();
+  await expect(page.locator('[data-onboarding-panel]')).toHaveCSS('transform', 'none');
+  await expect.poll(() => page.evaluate(() => document.getAnimations().filter((animation) => animation.playState === 'running').length)).toBe(0);
+});
+
+
+for (const width of [390, 768, 1440]) {
+  for (const theme of ['light', 'dark'] as const) {
+    test(`Studio reference at ${width}px in ${theme}`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      await page.addInitScript((value) => localStorage.setItem('ics-theme', value), theme);
+      await page.goto('/dev/me-preview');
+      await prepareStudioCapture(page, theme);
+      await expect(page).toHaveScreenshot(`academy-studio-${theme}-${width}.png`, { fullPage: true, animations: 'disabled' });
+    });
+
+    for (const [route, path, title] of [
+      ['today', '/me', 'Binary search patterns'],
+      ['calendar', '/me/calendar', 'Apr 12 to Apr 18'],
+      ['item', '/me/item/binary-search', 'Binary search patterns'],
+      ['cohort', '/me/cohort', '2 classmates this cycle'],
+      ['retro', '/me/retro', '1 coisa que você quer no próximo plano'],
+    ]) {
+      test(`Studio ${route} at ${width}px in ${theme}`, async ({ page }) => {
+        await mockStudioMember(page);
+        await page.setViewportSize({ width, height: 900 });
+        await page.emulateMedia({ reducedMotion: 'reduce' });
+        await page.addInitScript((value) => localStorage.setItem('ics-theme', value), theme);
+        await page.goto(path);
+        await expect(page.getByRole('heading', { name: title, exact: true })).toBeVisible();
+        if (route === 'item') {
+          await page.getByRole('button', { name: 'How did it go?' }).click();
+          await expect(page.getByRole('heading', { name: 'How did it go?' })).toBeFocused();
+        }
+        if (route === 'calendar') {
+          await expect(page.getByText('Mentor office hours')).toBeVisible();
+          const scroller = page.getByTestId('calendar-grid-scroller');
+          await expect(scroller).toHaveCSS('overflow-x', 'auto');
+          if (width < 1024) await scroller.evaluate((element) => {
+            element.scrollLeft = element.scrollWidth - element.clientWidth;
+            element.querySelector<HTMLElement>('.overflow-y-auto')!.scrollTop = 280;
+          });
+        }
+        await prepareStudioCapture(page, theme);
+        await page.evaluate(() => window.scrollTo(0, 0));
+        await expect(page).toHaveScreenshot(`academy-studio-${route}-${theme}-${width}.png`, { fullPage: true, animations: 'disabled' });
+      });
+    }
+  }
+}
+
+for (const width of [390, 1440]) {
+  for (const theme of ['light', 'dark'] as const) {
+    test(`Studio reconnect at ${width}px in ${theme}`, async ({ page }) => {
+      await mockStudioMember(page);
+      await page.setViewportSize({ width, height: 900 });
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      await page.addInitScript((value) => localStorage.setItem('ics-theme', value), theme);
+      await page.route(new RegExp(`^${API_BASE}/me$`), (route) => route.fulfill({ json: { ...member, googleConnected: false } }));
+      await page.goto('/me');
+      const gate = page.getByTestId('google-reconnect-gate');
+      await expect(gate).toBeVisible();
+      await expect(gate.getByRole('link', { name: 'Reconnect Google' })).toHaveAttribute('href', '/auth/google');
+      await expect(page.getByRole('heading', { name: item.title })).toHaveCount(0);
+      await prepareStudioCapture(page, theme);
+      await expect(page).toHaveScreenshot(`academy-studio-reconnect-${theme}-${width}.png`, { fullPage: true, animations: 'disabled' });
+    });
+
+    test(`Studio onboarding at ${width}px in ${theme}`, async ({ page }) => {
+      await mockStudioMember(page);
+      await page.setViewportSize({ width, height: 900 });
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      await page.addInitScript((value) => localStorage.setItem('ics-theme', value), theme);
+      await page.route(new RegExp(`^${API_BASE}/me$`), (route) => route.fulfill({ json: { ...member, targetTrack: null, googleConnected: false } }));
+      await page.goto('/me');
+      await expect(page).toHaveURL(/\/me\/onboarding$/);
+      await expect(page.getByRole('navigation', { name: 'Main navigation' })).toHaveCount(0);
+      await expect(page.getByRole('link', { name: 'Reconnect Google' })).toHaveCount(0);
+      for (const [index, title] of ['Where should we reach you?', 'Which one are you shooting for?', 'How much time per day?', 'Dark or light?'].entries()) {
+        const heading = page.getByRole('heading', { name: title, exact: true });
+        await expect(heading).toBeVisible();
+        if (index > 0) await expect(heading).toBeFocused();
+        if (index === 0) await page.getByRole('textbox').fill('+5511987654321');
+        if (index === 1) await page.getByRole('button', { name: /^Big Tech/ }).click();
+        await prepareStudioCapture(page, theme);
+        await page.evaluate(() => window.scrollTo(0, 0));
+        await expect(page).toHaveScreenshot(`academy-studio-onboarding-${index + 1}-${theme}-${width}.png`, { fullPage: true, animations: 'disabled' });
+        if (index < 3) await page.getByRole('button', { name: 'Next', exact: true }).click();
+      }
+      await expect(page.getByRole('button', { name: "LET'S GOOOO" })).toBeEnabled();
+    });
+  }
+}
+
+async function prepareStudioCapture(page: Page, theme: 'light' | 'dark') {
+  await page.addStyleTag({ content: 'nextjs-portal { display: none !important; }' });
+  await page.evaluate(() => document.fonts.ready);
+  await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+}
+
+test('Retro response remains reachable at 200 percent mobile zoom', async ({ page }) => {
+  await mockStudioMember(page);
+  // 780x1688 at 200% browser zoom yields a 390x844 CSS viewport. Unlike pinch
+  // magnification, browser zoom reflows the layout and is the spec's contract.
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/me/retro');
+  const response = page.getByRole('textbox');
+  await response.focus();
+  await response.evaluate((element) => element.scrollIntoView({ block: 'center' }));
+  const bounds = await response.boundingBox();
+  expect(bounds!.x).toBeGreaterThanOrEqual(0);
+  expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(390);
+  expect(bounds!.y).toBeGreaterThanOrEqual(0);
+  const navigation = await page.getByRole('navigation', { name: 'Main navigation' }).boundingBox();
+  expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(navigation!.y);
+  await response.fill('A resposta continua acessível com o teclado aberto.');
+  // A reduced visual height models the keyboard reserving the lower viewport.
+  await page.setViewportSize({ width: 390, height: 450 });
+  await response.evaluate((element) => element.scrollIntoView({ block: 'center' }));
+  await expect(response).toBeInViewport();
+  await expect(response).toHaveValue('A resposta continua acessível com o teclado aberto.');
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+test('onboarding preserves its ordered writes, answers on Back, and final redirect', async ({ page }) => {
+  await mockStudioMember(page);
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  let finished = false;
+  const writes: { path: string; body: Record<string, unknown> }[] = [];
+  await page.route(new RegExp(`^${API_BASE}/me$`), (route) => route.fulfill({ json: { ...member, targetTrack: finished ? 'BIG_TECH' : null } }));
+  for (const path of ['/me/profile', '/me/availability', '/me/theme']) {
+    await page.route(`${API_BASE}${path}`, (route) => {
+      writes.push({ path, body: route.request().postDataJSON() });
+      if (path === '/me/theme') finished = true;
+      return route.fulfill({ json: {} });
+    });
+  }
+  await page.goto('/me/onboarding');
+  await page.getByRole('textbox').fill('+5511987654321');
+  await page.getByRole('button', { name: 'Next', exact: true }).click();
+  await page.getByRole('button', { name: /^Big Tech/ }).click();
+  await page.getByRole('button', { name: 'Back', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Where should we reach you?' })).toBeFocused();
+  await expect(page.getByRole('textbox')).toHaveValue('+55 (11) 98765-4321');
+  await page.getByRole('button', { name: 'Next', exact: true }).click();
+  await expect(page.getByRole('button', { name: /^Big Tech/ })).toHaveAttribute('aria-pressed', 'true');
+  await page.getByRole('button', { name: 'Next', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'How much time per day?' })).toBeFocused();
+  await page.getByRole('button', { name: 'Next', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Dark or light?' })).toBeFocused();
+  expect(writes).toEqual([]);
+  await page.getByRole('button', { name: "LET'S GOOOO" }).click();
+  await expect(page).toHaveURL(/\/me$/);
+  expect(writes.map((write) => write.path)).toEqual(['/me/profile', '/me/availability', '/me/theme']);
+  expect(writes[0].body).toEqual({ whatsappPhone: '+5511987654321', targetTrack: 'BIG_TECH' });
+  expect(writes[1].body).toMatchObject({ mondayMinutes: 60, tuesdayMinutes: 60, wednesdayMinutes: 60, thursdayMinutes: 60, fridayMinutes: 30, saturdayMinutes: 90, sundayMinutes: 0, preferredSessionMinutes: 30 });
+  expect(writes[1].body.timezone).toBe(await page.evaluate(() => Intl.DateTimeFormat().resolvedOptions().timeZone));
+  expect(writes[2].body).toEqual({ themePreference: 'LIGHT' });
+});
+
+
+test('onboarding cannot finish before the final question enters', async ({ page }) => {
+  await mockStudioMember(page);
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.route(new RegExp(`^${API_BASE}/me$`), (route) => route.fulfill({ json: { ...member, targetTrack: null } }));
+  await page.goto('/me/onboarding');
+  await page.getByRole('textbox').fill('+5511987654321');
+  await page.getByRole('button', { name: 'Next', exact: true }).click();
+  await page.getByRole('button', { name: /^Big Tech/ }).click();
+  await page.getByRole('button', { name: 'Next', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'How much time per day?' })).toBeFocused();
+  await page.getByRole('button', { name: 'Next', exact: true }).click();
+  await expect(page.getByRole('button', { name: "LET'S GOOOO" })).toBeDisabled();
+  await expect(page.getByRole('heading', { name: 'Dark or light?' })).toBeFocused();
+  await expect(page.getByRole('button', { name: "LET'S GOOOO" })).toBeEnabled();
+});

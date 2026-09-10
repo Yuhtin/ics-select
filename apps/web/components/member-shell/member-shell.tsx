@@ -20,7 +20,7 @@ export function MemberShell({ children }: MemberShellProps) {
       {!isOnboarding && <MemberRail />}
       <div className="min-w-0 flex-1">
         <main className="pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0">
-          <div className="mx-auto w-full max-w-[1360px] px-5 py-7 sm:px-6 md:px-6 md:py-9 xl:px-8 min-[1440px]:px-10">
+          <div className="mx-auto w-full max-w-[1360px] px-5 py-7 sm:px-6 md:px-6 md:py-9 min-[1200px]:px-8 min-[1440px]:px-10">
             <OnboardingGate>
               <GoogleReconnectGate>{children}</GoogleReconnectGate>
             </OnboardingGate>

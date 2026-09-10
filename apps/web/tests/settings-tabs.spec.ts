@@ -376,47 +376,50 @@ test.describe('settings tabs', () => {
       });
     }
 
-    test(`all settings tabs fit mobile in ${theme}`, async ({ page }) => {
-      await page.setViewportSize({ width: 390, height: 844 });
-      await page.emulateMedia({ reducedMotion: 'reduce' });
-      await page.addInitScript((value) => localStorage.setItem('ics-theme', value), theme);
-      for (const [tab, label] of [['profile', 'WhatsApp phone'], ['appearance', 'Your choice syncs across devices.'], ['availability', 'Available time slots']]) {
-        await page.goto(`/me/settings/${tab}`);
-        await page.addStyleTag({ content: 'nextjs-portal { display: none !important; }' });
-        await expect(page.getByText(label, { exact: true }).first()).toBeVisible();
-        await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
-        await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-        await expect(page).toHaveScreenshot(`academy-settings-${tab}-${theme}-mobile.png`, { fullPage: true, animations: 'disabled' });
-      }
-      await page.keyboard.press('Tab');
-      await page.getByRole('button', { name: 'What does this do?' }).focus();
-      await expect(page.getByRole('tooltip')).toContainText('study events created by Academy Fellow');
-      for (const label of ['Mon start', 'Mon end']) {
-        await page.getByRole('button', { name: label, exact: true }).click();
-        const dialog = page.getByRole('dialog', { name: `${label} picker` });
-        await expect(dialog).toHaveCSS('opacity', '1');
-        await expect(dialog).toHaveCSS('transform', 'none');
-        const choices = await dialog.locator('button:enabled').evaluateAll((buttons) => buttons.map((button) => {
-          const { width, height } = button.getBoundingClientRect();
-          return { label: button.getAttribute('aria-label') ?? button.textContent, width, height };
-        }));
-        expect(choices.length).toBeGreaterThan(0);
-        expect.soft(choices.find(({ width, height }) => width < 44 || height < 44), `${label} choices must be at least 44×44px`).toBeUndefined();
-        if (label === 'Mon end') {
-          expect.soft((await dialog.getByRole('button', { name: /End of day/ }).boundingBox())?.height).toBeGreaterThanOrEqual(44);
+    for (const width of [390, 768, 1440]) {
+      test(`all settings tabs fit Studio reference at ${width}px in ${theme}`, async ({ page }) => {
+        await page.setViewportSize({ width, height: 844 });
+        await page.emulateMedia({ reducedMotion: 'reduce' });
+        await page.addInitScript((value) => localStorage.setItem('ics-theme', value), theme);
+        for (const [tab, label] of [['profile', 'WhatsApp phone'], ['appearance', 'Your choice syncs across devices.'], ['availability', 'Available time slots']]) {
+          await page.goto(`/me/settings/${tab}`);
+          await page.addStyleTag({ content: 'nextjs-portal { display: none !important; }' });
+          await expect(page.getByText(label, { exact: true }).first()).toBeVisible();
+          await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+          await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+          await expect(page).toHaveScreenshot(`academy-settings-${tab}-${theme}-${width === 390 ? 'mobile' : width}.png`, { fullPage: true, animations: 'disabled' });
         }
-        const bounds = await dialog.boundingBox();
-        expect(bounds!.x).toBeGreaterThanOrEqual(0);
-        expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(390);
-        expect(bounds!.y).toBeGreaterThanOrEqual(0);
-        expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(844);
-        if (label === 'Mon start') {
-          await expect(dialog).toHaveScreenshot(`academy-time-picker-${theme}.png`, { animations: 'disabled' });
+        if (width !== 390) return;
+        await page.keyboard.press('Tab');
+        await page.getByRole('button', { name: 'What does this do?' }).focus();
+        await expect(page.getByRole('tooltip')).toContainText('study events created by Academy Fellow');
+        for (const label of ['Mon start', 'Mon end']) {
+          await page.getByRole('button', { name: label, exact: true }).click();
+          const dialog = page.getByRole('dialog', { name: `${label} picker` });
+          await expect(dialog).toHaveCSS('opacity', '1');
+          await expect(dialog).toHaveCSS('transform', 'none');
+          const choices = await dialog.locator('button:enabled').evaluateAll((buttons) => buttons.map((button) => {
+            const { width, height } = button.getBoundingClientRect();
+            return { label: button.getAttribute('aria-label') ?? button.textContent, width, height };
+          }));
+          expect(choices.length).toBeGreaterThan(0);
+          expect.soft(choices.find(({ width, height }) => width < 44 || height < 44), `${label} choices must be at least 44×44px`).toBeUndefined();
+          if (label === 'Mon end') {
+            expect.soft((await dialog.getByRole('button', { name: /End of day/ }).boundingBox())?.height).toBeGreaterThanOrEqual(44);
+          }
+          const bounds = await dialog.boundingBox();
+          expect(bounds!.x).toBeGreaterThanOrEqual(0);
+          expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(390);
+          expect(bounds!.y).toBeGreaterThanOrEqual(0);
+          expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(844);
+          if (label === 'Mon start') {
+            await expect(dialog).toHaveScreenshot(`academy-time-picker-${theme}.png`, { animations: 'disabled' });
+          }
+          await page.keyboard.press('Escape');
+          await expect(dialog).toBeHidden();
         }
-        await page.keyboard.press('Escape');
-        await expect(dialog).toBeHidden();
-      }
-    });
+      });
+    }
 
     test(`onboarding steps stay readable in ${theme}`, async ({ page }) => {
       await page.setViewportSize({ width: 390, height: 844 });
