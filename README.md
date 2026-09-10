@@ -1,174 +1,152 @@
-# ICS Select
+# Academy Fellow
 
-Plataforma interna do ICS Select — Programa de Preparação Avançada para Entrevistas Técnicas (Inteli Consulting Society).
+Programa de desenvolvimento técnico do **Inteli Academy** para quem quer chegar mais preparado a entrevistas, competições e desafios reais de engenharia de software.
+
+São seis meses com uma cohort de 12 fellows ativos. Cada pessoa recebe um plano semanal individual, construído a partir de um acervo curado e organizado diretamente no Google Calendar. O Studio transforma esse plano em uma rotina clara: o que estudar agora, como a semana está avançando e onde agir quando algo trava.
+
+🔗 **[ics.daviduarte.com.br](https://ics.daviduarte.com.br)**
+
+![Landing page do Academy Fellow](assets/academy-fellow-landing.png)
+
+---
+
+## O programa
+
+Preparação técnica costuma virar uma trilha genérica que ninguém termina ou uma lista de links que deixa toda a decisão para o aluno. O Academy Fellow trabalha com três restrições deliberadas:
+
+**O plano é individual e tem revisão humana.** Toda semana, a liderança educacional monta o plano de cada fellow olhando o histórico, os pontos de dificuldade, os objetivos e o tempo disponível. Ao abrir o Studio, a próxima ação já está definida.
+
+**A cohort é pequena e visível.** São 12 pessoas por vez. Progresso, streak e engajamento ficam visíveis para que ninguém desapareça na multidão e para que a evolução seja também coletiva.
+
+**A prática aponta para desafios reais.** O programa atende tracks de Big Tech, consulting tech, programação competitiva, startups e objetivos personalizados. O acervo combina algoritmos, estruturas de dados, arquitetura de sistemas e materiais de engenharia selecionados pela equipe.
+
+Ao final de cada ciclo, a atividade da cohort é revista. Fellows seguem para o próximo ciclo de acordo com seu envolvimento, enquanto novas pessoas podem entrar pela lista de espera.
+
+## Entrada simples e institucional
+
+O acesso acontece com a conta institucional do Inteli. A integração com o Google Calendar lê somente os horários marcados como ocupados e cria as sessões de estudo nos intervalos disponíveis.
+
+![Login do Academy Fellow](assets/academy-fellow-login.png)
+
+## O Studio do Fellow
+
+![Studio do Fellow na visão Today](assets/academy-fellow-studio.png)
+
+O **Today** é a superfície principal: destaca o estudo atual, ordena o restante do dia e mantém cohort, streak, tempo de estudo e cobertura de tópicos no mesmo contexto. A navegação também reúne:
+
+- **Calendar**, para visualizar a semana e os blocos criados pelo programa;
+- **Cohort**, para acompanhar a evolução do grupo;
+- **Retro**, para refletir sobre a semana e registrar impedimentos;
+- **Settings**, para ajustar perfil, disponibilidade e aparência.
+
+Quando um plano é publicado, o **scheduler** divide cada item em sessões compatíveis com a disponibilidade semanal e cria os eventos no Google Calendar. A ordem pedagógica definida pela liderança é uma restrição forte: o sistema prefere preservar a sequência a encaixar um item posterior em uma brecha anterior.
+
+Ao concluir um item, o fellow registra um dos seis **outcomes** em um fluxo guiado, com uma decisão por vez:
+
+| Outcome | Significado |
+|---|---|
+| `DONE_EASY` | Concluiu com tranquilidade |
+| `DONE_HARD` | Concluiu, mas encontrou dificuldade |
+| `DOUBTS` | Concluiu e quer revisitar o assunto |
+| `STUCK` | Travou e precisa de apoio |
+| `SKIPPED` | Pulou porque já dominava o conteúdo |
+| `PENDING` | Ainda não concluiu |
+
+`DONE_HARD` e `DOUBTS` contam como conclusão, mas influenciam o plano seguinte de forma diferente de `DONE_EASY`. Itens `PENDING` e `STUCK` retornam automaticamente como carry-over e permanecem em destaque até serem resolvidos.
+
+## A operação educacional
+
+A equipe do Academy acompanha o programa por um cockpit administrativo com visão por fellow e por ciclo.
+
+**Editor de plano.** Organiza a semana com itens do acervo e mostra, no mesmo espaço, histórico de outcomes, cobertura por tópico, disponibilidade e carry-overs.
+
+**Acervo.** Mantém materiais com busca lexical, tópicos primários e secundários, dificuldade e uma ordem pedagógica independente da fonte.
+
+**Engajamento.** Consolida dias ativos, conclusão dos planos, retros, presença, posição na cohort e recência. A mesma regra alimenta as visões do admin e do fellow.
+
+**Aulas de arquitetura.** Abrem sistemas reais — como encurtadores de URL, mapas em tempo real, ledgers e arquiteturas orientadas a eventos — para discutir requisitos, escala e trade-offs.
+
+**IA como assistente.** O `gpt-5.4-mini` apoia rascunhos de plano, estruturação de briefs, diagnósticos e chat contextual. Toda geração registra tokens e custo; a decisão final continua com a equipe educacional.
 
 ## Stack
 
-- Monorepo: pnpm 9 + Turborepo 2
-- Backend: NestJS 10 + Prisma 5 + PostgreSQL 16 + pgvector
-- Frontend: Next.js 15 + HeroUI + Tailwind 3 + lucide-react + next-themes
-- Testes: Jest + Supertest (API), Playwright (web), Vitest (shared)
-- Deploy: Docker Compose + Caddy na VPS + Vercel (web) + GitHub Actions
+Monorepo com pnpm 9, Turborepo 2 e Node 20.
 
-## Pré-requisitos
+| Workspace | Tecnologias e responsabilidade |
+|---|---|
+| `apps/web` | Next.js 15, React 19, HeroUI, Tailwind CSS, Framer Motion, TanStack Query e Lucide |
+| `apps/api` | NestJS 10, Prisma 5, PostgreSQL 16 + pgvector, Google OAuth, JWT rotativo e criptografia AES-256-GCM |
+| `packages/prisma` | Schema, migrations e client do Prisma; busca textual e vetores complementados por SQL |
+| `packages/shared` | Contratos e regras de domínio compartilhados entre API e web |
 
-- Node 20 (`.nvmrc`)
-- pnpm 9 (`corepack enable && corepack prepare pnpm@9.12.0 --activate`)
-- Docker 24+ e Docker Compose v2
+O nome público é **Academy Fellow**. Os nomes internos `ics-select` e `@ics-select/*` permanecem no código para preservar compatibilidade com os workspaces e a infraestrutura existentes.
 
-## Setup local
+### Identidade visual
+
+A interface parte da marca do Inteli Academy e combina superfícies neutras frias com o azul do Academy. **Inter** conduz a interface, **Newsreader** aparece em momentos editoriais e **JetBrains Mono** organiza datas, métricas e identificadores.
+
+O Studio usa um canvas aberto com rail persistente, hierarquia tipográfica forte e divisores leves. Cores adicionais indicam outcomes e estados de sistema. A experiência inclui temas claro e escuro, foco visível, alvos de toque de pelo menos 44 px e movimento reduzido quando solicitado pelo sistema operacional.
+
+## Rodando localmente
+
+Você precisa de Node 20, pnpm 9 e Docker.
 
 ```bash
 # 1. Instalar dependências
 pnpm install
 
-# 2. Subir o banco local
+# 2. Subir o PostgreSQL 16 com pgvector
 cp .env.example .env
 docker compose up -d postgres
 
-# 3. Aplicar migrações
-pnpm --filter @ics-select/prisma exec prisma migrate deploy
+# 3. Aplicar migrations
+pnpm db:deploy
 
-# 4. Configurar a API
+# 4. Configurar API e web
 cp apps/api/.env.example apps/api/.env
-
-# 5. Configurar o web
 cp apps/web/.env.example apps/web/.env.local
 
-# 6. Rodar tudo (em terminais separados ou via turbo)
+# 5. Subir os workspaces
 pnpm dev
 ```
 
-- API: http://localhost:3001/health
-- Web: http://localhost:3000
+- Web: [http://localhost:3000](http://localhost:3000)
+- API: [http://localhost:3001/health](http://localhost:3001/health)
 
-## Comandos úteis
+Sem `GOOGLE_OAUTH_*`, o login institucional fica indisponível. Sem `OPENAI_API_KEY`, os recursos de IA ficam fora do ar; o restante da aplicação continua funcionando.
+
+### Comandos
 
 ```bash
-pnpm lint          # lint em todos os packages
-pnpm typecheck     # type-check em todos os packages
-pnpm test          # todos os testes (unit + e2e + playwright)
-pnpm build         # build de todos os packages
-pnpm db:migrate    # roda prisma migrate dev
+pnpm lint          # lint em todos os workspaces
+pnpm typecheck     # typecheck em todos os workspaces
+pnpm test          # Jest, Vitest e Playwright
+pnpm build         # build completo
+pnpm db:migrate    # cria e aplica uma migration local
 pnpm db:generate   # regenera o client do Prisma
+pnpm db:deploy     # aplica migrations existentes
+```
+
+Para executar um teste específico:
+
+```bash
+pnpm --filter @ics-select/api test -- --testPathPattern library.service
+pnpm --filter @ics-select/web test tests/member-studio.spec.ts
 ```
 
 ## Deploy
 
-### Backend (VPS)
+O frontend roda na Vercel e acompanha a branch `main`. A API roda em container no EasyPanel:
 
-O deploy é automático via GitHub Actions em merges na branch `main`:
+1. o workflow **CI** valida migrations, tipos, lint, testes e build;
+2. o workflow **Deploy** publica a imagem `ghcr.io/yuhtin/ics-select-api` com as tags do commit e `latest`;
+3. o EasyPanel recebe o gatilho, baixa a imagem e reinicia a API;
+4. o entrypoint executa `prisma migrate deploy` antes de iniciar o servidor.
 
-1. CI roda (lint, typecheck, testes, build)
-2. Deploy workflow builda a imagem Docker e faz push pra `ghcr.io/yuhtin/ics-select-api`
-3. SSH na VPS → `docker compose pull && migrate && up -d`
+O endpoint público de saúde é [`https://ics-api.daviduarte.com.br/health`](https://ics-api.daviduarte.com.br/health).
 
-**Deploy via EasyPanel:**
+## Sobre este repositório
 
-A API é deployada com EasyPanel na VPS, que importa a imagem publicada no GHCR pelo workflow `.github/workflows/deploy.yml`. Não há SSH no pipeline — o CI só builda e empurra a imagem; o EasyPanel cuida do pull e do restart.
+O Academy Fellow roda em produção com dados reais de fellows. O código está público porque as decisões de produto e arquitetura podem ser úteis para outras iniciativas, mas o repositório não foi preparado como uma distribuição genérica: ele depende de um projeto no Google Cloud, uma chave da OpenAI e infraestrutura configurada.
 
-Setup único no EasyPanel:
-1. Criar um app do tipo "App" apontando para a imagem `ghcr.io/yuhtin/ics-select-api:latest`.
-2. Adicionar credenciais do registry privado (usuário `Yuhtin` + PAT com escopo `read:packages`).
-3. Criar um serviço Postgres (com extensão `pgvector` — use a imagem `pgvector/pgvector:pg16`).
-4. Criar um serviço Evolution API (opcional, Fase 7).
-5. Configurar todas as variáveis de ambiente (ver tabela abaixo). `DATABASE_URL` deve apontar para o serviço Postgres criado pelo EasyPanel.
-6. Configurar o domínio `ics-api.daviduarte.com.br` apontando para o app — EasyPanel gera o certificado TLS automaticamente.
-7. Criar um "Job" / comando de deploy para rodar `cd /app/node_modules/@ics-select/prisma && npx prisma migrate deploy` antes de cada rollout.
-
-A cada merge em `main`, o workflow de CI roda os testes; passando, o workflow de Deploy builda a imagem e publica duas tags no GHCR (`:<sha-curto>` e `:latest`). Basta configurar o EasyPanel pra auto-pull em cima do `:latest` (ou apontar manualmente para uma tag específica para rollback).
-
-### Frontend (Vercel)
-
-- Projeto Vercel apontando pra este repositório
-- **Root Directory:** `apps/web`
-- **Build command:** `cd ../.. && pnpm install --frozen-lockfile && pnpm --filter @ics-select/web build`
-- **Install command:** (vazio, o build command já instala)
-- **Output directory:** `.next` (default)
-- Env var: `NEXT_PUBLIC_API_URL=https://ics-api.daviduarte.com.br`
-- Domínio customizado: `ics.daviduarte.com.br`
-
-## Secrets necessários no GitHub
-
-Nenhum secret de SSH é necessário — o workflow só usa `GITHUB_TOKEN` (automático) pra publicar no GHCR. As credenciais da VPS ficam do lado do EasyPanel.
-
-## Rollback
-
-No EasyPanel, troque a tag da imagem (`ghcr.io/yuhtin/ics-select-api:<sha-anterior>`) e dispare um redeploy. As tags `:<sha-curto>` persistem indefinidamente no GHCR.
-
-## Saúde e logs
-
-- Health: `curl -sS https://ics-api.daviduarte.com.br/health`
-- Logs: pela interface do EasyPanel (aba do app).
-- Postgres shell: pela interface do EasyPanel (aba do serviço Postgres).
-
-## Troubleshooting
-
-- **CI falha em "Apply Prisma migrations":** a service do Postgres não subiu a tempo; GitHub Actions retenta até 10x mas se falhar consistentemente, aumentar `--health-retries`.
-- **Playwright snapshot diff no CI:** rodar `pnpm --filter @ics-select/web test:update` localmente no mesmo SO (use Docker se estiver no macOS) e commitar os snapshots novos.
-- **EasyPanel não consegue puxar a imagem do GHCR:** confirmar que as credenciais do registry privado estão válidas e que o PAT tem escopo `read:packages`.
-
-## Novidades das Fases 5–8
-
-Estas fases consolidam o produto: presença, dashboards, IA, WhatsApp, LGPD e relatórios.
-
-### Fase 5 — Presença + Dashboard Admin
-
-- **Aulas presenciais:** modelos `ClassSession` + `ClassAttendance`. Endpoint admin para registrar presença em lote (`POST /cycles/:id/classes/:classId/attendance`).
-- **Dashboard do admin:** `GET /admin/dashboard` retorna métricas de coorte (total de membros, planos publicados, % de itens concluídos, taxa de presença) e visão por membro. UI em `/admin/dashboard` e `/admin/members/[id]`.
-
-### Fase 6 — IA (OpenAI `gpt-5.4-mini`)
-
-- **Draft de plano:** `POST /ai/draft-plan` gera um plano semanal sugerido a partir do histórico do membro e da biblioteca disponível.
-- **Brief → plano:** `POST /ai/brief-plan` recebe texto livre do admin e converte em itens estruturados.
-- **Diagnóstico do membro:** `GET /members/:id/diagnose` cacheado por 24h, retorna resumo de pontos fortes/fracos.
-- **Chat streaming:** `POST /members/:memberId/chat` (SSE) — coach interno do admin com contexto do membro.
-- **Auditoria de custo:** todas as chamadas registram em `AiGeneration` (tokens, custo USD). Dashboard de uso em `/admin/ai-usage`.
-- Usa a mesma `OPENAI_API_KEY` dos embeddings — não há chave separada.
-
-### Fase 7 — WhatsApp via Evolution API
-
-- **Lembretes automáticos:** cron `@nestjs/schedule` rodando a cada minuto procura `StudySession`s programadas para começar em ~10 minutos e dispara mensagem via WhatsApp.
-- **Alerta "travei":** quando o membro marca um item como travado, o admin recebe um WhatsApp.
-- **Endpoint de teste:** `POST /notifications/test-whatsapp` (admin) para validar a integração.
-- **Auditoria:** toda mensagem (sucesso ou falha) é registrada em `WhatsappLog`.
-
-#### Setup do Evolution API
-
-```bash
-docker compose --profile whatsapp up -d evolution
-```
-
-Depois pareie o número via QR code no painel admin do Evolution e preencha as variáveis de ambiente abaixo. Se elas não estiverem presentes, a feature degrada graciosamente — o serviço apenas registra `error: 'Evolution API not configured'` em `WhatsappLog`.
-
-### Fase 8 — LGPD + Relatórios
-
-- **Exportar meus dados:** `GET /me/export` retorna JSON com tudo que o usuário possui no sistema (perfil, disponibilidade, ciclos, planos, presenças).
-- **Apagar minha conta:** `DELETE /me` remove o usuário; cascatas do Prisma limpam as relações associadas. (Limpeza dos eventos do Google Calendar é best-effort em uma fase futura.)
-- **Aviso de privacidade:** o gate em `/privacy` continua bloqueando o uso até o aceite explícito (`User.privacyAcceptedAt`).
-- **Relatório de ciclo:** `GET /cycles/:id/report` (admin) baixa um Markdown com cobertura geral, presença por aula e estatísticas por membro. Botão "Baixar relatório" no detalhe do ciclo em `/admin/cycles/[id]`.
-
-## Variáveis de ambiente (API)
-
-Resumo das variáveis suportadas pelo `apps/api`. Ver `apps/api/.env.example` para os defaults locais.
-
-| Nome | Obrigatório | Descrição |
-|---|---|---|
-| `NODE_ENV` | não | `development` (default), `test`, `production` |
-| `PORT` | não | Porta HTTP, default `3001` |
-| `DATABASE_URL` | sim | URL Postgres com `?schema=public` |
-| `CORS_ALLOWED_ORIGINS` | sim | Lista CSV de origens permitidas |
-| `LOG_LEVEL` | não | `info` (default) ou `debug`/`warn`/etc |
-| `JWT_SECRET` | sim | ≥ 32 chars |
-| `ENCRYPTION_KEY` | sim | 32 bytes em base64 (cifrar tokens Google) |
-| `GOOGLE_OAUTH_CLIENT_ID` | sim | OAuth client ID |
-| `GOOGLE_OAUTH_CLIENT_SECRET` | sim | OAuth client secret |
-| `GOOGLE_OAUTH_CALLBACK_URL` | sim | URL de callback (`/auth/google/callback`) |
-| `ALLOWED_EMAIL_DOMAINS` | sim | CSV de domínios autorizados |
-| `BOOTSTRAP_ADMIN_EMAILS` | não | CSV de e-mails que viram ADMIN no primeiro login |
-| `FRONTEND_BASE_URL` | sim | URL pública do web (para redirect pós-login) |
-| `OPENAI_API_KEY` | sim | OpenAI — embeddings + chat (`gpt-5.4-mini`) das features de IA |
-| `EVOLUTION_API_BASE_URL` | não | URL do Evolution API self-hosted (Fase 7) |
-| `EVOLUTION_API_KEY` | não | API key do Evolution |
-| `EVOLUTION_INSTANCE` | não | Nome da instância pareada |
-| `ADMIN_WHATSAPP_NUMBER` | não | Número do admin (E.164) que recebe alertas "travei" |
+Issues com dúvidas são bem-vindas. O roadmap acompanha as necessidades da cohort e da operação do Inteli Academy.
