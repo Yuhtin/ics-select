@@ -28,19 +28,19 @@ export function LibraryItemRow({
   if (tags.length) metadata.push(tags.slice(0, 2).join(', '));
 
   return (
-    <div className="rounded-lg border border-border bg-surface p-4 hover:bg-surface-muted transition-colors flex items-center gap-4">
-      <div className="h-10 w-10 rounded-lg bg-brand-soft text-brand flex items-center justify-center flex-shrink-0">
+    <div className="rounded-card border border-border-token bg-surface p-4 hover:bg-surface-hover transition-colors flex flex-wrap items-center gap-3 sm:gap-4">
+      <div className="h-10 w-10 rounded-input bg-bg-subtle text-fg-soft flex items-center justify-center flex-shrink-0">
         <Icon className="h-5 w-5" strokeWidth={2} aria-hidden="true" />
       </div>
 
       <div className="min-w-0 flex-1">
-        <p className="text-base font-semibold text-foreground truncate">{title}</p>
-        <p className="text-xs text-foreground-muted mt-0.5 truncate">
+        <p className="font-sans text-base font-semibold text-fg truncate">{title}</p>
+        <p className="text-xs text-fg-mute mt-0.5 truncate">
           {metadata.join(' · ')}
         </p>
       </div>
 
-      <div className="flex items-center gap-3 flex-shrink-0">
+      <div className="ml-auto flex w-full items-center justify-end gap-3 flex-shrink-0 sm:w-auto">
         <StatusChip status={status} />
         <Button
           size="sm"
@@ -49,6 +49,7 @@ export function LibraryItemRow({
           isIconOnly
           onPress={onClick}
           aria-label="Ver detalhes"
+          className="min-h-11 min-w-11 rounded-input text-fg hover:bg-bg-subtle focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg data-[focus-visible=true]:outline-primary"
         >
           <ChevronRight className="h-4 w-4" />
         </Button>

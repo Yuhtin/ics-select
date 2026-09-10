@@ -4,12 +4,18 @@ import { formatMinutes } from '../../lib/format/time';
 
 interface StudyTimeCardProps {
   studyTime: StudyTimeSummary;
+  presentation?: 'card' | 'context';
   className?: string;
 }
 
 const OVERRUN_RATIO = 1.2;
 
-export function StudyTimeCard({ studyTime, className }: StudyTimeCardProps) {
+const PRESENTATION = {
+  card: 'rounded-tile border border-border-token bg-surface p-6',
+  context: 'py-5 first:pt-0 last:pb-0',
+} as const;
+
+export function StudyTimeCard({ studyTime, presentation = 'card', className }: StudyTimeCardProps) {
   const { actualMinutes, estimatedMinutes, itemsWithTime, itemsTotal } = studyTime;
 
   const pct =
@@ -18,10 +24,11 @@ export function StudyTimeCard({ studyTime, className }: StudyTimeCardProps) {
       : Math.min(150, Math.round((actualMinutes / estimatedMinutes) * 100));
   const overrun = estimatedMinutes > 0 && actualMinutes > estimatedMinutes * OVERRUN_RATIO;
   const barWidth = Math.min(100, pct);
+  const progressTone = presentation === 'context' ? 'bg-fg-mute' : 'bg-primary';
 
   return (
-    <section className={clsx('rounded-tile border border-border-token bg-surface p-6', className)}>
-      <p className="font-mono text-[10px] font-semibold uppercase tracking-eyebrow text-fg-mute">
+    <section className={clsx(PRESENTATION[presentation], className)}>
+      <p className="font-sans text-xs font-medium text-fg-mute">
         Study time this week
       </p>
 
@@ -36,7 +43,7 @@ export function StudyTimeCard({ studyTime, className }: StudyTimeCardProps) {
         <div
           className={clsx(
             'h-full transition-[width]',
-            overrun ? 'bg-reflect' : 'bg-fg',
+            overrun ? 'bg-reflect' : progressTone,
           )}
           style={{ width: `${barWidth}%` }}
         />
@@ -46,7 +53,7 @@ export function StudyTimeCard({ studyTime, className }: StudyTimeCardProps) {
       </p>
 
       {overrun && (
-        <p className="mt-3 font-sans text-[11px] text-reflect">
+        <p className="mt-3 font-sans text-xs leading-relaxed text-fg-soft">
           Taking longer than estimated. The program director sees this.
         </p>
       )}

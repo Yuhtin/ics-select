@@ -204,16 +204,19 @@ export function LibraryPickerModal({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-5xl rounded-card bg-surface border border-rule shadow-modal flex flex-col max-h-full"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="library-picker-title"
+        className="w-full max-w-5xl rounded-card bg-surface border border-border-token shadow-modal flex flex-col max-h-full"
         onClick={(e) => e.stopPropagation()}
       >
-        <header className="flex items-start justify-between gap-4 border-b border-rule px-6 py-4">
+        <header className="flex items-start justify-between gap-4 border-b border-border-token px-6 py-4">
           <div className="flex-1 min-w-0 space-y-1">
-            <h3 className="font-serif-tool text-xl font-semibold text-ink">
+            <h3 id="library-picker-title" className="font-sans text-xl font-semibold text-fg">
               Add from library
             </h3>
             <div className="flex items-center gap-3 flex-wrap">
-              <span className="font-mono text-xs text-ink-mute tabular-nums">
+              <span className="font-sans text-xs text-fg-mute tabular-nums">
                 {itemsCount} items · {plannedMinutes} min
               </span>
               <BudgetBadge
@@ -229,16 +232,16 @@ export function LibraryPickerModal({
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="grid h-8 w-8 place-items-center rounded-pill text-ink-mute hover:bg-paper-warm hover:text-ink"
+            className="grid h-8 w-8 place-items-center rounded-pill text-fg-mute hover:bg-bg-subtle hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
           >
             <X className="h-4 w-4" strokeWidth={1.5} />
           </button>
         </header>
 
-        <div className="border-b border-rule px-6 py-3 space-y-2">
+        <div className="border-b border-border-token px-6 py-3 space-y-2">
           <div className="relative">
             <Search
-              className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-ink-mute"
+              className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-fg-mute"
               strokeWidth={1.5}
             />
             <input
@@ -246,14 +249,14 @@ export function LibraryPickerModal({
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search title, url, topic, format…"
               autoFocus
-              className="w-full rounded-input border border-rule bg-paper px-9 py-2 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-focus/40"
+              className="w-full rounded-input border border-border-token bg-bg px-9 py-2 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
             />
             {query && (
               <button
                 type="button"
                 onClick={() => setQuery('')}
                 aria-label="Clear search"
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-mute hover:text-ink"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-fg-mute hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
               >
                 <X className="h-4 w-4" strokeWidth={1.5} />
               </button>
@@ -283,12 +286,12 @@ export function LibraryPickerModal({
               <button
                 type="button"
                 onClick={clearFilters}
-                className="inline-flex items-center gap-1 font-mono text-[10px] uppercase tracking-label text-ink-mute hover:text-ink"
+                className="inline-flex items-center gap-1 font-sans text-xs text-fg-mute hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
               >
                 <X className="h-3 w-3" strokeWidth={1.5} /> clear
               </button>
             )}
-            <span className="ml-auto font-mono text-[10px] text-ink-mute tabular-nums">
+            <span className="ml-auto font-sans text-xs text-fg-mute tabular-nums">
               {filtered.length} matching
             </span>
           </div>
@@ -296,17 +299,17 @@ export function LibraryPickerModal({
 
         <div className="flex-1 overflow-y-auto px-6 py-4">
           {isLoading ? (
-            <p className="font-mono text-xs uppercase tracking-label text-ink-mute py-8 text-center">
+            <p className="font-sans text-xs text-fg-mute py-8 text-center">
               Loading…
             </p>
           ) : filtered.length === 0 ? (
-            <p className="font-mono text-xs text-ink-mute py-12 text-center">
+            <p className="font-sans text-xs text-fg-mute py-12 text-center">
               No items match. Try a shorter query or clear filters.
             </p>
           ) : (
             <>
               <SectionLabel>Items · sorted by phase → difficulty</SectionLabel>
-              <ul className="mt-3 divide-y divide-rule">
+              <ul className="mt-3 divide-y divide-border-token">
                 {filtered.map((item) => (
                   <PickerRow
                     key={item.id}
@@ -321,11 +324,11 @@ export function LibraryPickerModal({
           )}
         </div>
 
-        <footer className="border-t border-rule px-6 py-3 flex justify-end">
+        <footer className="border-t border-border-token px-6 py-3 flex justify-end">
           <button
             type="button"
             onClick={onClose}
-            className="font-mono text-xs uppercase tracking-label px-4 py-2 bg-ink text-paper rounded-pill hover:opacity-90"
+            className="font-sans text-xs px-4 py-2 bg-primary text-primary-fg rounded-pill hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
           >
             Done
           </button>
@@ -339,7 +342,7 @@ export function LibraryPickerModal({
 // already exist in design-system.md (--outcome-stuck/doubts, --accent for
 // carried-over).
 const PLUS_STYLES: Record<ItemMark['kind'], { ring: string; label: string | null }> = {
-  fresh: { ring: 'border-rule text-ink-mute', label: null },
+  fresh: { ring: 'border-border-token text-fg-mute', label: null },
   'carried-over': {
     ring: 'border-accent text-accent bg-accent/10',
     label: 'carried over',
@@ -352,7 +355,7 @@ const PLUS_STYLES: Record<ItemMark['kind'], { ring: string; label: string | null
     ring: 'border-outcome-stuck text-outcome-stuck bg-outcome-stuck/10',
     label: 'stuck',
   },
-  mastered: { ring: 'border-rule text-ink-mute', label: null }, // never rendered (filtered out)
+  mastered: { ring: 'border-border-token text-fg-mute', label: null }, // never rendered (filtered out)
 };
 
 function PickerRow({
@@ -377,7 +380,7 @@ function PickerRow({
         disabled={selected}
         className={clsx(
           'w-full flex items-start gap-3 px-3 py-2.5 text-left transition-colors',
-          selected ? 'opacity-60 cursor-default' : 'hover:bg-paper-warm',
+          selected ? 'opacity-60 cursor-default' : 'hover:bg-bg-subtle',
         )}
       >
         <span
@@ -389,17 +392,17 @@ function PickerRow({
               : plus.ring,
           )}
         >
-          {selected ? <Check className="h-3 w-3" strokeWidth={2} /> : <Plus className="h-3 w-3" strokeWidth={2} />}
+          {selected ? <Check className="h-3 w-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface" strokeWidth={2} /> : <Plus className="h-3 w-3" strokeWidth={2} />}
         </span>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <p className="font-serif-tool text-sm font-semibold text-ink truncate">
+            <p className="font-sans text-sm font-semibold text-fg truncate">
               {item.title}
             </p>
             {!selected && plus.label && (
               <span
                 className={clsx(
-                  'font-mono text-[9px] uppercase tracking-label px-1.5 py-0.5 rounded-pill border',
+                  'font-sans text-xs px-1.5 py-0.5 rounded-pill border',
                   mark.kind === 'carried-over' && 'border-accent/40 text-accent',
                   mark.kind === 'doubts' && 'border-outcome-doubts/40 text-outcome-doubts',
                   mark.kind === 'stuck' && 'border-outcome-stuck/40 text-outcome-stuck',
@@ -409,7 +412,7 @@ function PickerRow({
               </span>
             )}
           </div>
-          <div className="mt-0.5 flex items-center gap-2 font-mono text-[10px] uppercase tracking-label text-ink-mute flex-wrap">
+          <div className="mt-0.5 flex items-center gap-2 font-sans text-xs text-fg-mute flex-wrap">
             <span>{platformLabel(platform)}</span>
             {primary && (
               <>

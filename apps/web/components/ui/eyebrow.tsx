@@ -10,7 +10,7 @@ export function Eyebrow({ children, className }: EyebrowProps) {
   return (
     <p
       className={clsx(
-        'font-mono text-[10px] uppercase tracking-eyebrow text-ink-mute font-semibold',
+        'font-sans text-[10px] uppercase tracking-eyebrow text-fg-mute font-semibold',
         className,
       )}
     >

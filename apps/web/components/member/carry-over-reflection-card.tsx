@@ -18,11 +18,11 @@ function formatRelative(iso: string): string {
 
 export function CarryOverReflectionCard({ reflection }: Props) {
   return (
-    <aside className="relative overflow-hidden rounded-tile border border-border-token bg-surface p-6 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-reflect">
-      <p className="font-mono text-[10px] font-semibold uppercase tracking-eyebrow text-reflect">
+    <aside className="border-t border-border-token pt-6">
+      <p className="font-sans text-xs font-medium text-fg-mute">
         Carried over · your note, {formatRelative(reflection.submittedAt)}
       </p>
-      <blockquote className="mt-3 max-w-[58ch] font-serif text-lg italic leading-[1.45] text-fg-soft">
+      <blockquote className="mt-3 max-w-[58ch] font-sans text-base leading-relaxed text-fg-soft">
         &ldquo;{reflection.reflection}&rdquo;
       </blockquote>
       <p className="mt-3 font-sans text-xs text-fg-mute">

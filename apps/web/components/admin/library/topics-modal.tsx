@@ -37,8 +37,8 @@ export function TopicsModal({
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4">
-      <div className="w-full max-w-lg rounded-card bg-surface border border-rule p-6 shadow-modal max-h-[80vh] overflow-y-auto">
-        <h3 className="font-serif-tool text-xl font-semibold text-ink">
+      <div className="w-full max-w-lg rounded-card bg-surface border border-border-token p-6 shadow-modal max-h-[80vh] overflow-y-auto">
+        <h3 className="font-sans text-xl font-semibold text-fg">
           Manage topics
         </h3>
         <ul className="mt-4 space-y-2">
@@ -51,16 +51,16 @@ export function TopicsModal({
             />
           ))}
           {(topics ?? []).length === 0 && (
-            <li className="font-mono text-[10px] text-ink-mute py-6 text-center border border-dashed border-rule rounded-card">
+            <li className="font-sans text-xs text-fg-mute py-6 text-center border border-dashed border-border-token rounded-card">
               No topics yet.
             </li>
           )}
         </ul>
-        <div className="mt-6 pt-4 border-t border-rule space-y-2">
-          <p className="font-mono text-[10px] uppercase tracking-label text-ink-mute">
+        <div className="mt-6 pt-4 border-t border-border-token space-y-2">
+          <p className="font-sans text-xs font-medium text-fg-mute">
             Add new
           </p>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <input
               placeholder="slug (e.g. dp)"
               value={newSlug}
@@ -69,13 +69,13 @@ export function TopicsModal({
                   e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''),
                 )
               }
-              className="flex-1 rounded-input border border-rule bg-paper px-3 py-2 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-focus/40"
+              className="min-w-0 flex-1 min-h-10 rounded-input border border-border-token bg-surface px-3 py-2 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
             />
             <input
               placeholder="Label"
               value={newLabel}
               onChange={(e) => setNewLabel(e.target.value)}
-              className="flex-1 rounded-input border border-rule bg-paper px-3 py-2 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-focus/40"
+              className="min-w-0 flex-1 min-h-10 rounded-input border border-border-token bg-surface px-3 py-2 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
             />
             <button
               type="button"
@@ -83,13 +83,13 @@ export function TopicsModal({
               disabled={
                 createT.isPending || !newSlug.trim() || !newLabel.trim()
               }
-              className="font-mono text-xs uppercase tracking-label px-3 py-2 bg-ink text-paper rounded-pill disabled:opacity-40"
+              className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface font-sans text-xs font-medium px-3 py-2 bg-primary text-primary-fg rounded-pill disabled:opacity-40"
             >
               Add
             </button>
           </div>
           {createT.error && (
-            <p className="font-mono text-[10px] text-outcome-stuck">
+            <p className="font-sans text-xs text-outcome-stuck">
               {(createT.error as Error).message}
             </p>
           )}
@@ -98,7 +98,7 @@ export function TopicsModal({
           <button
             type="button"
             onClick={onClose}
-            className="font-mono text-xs uppercase tracking-label px-4 py-2 bg-paper-warm text-ink-soft rounded-pill hover:bg-rule"
+            className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface font-sans text-xs font-medium px-4 py-2 bg-bg-subtle text-fg-soft rounded-pill hover:bg-border-token"
           >
             Done
           </button>
@@ -123,24 +123,24 @@ function TopicRow({
   const dirty = slug !== topic.slug || label !== topic.label;
 
   return (
-    <li className="flex items-center gap-2 border border-rule rounded-card p-2 bg-paper">
+    <li className="flex items-center gap-2 border border-border-token rounded-card p-2 bg-surface">
       <input
         value={slug}
         onChange={(e) =>
           setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))
         }
-        className="w-24 rounded-input border border-rule bg-paper px-2 py-1 font-mono text-xs focus:outline-none focus:ring-2 focus:ring-focus/40"
+        className="w-24 rounded-input border border-border-token bg-surface px-2 py-1 font-mono text-xs focus:outline-none focus:ring-2 focus:ring-primary/50"
       />
       <input
         value={label}
         onChange={(e) => setLabel(e.target.value)}
-        className="flex-1 rounded-input border border-rule bg-paper px-2 py-1 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-focus/40"
+        className="min-w-0 flex-1 rounded-input border border-border-token bg-surface px-2 py-1 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
       />
       {dirty && (
         <button
           type="button"
           onClick={() => onUpdate({ slug, label })}
-          className="font-mono text-[10px] uppercase tracking-label text-focus hover:underline"
+          className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface font-sans text-xs font-medium text-primary hover:underline"
         >
           save
         </button>
@@ -148,7 +148,7 @@ function TopicRow({
       <button
         type="button"
         onClick={() => setConfirmOpen(true)}
-        className="text-ink-mute hover:text-outcome-stuck"
+        className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface text-fg-mute hover:text-outcome-stuck"
         aria-label="Delete topic"
       >
         <Trash2 className="h-3.5 w-3.5" strokeWidth={1.5} />
@@ -163,7 +163,7 @@ function TopicRow({
         title="Delete topic?"
         description={
           <>
-            Delete topic <span className="font-semibold text-ink">{topic.label}</span>? Library
+            Delete topic <span className="font-semibold text-fg">{topic.label}</span>? Library
             items tagged with this topic will lose the tag.
           </>
         }

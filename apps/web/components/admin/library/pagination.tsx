@@ -17,7 +17,7 @@ export function Pagination({ page, totalPages, onChange }: Props) {
   const pages = windowedPages(page, totalPages);
 
   return (
-    <nav className="flex items-center justify-center gap-1 pt-4" aria-label="Pagination">
+    <nav className="flex flex-wrap items-center justify-center gap-1 pt-4" aria-label="Pagination">
       <PageButton
         disabled={page <= 1}
         onClick={() => onChange(page - 1)}
@@ -29,7 +29,7 @@ export function Pagination({ page, totalPages, onChange }: Props) {
         p === null ? (
           <span
             key={`gap-${i}`}
-            className="font-mono text-[11px] text-ink-mute px-1"
+            className="font-mono text-[11px] text-fg-mute px-1"
           >
             …
           </span>
@@ -76,10 +76,10 @@ function PageButton({
       aria-label={aria}
       aria-current={active ? 'page' : undefined}
       className={clsx(
-        'inline-flex items-center justify-center min-w-7 h-7 px-2 rounded-input font-mono text-[11px] transition-colors',
+        'touch-target focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface inline-flex items-center justify-center min-w-7 h-7 px-2 rounded-input font-mono text-[11px] transition-colors',
         active
-          ? 'bg-ink text-paper'
-          : 'text-ink-soft hover:bg-paper-warm disabled:opacity-40 disabled:hover:bg-transparent',
+          ? 'bg-primary text-primary-fg'
+          : 'text-fg-soft hover:bg-bg-subtle disabled:opacity-40 disabled:hover:bg-transparent',
       )}
     >
       {children}

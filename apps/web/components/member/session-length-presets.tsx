@@ -18,8 +18,9 @@ export function SessionLengthPresets({ value, onChange }: Props) {
             key={mins}
             type="button"
             onClick={() => onChange(mins)}
+            aria-pressed={active}
             className={clsx(
-              'rounded-pill border px-3 py-1.5 font-mono text-[12px] font-semibold transition-colors',
+              'min-h-11 rounded-input border px-3 font-mono text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg',
               active
                 ? 'border-primary bg-primary text-primary-fg'
                 : 'border-border-token bg-surface text-fg-soft hover:border-border-strong hover:text-fg',

@@ -89,13 +89,13 @@ export function WeekDayCard(props: WeekDayCardProps) {
     <div
       className={clsx(
         'rounded-card border bg-surface p-3 min-w-0',
-        props.contributesOverflow ? 'border-l-2 border-l-outcome-stuck' : 'border-rule',
-        (isOff || noSlots || allPast) && 'bg-paper-warm',
+        props.contributesOverflow ? 'border-l-2 border-l-outcome-stuck' : 'border-border-token',
+        (isOff || noSlots || allPast) && 'bg-bg-subtle',
       )}
     >
       <header className="mb-2">
-        <p className="font-serif-tool text-sm font-semibold text-ink">{props.label}</p>
-        <p className="font-mono text-[10px] uppercase tracking-label text-ink-mute">
+        <p className="font-sans text-sm font-semibold text-fg">{props.label}</p>
+        <p className="font-sans text-xs text-fg-mute">
           {props.dateLabel}
         </p>
       </header>
@@ -103,25 +103,25 @@ export function WeekDayCard(props: WeekDayCardProps) {
       <div className="mb-2 space-y-0.5">
         <p
           className={clsx(
-            'font-mono text-[10px] uppercase tracking-label',
-            isOff || noSlots || allPast ? 'italic text-ink-mute' : 'text-ink-soft',
+            'font-sans text-xs',
+            isOff || noSlots || allPast ? 'italic text-fg-mute' : 'text-fg-soft',
           )}
         >
           {isOff ? 'OFF' : `${props.capMinutes}m cap`}
         </p>
         {noSlots && (
-          <p className="font-mono text-[10px] italic text-ink-mute">no slot · sem janela</p>
+          <p className="font-sans text-xs italic text-fg-mute">no slot · sem janela</p>
         )}
         {allPast && (
-          <p className="font-mono text-[10px] italic text-ink-mute">passou · slots no passado</p>
+          <p className="font-sans text-xs italic text-fg-mute">passou · slots no passado</p>
         )}
         {!isOff &&
           props.slots.map((s, idx) => (
             <p
               key={idx}
               className={clsx(
-                'font-mono text-[10px] tabular-nums',
-                s.isPast ? 'text-ink-faint line-through' : 'text-ink-mute',
+                'font-sans text-xs tabular-nums',
+                s.isPast ? 'text-fg-mute line-through' : 'text-fg-mute',
               )}
             >
               {formatSlot(s)}
@@ -132,7 +132,7 @@ export function WeekDayCard(props: WeekDayCardProps) {
             {(props.busyBlocks ?? []).map((b, idx) => (
               <p
                 key={idx}
-                className="font-mono text-[10px] tabular-nums text-outcome-stuck"
+                className="font-sans text-xs tabular-nums text-outcome-stuck"
                 title="Google Calendar busy"
               >
                 ⊘ busy {formatSlot(b)}
@@ -142,11 +142,11 @@ export function WeekDayCard(props: WeekDayCardProps) {
         )}
       </div>
 
-      <hr className="my-2 border-rule" />
+      <hr className="my-2 border-border-token" />
 
       <div className="space-y-2">
         {props.items.length === 0 ? (
-          <p className="font-sans text-xs italic text-ink-faint">—</p>
+          <p className="font-sans text-xs italic text-fg-mute">—</p>
         ) : (
           props.items.map((item) => {
             const platform = detectPlatform(item.url, item.format);
@@ -155,14 +155,14 @@ export function WeekDayCard(props: WeekDayCardProps) {
                 type="button"
                 key={item.itemId}
                 onClick={() => props.onItemClick?.(item.libraryItemId)}
-                className="group block w-full text-left"
+                className="group block w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
               >
-                <p className="font-mono text-[10px] tabular-nums text-ink-mute">
+                <p className="font-sans text-xs tabular-nums text-fg-mute">
                   {formatTimeLocal(item.scheduledAt)}
                 </p>
                 <div
                   className="mt-0.5 flex items-start gap-2 border-l-[3px] pl-2"
-                  style={{ borderLeftColor: `var(--platform-${platform})` }}
+                  style={{ borderLeftColor: `hsl(var(--platform-${platform}, var(--border-strong)))` }}
                 >
                   <span
                     className={clsx(
@@ -170,11 +170,11 @@ export function WeekDayCard(props: WeekDayCardProps) {
                       OUTCOME_DOT[item.outcome],
                     )}
                   />
-                  <p className="line-clamp-2 font-sans text-xs text-ink group-hover:text-ink-soft">
+                  <p className="line-clamp-2 font-sans text-xs text-fg group-hover:text-fg-soft">
                     {item.title}
                   </p>
                 </div>
-                <p className="ml-2 mt-0.5 font-mono text-[9px] uppercase tracking-label text-ink-mute">
+                <p className="ml-2 mt-0.5 font-sans text-xs text-fg-mute">
                   {platformLabel(platform)} · {formatMinutes(item.durationMinutes)}
                 </p>
               </button>
@@ -183,16 +183,16 @@ export function WeekDayCard(props: WeekDayCardProps) {
         )}
       </div>
 
-      <hr className="my-2 border-rule" />
+      <hr className="my-2 border-border-token" />
 
       <p
         className={clsx(
-          'font-mono text-[10px] uppercase tracking-label',
+          'font-sans text-xs',
           isOff || noSlots || allPast
-            ? 'italic text-ink-mute'
+            ? 'italic text-fg-mute'
             : free > 0
               ? 'text-outcome-done-easy'
-              : 'text-ink-mute',
+              : 'text-fg-mute',
         )}
       >
         {isOff || noSlots || allPast ? '—' : `free ${free}m`}

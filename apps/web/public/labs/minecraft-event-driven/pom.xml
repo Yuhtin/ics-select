@@ -10,7 +10,7 @@
   <packaging>pom</packaging>
 
   <name>Minecraft Event-Driven Lab · Parent</name>
-  <description>Parent POM agregando os 4 plugins didáticos da aula minecraft-event-driven do ICS Select.</description>
+  <description>Parent POM agregando os 4 plugins didáticos da aula minecraft-event-driven do Academy Fellow.</description>
 
   <properties>
     <maven.compiler.source>21</maven.compiler.source>

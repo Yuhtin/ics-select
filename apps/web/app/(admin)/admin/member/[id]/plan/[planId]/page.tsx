@@ -743,13 +743,13 @@ export default function PlanEditorPage({
         <header className="mb-6 flex items-center gap-3">
           <Link
             href={context ? `/admin/cycle/${context.cycle.id}` : `/admin`}
-            className="inline-flex items-center gap-1.5 font-mono text-xs uppercase tracking-label text-ink-mute hover:text-ink"
+            className="inline-flex items-center gap-1.5 font-sans text-xs text-fg-mute hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
           >
             <ArrowLeft className="h-3.5 w-3.5" strokeWidth={1.5} />
             Back
           </Link>
           {plan && (
-            <span className="font-mono text-xs text-ink-mute">
+            <span className="font-sans text-xs text-fg-mute">
               {plan.status} · plan {plan.id.slice(0, 6)}
             </span>
           )}
@@ -757,7 +757,7 @@ export default function PlanEditorPage({
             <button
               type="button"
               onClick={() => setAiDrawerOpen(true)}
-              className="ml-auto inline-flex items-center gap-1.5 rounded-pill border border-rule px-3 py-1 font-mono text-[10px] uppercase tracking-label text-ink-soft hover:border-ink-soft hover:bg-paper-warm"
+              className="ml-auto inline-flex items-center gap-1.5 rounded-pill border border-border-token px-3 py-1 font-sans text-xs text-fg-soft hover:border-border-strong hover:bg-bg-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
             >
               <Sparkles className="h-3 w-3" strokeWidth={1.5} />
               Sugerir com IA
@@ -768,7 +768,7 @@ export default function PlanEditorPage({
               type="button"
               onClick={() => setRescheduleConfirmOpen(true)}
               disabled={reschedulePending.isPending}
-              className="ml-auto inline-flex items-center gap-1.5 rounded-pill border border-rule px-3 py-1 font-mono text-[10px] uppercase tracking-label text-ink-soft hover:border-ink-soft hover:bg-paper-warm disabled:opacity-50"
+              className="ml-auto inline-flex items-center gap-1.5 rounded-pill border border-border-token px-3 py-1 font-sans text-xs text-fg-soft hover:border-border-strong hover:bg-bg-subtle disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
             >
               {reschedulePending.isPending ? 'Rescheduling…' : 'Reschedule pending'}
             </button>
@@ -778,7 +778,7 @@ export default function PlanEditorPage({
               type="button"
               onClick={() => setDeleteConfirmOpen(true)}
               disabled={deletePlan.isPending}
-              className={`${plan.status === 'DRAFT' || plan.status === 'PUBLISHED' ? '' : 'ml-auto '}inline-flex items-center gap-1.5 rounded-pill border border-outcome-stuck/40 px-3 py-1 font-mono text-[10px] uppercase tracking-label text-outcome-stuck hover:border-outcome-stuck hover:bg-outcome-stuck/5 disabled:opacity-50`}
+              className={`${plan.status === 'DRAFT' || plan.status === 'PUBLISHED' ? '' : 'ml-auto '}inline-flex items-center gap-1.5 rounded-pill border border-outcome-stuck/40 px-3 py-1 font-sans text-xs text-outcome-stuck hover:border-outcome-stuck hover:bg-outcome-stuck/5 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface`}
             >
               {deletePlan.isPending ? 'Deleting…' : 'Delete plan'}
             </button>
@@ -786,26 +786,26 @@ export default function PlanEditorPage({
         </header>
 
         {planError ? (
-          <p className="inline-flex items-center gap-2 rounded-pill bg-outcome-stuck/10 px-3 py-1.5 font-mono text-xs uppercase tracking-label text-outcome-stuck">
+          <p className="inline-flex items-center gap-2 rounded-pill bg-outcome-stuck/10 px-3 py-1.5 font-sans text-xs text-outcome-stuck">
             Failed to load plan · {planError.message}
           </p>
         ) : getOrCreate.error ? (
-          <div className="rounded-card border border-outcome-stuck/30 bg-outcome-stuck/5 p-4 font-mono text-xs uppercase tracking-label text-outcome-stuck">
+          <div className="rounded-card border border-outcome-stuck/30 bg-outcome-stuck/5 p-4 font-sans text-xs text-outcome-stuck">
             <p>Failed to create draft · {(getOrCreate.error as Error).message}</p>
             <button
               type="button"
               onClick={() => getOrCreate.reset()}
-              className="mt-2 rounded-pill bg-outcome-stuck px-3 py-1 font-mono text-[10px] uppercase tracking-label text-paper hover:opacity-90"
+              className="mt-2 rounded-pill bg-outcome-stuck px-3 py-1 font-sans text-xs text-bg hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
             >
               Retry
             </button>
           </div>
         ) : !plan ? (
-          <p className="font-mono text-xs uppercase tracking-label text-ink-mute">
+          <p className="font-sans text-xs text-fg-mute">
             {initialPlanId === 'new' ? 'Creating draft…' : 'Loading plan…'}
           </p>
         ) : !context ? (
-          <p className="font-mono text-xs uppercase tracking-label text-ink-mute">
+          <p className="font-sans text-xs text-fg-mute">
             Loading context…
           </p>
         ) : (
@@ -911,10 +911,10 @@ export default function PlanEditorPage({
       </div>
 
       <div className="xl:hidden p-12 text-center">
-        <p className="font-serif-tool text-xl font-semibold">
+        <p className="font-sans text-xl font-semibold">
           Plan editor is desktop-only
         </p>
-        <p className="mt-2 font-sans text-sm text-ink-soft">
+        <p className="mt-2 font-sans text-sm text-fg-soft">
           Resize to at least 1280px width.
         </p>
       </div>
@@ -953,17 +953,17 @@ export default function PlanEditorPage({
 function NoAvailabilityBanner({ memberId }: { memberId: string }) {
   return (
     <div className="rounded-card border border-outcome-stuck/40 p-6">
-      <p className="mb-2 font-serif-tool text-base text-ink">
+      <p className="mb-2 font-sans text-base text-fg">
         Membro não configurou disponibilidade
       </p>
-      <p className="mb-4 font-sans text-sm text-ink-soft">
+      <p className="mb-4 font-sans text-sm text-fg-soft">
         Não dá pra prever a agenda sem isso.
       </p>
       <a
         href={`/admin/member/${memberId}/availability`}
         target="_blank"
         rel="noreferrer"
-        className="inline-flex items-center gap-1.5 rounded-pill bg-ink px-3 py-1.5 font-mono text-[11px] uppercase tracking-label text-paper hover:opacity-90"
+        className="inline-flex items-center gap-1.5 rounded-pill bg-primary px-3 py-1.5 font-sans text-xs text-primary-fg hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
       >
         Abrir availability
       </a>

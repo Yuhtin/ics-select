@@ -9,15 +9,15 @@ interface StatCardProps {
   iconClassName?: string;
 }
 
-export function StatCard({ icon: Icon, label, value, iconClassName = 'text-brand' }: StatCardProps) {
+export function StatCard({ icon: Icon, label, value, iconClassName = 'text-primary' }: StatCardProps) {
   return (
-    <div className="glass rounded-xl p-5 flex items-center gap-4 transition-all duration-200 hover:shadow-md">
-      <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-brand-soft to-surface-subtle flex items-center justify-center flex-shrink-0">
+    <div className="flex items-center gap-4 rounded-card border border-border-token bg-surface p-5">
+      <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-input bg-primary-soft">
         <Icon className={`h-5 w-5 ${iconClassName}`} />
       </div>
       <div>
-        <p className="text-2xl font-bold text-foreground tracking-tight">{value}</p>
-        <p className="text-xs text-foreground-muted mt-0.5">{label}</p>
+        <p className="font-mono text-2xl font-semibold tabular-nums tracking-tight text-fg">{value}</p>
+        <p className="mt-0.5 font-sans text-xs text-fg-mute">{label}</p>
       </div>
     </div>
   );

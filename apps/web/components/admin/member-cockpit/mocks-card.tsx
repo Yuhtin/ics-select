@@ -50,30 +50,30 @@ export function MocksCard({ memberId, cycleId }: Props) {
   // otherwise. The admin scans this once per cockpit visit.
   const scoreTone =
     list.length === 0
-      ? 'text-ink-faint'
+      ? 'text-fg-mute'
       : raw >= 4
         ? 'text-outcome-done-easy'
         : raw <= 2
           ? 'text-outcome-stuck'
-          : 'text-ink';
+          : 'text-fg';
 
   return (
-    <section className="bg-surface border border-rule rounded-lg p-5">
-      <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-mute font-medium">
+    <section className="bg-surface border border-border-token rounded-card p-5">
+      <p className="font-sans text-xs text-fg-mute font-medium">
         Mocks
       </p>
 
       <div className="mt-3 flex items-baseline gap-2">
         <span
-          className={`font-serif-tool tabular-nums font-semibold leading-none ${scoreTone}`}
+          className={`font-sans tabular-nums font-semibold leading-none ${scoreTone}`}
           style={{ fontSize: 40 }}
         >
           {isLoading ? '—' : value}
         </span>
-        <span className="font-serif-tool tabular-nums text-ink-faint text-base">/5.0</span>
+        <span className="font-sans tabular-nums text-fg-mute text-base">/5.0</span>
       </div>
 
-      <p className="mt-1.5 font-mono text-[11px] text-ink-mute tabular-nums">
+      <p className="mt-1.5 font-sans text-xs text-fg-mute tabular-nums">
         {list.length} mock{list.length === 1 ? '' : 's'}
         {list.length > 0 && (
           <>
@@ -87,9 +87,9 @@ export function MocksCard({ memberId, cycleId }: Props) {
       </p>
 
       {latest && (
-        <p className="mt-3 pt-3 border-t border-rule font-mono text-[10px] uppercase tracking-[0.1em] text-ink-mute">
+        <p className="mt-3 pt-3 border-t border-border-token font-sans text-xs text-fg-mute">
           Latest · {formatDate(latest.conductedAt)} {TYPE_LABEL_LONG[latest.type]}{' '}
-          <span className="text-ink tabular-nums">{latest.score}/5</span>
+          <span className="text-fg tabular-nums">{latest.score}/5</span>
         </p>
       )}
     </section>

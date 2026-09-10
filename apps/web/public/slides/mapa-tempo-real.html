@@ -225,10 +225,10 @@ function ico(path) {
 // The scrubber fill = position in the deck (slide idx / total) = the "live position" metaphor.
 function nowbar(slide, idx) {
   const sec = typeof slide.beat === 'number' ? sectionOf(slide.beat) : null;
-  const artist = slide.type === 'cover' ? 'ICS Select · Hot Stuff 2026.2'
-    : slide.type === 'closing' ? 'Síntese · ICS Select'
+  const artist = slide.type === 'cover' ? 'Academy Fellow · Hot Stuff 2026.2'
+    : slide.type === 'closing' ? 'Síntese · Academy Fellow'
     : slide.type === 'divider' ? 'Próximo capítulo'
-    : (sec ? sec.label : 'ICS Select');
+    : (sec ? sec.label : 'Academy Fellow');
   const pct = Math.round(((idx + 1) / TOTAL) * 100);
   const elapsed = String(idx + 1).padStart(2, '0');
   const total = String(TOTAL).padStart(2, '0');
@@ -326,7 +326,7 @@ function render(slide, idx) {
           <h1 class="display anim text-[84px] max-w-[15ch]">O mapa em tempo real da Uber.</h1>
           <p class="anim delay-1 text-[24px] mt-7 max-w-[52ch]" style="color:var(--muted)">Por que o carro anda liso com GPS de 4 em 4 segundos: push, interpolação e Kalman.</p>
           <div class="anim-fade delay-2 flex items-center gap-3 mt-8 text-[14px]" style="color:var(--muted)">
-            <span style="color:var(--ink);font-weight:700">ICS Select</span><span>·</span><span>Hot Stuff 2026.2</span><span>·</span><span>60 min</span><span>·</span><span>7 faixas</span>
+            <span style="color:var(--ink);font-weight:700">Academy Fellow</span><span>·</span><span>Hot Stuff 2026.2</span><span>·</span><span>60 min</span><span>·</span><span>7 faixas</span>
           </div>
         </div>`, { hero: true });
 

@@ -103,7 +103,7 @@ function BeatStepper({
                 type="button"
                 onClick={() => onSelect(i)}
                 className={clsx(
-                  'group relative flex h-full min-h-[78px] w-[126px] flex-col items-start gap-1.5 overflow-hidden rounded-card border px-3 py-2.5 pl-[14px] text-left transition-all',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface group relative flex h-full min-h-[78px] w-[126px] flex-col items-start gap-1.5 overflow-hidden rounded-card border px-3 py-2.5 pl-[14px] text-left transition-all',
                   active
                     ? 'border-fg bg-surface shadow-sm'
                     : passed
@@ -121,7 +121,7 @@ function BeatStepper({
                 />
                 <span
                   className={clsx(
-                    'font-mono text-[10px] font-bold uppercase tracking-eyebrow',
+                    'font-mono text-[10px] font-semibold',
                     active ? 'text-fg' : 'text-fg-mute',
                   )}
                 >
@@ -166,14 +166,14 @@ function FocusCard({ node }: { node: LessonNode }) {
               <span className="ml-2 text-fg-mute">· beat #{node.beat}</span>
             )}
           </Eyebrow>
-          <h2 className="font-serif text-xl font-semibold text-fg">{node.label}</h2>
+          <h2 className="font-sans text-xl font-semibold text-fg">{node.label}</h2>
         </div>
         {node.tags && node.tags.length > 0 && (
           <div className="mt-2 flex flex-wrap gap-1.5">
             {node.tags.map((tag) => (
               <span
                 key={tag}
-                className="inline-flex items-center rounded-pill border border-border-token/60 bg-bg-subtle/80 px-2 py-0.5 font-mono text-[10px] uppercase tracking-eyebrow text-fg-mute"
+                className="inline-flex items-center rounded-pill border border-border-token/60 bg-bg-subtle/80 px-2 py-0.5 font-sans text-xs font-medium text-fg-mute"
               >
                 {tag}
               </span>
@@ -186,7 +186,7 @@ function FocusCard({ node }: { node: LessonNode }) {
         <div className="space-y-7 px-7 py-7">
           <div>
             <Eyebrow className="mb-3">Pergunta-âncora</Eyebrow>
-            <p className="font-serif text-2xl leading-snug text-fg lg:text-[26px]">
+            <p className="font-sans text-2xl leading-snug text-fg lg:text-[26px]">
               "<Glossarized text={node.anchor} seen={seen} keyPrefix={`${node.id}-anc`} />"
             </p>
             <p className="mt-4 font-sans text-[15px] leading-relaxed text-fg-soft">
@@ -200,7 +200,7 @@ function FocusCard({ node }: { node: LessonNode }) {
             ) : node.diagram ? (
               <div className="mt-5 rounded-card border border-border-token bg-bg-subtle">
                 <div className="border-b border-border-token px-3 py-1.5">
-                  <span className="font-mono text-[10px] uppercase tracking-eyebrow text-fg-mute">
+                  <span className="font-sans text-xs font-medium text-fg-mute">
                     Diagrama · Mermaid
                   </span>
                 </div>
@@ -263,7 +263,7 @@ function FocusCard({ node }: { node: LessonNode }) {
             <Eyebrow className="mb-2">Default forward</Eyebrow>
             <p className="flex items-start gap-2 text-sm leading-relaxed text-fg">
               <ArrowRight
-                className="mt-1 h-4 w-4 shrink-0 text-fg-faint"
+                className="mt-1 h-4 w-4 shrink-0 text-fg-mute"
                 strokeWidth={1.8}
               />
               <span>
@@ -384,7 +384,7 @@ function ScenarioCard({
       </header>
       <div className="mt-3 space-y-2.5 text-[13px] leading-relaxed text-fg-soft">
         <p>
-          <span className="font-mono text-[10px] uppercase tracking-eyebrow text-fg-mute">
+          <span className="font-sans text-xs font-medium text-fg-mute">
             Forma:
           </span>{' '}
           <Glossarized
@@ -394,7 +394,7 @@ function ScenarioCard({
           />
         </p>
         <p>
-          <span className="font-mono text-[10px] uppercase tracking-eyebrow text-fg-mute">
+          <span className="font-sans text-xs font-medium text-fg-mute">
             {meta.redirectLabel}:
           </span>{' '}
           <Glossarized
@@ -463,13 +463,13 @@ function BeatNav({
         onClick={onPrev}
         disabled={!prev}
         className={clsx(
-          'group flex max-w-[260px] flex-1 items-start gap-3 rounded-input border border-border-token px-4 py-3 text-left transition-colors',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface group flex max-w-[260px] flex-1 items-start gap-3 rounded-input border border-border-token px-4 py-3 text-left transition-colors',
           prev
             ? 'bg-surface hover:border-border-strong'
             : 'cursor-not-allowed border-transparent opacity-40',
         )}
       >
-        <ArrowLeft className="mt-0.5 h-4 w-4 text-fg-faint" strokeWidth={1.8} />
+        <ArrowLeft className="mt-0.5 h-4 w-4 text-fg-mute" strokeWidth={1.8} />
         <div className="min-w-0">
           <Eyebrow>Previous</Eyebrow>
           <p className="mt-1 font-sans text-sm text-fg">
@@ -478,7 +478,7 @@ function BeatNav({
         </div>
       </button>
 
-      <div className="hidden items-center gap-2 font-mono text-[10px] uppercase tracking-eyebrow text-fg-mute sm:flex">
+      <div className="hidden items-center gap-2 font-sans text-xs font-medium text-fg-mute sm:flex">
         <kbd className="rounded border border-border-token bg-surface px-1.5 py-0.5 text-[10px]">
           ←
         </kbd>
@@ -493,22 +493,21 @@ function BeatNav({
         onClick={onNext}
         disabled={!next}
         className={clsx(
-          'group flex max-w-[260px] flex-1 items-start justify-end gap-3 rounded-input border border-border-token px-4 py-3 text-right transition-colors',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface group flex max-w-[260px] flex-1 items-start justify-end gap-3 rounded-input border border-border-token px-4 py-3 text-right transition-colors',
           next
-            ? 'bg-fg text-bg hover:bg-fg/90'
+            ? 'bg-primary text-primary-fg hover:bg-primary/90'
             : 'cursor-not-allowed border-transparent opacity-40',
         )}
       >
         <div className="min-w-0">
-          <Eyebrow className={next ? 'text-bg/70' : ''}>Next</Eyebrow>
+          <Eyebrow className={next ? 'text-primary-fg/90' : ''}>Next</Eyebrow>
           <p className="mt-1 font-sans text-sm">{next ? next.label : '—'}</p>
         </div>
         <ArrowRight
-          className={clsx('mt-0.5 h-4 w-4', next ? 'text-bg' : 'text-fg-faint')}
+          className={clsx('mt-0.5 h-4 w-4', next ? 'text-primary-fg' : 'text-fg-mute')}
           strokeWidth={1.8}
         />
       </button>
     </div>
   );
 }
-

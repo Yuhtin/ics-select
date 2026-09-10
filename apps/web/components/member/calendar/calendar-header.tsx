@@ -1,6 +1,7 @@
 'use client';
 
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { StudioPageHeader } from '../studio-page-header';
 
 interface CalendarHeaderProps {
   weekStart: Date;
@@ -18,42 +19,49 @@ function formatRange(start: Date, end: Date): string {
 }
 
 export function CalendarHeader({ weekStart, weekEnd, onPrev, onNext, onToday, isRefreshing = false }: CalendarHeaderProps) {
-  return (
-    <div className="flex items-center justify-between border-b border-border-token pb-3">
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={onPrev}
-          className="grid h-8 w-8 place-items-center rounded-input text-fg-soft transition-colors hover:bg-bg-subtle hover:text-fg"
-          aria-label="Previous week"
-        >
-          <ChevronLeft className="h-4 w-4" strokeWidth={1.5} />
-        </button>
-        <span className="font-serif text-xl font-medium tabular-nums text-fg">
-          {formatRange(weekStart, weekEnd)}
-        </span>
-        {isRefreshing && (
-          <span
-            className="h-1.5 w-1.5 animate-pulse rounded-full bg-fg-faint"
-            aria-label="Refreshing"
-          />
-        )}
-        <button
-          type="button"
-          onClick={onNext}
-          className="grid h-8 w-8 place-items-center rounded-input text-fg-soft transition-colors hover:bg-bg-subtle hover:text-fg"
-          aria-label="Next week"
-        >
-          <ChevronRight className="h-4 w-4" strokeWidth={1.5} />
-        </button>
-      </div>
+  const controls = (
+    <div className="flex items-center gap-1">
       <button
         type="button"
         onClick={onToday}
-        className="rounded-input border border-border-token px-3 py-1 font-sans text-sm font-medium text-fg-soft transition-colors hover:bg-bg-subtle hover:text-fg"
+        className="min-h-11 rounded-input border border-border-token px-4 font-sans text-sm font-medium text-fg-soft transition-colors hover:bg-bg-subtle hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
       >
         Today
       </button>
+      <button
+        type="button"
+        onClick={onPrev}
+        className="grid h-11 w-11 place-items-center rounded-input text-fg-soft transition-colors hover:bg-bg-subtle hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+        aria-label="Previous week"
+      >
+        <ChevronLeft className="h-4 w-4" strokeWidth={1.5} />
+      </button>
+      <button
+        type="button"
+        onClick={onNext}
+        className="grid h-11 w-11 place-items-center rounded-input text-fg-soft transition-colors hover:bg-bg-subtle hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+        aria-label="Next week"
+      >
+        <ChevronRight className="h-4 w-4" strokeWidth={1.5} />
+      </button>
     </div>
+  );
+
+  return (
+    <StudioPageHeader
+      eyebrow="Weekly planning"
+      title={
+        <span className="inline-flex flex-wrap items-center gap-3">
+          {formatRange(weekStart, weekEnd).replace(' – ', ' to ')}
+          {isRefreshing && (
+            <span role="status">
+              <span aria-hidden className="block h-1.5 w-1.5 animate-pulse rounded-full bg-fg-faint" />
+              <span className="sr-only">Refreshing</span>
+            </span>
+          )}
+        </span>
+      }
+      action={controls}
+    />
   );
 }

@@ -68,7 +68,7 @@ function PhaseDonut({ stat }: { stat: PhaseStat }) {
   const pct = Math.max(0, Math.min(1, stat.pct));
   const dash = hasAny ? c * pct : 0;
   return (
-    <div className="flex items-center gap-3 border border-rule rounded-card p-3 bg-surface">
+    <div className="flex items-center gap-3 border border-border-token rounded-card p-3 bg-surface">
       <svg
         width={size}
         height={size}
@@ -81,7 +81,7 @@ function PhaseDonut({ stat }: { stat: PhaseStat }) {
           r={r}
           fill="none"
           strokeWidth={stroke}
-          className="stroke-rule"
+          className="stroke-border-token"
         />
         {hasAny && (
           <circle
@@ -102,7 +102,7 @@ function PhaseDonut({ stat }: { stat: PhaseStat }) {
           textAnchor="middle"
           dominantBaseline="central"
           className={clsx(
-            'font-mono tabular-nums',
+            'font-sans tabular-nums',
             hasAny ? 'fill-ink' : 'fill-ink-faint',
           )}
           style={{ fontSize: 10, fontWeight: 600 }}
@@ -111,11 +111,11 @@ function PhaseDonut({ stat }: { stat: PhaseStat }) {
         </text>
       </svg>
       <div className="min-w-0 flex-1">
-        <p className="truncate font-mono text-[10px] font-semibold uppercase tracking-eyebrow text-ink-mute">
+        <p className="truncate font-sans text-xs font-semibold text-fg-mute">
           {stat.label}
         </p>
-        <p className="mt-0.5 font-mono text-[10px] tabular-nums text-ink-faint">
-          <span className="text-ink-soft">{stat.done}</span>
+        <p className="mt-0.5 font-sans text-xs tabular-nums text-fg-mute">
+          <span className="text-fg-soft">{stat.done}</span>
           <span>/{stat.planned} done</span>
         </p>
       </div>

@@ -1,10 +1,10 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { clsx } from 'clsx';
-import { ArrowLeft, ArrowRight, Check, Lock } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Lock } from 'lucide-react';
 import { TRACKS } from '@ics-select/shared';
 import {
   useUpdateAvailability,
@@ -43,6 +43,10 @@ const EASE = [0.16, 1, 0.3, 1] as const;
 
 export default function MemberOnboardingPage() {
   const router = useRouter();
+  const reduceMotion = useReducedMotion();
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  const navigationLock = useRef(false);
+  const [transitioning, setTransitioning] = useState(false);
   const { user, refetch } = useAuth();
   const updateProfile = useUpdateProfile();
   const updateAvailability = useUpdateAvailability();
@@ -73,12 +77,15 @@ export default function MemberOnboardingPage() {
     updateProfile.isPending || updateAvailability.isPending || updateTheme.isPending;
 
   function goTo(next: StepId) {
+    if (navigationLock.current || submitting) return;
+    navigationLock.current = true;
+    setTransitioning(true);
     setDirection(next > step ? 1 : -1);
     setStep(next);
   }
 
   async function handleFinish() {
-    if (submitting) return;
+    if (submitting || navigationLock.current) return;
     setSubmitError(null);
     try {
       // Profile first — this creates the CycleMembership if missing so the
@@ -123,15 +130,21 @@ export default function MemberOnboardingPage() {
     }
   }
 
+  const stepVariants = {
+    enter: (direction: 1 | -1) => ({ opacity: 0, y: reduceMotion ? 0 : direction * 24 }),
+    center: { opacity: 1, y: 0 },
+    exit: (direction: 1 | -1) => ({ opacity: 0, y: reduceMotion ? 0 : direction * -20 }),
+  };
+
   const firstName = user?.name?.split(' ')[0] ?? 'there';
 
   return (
-    <div className="mx-auto max-w-2xl px-5 py-10 md:py-16">
+    <div className="mx-auto max-w-[680px] py-6 md:py-10">
       <header className="mb-10 space-y-3">
-        <p className="font-mono text-[10px] font-semibold uppercase tracking-eyebrow text-fg-mute">
+        <p className="font-sans text-xs font-medium text-fg-mute">
           Welcome{user?.name ? `, ${firstName}` : ''}
         </p>
-        <h1 className="font-serif text-[44px] font-medium leading-[1.05] tracking-tight text-fg md:text-[52px]">
+        <h1 className="font-sans text-[32px] font-semibold leading-[1.1] tracking-[-0.045em] text-fg md:text-[40px]">
           Four small things.
         </h1>
         <p className="max-w-prose font-sans text-[15px] leading-relaxed text-fg-soft">
@@ -146,15 +159,24 @@ export default function MemberOnboardingPage() {
         <AnimatePresence mode="wait" initial={false} custom={direction}>
           <motion.div
             key={step}
+            data-onboarding-panel
             custom={direction}
             variants={stepVariants}
             initial="enter"
             animate="center"
             exit="exit"
-            transition={{ duration: 0.35, ease: EASE }}
+            transition={{ duration: reduceMotion ? 0.1 : 0.3, ease: EASE }}
+            onAnimationComplete={(definition) => {
+              if (definition !== 'center') return;
+              const changedStep = navigationLock.current;
+              navigationLock.current = false;
+              setTransitioning(false);
+              if (changedStep) headingRef.current?.focus({ preventScroll: true });
+            }}
           >
             {step === 0 && (
               <StepCard
+                headingRef={headingRef}
                 eyebrow="Step 1 / 4 · WhatsApp"
                 title="Where should we reach you?"
                 subtitle="Reminders land ten minutes before each study block. Retros open every Friday. WhatsApp only, no email spam."
@@ -163,10 +185,12 @@ export default function MemberOnboardingPage() {
                   value={phone}
                   onChange={setPhone}
                   autoFocus
+                  aria-labelledby="onboarding-question"
+                  aria-describedby={phone.length > 0 && !phoneOk ? 'onboarding-phone-error' : undefined}
                   error={phone.length > 0 && !phoneOk}
                 />
                 {phone.length > 0 && !phoneOk && (
-                  <p className="mt-2 font-mono text-[11px] text-danger">
+                  <p id="onboarding-phone-error" role="alert" className="mt-2 font-sans text-[11px] text-danger">
                     E.164 format: + country code + number. Example: +5511999999999
                   </p>
                 )}
@@ -175,6 +199,7 @@ export default function MemberOnboardingPage() {
 
             {step === 1 && (
               <StepCard
+                headingRef={headingRef}
                 eyebrow="Step 2 / 4 · Track"
                 title="Which one are you shooting for?"
                 subtitle="Shapes the kind of practice the director picks each week. You can switch between cycles."
@@ -185,6 +210,7 @@ export default function MemberOnboardingPage() {
 
             {step === 2 && (
               <StepCard
+                headingRef={headingRef}
                 eyebrow="Step 3 / 4 · Availability"
                 title="How much time per day?"
                 subtitle="Rough minutes you can protect for study. The scheduler packs blocks into this budget; you can resize it anytime."
@@ -192,7 +218,7 @@ export default function MemberOnboardingPage() {
                 <AvailabilityPresets value={availability} onChange={setAvailability} />
 
                 <div className="mt-6">
-                  <p className="font-mono text-[10px] font-semibold uppercase tracking-eyebrow text-fg-mute">
+                  <p className="font-sans text-xs font-medium text-fg-mute">
                     Preferred session length
                   </p>
                   <p className="mt-1 font-sans text-[13px] text-fg-soft">
@@ -203,8 +229,8 @@ export default function MemberOnboardingPage() {
                   </div>
                 </div>
 
-                <div className="mt-8 flex items-start gap-3 rounded-card border border-border-token bg-bg-subtle/60 px-4 py-3">
-                  <Lock className="mt-[2px] h-3.5 w-3.5 shrink-0 text-fg-mute" strokeWidth={1.8} />
+                <div className="mt-8 flex items-start gap-3 border-t border-border-token pt-5">
+                  <Lock className="mt-[2px] h-3.5 w-3.5 shrink-0 text-fg-mute" strokeWidth={1.5} />
                   <p className="font-sans text-[12px] leading-relaxed text-fg-soft">
                     <span className="font-semibold text-fg">Só você enxerga seu Calendar.</span>{' '}
                     O scheduler lê apenas os slots marcados como{' '}
@@ -219,6 +245,7 @@ export default function MemberOnboardingPage() {
 
             {step === 3 && (
               <StepCard
+                headingRef={headingRef}
                 eyebrow="Step 4 / 4 · Appearance"
                 title="Dark or light?"
                 subtitle="Preview below, the site switches as you pick. You can swap anytime in Settings."
@@ -235,16 +262,17 @@ export default function MemberOnboardingPage() {
       </div>
 
       {submitError && (
-        <p className="mt-4 font-mono text-[11px] text-danger">{submitError}</p>
+        <p role="alert" className="mt-4 font-sans text-xs text-danger">{submitError}</p>
       )}
 
-      <nav className="mt-10 flex items-center justify-between gap-3">
-        <button
+      <nav className="mt-10 flex items-center justify-between gap-3 border-t border-border-token pt-5">
+        <motion.button
           type="button"
           onClick={() => goTo(Math.max(0, step - 1) as StepId)}
-          disabled={step === 0}
+          disabled={step === 0 || transitioning || submitting}
+          whileTap={reduceMotion || transitioning || submitting ? undefined : { scale: 0.98 }}
           className={clsx(
-            'inline-flex h-10 items-center gap-2 rounded-input px-3 font-sans text-sm font-medium transition-colors',
+            'inline-flex min-h-11 min-w-11 items-center gap-2 rounded-input px-3 font-sans text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
             step === 0
               ? 'invisible'
               : 'text-fg-soft hover:bg-bg-subtle hover:text-fg',
@@ -252,40 +280,41 @@ export default function MemberOnboardingPage() {
         >
           <ArrowLeft className="h-4 w-4" strokeWidth={1.5} />
           Back
-        </button>
+        </motion.button>
 
         {step < 3 ? (
-          <button
+          <motion.button
             type="button"
             onClick={() => canAdvance && goTo((step + 1) as StepId)}
-            disabled={!canAdvance}
+            disabled={!canAdvance || transitioning}
+            whileTap={reduceMotion || !canAdvance || transitioning ? undefined : { scale: 0.98 }}
             className={clsx(
-              'inline-flex h-10 items-center gap-2 rounded-input px-4 font-sans text-sm font-semibold transition-all',
+              'inline-flex min-h-11 items-center gap-2 rounded-input px-4 font-sans text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg',
               canAdvance
-                ? 'bg-fg text-bg hover:bg-fg-soft'
+                ? 'bg-primary text-primary-fg hover:bg-primary/90'
                 : 'cursor-not-allowed bg-bg-subtle text-fg-mute',
             )}
           >
             Next
-            <ArrowRight className="h-4 w-4" strokeWidth={2} />
-          </button>
+            <ArrowRight className="h-4 w-4" strokeWidth={1.5} />
+          </motion.button>
         ) : (
           <motion.button
             type="button"
             onClick={handleFinish}
-            disabled={!canAdvance || submitting}
-            whileHover={canAdvance && !submitting ? { scale: 1.02 } : undefined}
-            whileTap={canAdvance && !submitting ? { scale: 0.98 } : undefined}
-            transition={{ duration: 0.15, ease: EASE }}
+            disabled={!canAdvance || submitting || transitioning}
+            whileHover={!reduceMotion && canAdvance && !submitting && !transitioning ? { y: -2 } : undefined}
+            whileTap={!reduceMotion && canAdvance && !submitting && !transitioning ? { scale: 0.98 } : undefined}
+            transition={{ duration: reduceMotion ? 0 : 0.15, ease: EASE }}
             className={clsx(
-              'inline-flex h-12 items-center gap-2 rounded-input px-6 font-sans text-[15px] font-bold uppercase tracking-[0.04em] transition-colors',
+              'inline-flex h-12 items-center gap-2 rounded-input px-6 font-sans text-[15px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg',
               canAdvance && !submitting
-                ? 'bg-primary text-primary-fg shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_10px_30px_-10px_hsl(var(--primary)/0.5)] hover:bg-primary/95'
+                ? 'bg-primary text-primary-fg hover:bg-primary/95'
                 : 'cursor-not-allowed bg-bg-subtle text-fg-mute',
             )}
           >
             {submitting ? 'Saving…' : "LET'S GOOOO"}
-            {!submitting && <ArrowRight className="h-4 w-4" strokeWidth={2.5} />}
+            {!submitting && <ArrowRight className="h-4 w-4" strokeWidth={1.5} />}
           </motion.button>
         )}
       </nav>
@@ -293,65 +322,32 @@ export default function MemberOnboardingPage() {
   );
 }
 
-const stepVariants = {
-  enter: (d: 1 | -1) => ({ opacity: 0, x: d * 24 }),
-  center: { opacity: 1, x: 0 },
-  exit: (d: 1 | -1) => ({ opacity: 0, x: d * -24 }),
-};
-
 function Progress({ step }: { step: StepId }) {
+  const reduceMotion = useReducedMotion();
   return (
-    <ol className="flex items-center gap-3">
-      {[0, 1, 2, 3].map((i) => {
-        const state = i < step ? 'done' : i === step ? 'current' : 'pending';
-        return (
-          <li key={i} className="flex items-center gap-3">
-            <motion.span
-              initial={false}
-              animate={{
-                backgroundColor:
-                  state === 'current'
-                    ? 'hsl(var(--primary))'
-                    : state === 'done'
-                      ? 'hsl(var(--fg))'
-                      : 'hsl(var(--bg-subtle))',
-                color:
-                  state === 'pending' ? 'hsl(var(--fg-mute))' : 'hsl(var(--primary-fg))',
-                scale: state === 'current' ? 1.05 : 1,
-              }}
-              transition={{ duration: 0.3, ease: EASE }}
-              className={clsx(
-                'grid h-8 w-8 place-items-center rounded-full border font-mono text-[11px] font-bold tabular-nums',
-                state === 'pending' ? 'border-border-token' : 'border-transparent',
-              )}
-              aria-label={`Step ${i + 1} ${state}`}
-            >
-              {state === 'done' ? <Check className="h-3.5 w-3.5" strokeWidth={2.5} /> : i + 1}
-            </motion.span>
-            {i < 3 && (
-              <motion.span
-                initial={false}
-                animate={{
-                  backgroundColor:
-                    i < step ? 'hsl(var(--fg))' : 'hsl(var(--bg-subtle))',
-                }}
-                transition={{ duration: 0.3, ease: EASE }}
-                className="h-px w-6 sm:w-10"
-              />
-            )}
-          </li>
-        );
-      })}
-    </ol>
+    <div className="flex items-center gap-4">
+      <span aria-hidden className="h-[3px] flex-1 overflow-hidden bg-border-token">
+        <motion.span
+          initial={false}
+          animate={{ scaleX: (step + 1) / 4 }}
+          transition={{ duration: reduceMotion ? 0 : 0.3, ease: EASE }}
+          className="block h-full origin-left bg-primary"
+        />
+      </span>
+      <span aria-hidden className="font-mono text-xs text-fg-mute">{step + 1} of 4</span>
+      <span className="sr-only" aria-live="polite" aria-atomic="true">Step {step + 1} of 4</span>
+    </div>
   );
 }
 
 function StepCard({
+  headingRef,
   eyebrow,
   title,
   subtitle,
   children,
 }: {
+  headingRef: React.RefObject<HTMLHeadingElement | null>;
   eyebrow: string;
   title: string;
   subtitle: string;
@@ -359,10 +355,10 @@ function StepCard({
 }) {
   return (
     <section>
-      <p className="font-mono text-[10px] font-semibold uppercase tracking-eyebrow text-fg-mute">
+      <p className="font-sans text-xs font-medium text-fg-mute">
         {eyebrow}
       </p>
-      <h2 className="mt-2 font-serif text-[30px] font-medium leading-tight tracking-tight text-fg md:text-[34px]">
+      <h2 id="onboarding-question" ref={headingRef} tabIndex={-1} className="mt-2 text-[28px] font-semibold leading-[1.15] tracking-[-0.045em] text-fg outline-none sm:text-[36px]">
         {title}
       </h2>
       <p className="mt-2 max-w-prose font-sans text-[14px] leading-relaxed text-fg-soft">

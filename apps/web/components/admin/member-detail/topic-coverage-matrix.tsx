@@ -42,15 +42,15 @@ export function TopicCoverageMatrix({ topics }: Props) {
 
         <div className="min-w-0">
           <div className="mb-2 flex items-baseline justify-between">
-            <p className="font-mono text-[10px] font-semibold uppercase tracking-eyebrow text-ink-mute">
+            <p className="font-sans text-xs font-semibold text-fg-mute">
               Active topics · by effort
             </p>
-            <p className="font-mono text-[10px] tabular-nums text-ink-faint">
+            <p className="font-sans text-xs tabular-nums text-fg-mute">
               {active.length}
             </p>
           </div>
           {active.length === 0 ? (
-            <p className="font-mono text-xs text-ink-mute">
+            <p className="font-sans text-xs text-fg-mute">
               No activity yet this cycle.
             </p>
           ) : (
@@ -67,11 +67,11 @@ export function TopicCoverageMatrix({ topics }: Props) {
                     className={clsx(
                       'flex items-center gap-3 rounded border border-transparent px-2 py-1.5 transition-colors',
                       isSelected
-                        ? 'border-rule bg-paper-warm'
-                        : 'hover:bg-paper-warm',
+                        ? 'border-border-token bg-bg-subtle'
+                        : 'hover:bg-bg-subtle',
                     )}
                   >
-                    <span className="flex-1 truncate font-mono text-[11px] uppercase tracking-label text-ink-soft">
+                    <span className="flex-1 truncate font-sans text-xs text-fg-soft">
                       {t.label}
                     </span>
                     <div className="relative h-1.5 w-16 overflow-hidden rounded-sm bg-rule">
@@ -80,7 +80,7 @@ export function TopicCoverageMatrix({ topics }: Props) {
                         style={{ width: `${pct * 100}%` }}
                       />
                     </div>
-                    <span className="w-10 text-right font-mono text-[10px] tabular-nums text-ink-mute">
+                    <span className="w-10 text-right font-sans text-xs tabular-nums text-fg-mute">
                       {t.itemsDone}/{t.itemsPlanned}
                     </span>
                   </li>

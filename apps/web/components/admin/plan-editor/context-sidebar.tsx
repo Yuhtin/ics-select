@@ -41,7 +41,7 @@ export function ContextSidebar({
   }));
 
   return (
-    <div className="space-y-8 rounded-card border border-rule bg-surface p-4">
+    <div className="space-y-5 rounded-card border border-border-token bg-surface p-4">
       <section>
         <SectionLabel>Last week · {totalOutcomes} outcomes</SectionLabel>
         <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1.5">
@@ -55,7 +55,7 @@ export function ContextSidebar({
       </section>
 
       {!hideCarryOver && (
-        <section className="border-t border-rule pt-6">
+        <section className="border-t border-border-token pt-4">
           <SectionLabel>Carry-over candidates</SectionLabel>
           <div className="mt-3">
             <CarryOverList
@@ -67,7 +67,7 @@ export function ContextSidebar({
         </section>
       )}
 
-      <section className="border-t border-rule pt-6">
+      <section className="border-t border-border-token pt-4">
         <SectionLabel>
           {data.retro
             ? `Retro · submitted ${formatDate(data.retro.submittedAt)}`
@@ -95,12 +95,12 @@ export function ContextSidebar({
               )}
             </>
           ) : (
-            <p className="font-mono text-xs text-ink-mute">No retro submitted last week.</p>
+            <p className="font-sans text-xs text-fg-mute">No retro submitted last week.</p>
           )}
         </div>
       </section>
 
-      <section className="border-t border-rule pt-6">
+      <section className="border-t border-border-token pt-4">
         <SectionLabel>Topic coverage · all time</SectionLabel>
         <div className="mt-3">
           <TopicCoverageHeatmap
@@ -126,10 +126,10 @@ function OutcomeRow({
   return (
     <div className="flex items-center gap-2">
       <span className={`inline-block h-1.5 w-1.5 rounded-full ${dot}`} />
-      <p className="flex-1 truncate font-mono text-[10px] uppercase tracking-label text-ink-mute">
+      <p className="flex-1 truncate font-sans text-xs text-fg-mute">
         {label}
       </p>
-      <span className="font-mono text-sm tabular-nums font-semibold text-ink">{count}</span>
+      <span className="font-sans text-sm tabular-nums font-semibold text-fg">{count}</span>
     </div>
   );
 }
@@ -144,17 +144,17 @@ function RetroBlock({
   linkedItem?: { id: string; title: string; outcome: string } | null;
 }) {
   return (
-    <div className="border-l-2 border-accent bg-paper-warm/40 py-2 pl-3">
-      <p className="font-mono text-[10px] font-semibold uppercase tracking-eyebrow text-ink-mute">
+    <div className="border-l-2 border-border-strong bg-bg-subtle py-2 pl-3">
+      <p className="font-sans text-xs font-semibold text-fg-mute">
         {label}
       </p>
       {linkedItem && (
-        <p className="mt-1 font-mono text-[11px] text-ink-mute">
+        <p className="mt-1 font-sans text-xs text-fg-mute">
           → {linkedItem.title}
-          <span className="ml-2 text-ink-faint">[{linkedItem.outcome}]</span>
+          <span className="ml-2 text-fg-mute">[{linkedItem.outcome}]</span>
         </p>
       )}
-      <p className="mt-1 font-serif-tool text-sm italic leading-relaxed text-ink">
+      <p className="mt-1 font-sans text-sm italic leading-relaxed text-fg">
         &ldquo;{text}&rdquo;
       </p>
     </div>

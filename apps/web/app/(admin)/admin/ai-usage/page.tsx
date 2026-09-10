@@ -49,20 +49,20 @@ export default function AdminAiUsagePage() {
       <header className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <Eyebrow>AI usage</Eyebrow>
-          <h1 className="mt-2 font-serif-tool text-3xl font-semibold tracking-tight">
+          <h1 className="mt-2 font-sans text-3xl font-semibold tracking-tight">
             AI usage
           </h1>
         </div>
-        <nav className="flex gap-1 rounded-pill border border-rule bg-paper p-1">
+        <nav className="flex gap-1 rounded-pill border border-border-token bg-surface p-1">
           {([7, 30, 90] as Range[]).map((r) => (
             <button
               key={r}
               onClick={() => setRange(r)}
               className={clsx(
-                'font-mono text-xs uppercase tracking-label px-3 py-1 rounded-pill transition-colors',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface font-mono text-xs px-3 py-2 rounded-pill transition-colors',
                 range === r
-                  ? 'bg-ink text-paper'
-                  : 'text-ink-soft hover:bg-paper-warm',
+                  ? 'bg-primary text-primary-fg'
+                  : 'text-fg-soft hover:bg-bg-subtle',
               )}
             >
               {r}d
@@ -72,34 +72,34 @@ export default function AdminAiUsagePage() {
       </header>
 
       {isLoading ? (
-        <p className="font-mono text-xs uppercase tracking-label text-ink-mute">
+        <p className="font-sans text-xs font-medium text-fg-mute">
           Loading…
         </p>
       ) : (
         <>
-          <section className="grid grid-cols-3 gap-4">
+          <section className="grid gap-4 sm:grid-cols-3">
             <StatCard label={`Cost · ${range}d`} value={formatUsd(totalCost)} />
             <StatCard label="Tokens" value={totalTokens.toLocaleString('en-US')} />
             <StatCard label="Calls" value={rows.length.toLocaleString('en-US')} />
           </section>
 
-          <section>
+          <section className="rounded-card border border-border-token bg-surface p-5">
             <SectionLabel>Daily cost</SectionLabel>
             {daily.length === 0 ? (
-              <p className="mt-3 font-mono text-xs text-ink-mute py-8 text-center border border-dashed border-rule rounded-card">
+              <p className="mt-3 font-sans text-xs text-fg-mute py-8 text-center border border-dashed border-border-token rounded-card">
                 No usage yet in this range.
               </p>
             ) : (
-              <div className="mt-3 flex items-end gap-1 h-32 border-b border-rule">
+              <div className="mt-3 flex items-end gap-1 h-32 border-b border-border-token">
                 {daily.map((d) => {
                   const hPct = Math.max(2, (d.cost / maxDailyCost) * 100);
                   return (
                     <div
                       key={d.date}
-                      className="flex-1 flex flex-col justify-end items-center group relative"
+                      className="h-full flex-1 flex flex-col justify-end items-center group relative"
                     >
                       <div
-                        className="w-full bg-ink/70 hover:bg-ink transition-colors"
+                        className="w-full rounded-t-sm bg-primary/80 hover:bg-primary transition-colors"
                         style={{ height: `${hPct}%` }}
                         title={`${formatDay(d.date)} · ${formatUsd(d.cost)} · ${d.calls} calls`}
                       />
@@ -114,7 +114,7 @@ export default function AdminAiUsagePage() {
                   <span
                     key={d.date}
                     className={clsx(
-                      'flex-1 text-center font-mono text-[9px] uppercase tracking-label text-ink-mute',
+                      'min-w-0 flex-1 text-center font-mono text-[10px] text-fg-mute',
                       idx % Math.max(1, Math.floor(daily.length / 8)) !== 0 && 'invisible',
                     )}
                   >
@@ -128,14 +128,14 @@ export default function AdminAiUsagePage() {
           <section>
             <SectionLabel>Usage · {rows.length} calls</SectionLabel>
             {rows.length === 0 ? (
-              <p className="mt-3 font-mono text-xs text-ink-mute py-8 text-center border border-dashed border-rule rounded-card">
+              <p className="mt-3 font-sans text-xs text-fg-mute py-8 text-center border border-dashed border-border-token rounded-card">
                 No usage yet.
               </p>
             ) : (
-              <div className="mt-3 overflow-x-auto border border-rule rounded-card bg-surface">
-                <table className="w-full text-sm">
-                  <thead className="bg-paper-warm">
-                    <tr className="font-mono text-[10px] uppercase tracking-label text-ink-mute">
+              <div className="mt-3 overflow-x-auto border border-border-token rounded-card bg-surface">
+                <table className="w-full min-w-[640px] text-sm">
+                  <thead className="bg-bg-subtle">
+                    <tr className="font-sans text-xs font-medium text-fg-mute">
                       <th className="text-left px-4 py-2">When</th>
                       <th className="text-left px-4 py-2">Purpose</th>
                       <th className="text-left px-4 py-2">Model</th>
@@ -144,25 +144,25 @@ export default function AdminAiUsagePage() {
                       <th className="text-right px-4 py-2">Cost</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-rule">
+                  <tbody className="divide-y divide-border-token">
                     {rows.slice(0, 50).map((r) => (
-                      <tr key={r.id} className="hover:bg-paper-warm/50">
-                        <td className="px-4 py-2 font-mono text-xs text-ink-mute">
+                      <tr key={r.id} className="hover:bg-bg-subtle/50">
+                        <td className="px-4 py-2 font-mono text-xs text-fg-mute">
                           {formatDay(r.createdAt)}
                         </td>
-                        <td className="px-4 py-2 font-sans text-sm text-ink">
+                        <td className="px-4 py-2 font-sans text-sm text-fg">
                           {r.purpose}
                         </td>
-                        <td className="px-4 py-2 font-mono text-xs text-ink-soft">
+                        <td className="px-4 py-2 font-mono text-xs text-fg-soft">
                           {r.model}
                         </td>
-                        <td className="px-4 py-2 text-right font-mono text-xs tabular-nums text-ink-mute">
+                        <td className="px-4 py-2 text-right font-mono text-xs tabular-nums text-fg-mute">
                           {r.promptTokens.toLocaleString('en-US')}
                         </td>
-                        <td className="px-4 py-2 text-right font-mono text-xs tabular-nums text-ink-mute">
+                        <td className="px-4 py-2 text-right font-mono text-xs tabular-nums text-fg-mute">
                           {r.responseTokens.toLocaleString('en-US')}
                         </td>
-                        <td className="px-4 py-2 text-right font-mono text-xs tabular-nums text-ink">
+                        <td className="px-4 py-2 text-right font-mono text-xs tabular-nums text-fg">
                           {formatUsd(Number(r.costUsd))}
                         </td>
                       </tr>
@@ -170,7 +170,7 @@ export default function AdminAiUsagePage() {
                   </tbody>
                 </table>
                 {rows.length > 50 && (
-                  <p className="px-4 py-2 font-mono text-[10px] uppercase tracking-label text-ink-mute border-t border-rule">
+                  <p className="px-4 py-2 font-mono text-[10px] uppercase tracking-label text-fg-mute border-t border-border-token">
                     Showing first 50 of {rows.length}
                   </p>
                 )}
@@ -185,11 +185,11 @@ export default function AdminAiUsagePage() {
 
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="border border-rule rounded-card bg-surface px-5 py-4">
-      <p className="font-mono text-[10px] uppercase tracking-eyebrow text-ink-mute font-semibold">
+    <div className="border border-border-token rounded-card bg-surface px-5 py-4">
+      <p className="font-sans text-xs font-semibold text-fg-mute">
         {label}
       </p>
-      <p className="mt-2 font-serif-tool text-3xl font-semibold tabular-nums text-ink">
+      <p className="mt-2 font-mono text-3xl font-semibold tabular-nums text-fg">
         {value}
       </p>
     </div>

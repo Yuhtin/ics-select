@@ -48,10 +48,10 @@ export function MultiFilterCombobox({ label, options, value, onChange }: Props) 
         type="button"
         onClick={() => setOpen((o) => !o)}
         className={clsx(
-          'inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-label px-3 py-1.5 rounded-pill border transition-colors',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface inline-flex items-center gap-1.5 font-sans text-xs font-medium px-3 py-1.5 rounded-pill border transition-colors',
           value.length > 0
-            ? 'bg-paper-warm border-ink text-ink'
-            : 'bg-paper border-rule text-ink-soft hover:bg-paper-warm',
+            ? 'bg-bg-subtle border-border-strong text-fg'
+            : 'bg-surface border-border-token text-fg-soft hover:bg-bg-subtle',
         )}
       >
         {triggerLabel}
@@ -69,7 +69,7 @@ export function MultiFilterCombobox({ label, options, value, onChange }: Props) 
         )}
       </button>
       {open && (
-        <div className="absolute z-20 mt-1 w-56 rounded-card border border-rule bg-surface shadow-sm">
+        <div className="absolute z-20 mt-1 w-56 rounded-card border border-border-token bg-surface shadow-sm">
           <ul className="max-h-72 overflow-auto py-1">
             {options.map((opt) => {
               const active = value.includes(opt.value);
@@ -79,8 +79,8 @@ export function MultiFilterCombobox({ label, options, value, onChange }: Props) 
                     type="button"
                     onClick={() => toggle(opt.value)}
                     className={clsx(
-                      'flex w-full items-center justify-between px-3 py-1.5 font-sans text-sm text-left',
-                      active ? 'bg-focus/5 text-ink' : 'text-ink-soft hover:bg-paper-warm',
+                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface flex w-full items-center justify-between px-3 py-1.5 font-sans text-sm text-left',
+                      active ? 'bg-primary-soft text-fg' : 'text-fg-soft hover:bg-bg-subtle',
                     )}
                   >
                     <span>{opt.label}</span>
@@ -91,11 +91,11 @@ export function MultiFilterCombobox({ label, options, value, onChange }: Props) 
             })}
           </ul>
           {value.length > 0 && (
-            <div className="border-t border-rule px-3 py-1.5">
+            <div className="border-t border-border-token px-3 py-1.5">
               <button
                 type="button"
                 onClick={() => onChange([])}
-                className="font-mono text-[10px] uppercase tracking-label text-ink-mute hover:text-ink"
+                className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface font-sans text-xs font-medium text-fg-mute hover:text-fg"
               >
                 Clear
               </button>

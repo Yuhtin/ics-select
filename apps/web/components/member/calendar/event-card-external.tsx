@@ -1,6 +1,6 @@
 'use client';
 
-import { ExternalLink, MapPin, Video } from 'lucide-react';
+import { MapPin } from 'lucide-react';
 import type { CalendarEvent } from '../../../lib/queries/me-calendar';
 
 interface EventCardExternalProps {
@@ -9,35 +9,22 @@ interface EventCardExternalProps {
 }
 
 export function EventCardExternal({ event, timeLabel }: EventCardExternalProps) {
-  const link = event.meetLink ?? event.htmlLink;
-  const LinkIcon = event.meetLink ? Video : event.htmlLink ? ExternalLink : null;
-
   return (
-    <div className="flex h-full w-full flex-col overflow-hidden rounded-input border border-dashed border-border-token px-2 py-1">
-      <span className="truncate font-sans text-[11px] font-medium text-fg-soft">
+    // External destinations are full-height links in the agenda. Temporal blocks
+    // can be shorter than 44px, so they show chronology without overlapping actions.
+    <div className="flex h-full w-full flex-col overflow-hidden rounded-md border border-border-token border-l-[3px] border-l-fg-faint bg-bg-subtle/60 px-2 py-1">
+      <span className="shrink-0 truncate font-sans text-xs font-medium leading-tight text-fg-soft">
         {event.title}
       </span>
-      <div className="flex items-center gap-2 font-sans text-[10px] tabular-nums text-fg-mute">
-        <span>{timeLabel}</span>
-        {event.location && (
-          <span className="inline-flex items-center gap-0.5">
-            <MapPin className="h-2.5 w-2.5" strokeWidth={1.5} />
-            <span className="max-w-[80px] truncate">{event.location}</span>
-          </span>
-        )}
-        {LinkIcon && link && (
-          <a
-            href={link}
-            target="_blank"
-            rel="noreferrer"
-            className="ml-auto text-fg-mute hover:text-fg"
-            onClick={(e) => e.stopPropagation()}
-            aria-label="Open external link"
-          >
-            <LinkIcon className="h-2.5 w-2.5" strokeWidth={1.5} />
-          </a>
-        )}
-      </div>
+      <span className="shrink-0 truncate font-mono text-[10px] tabular-nums text-fg-mute">
+        {timeLabel}
+      </span>
+      {event.location && (
+        <span className="inline-flex min-w-0 items-center gap-0.5 font-sans text-[10px] text-fg-mute">
+          <MapPin aria-hidden className="h-2.5 w-2.5 shrink-0" strokeWidth={1.5} />
+          <span className="truncate">{event.location}</span>
+        </span>
+      )}
     </div>
   );
 }

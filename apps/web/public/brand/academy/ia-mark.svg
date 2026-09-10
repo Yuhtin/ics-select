@@ -1,0 +1,8 @@
+<svg width="64" height="56" viewBox="0 0 64 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Official Figma paths: jZFcepE7ZQJbaipCR2pYpO, nodes 9:55 and 9:56.
+       Source positions: A (134, 110), I (111, 110); export stroke bounds retained. -->
+  <g transform="translate(22.745947 0)">
+    <path id="Vector 5" fill-rule="evenodd" clip-rule="evenodd" d="M0.754053 55.5L23.9921 0.5H40.7541V55.5H28.9445L15.9921 48.2931L12.9445 55.5H0.754053ZM29.3255 16.8103L19.4207 39.9483L29.3255 45.2586V16.8103Z" fill="black" stroke="white"/>
+  </g>
+  <path id="Vector 3" d="M20.7647 7.32759V0.5H39.5V7.32759H35.6765L16.5588 49.431H20V55.5H0.5V49.431H4.32353L23.4412 7.32759H20.7647Z" fill="black" stroke="white"/>
+</svg>

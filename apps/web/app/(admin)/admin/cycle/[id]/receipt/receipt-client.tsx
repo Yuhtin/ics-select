@@ -16,7 +16,7 @@ export function ReceiptClient({ cycleId, asOf, modeOverride }: Props) {
 
   if (isLoading) {
     return (
-      <div className="p-12 font-mono text-sm text-ink-mute">Loading receipt…</div>
+      <div className="p-8 font-sans text-sm text-fg-mute">Loading receipt…</div>
     );
   }
   if (error || !data) {
@@ -28,7 +28,7 @@ export function ReceiptClient({ cycleId, asOf, modeOverride }: Props) {
         : code === 'INVALID_AS_OF'
           ? 'That date is outside the cycle range.'
           : 'Failed to load receipt.';
-    return <div className="p-12 font-mono text-sm text-ink-mute">{message}</div>;
+    return <div className="p-8 font-sans text-sm text-fg-mute">{message}</div>;
   }
 
   const mode = modeOverride ?? data.mode;

@@ -45,11 +45,11 @@ export default function AdminMemberPage({ params }: { params: Promise<{ id: stri
     }
   }
 
-  if (isLoading) return <p className="font-mono text-xs uppercase tracking-[0.1em] text-ink-mute">Loading…</p>;
+  if (isLoading) return <p className="font-sans text-xs text-fg-mute">Loading…</p>;
   if (error || !data) {
     return (
       <div className="max-w-xl space-y-4">
-        <Link href="/admin/members" className="inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.1em] text-ink-mute hover:text-ink">
+        <Link href="/admin/members" className="inline-flex items-center gap-1.5 font-sans text-xs text-fg-mute hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface">
           <ArrowLeft className="w-3.5 h-3.5" strokeWidth={1.5} /> All members
         </Link>
         <p className="font-sans text-sm text-outcome-stuck">Failed to load cockpit. {error instanceof Error ? error.message : ''}</p>
@@ -64,19 +64,19 @@ export default function AdminMemberPage({ params }: { params: Promise<{ id: stri
 
   return (
     <div className="space-y-6">
-      <Link href="/admin/members" className="inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.1em] text-ink-mute hover:text-ink">
+      <Link href="/admin/members" className="inline-flex items-center gap-1.5 font-sans text-xs text-fg-mute hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface">
         <ArrowLeft className="w-3.5 h-3.5" strokeWidth={1.5} /> All members
       </Link>
 
-      <header className="flex items-end justify-between flex-wrap gap-4 pb-5 border-b border-rule">
-        <div className="flex items-end gap-4 min-w-0">
+      <header className="flex items-end justify-between flex-wrap gap-4 pb-5 border-b border-border-token">
+        <div className="flex items-end gap-4 min-w-0 w-full lg:w-auto">
           <Avatar name={member.name} pictureUrl={member.pictureUrl} />
           <div className="min-w-0">
             <Eyebrow>Member</Eyebrow>
-            <h1 className="font-serif text-[34px] leading-[1.05] font-semibold text-ink tracking-tight">
+            <h1 className="font-sans text-3xl leading-tight font-semibold text-fg tracking-tight">
               {member.name}
             </h1>
-            <p className="font-mono text-[11px] text-ink-mute mt-1.5">
+            <p className="font-sans text-xs text-fg-mute mt-1.5 break-words">
               {member.track ?? 'No track'}
               {cycle && <> · {cycle.name} · week {cycle.weekNumber} of {cycle.weeksTotal}</>}
               {' · '}{member.email}
@@ -90,12 +90,12 @@ export default function AdminMemberPage({ params }: { params: Promise<{ id: stri
             )}
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <RangeSelector value={range} onChange={setRange} />
           <button
             type="button"
             onClick={() => setPlanWeekOpen(true)}
-            className="inline-flex items-center gap-2 bg-ink text-paper font-mono text-[11px] uppercase tracking-[0.1em] px-4 py-2 rounded-pill hover:opacity-90"
+            className="inline-flex items-center gap-2 bg-primary text-primary-fg font-sans text-xs px-4 py-2 rounded-pill hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
           >
             Plan week
             <ChevronDown className="w-3 h-3" strokeWidth={2} />
@@ -105,7 +105,7 @@ export default function AdminMemberPage({ params }: { params: Promise<{ id: stri
               href={waLink}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 bg-paper-warm text-ink-soft font-mono text-[11px] uppercase tracking-[0.1em] px-4 py-2 rounded-pill hover:bg-rule"
+              className="inline-flex items-center gap-2 bg-bg-subtle text-fg-soft font-sans text-xs px-4 py-2 rounded-pill hover:bg-surface-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
             >
               <MessageCircle className="w-3 h-3" strokeWidth={1.5} /> WhatsApp
             </a>
@@ -120,7 +120,7 @@ export default function AdminMemberPage({ params }: { params: Promise<{ id: stri
       {/* Engagement is null on range=all (cohort comparison has no meaning
           across cycles). Drop the container to 9 columns so the two remaining
           cards, 6 + 3, still fill the row instead of leaving a gap. */}
-      <div className={clsx('grid gap-5', data.engagement ? 'grid-cols-12' : 'grid-cols-9')}>
+      <div className={clsx('grid grid-cols-1 gap-4', data.engagement ? 'lg:grid-cols-12' : 'lg:grid-cols-9')}>
         {data.engagement && (
           <EngagementCard engagement={data.engagement} status={data.risk.status} />
         )}
@@ -130,9 +130,9 @@ export default function AdminMemberPage({ params }: { params: Promise<{ id: stri
 
       <BehaviorStrip behavior={data.behavior} />
 
-      <div className="grid grid-cols-12 gap-5">
+      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-12">
         <TopicEngagementTable topics={data.topicEngagement} />
-        <div className="col-span-4 space-y-5">
+        <div className="min-w-0 grid gap-4 sm:grid-cols-2 lg:col-span-4 lg:grid-cols-1">
           <MocksCard memberId={memberId} cycleId={selectedCycleId ?? cycle?.id ?? null} />
           <SessionPatternCard behavior={data.behavior} />
           <ClassAttendanceCard classAttendance={data.classAttendance} firstSession={data.firstSession} cycle={data.cycle} />
@@ -171,7 +171,7 @@ function Avatar({ name, pictureUrl }: { name: string; pictureUrl: string | null 
       <img
         src={pictureUrl}
         alt=""
-        className="w-14 h-14 rounded-full object-cover border border-rule"
+        className="w-14 h-14 shrink-0 rounded-full object-cover border border-border-token"
       />
     );
   }
@@ -182,7 +182,7 @@ function Avatar({ name, pictureUrl }: { name: string; pictureUrl: string | null 
     .map((p) => p[0]?.toUpperCase() ?? '')
     .join('');
   return (
-    <div className="w-14 h-14 rounded-full bg-paper-warm border border-rule flex items-center justify-center font-serif text-ink text-xl font-semibold">
+    <div className="w-14 h-14 shrink-0 rounded-full bg-bg-subtle border border-border-token flex items-center justify-center font-sans text-fg text-xl font-semibold">
       {initials || '—'}
     </div>
   );
@@ -215,13 +215,14 @@ function CyclePicker({
             key={m.cycleId}
             type="button"
             onClick={() => onSelect(m.cycleId)}
+            aria-pressed={isSelected}
             className={clsx(
-              'rounded-pill border px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-label transition-colors',
+              'rounded-pill border px-2.5 py-1.5 font-sans text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
               isSelected
-                ? 'border-ink bg-ink text-paper'
+                ? 'border-primary bg-primary text-primary-fg'
                 : isArchived
-                  ? 'border-rule text-ink-faint hover:text-ink-mute'
-                  : 'border-rule text-ink-mute hover:text-ink hover:border-ink/40',
+                  ? 'border-border-token text-fg-mute hover:text-fg-mute'
+                  : 'border-border-token text-fg-mute hover:text-fg hover:border-border-strong',
             )}
           >
             {m.cycleName}
@@ -236,16 +237,17 @@ function CyclePicker({
 function RangeSelector({ value, onChange }: { value: Range; onChange: (r: Range) => void }) {
   const opts: Range[] = ['7d', 'cycle', 'all'];
   return (
-    <div className="inline-flex bg-paper-warm rounded-pill p-1 font-mono text-[11px] uppercase tracking-[0.1em]">
+    <div className="inline-flex bg-bg-subtle rounded-pill p-1 font-sans text-xs">
       {opts.map((r) => (
         <button
           key={r}
           type="button"
           onClick={() => onChange(r)}
+          aria-pressed={value === r}
           className={
             value === r
-              ? 'px-3 py-1.5 rounded-pill bg-surface text-ink shadow-[0_1px_2px_rgba(0,0,0,0.06)]'
-              : 'px-3 py-1.5 rounded-pill text-ink-mute hover:text-ink'
+              ? 'px-3 py-1.5 rounded-pill bg-primary text-primary-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2'
+              : 'px-3 py-1.5 rounded-pill text-fg-mute hover:text-fg hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary'
           }
         >
           {r === '7d' ? '7d' : r === 'cycle' ? 'Cycle' : 'All'}

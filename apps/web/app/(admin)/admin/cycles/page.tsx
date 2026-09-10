@@ -37,10 +37,10 @@ function phaseOf(cycle: CycleRow, now: Date): Phase {
 }
 
 const PHASE_CLASS: Record<Phase, string> = {
-  active: 'bg-ink text-paper border-ink',
-  upcoming: 'bg-paper text-ink border-ink/40',
-  past: 'bg-paper-warm text-ink-mute border-rule',
-  archived: 'bg-paper text-ink-faint border-rule',
+  active: 'bg-primary text-primary-fg border-border-strong',
+  upcoming: 'bg-surface text-fg border-border-strong/40',
+  past: 'bg-bg-subtle text-fg-mute border-border-token',
+  archived: 'bg-surface text-fg-faint border-border-token',
 };
 
 const PHASE_LABEL: Record<Phase, string> = {
@@ -93,16 +93,16 @@ export default function AdminCyclesPage() {
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <Eyebrow>Cycles</Eyebrow>
-          <h1 className="mt-2 font-serif-tool text-3xl font-semibold tracking-tight">
+          <h1 className="mt-2 font-sans text-3xl font-semibold tracking-tight">
             Cycles
           </h1>
-          <p className="mt-1 font-mono text-xs text-ink-mute">
+          <p className="mt-1 font-mono text-xs text-fg-mute">
             {data ? `${data.length} total` : 'Loading…'}
           </p>
         </div>
         <button
           onClick={() => setNewOpen(true)}
-          className="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-label px-4 py-2 bg-ink text-paper rounded-pill hover:opacity-90"
+          className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface inline-flex items-center gap-2 font-sans text-xs font-medium px-4 py-2 bg-primary text-primary-fg rounded-pill hover:opacity-90"
         >
           <Plus className="h-3.5 w-3.5" strokeWidth={1.5} />
           New cycle
@@ -110,15 +110,15 @@ export default function AdminCyclesPage() {
       </div>
 
       {isLoading ? (
-        <p className="font-mono text-xs uppercase tracking-label text-ink-mute">
+        <p className="font-sans text-xs font-medium text-fg-mute">
           Loading…
         </p>
       ) : rows.length === 0 ? (
-        <p className="font-mono text-xs text-ink-mute py-12 text-center border border-dashed border-rule rounded-card">
+        <p className="font-sans text-xs text-fg-mute py-12 text-center border border-dashed border-border-token rounded-card">
           No cycles yet. Create one to get started.
         </p>
       ) : (
-        <ul className="divide-y divide-rule border border-rule rounded-card bg-surface">
+        <ul className="divide-y divide-border-token border border-border-token rounded-card bg-surface">
           {rows.map(({ cycle, phase }) => {
             const memberCount =
               cycle._count?.memberships ?? cycle.memberships?.length ?? 0;
@@ -128,8 +128,8 @@ export default function AdminCyclesPage() {
                 className={clsx(
                   'flex items-center gap-4 px-4 py-3 transition-colors',
                   phase === 'active'
-                    ? 'bg-paper-warm/40'
-                    : 'hover:bg-paper-warm/60',
+                    ? 'bg-bg-subtle/40'
+                    : 'hover:bg-bg-subtle/60',
                 )}
               >
                 <Link
@@ -137,10 +137,10 @@ export default function AdminCyclesPage() {
                   className="flex-1 min-w-0 flex items-center gap-4"
                 >
                   <div className="flex-1 min-w-0">
-                    <p className="font-serif-tool text-base font-semibold text-ink">
+                    <p className="font-sans text-base font-semibold text-fg">
                       {cycle.name}
                     </p>
-                    <p className="font-mono text-[10px] uppercase tracking-label text-ink-mute">
+                    <p className="font-mono text-[10px] uppercase tracking-label text-fg-mute">
                       {formatRange(cycle.startsAt, cycle.endsAt)}
                       {' · '}
                       {memberCount} members
@@ -149,7 +149,7 @@ export default function AdminCyclesPage() {
                   </div>
                   <span
                     className={clsx(
-                      'font-mono text-[10px] uppercase tracking-label px-2 py-0.5 rounded-pill border',
+                      'font-sans text-xs font-medium px-2 py-0.5 rounded-pill border',
                       PHASE_CLASS[phase],
                     )}
                   >
@@ -160,7 +160,7 @@ export default function AdminCyclesPage() {
                   <button
                     onClick={() => setArchiveTarget(cycle)}
                     disabled={archive.isPending}
-                    className="inline-flex items-center gap-1 font-mono text-[11px] text-ink-mute hover:text-ink disabled:opacity-40"
+                    className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface inline-flex items-center gap-1 font-sans text-xs text-fg-mute hover:text-fg disabled:opacity-40"
                     title="Archive this cycle"
                   >
                     <Archive className="h-3 w-3" strokeWidth={1.5} />
@@ -184,7 +184,7 @@ export default function AdminCyclesPage() {
         description={
           archiveTarget ? (
             <>
-              Archive <span className="font-semibold text-ink">{archiveTarget.name}</span>? Members
+              Archive <span className="font-semibold text-fg">{archiveTarget.name}</span>? Members
               will keep their data, but the cycle won&apos;t appear as active anymore.
             </>
           ) : null

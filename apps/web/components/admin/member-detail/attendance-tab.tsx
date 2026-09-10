@@ -46,12 +46,12 @@ function formatTime(iso: string): string {
 function StatusPill({ status }: { status: AttendanceEntry['status'] }) {
   if (!status) {
     return (
-      <span className="font-mono text-xs text-ink-faint">—</span>
+      <span className="font-sans text-xs text-fg-mute">—</span>
     );
   }
   const cfg = STATUS_CONFIG[status];
   return (
-    <span className={`inline-flex items-center gap-1.5 font-mono text-xs ${cfg.textClass}`}>
+    <span className={`inline-flex items-center gap-1.5 font-sans text-xs ${cfg.textClass}`}>
       <span
         className={`inline-block w-2 h-2 rounded-full flex-shrink-0 ${cfg.dotClass}`}
         aria-hidden="true"
@@ -68,7 +68,7 @@ export function AttendanceTab({
 }) {
   if (attendance.length === 0) {
     return (
-      <p className="font-mono text-xs text-ink-mute">
+      <p className="font-sans text-xs text-fg-mute">
         No classes scheduled in this cycle yet.
       </p>
     );
@@ -79,24 +79,24 @@ export function AttendanceTab({
       {attendance.map((cls) => (
         <div
           key={cls.classId}
-          className="flex items-center gap-4 py-3 border-b border-rule last:border-0"
+          className="flex items-center gap-4 py-3 border-b border-border-token last:border-0"
         >
           <div className="w-28 flex-shrink-0">
-            <p className="font-mono text-xs text-ink-mute">{formatDate(cls.scheduledAt)}</p>
-            <p className="font-mono text-xs text-ink-faint">{formatTime(cls.scheduledAt)}</p>
+            <p className="font-sans text-xs text-fg-mute">{formatDate(cls.scheduledAt)}</p>
+            <p className="font-sans text-xs text-fg-mute">{formatTime(cls.scheduledAt)}</p>
           </div>
 
           <div className="flex-1 min-w-0">
-            <p className="font-serif-tool text-sm font-medium text-ink truncate">
+            <p className="font-sans text-sm font-medium text-fg truncate">
               {cls.classTitle}
             </p>
             {cls.topic && (
-              <p className="mt-0.5 font-mono text-xs text-ink-mute truncate">{cls.topic}</p>
+              <p className="mt-0.5 font-sans text-xs text-fg-mute truncate">{cls.topic}</p>
             )}
           </div>
 
           <div className="w-24 flex-shrink-0 text-right">
-            <p className="font-mono text-xs text-ink-faint">{cls.durationMin}min</p>
+            <p className="font-sans text-xs text-fg-mute">{cls.durationMin}min</p>
           </div>
 
           <div className="w-20 flex-shrink-0 flex justify-end">

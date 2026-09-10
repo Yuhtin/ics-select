@@ -11,7 +11,7 @@ interface ProgressBarProps {
 }
 
 const TONE_FILL: Record<Tone, string> = {
-  default: 'bg-fg',
+  default: 'bg-primary',
   success: 'bg-success',
   primary: 'bg-primary',
   warn: 'bg-warn',
@@ -29,12 +29,12 @@ export function ProgressBar({
   return (
     <div className={className}>
       {(label || valueLabel) && (
-        <div className="mb-1 flex items-center justify-between font-mono text-[10px] uppercase tracking-eyebrow text-fg-mute">
+        <div className="mb-2 flex items-center justify-between gap-3 font-sans text-xs text-fg-mute">
           {label && <span>{label}</span>}
-          {valueLabel && <span className="tabular-nums">{valueLabel}</span>}
+          {valueLabel && <span className="shrink-0 font-mono tabular-nums">{valueLabel}</span>}
         </div>
       )}
-      <div className="h-1.5 overflow-hidden rounded-full bg-bg-subtle">
+      <div className="h-1.5 overflow-hidden rounded-full bg-surface-strong">
         <div
           className={clsx('h-full rounded-full transition-[width] duration-500', TONE_FILL[tone])}
           style={{

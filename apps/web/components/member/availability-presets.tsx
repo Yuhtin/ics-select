@@ -36,9 +36,9 @@ export function AvailabilityPresets({ value, onChange }: Props) {
       {DAYS.map((d) => (
         <div
           key={d.key}
-          className="flex items-center gap-3 rounded-input border border-border-token bg-surface px-3 py-2"
+          className="flex items-start gap-3 border-b border-border-token py-3 last:border-0"
         >
-          <span className="w-14 font-mono text-[11px] font-semibold uppercase tracking-eyebrow text-fg-mute">
+          <span className="mt-3 w-10 shrink-0 font-sans text-xs font-medium text-fg-mute">
             {d.short}
           </span>
           <div className="flex flex-1 flex-wrap gap-1.5">
@@ -51,11 +51,12 @@ export function AvailabilityPresets({ value, onChange }: Props) {
                   type="button"
                   onClick={() => onChange({ ...value, [d.key]: mins })}
                   className={clsx(
-                    'rounded-pill border px-2.5 py-1 font-mono text-[11px] font-semibold transition-colors',
+                    'min-h-11 min-w-11 rounded-input border px-2.5 font-mono text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg',
                     active
                       ? 'border-primary bg-primary text-primary-fg'
                       : 'border-border-token bg-surface text-fg-soft hover:border-border-strong hover:text-fg',
                   )}
+                  aria-pressed={active}
                   aria-label={mins === null ? `${d.short}: no cap` : `${d.short}: ${mins} minutes cap`}
                 >
                   {label}

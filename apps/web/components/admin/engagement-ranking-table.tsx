@@ -27,7 +27,7 @@ function scoreColor(score: number): string {
 function Avatar({ name, pictureUrl }: { name: string; pictureUrl: string | null }) {
   if (pictureUrl) {
     return (
-      <span className="block h-6 w-6 overflow-hidden rounded-full bg-paper-warm">
+      <span className="block h-6 w-6 overflow-hidden rounded-full bg-bg-subtle">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={pictureUrl} alt="" className="h-full w-full object-cover" />
       </span>
@@ -40,7 +40,7 @@ function Avatar({ name, pictureUrl }: { name: string; pictureUrl: string | null 
     .map((part) => part[0]?.toUpperCase() ?? '')
     .join('');
   return (
-    <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-paper-warm font-sans text-[10px] font-semibold text-ink-soft">
+    <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-bg-subtle font-sans text-[10px] font-semibold text-fg-soft">
       {initials || '—'}
     </span>
   );
@@ -50,31 +50,31 @@ export function EngagementRankingTable({ ranking }: EngagementRankingTableProps)
   if (ranking.length === 0) return null;
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full font-serif-tool tabular-nums text-sm">
+    <div className="overflow-x-auto rounded-card border border-border-token bg-surface px-4">
+      <table className="w-full min-w-[600px] font-sans tabular-nums text-sm">
         <thead>
-          <tr className="border-b-2 border-ink text-left">
-            <th className="py-2 pr-2 font-mono text-[10px] uppercase tracking-eyebrow text-ink-mute">##</th>
-            <th className="py-2 pr-4 font-mono text-[10px] uppercase tracking-eyebrow text-ink-mute">Member</th>
-            <th className="py-2 pr-4 font-mono text-[10px] uppercase tracking-eyebrow text-ink-mute">Score</th>
+          <tr className="border-b border-border-token text-left">
+            <th className="py-2 pr-2 font-sans text-xs font-medium text-fg-mute">##</th>
+            <th className="py-2 pr-4 font-sans text-xs font-medium text-fg-mute">Member</th>
+            <th className="py-2 pr-4 font-sans text-xs font-medium text-fg-mute">Score</th>
             {COLUMN_LABELS.map((c) => (
-              <th key={c.key} className="py-2 pr-4 font-mono text-[10px] uppercase tracking-eyebrow text-ink-mute">
+              <th key={c.key} className="py-2 pr-4 font-sans text-xs font-medium text-fg-mute">
                 {c.label}
               </th>
             ))}
-            <th className="py-2 font-mono text-[10px] uppercase tracking-eyebrow text-ink-mute" aria-label="alert" />
+            <th className="py-2 font-sans text-xs font-medium text-fg-mute" aria-label="alert" />
           </tr>
         </thead>
-        <tbody className="divide-y divide-rule">
+        <tbody className="divide-y divide-border-token">
           {ranking.map((row, idx) => (
-            <tr key={row.userId} className="group hover:bg-paper-warm">
-              <td className="py-2 pr-2 font-mono text-xs text-ink-mute">
+            <tr key={row.userId} className="group hover:bg-bg-subtle">
+              <td className="py-2 pr-2 font-mono text-xs text-fg-mute">
                 {String(idx + 1).padStart(2, '0')}
               </td>
               <td className="py-2 pr-4">
                 <Link
                   href={`/admin/member/${row.userId}`}
-                  className="flex items-center gap-2 font-serif font-medium text-ink hover:underline"
+                  className="flex items-center gap-2 font-sans font-medium text-fg hover:underline"
                 >
                   <Avatar name={row.name} pictureUrl={row.pictureUrl} />
                   {row.name}
@@ -86,7 +86,7 @@ export function EngagementRankingTable({ ranking }: EngagementRankingTableProps)
               {COLUMN_LABELS.map((c) => {
                 const entry = row.breakdown.find((b) => b.label === c.key);
                 return (
-                  <td key={c.key} className="py-2 pr-4 font-mono text-ink-soft">
+                  <td key={c.key} className="py-2 pr-4 font-mono text-fg-soft">
                     {entry ? entry.value : 0}
                   </td>
                 );

@@ -52,18 +52,18 @@ function SlotRow({
       className={clsx(
         'group flex items-center justify-between gap-4 w-full rounded-card border px-4 py-3 text-left transition-colors',
         disabled
-          ? 'border-rule bg-paper-warm opacity-60 cursor-not-allowed'
-          : 'border-rule bg-surface hover:border-ink hover:bg-paper-warm',
+          ? 'border-border-token bg-bg-subtle opacity-60 cursor-not-allowed'
+          : 'border-border-token bg-surface hover:border-primary hover:bg-primary-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
       )}
     >
       <div className="min-w-0">
-        <div className="font-mono text-[10px] uppercase tracking-label text-ink-mute">
+        <div className="font-sans text-xs text-fg-mute">
           {label}
         </div>
-        <div className="mt-0.5 font-serif-tool text-base font-semibold text-ink">
+        <div className="mt-0.5 font-sans text-base font-semibold text-fg">
           {formatWeekLabel(slot.weekStart, slot.weekEnd)}
         </div>
-        <div className="mt-1 font-mono text-[11px] text-ink-soft">
+        <div className="mt-1 font-sans text-xs text-fg-soft">
           {disabled
             ? 'Outside cycle'
             : hasPlan
@@ -73,7 +73,7 @@ function SlotRow({
       </div>
       {!disabled && (
         <ArrowRight
-          className="h-4 w-4 text-ink-mute group-hover:text-ink"
+          className="h-4 w-4 text-fg-mute group-hover:text-fg"
           strokeWidth={1.5}
         />
       )}
@@ -89,9 +89,10 @@ export function PlanWeekModal({ isOpen, onClose, current, next, onPick }: Props)
       placement="center"
       size="md"
       backdrop="blur"
+      classNames={{ base: 'border border-border-token bg-surface text-fg rounded-card shadow-modal', closeButton: 'text-fg-mute hover:bg-bg-subtle focus-visible:ring-2 focus-visible:ring-primary' }}
     >
       <ModalContent>
-        <ModalHeader className="flex flex-col gap-1 font-serif-tool">
+        <ModalHeader className="flex flex-col gap-1 font-sans">
           Plan week
         </ModalHeader>
         <ModalBody className="pb-6">

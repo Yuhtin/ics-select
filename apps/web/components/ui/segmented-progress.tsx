@@ -8,10 +8,10 @@ interface SegmentedProgressProps {
 }
 
 const SEG_CLASS: Record<SegmentState, string> = {
-  pending: 'bg-bg-subtle',
+  pending: 'bg-surface-strong',
   done: 'bg-success',
   hard: 'bg-warn',
-  now: 'bg-primary ring-2 ring-primary/35 ring-offset-2 ring-offset-surface',
+  now: 'bg-primary ring-2 ring-primary/35 ring-offset-2 ring-offset-bg',
   stuck: 'bg-danger',
   doubts: 'bg-outcome-doubts',
 };
@@ -21,7 +21,7 @@ export function SegmentedProgress({ segments, className }: SegmentedProgressProp
     return null;
   }
   return (
-    <div className={clsx('flex gap-1', className)}>
+    <div className={clsx('flex gap-1', className)} role="img" aria-label={segments.map((state, idx) => `${idx + 1}: ${state}`).join(', ')}>
       {segments.map((state, idx) => (
         <span
           key={idx}

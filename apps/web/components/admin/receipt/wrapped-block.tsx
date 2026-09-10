@@ -11,23 +11,23 @@ export type WrappedGradient =
   | 'close';
 
 const gradients: Record<WrappedGradient, string> = {
-  cover: 'bg-gradient-to-br from-[#4C1D95] to-[#1E1B4B]',
-  hours: 'bg-gradient-to-br from-[#C45D3A] to-[#9A1F47]',
-  topic: 'bg-gradient-to-br from-[#3730A3] to-[#0F172A]',
-  mover: 'bg-gradient-to-br from-[#D97706] to-[#92400E]',
-  grid: 'bg-gradient-to-br from-[#1F2937] to-[#0B0F1A]',
-  fame: 'bg-gradient-to-br from-[#F59E0B] to-[#C2410C]',
-  close: 'bg-gradient-to-br from-[#FEF3C7] to-[#FAFAF7]',
+  cover: 'bg-primary',
+  hours: 'bg-fg',
+  topic: 'bg-primary',
+  mover: 'bg-fg',
+  grid: 'bg-fg',
+  fame: 'bg-primary',
+  close: 'bg-surface',
 };
 
 const inkClasses: Record<WrappedGradient, string> = {
-  cover: 'text-white',
-  hours: 'text-white',
-  topic: 'text-white',
-  mover: 'text-white',
-  grid: 'text-white',
-  fame: 'text-white',
-  close: 'text-ink',
+  cover: 'text-primary-fg',
+  hours: 'text-primary-fg',
+  topic: 'text-primary-fg',
+  mover: 'text-primary-fg',
+  grid: 'text-primary-fg',
+  fame: 'text-primary-fg',
+  close: 'text-fg',
 };
 
 export function WrappedBlock({
@@ -39,9 +39,9 @@ export function WrappedBlock({
 }) {
   return (
     <section
-      className={`flex min-h-screen flex-col items-center justify-center px-8 py-16 ${gradients[gradient]} ${inkClasses[gradient]}`}
+      className={`flex min-h-[100dvh] flex-col items-center justify-center px-8 py-16 ${gradients[gradient]} ${inkClasses[gradient]} print:bg-surface print:text-fg print:[&_table_*]:!text-fg print:[&_table_*]:!border-border-token`}
     >
-      <div className="max-w-2xl text-center">{children}</div>
+      <div className="w-full max-w-2xl text-center">{children}</div>
     </section>
   );
 }

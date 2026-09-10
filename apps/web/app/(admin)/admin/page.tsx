@@ -8,7 +8,7 @@ export default function AdminHomeRedirect() {
     router.replace('/admin/cycle/active');
   }, [router]);
   return (
-    <p className="font-mono text-xs uppercase tracking-label text-ink-mute">
+    <p className="font-sans text-xs font-medium text-fg-mute">
       Loading…
     </p>
   );

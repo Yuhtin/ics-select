@@ -5,57 +5,42 @@ interface StreakCardProps {
   current: number;
   /** Last 7 days — true if the day had a positive outcome. Oldest first. */
   last7: boolean[];
+  presentation?: 'card' | 'context';
   className?: string;
 }
 
-function milestone(current: number): { label: string | null; tone: 'neutral' | 'success' | 'reflect' | 'primary' } {
-  if (current >= 30) return { label: 'Milestone · 30d', tone: 'primary' };
-  if (current >= 14) return { label: '2-week milestone', tone: 'reflect' };
-  if (current >= 7) return { label: '1-week streak', tone: 'success' };
-  return { label: null, tone: 'neutral' };
+function milestone(current: number): string | null {
+  if (current >= 30) return 'Milestone · 30d';
+  if (current >= 14) return '2-week milestone';
+  if (current >= 7) return '1-week streak';
+  return null;
 }
 
-const TONE_LABEL_CLASS: Record<'success' | 'reflect' | 'primary' | 'neutral', string> = {
-  success: 'bg-success-soft text-success',
-  reflect: 'bg-reflect-soft text-reflect',
-  primary: 'bg-primary-soft text-primary',
-  neutral: 'bg-bg-subtle text-fg-mute',
-};
+const PRESENTATION = {
+  card: 'rounded-card border border-border-token bg-surface p-6',
+  context: 'py-5 first:pt-0 last:pb-0',
+} as const;
 
-const TONE_NUM_CLASS: Record<'success' | 'reflect' | 'primary' | 'neutral', string> = {
-  success: 'text-success',
-  reflect: 'text-reflect',
-  primary: 'text-primary',
-  neutral: 'text-fg',
-};
-
-export function StreakCard({ current, last7, className }: StreakCardProps) {
-  const tone = milestone(current);
+export function StreakCard({ current, last7, presentation = 'card', className }: StreakCardProps) {
+  const milestoneLabel = milestone(current);
   const todayIdx = last7.length - 1;
   return (
-    <section className={clsx('rounded-tile border border-border-token bg-surface p-6', className)}>
-      <div className="flex items-baseline justify-between">
-        <p className="font-mono text-[10px] font-semibold uppercase tracking-eyebrow text-fg-mute">
+    <section className={clsx(PRESENTATION[presentation], className)}>
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <p className="font-sans text-[10px] font-semibold uppercase tracking-eyebrow text-fg-mute">
           Streak
         </p>
-        {tone.label && (
-          <span
-            className={clsx(
-              'inline-flex h-[18px] items-center rounded-pill px-2 font-mono text-[10px] font-medium',
-              TONE_LABEL_CLASS[tone.tone],
-            )}
-          >
-            {tone.label}
+        {milestoneLabel && (
+          <span className={clsx(
+            'font-sans text-[10px] font-medium text-fg',
+            presentation === 'card' && 'inline-flex min-h-5 items-center rounded-pill bg-success-soft px-2',
+          )}>
+            {milestoneLabel}
           </span>
         )}
       </div>
-      <p
-        className={clsx(
-          'mt-2 font-sans text-[42px] font-semibold leading-none tracking-tight tabular-nums',
-          TONE_NUM_CLASS[tone.tone],
-        )}
-      >
-        {current} <span className="text-sm font-medium text-fg-faint">days</span>
+      <p className="mt-2 font-mono text-[42px] font-semibold leading-none tracking-tight tabular-nums text-fg">
+        {current} <span className="font-sans text-sm font-medium text-fg-mute">days</span>
       </p>
       <div className="mt-4 flex gap-1.5" aria-label="last 7 days">
         {last7.map((on, i) => {
@@ -66,16 +51,16 @@ export function StreakCard({ current, last7, className }: StreakCardProps) {
               className={clsx(
                 'h-[6px] w-[22px] rounded-sm',
                 isToday
-                  ? 'bg-primary shadow-[0_0_0_2px_hsl(var(--primary)/0.25)]'
+                  ? 'bg-primary ring-2 ring-primary/35 ring-offset-2 ring-offset-bg'
                   : on
                     ? 'bg-success'
-                    : 'bg-bg-subtle',
+                    : 'bg-surface-strong',
               )}
             />
           );
         })}
       </div>
-      <p className="mt-3 font-mono text-[10px] uppercase tracking-eyebrow text-fg-mute">
+      <p className="mt-3 font-sans text-[10px] uppercase tracking-eyebrow text-fg-mute">
         S · M · T · W · T · F · S
       </p>
     </section>

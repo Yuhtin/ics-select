@@ -139,15 +139,18 @@ export function PublishModal({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-lg rounded-card bg-surface border border-rule shadow-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="publish-plan-title"
+        className="w-full max-w-lg rounded-card bg-surface border border-border-token shadow-modal"
         onClick={(e) => e.stopPropagation()}
       >
-        <header className="flex items-start justify-between gap-4 border-b border-rule px-6 py-4">
+        <header className="flex items-start justify-between gap-4 border-b border-border-token px-6 py-4">
           <div>
-            <h3 className="font-serif-tool text-xl font-semibold text-ink">
+            <h3 id="publish-plan-title" className="font-sans text-xl font-semibold text-fg">
               Publish plan
             </h3>
-            <p className="mt-1 font-mono text-[11px] text-ink-mute">
+            <p className="mt-1 font-sans text-xs text-fg-mute">
               Member timezone · {memberTimezone}
             </p>
           </div>
@@ -155,7 +158,7 @@ export function PublishModal({
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="grid h-8 w-8 place-items-center rounded-pill text-ink-mute hover:bg-paper-warm hover:text-ink"
+            className="grid h-8 w-8 place-items-center rounded-pill text-fg-mute hover:bg-bg-subtle hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
           >
             <X className="h-4 w-4" strokeWidth={1.5} />
           </button>
@@ -163,33 +166,33 @@ export function PublishModal({
 
         <div className="px-6 py-5 space-y-5">
           <div>
-            <div className="font-mono text-[10px] uppercase tracking-eyebrow text-ink-mute mb-2">
+            <div className="font-sans text-xs text-fg-mute mb-2">
               When
             </div>
             <div className="flex gap-2">
-              <label className="flex-1 flex items-center gap-2 rounded-input border border-rule px-3 py-2 cursor-pointer hover:bg-paper-warm">
+              <label className="flex-1 flex items-center gap-2 rounded-input border border-border-token px-3 py-2 cursor-pointer hover:bg-bg-subtle">
                 <input
                   type="radio"
                   name="publish-mode"
                   value="scheduled"
                   checked={mode === 'scheduled'}
                   onChange={() => setMode('scheduled')}
-                  className="accent-ink"
+                  className="accent-primary"
                 />
-                <span className="font-mono text-xs uppercase tracking-label text-ink">
+                <span className="font-sans text-xs text-fg">
                   Scheduled
                 </span>
               </label>
-              <label className="flex-1 flex items-center gap-2 rounded-input border border-rule px-3 py-2 cursor-pointer hover:bg-paper-warm">
+              <label className="flex-1 flex items-center gap-2 rounded-input border border-border-token px-3 py-2 cursor-pointer hover:bg-bg-subtle">
                 <input
                   type="radio"
                   name="publish-mode"
                   value="now"
                   checked={mode === 'now'}
                   onChange={() => setMode('now')}
-                  className="accent-ink"
+                  className="accent-primary"
                 />
-                <span className="font-mono text-xs uppercase tracking-label text-ink">
+                <span className="font-sans text-xs text-fg">
                   Publish now
                 </span>
               </label>
@@ -198,12 +201,13 @@ export function PublishModal({
               <div className="mt-3">
                 <input
                   type="datetime-local"
+                  aria-label="Publish date and time"
                   value={when}
                   onChange={(e) => setWhen(e.target.value)}
-                  className="w-full rounded-input border border-rule bg-paper px-3 py-2 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-focus/40"
+                  className="w-full rounded-input border border-border-token bg-bg px-3 py-2 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
                 />
-                <p className="mt-1 font-mono text-[10px] text-ink-mute">
-                  Will publish at <span className="text-ink">{previewLabel}</span> (member time).
+                <p className="mt-1 font-sans text-xs text-fg-mute">
+                  Will publish at <span className="text-fg">{previewLabel}</span> (member time).
                 </p>
               </div>
             )}
@@ -215,9 +219,9 @@ export function PublishModal({
                 type="checkbox"
                 checked={autoSchedule}
                 onChange={(e) => setAutoSchedule(e.target.checked)}
-                className="accent-ink"
+                className="accent-primary"
               />
-              <span className="font-sans text-sm text-ink">
+              <span className="font-sans text-sm text-fg">
                 Create Google Calendar events
               </span>
             </label>
@@ -226,21 +230,21 @@ export function PublishModal({
                 type="checkbox"
                 checked={sendWhatsapp}
                 onChange={(e) => setSendWhatsapp(e.target.checked)}
-                className="accent-ink"
+                className="accent-primary"
               />
-              <span className="font-sans text-sm text-ink">
+              <span className="font-sans text-sm text-fg">
                 Send WhatsApp notification to member
               </span>
             </label>
           </div>
         </div>
 
-        <footer className="border-t border-rule px-6 py-3 flex justify-end gap-3">
+        <footer className="border-t border-border-token px-6 py-3 flex justify-end gap-3">
           <button
             type="button"
             onClick={onClose}
             disabled={publishing}
-            className="font-mono text-xs uppercase tracking-label px-4 py-2 text-ink-soft hover:bg-paper-warm rounded-pill disabled:opacity-40"
+            className="font-sans text-xs px-4 py-2 text-fg-soft hover:bg-bg-subtle rounded-pill disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
           >
             Cancel
           </button>
@@ -248,7 +252,7 @@ export function PublishModal({
             type="button"
             onClick={handleSubmit}
             disabled={publishing}
-            className="inline-flex items-center gap-2 bg-ink text-paper rounded-pill px-4 py-2 font-mono text-xs uppercase tracking-label hover:opacity-90 disabled:opacity-40"
+            className="inline-flex items-center gap-2 bg-primary text-primary-fg rounded-pill px-4 py-2 font-sans text-xs hover:opacity-90 disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
           >
             <Zap className="h-4 w-4" strokeWidth={1.5} />
             {publishing ? 'Publishing…' : mode === 'now' ? 'Publish now' : 'Schedule publish'}

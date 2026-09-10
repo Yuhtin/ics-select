@@ -131,7 +131,7 @@ function SidebarNav({
                         )}
                       />
                       {typeof n.beat === 'number' && (
-                        <span className="mr-2 font-mono text-[10px] text-fg-faint">
+                        <span className="mr-2 font-mono text-[10px] text-fg-mute">
                           #{n.beat}
                         </span>
                       )}
@@ -168,8 +168,8 @@ function PassSwitcher({
               type="button"
               onClick={() => onChange(p)}
               className={clsx(
-                'group relative rounded-[8px] px-4 py-2 text-left transition-colors',
-                active ? 'bg-fg text-bg' : 'text-fg-mute hover:text-fg',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface group relative rounded-input px-4 py-2 text-left transition-colors',
+                active ? 'bg-primary text-primary-fg' : 'text-fg-mute hover:text-fg',
               )}
             >
               <span className="block font-sans text-sm font-semibold leading-none">
@@ -177,8 +177,8 @@ function PassSwitcher({
               </span>
               <span
                 className={clsx(
-                  'mt-1 block font-mono text-[10px] uppercase tracking-eyebrow',
-                  active ? 'text-bg/70' : 'text-fg-faint',
+                  'mt-1 block font-sans text-xs font-medium',
+                  active ? 'text-primary-fg/90' : 'text-fg-mute',
                 )}
               >
                 {meta.sublabel}
@@ -222,12 +222,12 @@ function NodeSection({
             </span>
           )}
           {node.teachFromZero === true && (
-            <span className="font-mono text-[10px] uppercase tracking-eyebrow text-warn">
+            <span className="font-sans text-xs font-medium text-warn">
               · teach from zero
             </span>
           )}
         </div>
-        <h2 className="font-serif text-3xl font-semibold tracking-tight text-fg lg:text-4xl">
+        <h2 className="font-sans text-3xl font-semibold tracking-tight text-fg lg:text-4xl">
           {node.label}
         </h2>
         <p className="max-w-2xl font-sans text-[17px] leading-relaxed text-fg-soft">
@@ -260,7 +260,7 @@ function TagsRow({ tags }: { tags: string[] }) {
       {tags.map((tag) => (
         <span
           key={tag}
-          className="inline-flex items-center rounded-pill border border-border-token bg-surface px-2 py-0.5 font-mono text-[10px] uppercase tracking-eyebrow text-fg-mute"
+          className="inline-flex items-center rounded-pill border border-border-token bg-surface px-2 py-0.5 font-sans text-xs font-medium text-fg-mute"
         >
           {tag}
         </span>
@@ -282,7 +282,7 @@ function DiagramMedia({ node }: { node: LessonNode }) {
     return (
       <div className="rounded-card border border-border-token bg-bg-subtle">
         <div className="border-b border-border-token px-4 py-2">
-          <span className="font-mono text-[10px] uppercase tracking-eyebrow text-fg-mute">
+          <span className="font-sans text-xs font-medium text-fg-mute">
             Diagrama · Mermaid
           </span>
         </div>
@@ -369,14 +369,14 @@ function BoardVisuals({ node }: { node: LessonNode }) {
               )}
               {v.board && (
                 <p className="flex gap-2 text-sm leading-snug text-fg-soft">
-                  <span className="shrink-0 font-mono text-[10px] uppercase tracking-eyebrow text-fg-faint">
+                  <span className="shrink-0 font-sans text-xs font-medium text-fg-mute">
                     no quadro
                   </span>
                   <span>{v.board}</span>
                 </p>
               )}
               {v.kind === 'image' && (
-                <p className="font-mono text-[10px] uppercase tracking-eyebrow text-fg-faint">
+                <p className="font-sans text-xs font-medium text-fg-mute">
                   {v.creditUrl ? (
                     <a
                       href={v.creditUrl}
@@ -444,7 +444,7 @@ function AnchorCard({ node, seen }: { node: LessonNode; seen: Set<string> }) {
   return (
     <div className="rounded-card border border-border-token bg-surface p-5">
       <Eyebrow className="mb-2">Pergunta-âncora</Eyebrow>
-      <p className="font-serif text-lg leading-snug text-fg">
+      <p className="font-sans text-lg leading-snug text-fg">
         "<Glossarized text={node.anchor} seen={seen} keyPrefix={`${node.id}-anc`} />"
       </p>
     </div>
@@ -499,7 +499,7 @@ function FollowupCard({ node, seen }: { node: LessonNode; seen: Set<string> }) {
       <Eyebrow className="mb-2">Pergunta-ponte</Eyebrow>
       <div className="flex items-start gap-2">
         <ArrowRight
-          className="mt-1 h-4 w-4 shrink-0 text-fg-faint"
+          className="mt-1 h-4 w-4 shrink-0 text-fg-mute"
           strokeWidth={1.8}
         />
         <p className="text-sm leading-relaxed text-fg">
@@ -523,4 +523,3 @@ function AskerBadgeRow({ node }: { node: LessonNode }) {
     </div>
   );
 }
-

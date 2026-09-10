@@ -22,24 +22,24 @@ export function LessonView({ lesson }: { lesson: Lesson }) {
 
   return (
     <>
-      <div className="mx-auto max-w-[1280px] space-y-10 px-6 py-10 print:hidden">
+      <div className="mx-auto max-w-[1280px] space-y-8 print:hidden">
         <Link
           href="/admin/meetings"
-          className="inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-eyebrow text-fg-mute hover:text-fg"
+          className="inline-flex items-center gap-1.5 font-sans text-xs font-medium text-fg-mute hover:text-fg"
         >
           <ArrowLeft className="h-3 w-3" strokeWidth={1.8} /> All meetings
         </Link>
 
         <header className="flex flex-wrap items-start justify-between gap-x-10 gap-y-6">
-          <div className="flex-1 min-w-0 space-y-3">
+          <div className="w-full min-w-0 space-y-3 xl:flex-1">
             <Eyebrow>Aula · System Design</Eyebrow>
-            <h1 className="font-serif text-5xl font-semibold leading-[1.05] tracking-tight text-fg">
+            <h1 className="font-serif text-4xl sm:text-5xl font-semibold leading-[1.05] tracking-tight text-fg">
               {lesson.title}
             </h1>
             <p className="max-w-2xl font-sans text-lg leading-snug text-fg-soft">
               {lesson.subtitle}
             </p>
-            <p className="font-mono text-[11px] uppercase tracking-eyebrow text-fg-mute">
+            <p className="font-sans text-xs font-medium text-fg-mute">
               {lesson.audience} · {lesson.durationMin} min · {beats} beats
             </p>
           </div>
@@ -94,7 +94,7 @@ function SlidesButton({ url }: { url: string }) {
         <span className="block font-sans text-sm font-semibold leading-none text-fg">
           Slides
         </span>
-        <span className="mt-1 block font-mono text-[10px] uppercase tracking-eyebrow text-fg-faint">
+        <span className="mt-1 block font-sans text-xs font-medium text-fg-mute">
           apresentar
         </span>
       </span>
@@ -128,7 +128,7 @@ function ExportMenu({ lesson }: { lesson: Lesson }) {
         type="button"
         onClick={() => setOpen((o) => !o)}
         className={clsx(
-          'inline-flex items-center gap-2 rounded-card border bg-surface px-4 py-2.5 text-left transition-colors',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface inline-flex items-center gap-2 rounded-card border bg-surface px-4 py-2.5 text-left transition-colors',
           open ? 'border-fg' : 'border-border-token hover:border-border-strong hover:bg-surface-hover',
         )}
         title="Exportar slides ou material em PDF"
@@ -140,7 +140,7 @@ function ExportMenu({ lesson }: { lesson: Lesson }) {
           <span className="block font-sans text-sm font-semibold leading-none text-fg">
             Exportar
           </span>
-          <span className="mt-1 block font-mono text-[10px] uppercase tracking-eyebrow text-fg-faint">
+          <span className="mt-1 block font-sans text-xs font-medium text-fg-mute">
             slides · material
           </span>
         </span>
@@ -175,7 +175,7 @@ function ExportMenu({ lesson }: { lesson: Lesson }) {
               setOpen(false);
               window.print();
             }}
-            className="flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-bg-subtle"
+            className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-bg-subtle"
           >
             <span className="mt-0.5 inline-grid h-8 w-8 shrink-0 place-items-center rounded-full bg-bg-subtle text-fg-soft">
               <FileText className="h-4 w-4" strokeWidth={1.8} />
@@ -240,14 +240,14 @@ function ToggleButton({
       type="button"
       onClick={onClick}
       className={clsx(
-        'flex items-center gap-2.5 rounded-[8px] px-4 py-2 text-left transition-colors',
-        active ? 'bg-fg text-bg' : 'text-fg-mute hover:text-fg',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface flex items-center gap-2.5 rounded-input px-4 py-2 text-left transition-colors',
+        active ? 'bg-primary text-primary-fg' : 'text-fg-mute hover:text-fg',
       )}
     >
       <span
         className={clsx(
           'inline-grid h-7 w-7 place-items-center rounded-full',
-          active ? 'bg-bg/15 text-bg' : 'bg-bg-subtle text-fg-soft',
+          active ? 'bg-primary-fg/15 text-primary-fg' : 'bg-bg-subtle text-fg-soft',
         )}
       >
         {icon}
@@ -258,8 +258,8 @@ function ToggleButton({
         </span>
         <span
           className={clsx(
-            'mt-1 block font-mono text-[10px] uppercase tracking-eyebrow',
-            active ? 'text-bg/70' : 'text-fg-faint',
+            'mt-1 block font-sans text-xs font-medium',
+            active ? 'text-primary-fg/90' : 'text-fg-mute',
           )}
         >
           {subtitle}

@@ -9,9 +9,15 @@
  * Three states snapshotted: ON_TRACK, WATCH, AT_RISK.
  */
 
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page, type Locator } from '@playwright/test';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import ts from 'typescript';
 
 const API_BASE = 'http://localhost:3001';
+const FIXED_NOW = new Date('2026-09-09T12:00:00.000Z').getTime();
 
 const MOCK_ADMIN = {
   id: 'admin-1',
@@ -160,7 +166,7 @@ function buildResponse(state: 'AT_RISK' | 'WATCH' | 'ON_TRACK') {
     return {
       ...BASE_COCKPIT,
       itemsCompleted: { ...BASE_COCKPIT.itemsCompleted, total: 11, completionPct: 46, needsAttention: { total: 1, stuck: 0, doubts: 1 } },
-      behavior: { ...BASE_COCKPIT.behavior, sessions: { value: 14, cohortMedian: 16, perWeek: [3, 3, 3, 3, 2] }, lastSeen: { occurredAt: new Date(Date.now() - 4 * 86400_000).toISOString(), surface: '/me/plan' } },
+      behavior: { ...BASE_COCKPIT.behavior, sessions: { value: 14, cohortMedian: 16, perWeek: [3, 3, 3, 3, 2] }, lastSeen: { occurredAt: new Date(FIXED_NOW - 4 * 86400_000).toISOString(), surface: '/me/plan' } },
       risk: { status: 'WATCH', reasons: ['4 days no session', '46% items completed'] },
       engagement: {
         score: 55,
@@ -184,7 +190,7 @@ function buildResponse(state: 'AT_RISK' | 'WATCH' | 'ON_TRACK') {
       sessions: { value: 22, cohortMedian: 16, perWeek: [4, 5, 4, 5, 4] },
       retros:   { submitted: 4, expected: 4 },
       carryOver:{ value: 0, cohortMedian: 1, perWeek: [0, 0, 0, 0, 0] },
-      lastSeen: { occurredAt: new Date(Date.now() - 1 * 86400_000).toISOString(), surface: '/me/plan' },
+      lastSeen: { occurredAt: new Date(FIXED_NOW - 1 * 86400_000).toISOString(), surface: '/me/plan' },
     },
     risk: { status: 'ON_TRACK', reasons: [] },
     engagement: {
@@ -202,6 +208,7 @@ function buildResponse(state: 'AT_RISK' | 'WATCH' | 'ON_TRACK') {
 }
 
 async function setupMocks(page: Page, state: 'AT_RISK' | 'WATCH' | 'ON_TRACK') {
+  await page.clock.setFixedTime(FIXED_NOW);
   await page.addInitScript(() => {
     window.localStorage.setItem('ics_access_token', 'fake-admin-token');
   });
@@ -211,34 +218,412 @@ async function setupMocks(page: Page, state: 'AT_RISK' | 'WATCH' | 'ON_TRACK') {
   await page.route(new RegExp(`^${API_BASE}/admin/member/[^/]+/cockpit`), (r) =>
     r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(buildResponse(state)) }),
   );
+  await page.route(new RegExp(`^${API_BASE}/admin/member/[^/]+/mocks`), (r) => r.fulfill({ json: [] }));
+  await page.route(new RegExp(`^${API_BASE}/admin/member/[^/]+/notes`), (r) => r.fulfill({ json: [] }));
   await page.route(new RegExp(`^${API_BASE}/admin/member/[^/?]+(\\?.*)?$`), (r) => {
     if (r.request().url().includes('/cockpit')) return r.continue();
     return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(MOCK_ADMIN_MEMBER) });
   });
 }
 
+test.describe('Academy admin operations', () => {
+  for (const theme of ['light', 'dark'] as const) {
+    async function mockReviewedMembers(page: Page) {
+      await setupMocks(page, 'ON_TRACK');
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      await page.addInitScript((value) => localStorage.setItem('ics-theme', value), theme);
+      await page.route(`${API_BASE}/admin/dashboard`, (route) => route.fulfill({ json: [
+        { ...MOCK_ADMIN, stats: { plansCount: 6, doneItems: 18, skippedItems: 1, stuckItems: 0 } },
+      ] }));
+      await page.route(`${API_BASE}/admin/invites`, (route) => route.fulfill({ json: [
+        { id: 'invite-admin', email: 'new.admin@sou.inteli.edu.br', role: 'ADMIN', createdAt: '2026-09-01T12:00:00Z', createdBy: MOCK_ADMIN, cycle: null },
+      ] }));
+      await page.route(`${API_BASE}/cycles`, (route) => route.fulfill({ json: [
+        { ...BASE_COCKPIT.cycle, status: 'ACTIVE', endsAt: '2099-12-01T00:00:00Z' },
+      ] }));
+    }
+
+    test(`reviewed admin labels meet AA contrast in ${theme}`, async ({ page }) => {
+      await mockReviewedMembers(page);
+      await page.goto('/admin/members');
+      const memberBadge = page.getByRole('link', { name: /Davi Admin.*ADMIN/ }).getByText('ADMIN', { exact: true });
+      const inviteBadge = page.getByRole('listitem').filter({ hasText: 'new.admin@sou.inteli.edu.br' }).getByText('ADMIN', { exact: true });
+      const assertContrast = async (control: Locator) => {
+        await expect(control).toBeVisible();
+        const colors = await control.evaluate((element) => {
+          const rgba = (color: string) => color.match(/[\d.]+/g)!.map(Number);
+          const over = (front: number[], back: number[]) => front.slice(0, 3).map((value, i) => value * (front[3] ?? 1) + back[i] * (1 - (front[3] ?? 1)));
+          const ancestors: Element[] = [];
+          for (let node: Element | null = element; node; node = node.parentElement) ancestors.push(node);
+          const background = ancestors.reverse().reduce((back, node) => over(rgba(getComputedStyle(node).backgroundColor), back), [255, 255, 255]);
+          const foreground = over(rgba(getComputedStyle(element).color), background);
+          const luminance = (rgb: number[]) => rgb.map((value) => {
+            const channel = value / 255;
+            return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+          }).reduce((sum, value, i) => sum + value * [0.2126, 0.7152, 0.0722][i], 0);
+          const values = [luminance(foreground), luminance(background)];
+          return { foreground, background, ratio: (Math.max(...values) + 0.05) / (Math.min(...values) + 0.05) };
+        });
+        expect.soft(colors.ratio, JSON.stringify(colors)).toBeGreaterThanOrEqual(4.5);
+      };
+      await assertContrast(memberBadge);
+      await assertContrast(inviteBadge);
+      await page.route(`${API_BASE}/admin/cycle/active`, (route) => route.fulfill({ json: {
+        cycle: { ...BASE_COCKPIT.cycle, status: 'ACTIVE', rankingVisibleToMembers: true },
+        members: [], heatmap: { weeks: [], rows: [] }, feed: [], ranking: [],
+      } }));
+      await page.route(`${API_BASE}/admin/triage?*`, (route) => route.fulfill({ json: { alerts: [] } }));
+      await page.route(`${API_BASE}/cycles/cy1/classes`, (route) => route.fulfill({ json: [{
+        id: 'class-1', cycleId: 'cy1', title: 'System design', topic: null,
+        scheduledAt: '2026-09-08T18:00:00Z', durationMin: 60, notes: null, attendances: [],
+      }] }));
+      await page.goto('/admin/cycle/active');
+      await assertContrast(page.getByRole('button', { name: 'Attendance for System design' }));
+    });
+
+    test(`reviewed admin touch targets measure at least 44px in ${theme}`, async ({ page }) => {
+      await mockReviewedMembers(page);
+      await page.setViewportSize({ width: 390, height: 600 });
+      await page.goto('/admin/members');
+      const controls = [
+        page.getByPlaceholder('Search by name or email…'),
+        page.getByPlaceholder('email@sou.inteli.edu.br'),
+        page.getByRole('combobox').nth(0), page.getByRole('combobox').nth(1),
+        page.getByRole('button', { name: 'Convidar', exact: true }),
+        page.getByRole('button', { name: 'Revoke invite for new.admin@sou.inteli.edu.br' }),
+      ];
+      for (const control of controls) {
+        await expect(control).toBeVisible();
+        const box = await control.boundingBox();
+        expect.soft(box!.width).toBeGreaterThanOrEqual(44);
+        expect.soft(box!.height).toBeGreaterThanOrEqual(44);
+      }
+      await controls[0].fill('missing');
+      await expect(page.getByText('No members match.')).toBeVisible();
+      await controls[5].click();
+      await expect(page.getByRole('dialog')).toBeVisible();
+      await page.keyboard.press('Escape');
+      await expect(page.getByRole('dialog')).toBeHidden();
+    });
+
+    test(`library pagination specimen has mobile touch targets in ${theme}`, async ({ page }) => {
+      await mockReviewedMembers(page);
+      await page.setViewportSize({ width: 390, height: 600 });
+      await page.goto('/admin/members');
+      await expect(page.getByRole('heading', { name: 'Members', exact: true })).toBeVisible();
+      // Pagination is currently unused by LibraryGrid. Render the real component
+      // against the app stylesheet without adding a new production route or flow.
+      // Compile with React's JSX runtime: Playwright's own JSX transform creates
+      // component-test descriptors, which React's server renderer cannot use.
+      const compiled = ts.transpileModule(readFileSync(join(__dirname, '../components/admin/library/pagination.tsx'), 'utf8'), {
+        compilerOptions: { jsx: ts.JsxEmit.ReactJSX, module: ts.ModuleKind.CommonJS, esModuleInterop: true },
+      });
+      const specimen = { exports: {} as { Pagination: React.ComponentType<{ page: number; totalPages: number; onChange: (page: number) => void }> } };
+      new Function('require', 'module', 'exports', compiled.outputText)(require, specimen, specimen.exports);
+      const markup = renderToStaticMarkup(createElement(specimen.exports.Pagination, { page: 5, totalPages: 10, onChange: () => {} }));
+      await page.getByRole('main').evaluate((element, html) => { element.innerHTML = html; }, markup);
+      const navigation = page.getByRole('navigation', { name: 'Pagination' });
+      const boxes = await navigation.getByRole('button').evaluateAll((buttons) => buttons.map((button) => {
+        const { width, height, left, right } = button.getBoundingClientRect();
+        return { label: button.getAttribute('aria-label'), width, height, left, right };
+      }));
+      expect(boxes).toHaveLength(7);
+      for (const box of boxes) {
+        expect.soft(box.width, box.label!).toBeGreaterThanOrEqual(44);
+        expect.soft(box.height, box.label!).toBeGreaterThanOrEqual(44);
+        expect.soft(box.left).toBeGreaterThanOrEqual(0);
+        expect.soft(box.right).toBeLessThanOrEqual(390);
+      }
+      await expect(navigation.getByRole('button', { name: 'Page 5', exact: true })).toHaveAttribute('aria-current', 'page');
+    });
+
+    test(`plans keep member names readable from mobile to desktop in ${theme}`, async ({ page }) => {
+      await setupMocks(page, 'ON_TRACK');
+      await page.addInitScript((value) => localStorage.setItem('ics-theme', value), theme);
+      await page.route(`${API_BASE}/cycles`, (route) => route.fulfill({ json: [
+        { ...BASE_COCKPIT.cycle, status: 'ACTIVE' },
+      ] }));
+      await page.route(`${API_BASE}/admin/cycles/cy1/plans?*`, (route) => route.fulfill({ json: {
+        cycle: BASE_COCKPIT.cycle,
+        weeks: [{
+          weekStart: '2026-09-01', weekEnd: '2026-09-07',
+          plans: [{
+            id: 'plan1', status: 'PUBLISHED', lastActivityAt: '2026-09-01T12:00:00Z',
+            items: { done: 8, total: 11 }, user: BASE_COCKPIT.member,
+          }],
+        }],
+      } }));
+      await page.setViewportSize({ width: 390, height: 960 });
+      await page.goto('/admin/plans?cycleId=cy1');
+      const row = page.getByRole('link', { name: /Maria Clara/ });
+      await expect(row).toHaveAttribute('href', '/admin/member/u1/plan/plan1');
+      await page.evaluate(() => document.fonts.ready);
+      for (const width of [390, 768, 1440]) {
+        await page.setViewportSize({ width, height: 960 });
+        const name = row.getByText('Maria Clara', { exact: true });
+        expect(await name.evaluate((element) => element.getBoundingClientRect().width)).toBeGreaterThan(0);
+        expect(await name.evaluate((element) => element.clientWidth >= element.scrollWidth)).toBe(true);
+        await expect(name).toBeInViewport({ ratio: 1 });
+        for (const label of ['PUBLISHED', '8/11 done', '1w ago', '→']) {
+          await expect(row.getByText(label, { exact: true })).toBeInViewport({ ratio: 1 });
+        }
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+        await row.focus();
+        await expect(row).toBeFocused();
+        await expect(page.getByLabel('Cycle', { exact: true })).toBeEnabled();
+        await expect(page.getByLabel('Status', { exact: true })).toBeEnabled();
+      }
+      await page.getByLabel('Status', { exact: true }).selectOption('published');
+      await expect(page).toHaveURL(/status=published/);
+    });
+
+    test(`waitlist course filters show hover feedback in ${theme}`, async ({ page }) => {
+      await setupMocks(page, 'ON_TRACK');
+      await page.addInitScript((value) => localStorage.setItem('ics-theme', value), theme);
+      await page.route(`${API_BASE}/waitlist/config`, (route) => route.fulfill({ json: { cycleTarget: '2026.2', startsAt: null } }));
+      await page.route(`${API_BASE}/admin/waitlist?*`, (route) => route.fulfill({ json: { items: [], total: 0, page: 1, pageSize: 50 } }));
+      await page.route(`${API_BASE}/admin/waitlist/stats`, (route) => route.fulfill({ json: { total: 0, last7d: 0, byCourse: [], bySkill: [] } }));
+      await page.goto('/admin/waitlist');
+      const course = page.getByRole('button', { name: 'Ciência da Computação', exact: true });
+      await expect(course).toHaveAttribute('aria-pressed', 'false');
+      const restingBorder = await course.evaluate((element) => getComputedStyle(element).borderColor);
+      await course.hover();
+      await expect(course).not.toHaveCSS('border-color', restingBorder);
+      await course.click();
+      await expect(course).toHaveAttribute('aria-pressed', 'true');
+    });
+
+    test(`configuration tab shows keyboard focus in ${theme}`, async ({ page }) => {
+      await setupMocks(page, 'ON_TRACK');
+      await page.addInitScript((value) => localStorage.setItem('ics-theme', value), theme);
+      await page.route(`${API_BASE}/admin/whatsapp/templates`, (route) => route.fulfill({ json: [] }));
+      await page.goto('/admin/config');
+      const tab = page.getByRole('button', { name: 'WhatsApp messages', exact: true });
+      await page.keyboard.press('Tab');
+      await tab.focus();
+      await expect(tab).toBeFocused();
+      await expect(tab).not.toHaveCSS('box-shadow', 'none');
+    });
+
+    test(`AI usage chart renders daily values in ${theme}`, async ({ page }) => {
+      await setupMocks(page, 'ON_TRACK');
+      await page.addInitScript((value) => localStorage.setItem('ics-theme', value), theme);
+      await page.route(`${API_BASE}/ai/usage?*`, (route) => route.fulfill({ json: {
+        totalCost: 0.12,
+        rows: [1, 2].map((day) => ({
+          id: `usage-${day}`, userId: 'u1', purpose: 'Plan generation', model: 'gpt-4.1',
+          promptTokens: 1024, responseTokens: 247, costUsd: String(day * 0.04),
+          createdAt: `2026-09-0${day}T12:00:00Z`, metadata: null,
+        })),
+      } }));
+      await page.goto('/admin/ai-usage');
+      const bars = page.locator('[title*="calls"]');
+      await expect(bars).toHaveCount(2);
+      const heights = await bars.evaluateAll((elements) => elements.map((element) => element.getBoundingClientRect().height));
+      expect(heights[0]).toBeGreaterThan(0);
+      expect(heights[1]).toBeCloseTo(heights[0] * 2, 0);
+      const request = page.waitForRequest(`${API_BASE}/ai/usage?sinceDays=7`);
+      await page.getByRole('button', { name: '7d', exact: true }).click();
+      await request;
+      await expect(bars).toHaveCount(2);
+    });
+
+    for (const width of [1440, 768]) {
+      test(`members remain dense and operable in ${theme} at ${width}px`, async ({ page }) => {
+        await setupMocks(page, 'ON_TRACK');
+        await page.addInitScript((value) => localStorage.setItem('ics-theme', value), theme);
+        await page.setViewportSize({ width, height: 960 });
+        await page.route(`${API_BASE}/admin/dashboard`, (route) => route.fulfill({ json: [
+          { ...MOCK_ADMIN, stats: { plansCount: 6, doneItems: 18, skippedItems: 1, stuckItems: 0 } },
+          { ...BASE_COCKPIT.member, role: 'MEMBER', stats: { plansCount: 4, doneItems: 11, skippedItems: 0, stuckItems: 2 } },
+        ] }));
+        await page.route(`${API_BASE}/admin/invites`, (route) => route.fulfill({ json: [
+          { id: 'invite-1', email: 'rafael.lima@sou.inteli.edu.br', role: 'MEMBER', createdAt: '2026-09-01T12:00:00Z', createdBy: MOCK_ADMIN, cycle: { id: 'cy1', name: '2026.2' } },
+        ] }));
+        await page.route(`${API_BASE}/cycles`, (route) => route.fulfill({ json: [
+          { ...BASE_COCKPIT.cycle, status: 'ACTIVE', startsAt: '2026-08-01T00:00:00Z', endsAt: '2099-12-01T00:00:00Z' },
+        ] }));
+        await page.goto('/admin/members');
+        await page.addStyleTag({ content: 'nextjs-portal { display: none !important; }' });
+        await expect(page.getByRole('link', { name: 'Academy Fellow Admin', exact: true })).toBeVisible();
+        await expect(page.getByText('rafael.lima@sou.inteli.edu.br', { exact: true })).toBeVisible();
+        const invitation = page.getByText(/^Invited /);
+        await expect(invitation).toHaveCSS('text-transform', 'none');
+        const headingFont = await page.getByRole('heading', { name: 'Members', exact: true })
+          .evaluate((element) => getComputedStyle(element).fontFamily);
+        await expect(invitation).toHaveCSS('font-family', headingFont);
+        await expect(page.getByRole('link', { name: /Maria Clara/ })).toBeVisible();
+        await page.evaluate(() => document.fonts.ready);
+        const navigation = page.getByRole('navigation', { name: 'Admin navigation' });
+        expect(await navigation.getByRole('link').evaluateAll((links) =>
+          new Set(links.map((link) => Math.round(link.getBoundingClientRect().top))).size,
+        )).toBe(1);
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+        await expect(page).toHaveScreenshot(`academy-admin-members-${theme}-${width}.png`, { fullPage: true });
+        await page.getByPlaceholder('Search by name or email…').fill('maria');
+        await expect(page.getByRole('link', { name: /Maria Clara/ })).toBeVisible();
+        await expect(page.getByRole('main').getByRole('link', { name: /Davi Admin/ })).toHaveCount(0);
+        await page.getByRole('button', { name: 'Revoke invite for rafael.lima@sou.inteli.edu.br' }).click();
+        const dialog = page.getByRole('dialog');
+        await expect(dialog).toBeVisible();
+        await expect(dialog.getByText('Revogar convite?', { exact: true })).toBeVisible();
+        await page.keyboard.press('Escape');
+        await expect(dialog).toHaveCount(0);
+      });
+    }
+  }
+});
+
 test.describe('Member cockpit', () => {
+  for (const theme of ['light', 'dark'] as const) {
+    for (const state of ['AT_RISK', 'WATCH', 'ON_TRACK'] as const) {
+      test(`${state} keeps readable text and risk signals in ${theme}`, async ({ page }) => {
+        await setupMocks(page, state);
+        await page.addInitScript((value) => localStorage.setItem('ics-theme', value), theme);
+        await page.setViewportSize({ width: 1440, height: 960 });
+        await page.goto('/admin/member/u1');
+        await page.addStyleTag({ content: 'nextjs-portal { display: none !important; }' });
+        const indicator = page.getByRole('status', { name: 'Engagement risk' });
+        await expect(indicator).toContainText(state.replace('_', ' '));
+        await expect(indicator.locator('svg')).toBeVisible();
+        const headingFont = await page.getByRole('heading', { name: 'Maria Clara' })
+          .evaluate((element) => getComputedStyle(element).fontFamily);
+        await expect(page.getByText('Items completed', { exact: true })).toHaveCSS('font-family', headingFont);
+        await expect(page.getByText('Plan week', { exact: true })).toHaveCSS('font-family', headingFont);
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+        await expect.soft(page).toHaveScreenshot(`academy-cockpit-${state.toLowerCase()}-${theme}.png`, { fullPage: true });
+      });
+    }
+
+    test(`detail tabs and week picker remain usable on mobile in ${theme}`, async ({ page }) => {
+      await setupMocks(page, 'WATCH');
+      await page.addInitScript((value) => localStorage.setItem('ics-theme', value), theme);
+      await page.setViewportSize({ width: 390, height: 844 });
+      await page.goto('/admin/member/u1');
+      await page.addStyleTag({ content: 'nextjs-portal { display: none !important; }' });
+      await expect(page.getByRole('status', { name: 'Member risk' })).toContainText('WATCH');
+      await page.setViewportSize({ width: 768, height: 960 });
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+      await page.setViewportSize({ width: 390, height: 844 });
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+      const rangeRequest = page.waitForRequest((request) => request.url().includes('/cockpit?') && request.url().includes('range=7d'));
+      await page.getByRole('button', { name: '7d', exact: true }).click();
+      await rangeRequest;
+      await expect(page.getByRole('button', { name: '7d', exact: true })).toHaveAttribute('aria-pressed', 'true');
+      await page.locator('summary').filter({ hasText: 'Raw data' }).click();
+      const tabs = page.getByRole('navigation', { name: 'Member detail' });
+      for (const [tab, empty] of [['Timeline', 'No plans yet.'], ['Retros', 'No retros submitted yet.'], ['Notes', 'No notes yet.'], ['Attendance', 'No classes scheduled in this cycle yet.']]) {
+        await tabs.getByRole('button', { name: tab, exact: true }).click();
+        await expect(tabs.getByRole('button', { name: tab, exact: true })).toHaveAttribute('aria-pressed', 'true');
+        await expect(page.getByText(empty, { exact: true })).toBeVisible();
+      }
+      await expect.soft(page).toHaveScreenshot(`academy-cockpit-tabs-${theme}-390.png`, { fullPage: true });
+      await page.getByRole('button', { name: 'Plan week', exact: true }).click();
+      const dialog = page.getByRole('dialog');
+      await expect(dialog).toBeVisible();
+      await expect(dialog.getByRole('button', { name: /Current week/ })).toBeEnabled();
+      await expect.soft(dialog).toHaveScreenshot(`academy-plan-week-${theme}-390.png`);
+      await page.keyboard.press('Escape');
+      await expect(dialog).toHaveCount(0);
+    });
+  }
+
+  for (const width of [1280, 390]) {
+    test(`dark admin active navigation meets AA contrast at ${width}px`, async ({ page }) => {
+      await setupMocks(page, 'ON_TRACK');
+      await page.route(`${API_BASE}/admin/members`, (route) => route.fulfill({ json: [] }));
+      await page.setViewportSize({ width, height: 844 });
+      await page.addInitScript(() => localStorage.setItem('ics-theme', 'dark'));
+      await page.goto('/admin/members');
+      await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+      const active = page.getByRole('navigation', { name: 'Admin navigation' })
+        .getByRole('link', { name: 'Members', exact: true });
+      await expect(active).toHaveAttribute('aria-current', 'page');
+      const contrast = await active.evaluate((element) => {
+        const luminance = (color: string) => {
+          const [r, g, b] = color.match(/[\d.]+/g)!.slice(0, 3).map((value) => {
+            const channel = Number(value) / 255;
+            return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+          });
+          return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+        };
+        const style = getComputedStyle(element);
+        const text = luminance(style.color);
+        const background = luminance(style.backgroundColor);
+        return (Math.max(text, background) + 0.05) / (Math.min(text, background) + 0.05);
+      });
+      expect(contrast).toBeGreaterThanOrEqual(4.5);
+    });
+  }
+
+  test.afterEach(async ({ page }) => {
+    await expect(page.getByText('Academy Fellow', { exact: true }).first()).toBeVisible();
+    await expect(page.getByText('ICS Select', { exact: true })).toHaveCount(0);
+  });
+
   test('AT_RISK state', async ({ page }) => {
     await setupMocks(page, 'AT_RISK');
     await page.goto('/admin/member/u1');
+    await page.addStyleTag({ content: 'nextjs-portal { display: none !important; }' });
     await expect(page.getByText('AT RISK', { exact: true }).first()).toBeVisible();
+    const riskBanner = page.getByRole('status', { name: 'Member risk' });
+    await expect(riskBanner).toContainText('AT RISK');
+    await expect(riskBanner.locator('svg')).toBeVisible();
+    await expect(riskBanner).toContainText('14 days no session');
     await page.waitForTimeout(400);
-    await expect(page).toHaveScreenshot('cockpit-at-risk.png', { fullPage: true });
+    await expect.soft(page).toHaveScreenshot('cockpit-at-risk.png', { fullPage: true });
   });
 
   test('WATCH state', async ({ page }) => {
     await setupMocks(page, 'WATCH');
     await page.goto('/admin/member/u1');
+    await page.addStyleTag({ content: 'nextjs-portal { display: none !important; }' });
     await expect(page.getByText('WATCH', { exact: true }).first()).toBeVisible();
+    const riskBanner = page.getByRole('status', { name: 'Member risk' });
+    await expect(riskBanner).toContainText('WATCH');
+    await expect(riskBanner.locator('svg')).toBeVisible();
+    await expect(riskBanner).toContainText('4 days no session');
     await page.waitForTimeout(400);
-    await expect(page).toHaveScreenshot('cockpit-watch.png', { fullPage: true });
+    await expect.soft(page).toHaveScreenshot('cockpit-watch.png', { fullPage: true });
   });
 
   test('ON_TRACK state', async ({ page }) => {
     await setupMocks(page, 'ON_TRACK');
     await page.goto('/admin/member/u1');
+    await page.addStyleTag({ content: 'nextjs-portal { display: none !important; }' });
     await expect(page.getByText('Maria Clara')).toBeVisible();
+    const riskIndicator = page.getByRole('status', { name: 'Engagement risk' });
+    await expect(riskIndicator).toContainText('ON TRACK');
+    await expect(riskIndicator.locator('svg')).toBeVisible();
+    await expect(page.getByRole('status', { name: 'Member risk' })).toHaveCount(0);
     await page.waitForTimeout(400);
-    await expect(page).toHaveScreenshot('cockpit-on-track.png', { fullPage: true });
+    await expect.soft(page).toHaveScreenshot('cockpit-on-track.png', { fullPage: true });
+  });
+
+  test('admin shell keeps all destinations accessible at desktop and mobile widths', async ({ page }) => {
+    await setupMocks(page, 'ON_TRACK');
+    await page.goto('/admin/member/u1');
+    await page.addStyleTag({ content: 'nextjs-portal { display: none !important; }' });
+    const header = page.getByRole('banner');
+    for (const width of [1280, 1024, 390]) {
+      await page.setViewportSize({ width, height: 844 });
+      const brandLink = header.getByRole('link', { name: 'Academy Fellow Admin', exact: true });
+      expect((await brandLink.boundingBox())?.height).toBeGreaterThanOrEqual(44);
+      for (const [name, path] of [['Members', 'members'], ['Cycles', 'cycles'], ['Plans', 'plans'], ['Library', 'library'], ['Waitlist', 'waitlist'], ['Meetings', 'meetings'], ['Config', 'config']]) {
+        const link = header.getByRole('link', { name, exact: true });
+        await expect(link).toHaveAttribute('href', `/admin/${path}`);
+        await link.focus();
+        await expect(link).toBeFocused();
+        await expect(link).not.toHaveCSS('box-shadow', 'none');
+        expect((await link.boundingBox())?.height).toBeGreaterThanOrEqual(44);
+      }
+      await expect.poll(() => header.evaluate((element) => element.scrollWidth <= window.innerWidth)).toBe(true);
+      await expect(header.getByRole('button', { name: 'Sign out' })).toBeVisible();
+    }
+    const theme = header.getByRole('button', { name: /Switch to .* theme/ });
+    await theme.click();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+    await theme.click();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
   });
 });

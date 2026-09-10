@@ -125,19 +125,19 @@ export function EditablePlanPanel({
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-5">
       <header className="space-y-2">
         <Eyebrow>The plan · editable</Eyebrow>
-        <p className="font-serif-tool text-lg font-semibold text-ink-soft">
+        <p className="font-sans text-lg font-semibold text-fg-soft">
           {context.member.name}
         </p>
-        <h2 className="font-serif-tool text-2xl font-semibold tracking-tight text-ink">
+        <h2 className="font-sans text-2xl font-semibold tracking-tight text-fg">
           Week {context.cycle.weekNumber} · {formatShort(plan.weekStart)} — {formatShort(plan.weekEnd)}
         </h2>
         <div className="flex items-center gap-3 flex-wrap">
-          <span className="font-mono text-xs text-ink-mute">
+          <span className="font-sans text-xs text-fg-mute">
             {plan.items.length} items · {plannedMinutes} min{' '}
-            <span className="text-ink-faint">({rawMinutes} raw)</span>
+            <span className="text-fg-mute">({rawMinutes} raw)</span>
           </span>
           <BudgetBadge
             plannedMinutes={plannedMinutes}
@@ -150,13 +150,13 @@ export function EditablePlanPanel({
       </header>
 
       {isPublished && (
-        <div className="flex items-start gap-3 rounded-card border border-accent/40 bg-accent/5 p-3">
-          <AlertCircle className="h-4 w-4 mt-0.5 shrink-0 text-accent" strokeWidth={1.5} />
+        <div className="flex items-start gap-3 rounded-card border border-warn/30 bg-warn-soft p-3">
+          <AlertCircle className="h-4 w-4 mt-0.5 shrink-0 text-fg" strokeWidth={1.5} />
           <div className="space-y-1">
-            <p className="font-mono text-[11px] uppercase tracking-label text-accent">
+            <p className="font-sans text-xs text-fg">
               Editing a published plan
             </p>
-            <p className="font-sans text-sm text-ink-soft">
+            <p className="font-sans text-sm text-fg-soft">
               Changes go straight to the member&rsquo;s Calendar. Items already
               completed (with any outcome) cannot be removed. No WhatsApp is sent.
             </p>
@@ -166,7 +166,7 @@ export function EditablePlanPanel({
 
       <section className="space-y-3">
         {plan.items.length === 0 ? (
-          <p className="font-mono text-xs text-ink-mute py-8 text-center border border-dashed border-rule rounded-card">
+          <p className="font-sans text-xs text-fg-mute py-8 text-center border border-dashed border-border-token rounded-card">
             No items yet. Use the AI draft panel or search the library below.
           </p>
         ) : (
@@ -188,7 +188,7 @@ export function EditablePlanPanel({
         <button
           type="button"
           onClick={() => setPickerOpen(true)}
-          className="w-full inline-flex items-center justify-center gap-2 rounded-input border border-dashed border-rule bg-paper px-3 py-3 font-mono text-xs uppercase tracking-label text-ink-soft hover:border-ink/30 hover:bg-paper-warm"
+          className="w-full inline-flex items-center justify-center gap-2 rounded-input border border-dashed border-border-token bg-bg px-3 py-3 font-sans text-xs text-fg-soft hover:border-primary/30 hover:bg-bg-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
         >
           <Plus className="h-4 w-4" strokeWidth={1.5} />
           Add from library
@@ -218,17 +218,17 @@ export function EditablePlanPanel({
           onChange={(e) => onAdminNotesChange(e.target.value)}
           rows={4}
           placeholder="Notas privadas — só admin lê."
-          className="mt-2 w-full rounded-input border border-rule bg-paper p-3 font-sans text-sm resize-vertical focus:outline-none focus:ring-2 focus:ring-focus/40"
+          className="mt-2 w-full rounded-input border border-border-token bg-bg p-3 font-sans text-sm resize-vertical focus:outline-none focus:ring-2 focus:ring-primary/40"
         />
       </section>
 
-      <footer className="flex justify-end gap-3 pt-6 border-t border-rule">
+      <footer className="flex justify-end gap-3 pt-4 border-t border-border-token">
         {isPublished ? (
           <button
             type="button"
             onClick={onApplyEdit}
             disabled={applyingEdit || plan.items.length === 0}
-            className="font-mono text-xs uppercase tracking-label px-4 py-2 bg-ink text-paper rounded-pill hover:opacity-90 disabled:opacity-40"
+            className="font-sans text-xs px-4 py-2 bg-primary text-primary-fg rounded-pill hover:opacity-90 disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
           >
             {applyingEdit ? 'Applying…' : 'Apply changes'}
           </button>
@@ -238,7 +238,7 @@ export function EditablePlanPanel({
               type="button"
               onClick={onSaveDraft}
               disabled={saving}
-              className="font-mono text-xs uppercase tracking-label px-4 py-2 text-ink-soft hover:bg-paper-warm rounded-pill disabled:opacity-40"
+              className="font-sans text-xs px-4 py-2 text-fg-soft hover:bg-bg-subtle rounded-pill disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
             >
               {saving ? 'Saving…' : 'Save draft'}
             </button>
@@ -246,7 +246,7 @@ export function EditablePlanPanel({
               type="button"
               onClick={() => setPublishOpen(true)}
               disabled={publishing || plan.items.length === 0}
-              className="font-mono text-xs uppercase tracking-label px-4 py-2 bg-ink text-paper rounded-pill hover:opacity-90 disabled:opacity-40"
+              className="font-sans text-xs px-4 py-2 bg-primary text-primary-fg rounded-pill hover:opacity-90 disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
             >
               {publishing ? 'Publishing…' : 'Publish…'}
             </button>

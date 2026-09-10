@@ -8,7 +8,7 @@
   </parent>
   <artifactId>chat-plugin</artifactId>
   <packaging>jar</packaging>
-  <name>Chat Plugin (ICS Lab)</name>
+  <name>Chat Plugin (Academy Fellow Lab)</name>
   <build><finalName>ChatPlugin</finalName></build>
   <dependencies>
     <dependency>

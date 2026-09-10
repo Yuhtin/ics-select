@@ -13,10 +13,10 @@ export function Pill({ children, variant = 'solid', className }: PillProps) {
   return (
     <span
       className={clsx(
-        'inline-flex items-center rounded-pill px-2 py-0.5 text-[9px] font-bold uppercase tracking-label',
-        variant === 'solid' && 'bg-ink text-paper',
-        variant === 'soft' && 'bg-paper-warm text-ink',
-        variant === 'outline' && 'border border-rule text-ink-mute bg-transparent',
+        'inline-flex items-center rounded-input px-2 py-1 font-sans text-[10px] font-semibold uppercase tracking-label',
+        variant === 'solid' && 'bg-primary text-primary-fg',
+        variant === 'soft' && 'bg-surface-strong text-fg',
+        variant === 'outline' && 'border border-border-token text-fg-soft bg-transparent',
         className,
       )}
     >

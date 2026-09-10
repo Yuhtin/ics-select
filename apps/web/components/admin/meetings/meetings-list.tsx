@@ -9,10 +9,10 @@ import { GROUP_META } from './group-meta';
 
 export function MeetingsList({ meetings }: { meetings: MeetingSummary[] }) {
   return (
-    <div className="mx-auto max-w-[1280px] space-y-10 px-6 py-10">
+    <div className="mx-auto max-w-[1280px] space-y-8">
       <header className="space-y-3">
         <Eyebrow>Admin · Meetings</Eyebrow>
-        <h1 className="font-serif text-5xl font-semibold tracking-tight text-fg">
+        <h1 className="font-sans text-3xl font-semibold tracking-tight text-fg">
           Aulas
         </h1>
         <p className="max-w-2xl font-sans text-lg leading-snug text-fg-soft">
@@ -51,7 +51,7 @@ function MeetingCard({ meeting }: { meeting: MeetingSummary }) {
         <div className="flex flex-wrap items-start justify-between gap-x-10 gap-y-4">
           <div className="min-w-0 flex-1 space-y-3">
             <Eyebrow className={meta.accentClass}>System Design · {meta.label}</Eyebrow>
-            <h2 className="font-serif text-3xl font-semibold leading-tight tracking-tight text-fg">
+            <h2 className="font-sans text-3xl font-semibold leading-tight tracking-tight text-fg">
               {meeting.title}
             </h2>
             <p className="font-sans text-base leading-snug text-fg-soft">
@@ -61,16 +61,16 @@ function MeetingCard({ meeting }: { meeting: MeetingSummary }) {
               {meeting.blurb}
             </p>
 
-            <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 pt-2 font-mono text-[11px] uppercase tracking-eyebrow text-fg-mute">
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 pt-2 font-sans text-xs font-medium text-fg-mute">
               <span className="inline-flex items-center gap-1.5">
                 <Users className="h-3 w-3" strokeWidth={1.8} />
                 {meeting.audience}
               </span>
-              <span className="inline-flex items-center gap-1.5">
+              <span className="inline-flex items-center gap-1.5 font-mono">
                 <Clock className="h-3 w-3" strokeWidth={1.8} />
                 {meeting.durationMin} min
               </span>
-              <span className="inline-flex items-center gap-1.5">
+              <span className="inline-flex items-center gap-1.5 font-mono">
                 <Layers className="h-3 w-3" strokeWidth={1.8} />
                 {meeting.beatCount} beats
               </span>
@@ -90,7 +90,7 @@ function MeetingCard({ meeting }: { meeting: MeetingSummary }) {
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
-                className="inline-flex h-10 items-center gap-2 rounded-card border border-border-token bg-bg-subtle px-3 font-mono text-[10px] uppercase tracking-eyebrow text-fg-soft transition-colors hover:border-fg hover:bg-fg hover:text-bg"
+                className="inline-flex h-10 items-center gap-2 rounded-card border border-border-token bg-bg-subtle px-3 font-sans text-xs font-medium text-fg-soft transition-colors hover:border-fg hover:bg-fg hover:text-bg"
                 title="Abrir slides em nova aba"
               >
                 <Presentation className="h-3.5 w-3.5" strokeWidth={1.8} />

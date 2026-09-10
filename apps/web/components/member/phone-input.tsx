@@ -44,6 +44,8 @@ interface PhoneInputProps {
   error?: boolean;
   invalid?: boolean;
   className?: string;
+  'aria-labelledby'?: string;
+  'aria-describedby'?: string;
 }
 
 export function PhoneInput({
@@ -56,6 +58,8 @@ export function PhoneInput({
   error,
   invalid,
   className,
+  'aria-labelledby': labelledBy,
+  'aria-describedby': describedBy,
 }: PhoneInputProps) {
   const id = useId();
   const hasError = error || invalid;
@@ -64,7 +68,7 @@ export function PhoneInput({
       {label && (
         <label
           htmlFor={id}
-          className="font-mono text-[10px] font-semibold uppercase tracking-eyebrow text-fg-mute"
+          className="font-sans text-xs font-medium text-fg-mute"
         >
           {label}
         </label>
@@ -79,13 +83,14 @@ export function PhoneInput({
         onChange={(e) => onChange(toE164(e.target.value))}
         onBlur={onBlur}
         placeholder={placeholder}
+        aria-invalid={hasError || undefined}
+        aria-labelledby={labelledBy}
+        aria-describedby={describedBy}
         className={clsx(
-          'w-full rounded-input border bg-surface px-4 py-3 font-sans text-base text-fg transition-colors placeholder:text-fg-faint focus:outline-none focus:ring-2',
+          'min-h-12 w-full rounded-none border-0 border-b-2 bg-transparent px-0 py-2 font-sans text-base text-fg outline-none transition-colors placeholder:text-fg-mute focus:ring-0',
           hasError
-            ? 'border-danger focus:border-danger focus:ring-danger/15'
-            : value.length === 0
-              ? 'border-border-strong focus:border-primary focus:ring-primary/15'
-              : 'border-success focus:border-success focus:ring-success/15',
+            ? 'border-danger focus:border-danger focus-visible:shadow-[inset_0_-2px_0_0_hsl(var(--danger))]'
+            : 'border-border-strong focus:border-primary',
         )}
       />
     </div>

@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { clsx } from 'clsx';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 import { minutesToHHMM } from '../../lib/format/time';
 
@@ -30,9 +30,10 @@ export function TimePill({
   ariaLabel,
 }: Props) {
   const [open, setOpen] = useState(false);
+  const reduceMotion = useReducedMotion();
   const [mounted, setMounted] = useState(false);
   const [draftHour, setDraftHour] = useState<number>(Math.floor(value / 60));
-  const [coords, setCoords] = useState<{ left: number; top: number; width: number } | null>(null);
+  const [coords, setCoords] = useState<{ left: number; top: number; width: number; maxHeight: number } | null>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
 
@@ -43,23 +44,51 @@ export function TimePill({
     if (open) setDraftHour(Math.floor(value / 60));
   }, [open, value]);
 
-  // Position popover below (or above if no room) button
+  // Use the visible viewport, including pinch zoom and the on-screen keyboard.
+  // When neither side fits, use the larger side and scroll within the panel.
   useLayoutEffect(() => {
     if (!open || !buttonRef.current) return;
-    const rect = buttonRef.current.getBoundingClientRect();
-    const POPOVER_MAX_H = 320;
-    const POPOVER_W = 260;
-    const spaceBelow = window.innerHeight - rect.bottom;
-    const top =
-      spaceBelow < POPOVER_MAX_H + 12 && rect.top > POPOVER_MAX_H + 12
-        ? rect.top - POPOVER_MAX_H - 8
-        : rect.bottom + 6;
-    let left = rect.left;
-    if (left + POPOVER_W > window.innerWidth - 8) {
-      left = Math.max(8, window.innerWidth - POPOVER_W - 8);
-    }
-    setCoords({ left, top, width: POPOVER_W });
-  }, [open]);
+    const viewport = window.visualViewport;
+    const position = () => {
+      const rect = buttonRef.current!.getBoundingClientRect();
+      const margin = 8;
+      const gap = 6;
+      const viewportLeft = viewport?.offsetLeft ?? 0;
+      const viewportTop = viewport?.offsetTop ?? 0;
+      const viewportWidth = viewport?.width ?? window.innerWidth;
+      const viewportHeight = viewport?.height ?? window.innerHeight;
+      const width = Math.min(312, viewportWidth - margin * 2);
+      const fullHeight = popoverRef.current
+        ? popoverRef.current.scrollHeight + 2
+        : allowEndOfDay ? 384 : 324;
+      const spaceBelow = viewportTop + viewportHeight - margin - rect.bottom - gap;
+      const spaceAbove = rect.top - viewportTop - margin - gap;
+      const below = spaceBelow >= fullHeight || spaceBelow >= spaceAbove;
+      const maxHeight = Math.min(viewportHeight - margin * 2, Math.max(44, below ? spaceBelow : spaceAbove));
+      const height = Math.min(fullHeight, maxHeight);
+      const top = Math.max(viewportTop + margin, Math.min(
+        below ? rect.bottom + gap : rect.top - gap - height,
+        viewportTop + viewportHeight - margin - height,
+      ));
+      const left = Math.max(viewportLeft + margin, Math.min(rect.left, viewportLeft + viewportWidth - margin - width));
+      setCoords({ left, top, width, maxHeight });
+    };
+    const onScroll = (event: Event) => {
+      if (event.target instanceof Node && popoverRef.current?.contains(event.target)) return;
+      position();
+    };
+    position();
+    window.addEventListener('resize', position);
+    window.addEventListener('scroll', onScroll, true);
+    viewport?.addEventListener('resize', position);
+    viewport?.addEventListener('scroll', position);
+    return () => {
+      window.removeEventListener('resize', position);
+      window.removeEventListener('scroll', onScroll, true);
+      viewport?.removeEventListener('resize', position);
+      viewport?.removeEventListener('scroll', position);
+    };
+  }, [open, allowEndOfDay, coords?.width]);
 
   // Close on outside click or Escape
   useEffect(() => {
@@ -111,7 +140,7 @@ export function TimePill({
         aria-haspopup="dialog"
         aria-expanded={open}
         className={clsx(
-          'inline-flex h-9 min-w-[84px] items-center justify-between gap-1.5 rounded-input border bg-surface px-3 font-mono text-[13px] tabular-nums text-fg transition-colors',
+          'inline-flex h-11 min-w-[84px] items-center justify-between gap-1.5 rounded-input border bg-surface px-3 font-mono text-[13px] tabular-nums text-fg transition-colors',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
           open
             ? 'border-primary shadow-[0_0_0_3px_hsl(var(--primary)/0.15)]'
@@ -136,24 +165,25 @@ export function TimePill({
                 ref={popoverRef}
                 role="dialog"
                 aria-label={`${ariaLabel} picker`}
-                initial={{ opacity: 0, y: -4, scale: 0.98 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -4, scale: 0.98 }}
-                transition={{ duration: 0.16, ease: EASE }}
+                initial={reduceMotion ? false : { opacity: 0, y: -4, scale: 0.98 }}
+                animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
+                exit={reduceMotion ? { opacity: 1 } : { opacity: 0, y: -4, scale: 0.98 }}
+                transition={{ duration: reduceMotion ? 0 : 0.16, ease: EASE }}
                 style={{
                   position: 'fixed',
                   left: coords.left,
                   top: coords.top,
                   width: coords.width,
+                  maxHeight: coords.maxHeight,
                   zIndex: 50,
                 }}
-                className="origin-top rounded-card border border-border-token bg-surface p-3 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.25)]"
+                className="origin-top overflow-y-auto overscroll-contain rounded-card border border-border-token bg-surface p-3 shadow-lg"
               >
                 <div>
-                  <p className="mb-2 font-mono text-[10px] font-semibold uppercase tracking-eyebrow text-fg-mute">
+                  <p className="mb-2 font-sans text-xs font-medium text-fg-mute">
                     Hour
                   </p>
-                  <div className="grid grid-cols-6 gap-1">
+                  <div className="grid grid-cols-[repeat(auto-fit,minmax(44px,1fr))] gap-1">
                     {Array.from({ length: 24 }, (_, h) => {
                       const allowed = isHourAllowed(h);
                       const isSelected = h === draftHour;
@@ -175,10 +205,10 @@ export function TimePill({
                             }
                           }}
                           className={clsx(
-                            'h-8 rounded-[6px] font-mono text-[12px] tabular-nums transition-colors',
+                            'h-11 min-w-11 rounded-input font-mono text-[12px] tabular-nums transition-colors',
                             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
-                            !allowed && 'cursor-not-allowed text-fg-faint',
-                            allowed && isSelected && 'bg-fg text-bg',
+                            !allowed && 'cursor-not-allowed text-fg-mute',
+                            allowed && isSelected && 'bg-primary text-primary-fg',
                             allowed && !isSelected &&
                               'text-fg-soft hover:bg-bg-subtle hover:text-fg',
                           )}
@@ -191,7 +221,7 @@ export function TimePill({
                 </div>
 
                 <div className="mt-4">
-                  <p className="mb-2 font-mono text-[10px] font-semibold uppercase tracking-eyebrow text-fg-mute">
+                  <p className="mb-2 font-sans text-xs font-medium text-fg-mute">
                     Minute
                   </p>
                   <div className="grid grid-cols-2 gap-1.5">
@@ -207,12 +237,12 @@ export function TimePill({
                           aria-label={`Minute ${String(m).padStart(2, '0')}`}
                           onClick={() => commit(total)}
                           className={clsx(
-                            'h-10 rounded-[8px] border font-mono text-[13px] font-semibold tabular-nums transition-colors',
+                            'h-11 rounded-input border font-mono text-[13px] font-semibold tabular-nums transition-colors',
                             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
                             !allowed &&
-                              'cursor-not-allowed border-border-token/60 text-fg-faint',
+                              'cursor-not-allowed border-border-token/60 text-fg-mute',
                             allowed && isSelected &&
-                              'border-fg bg-fg text-bg',
+                              'border-primary bg-primary text-primary-fg',
                             allowed && !isSelected &&
                               'border-border-token bg-surface text-fg-soft hover:border-border-strong hover:text-fg',
                           )}
@@ -230,12 +260,12 @@ export function TimePill({
                     disabled={!isTimeAllowed(1440)}
                     onClick={() => commit(1440)}
                     className={clsx(
-                      'mt-4 flex w-full items-center justify-between rounded-[8px] border px-3 py-2 font-sans text-[12px] transition-colors',
+                      'mt-4 flex min-h-11 w-full items-center justify-between rounded-[8px] border px-3 py-2 font-sans text-[12px] transition-colors',
                       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
                       !isTimeAllowed(1440)
-                        ? 'cursor-not-allowed border-border-token/60 text-fg-faint'
+                        ? 'cursor-not-allowed border-border-token/60 text-fg-mute'
                         : value === 1440
-                          ? 'border-fg bg-fg text-bg'
+                          ? 'border-primary bg-primary text-primary-fg'
                           : 'border-border-token text-fg-soft hover:border-border-strong hover:text-fg',
                     )}
                   >

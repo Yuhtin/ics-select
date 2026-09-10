@@ -29,20 +29,21 @@ export function EventCardIcs({ event, timeLabel }: EventCardIcsProps) {
   const platform = detectPlatform(event.ics?.url, event.ics?.format);
   const outcome = event.ics?.outcome ?? 'PENDING';
   return (
-    <div className="relative flex h-full w-full overflow-hidden rounded-input border border-border-token bg-surface">
-      <span className={`w-[3px] flex-shrink-0 ${PLATFORM_CLASS[platform]}`} />
+    <div className="relative flex h-full w-full overflow-hidden rounded-md border border-border-token bg-bg-subtle">
+      <span aria-hidden className={`w-[3px] shrink-0 ${PLATFORM_CLASS[platform]}`} />
       <div className="flex min-w-0 flex-1 flex-col px-2 py-1">
-        <span className="truncate font-serif text-[12px] leading-tight text-fg">
+        <span className="shrink-0 truncate pr-2 font-sans text-xs font-semibold leading-tight text-fg">
           {event.title}
         </span>
-        <span className="font-sans text-[10px] tabular-nums text-fg-mute">
+        <span className="shrink-0 truncate font-mono text-[10px] tabular-nums text-fg-mute">
           {timeLabel} · {platformLabel(platform)}
         </span>
       </div>
       <span
         className={`absolute right-1 top-1 h-2 w-2 rounded-full ${OUTCOME_CLASS[outcome]}`}
-        aria-label={`Outcome: ${outcome}`}
+        aria-hidden
       />
+      <span className="sr-only">Outcome: {outcome}</span>
     </div>
   );
 }

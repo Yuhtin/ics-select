@@ -98,6 +98,7 @@ const BASE_RECEIPT = {
 };
 
 async function setupMocks(page: Page, override?: Partial<typeof BASE_RECEIPT>) {
+  await page.clock.setFixedTime(new Date('2026-09-09T12:00:00.000Z'));
   await page.addInitScript(() => {
     window.localStorage.setItem('ics_access_token', 'fake-admin-token');
   });
@@ -118,11 +119,47 @@ async function setupMocks(page: Page, override?: Partial<typeof BASE_RECEIPT>) {
 }
 
 test.describe('Cycle receipt', () => {
+  for (const theme of ['light', 'dark'] as const) {
+    test(`receipt modes retain totals, export and print in ${theme}`, async ({ page }) => {
+      await setupMocks(page);
+      await page.addInitScript((value) => localStorage.setItem('ics-theme', value), theme);
+      await page.setViewportSize({ width: 1440, height: 960 });
+      await page.goto('/admin/cycle/c1/receipt?mode=wrapped');
+      await page.addStyleTag({ content: 'nextjs-portal { display: none !important; }' });
+      await expect(page.getByText('ACADEMY · FELLOW', { exact: true })).toBeVisible();
+      await expect(page.getByText('8h 00m', { exact: true })).toBeVisible();
+      await page.evaluate(() => window.scrollTo(0, 0));
+      await expect.soft(page).toHaveScreenshot(`academy-receipt-wrapped-${theme}.png`, { fullPage: true });
+      await page.emulateMedia({ media: 'print' });
+      const sections = page.locator('#receipt-capture-root > section');
+      expect(await sections.evaluateAll((elements) => elements.every((element) =>
+        getComputedStyle(element).backgroundColor.match(/\d+/g)!.slice(0, 3).every((value) => Number(value) > 240),
+      ))).toBe(true);
+      await expect.soft(page).toHaveScreenshot(`academy-receipt-wrapped-print-${theme}.png`, { fullPage: true });
+      await page.emulateMedia({ media: 'screen' });
+      await page.getByRole('button', { name: 'Switch to thermal' }).click();
+      await page.waitForURL(/mode=thermal/);
+      await expect(page.getByText('COHORT RECEIPT · CICLO 4')).toBeVisible();
+      await expect(page.getByText('8h 00m', { exact: true })).toBeVisible();
+      await expect(page.getByText('88%', { exact: true })).toBeVisible();
+      await page.evaluate(() => window.scrollTo(0, 0));
+      await expect.soft(page).toHaveScreenshot(`academy-receipt-thermal-${theme}.png`, { fullPage: true });
+      const downloadPromise = page.waitForEvent('download');
+      await page.getByRole('button', { name: 'Download PNG' }).click();
+      const download = await downloadPromise;
+      expect(download.suggestedFilename()).toBe('cycle-c1-receipt-2026-05-12.png');
+      expect(await download.failure()).toBeNull();
+      await page.emulateMedia({ media: 'print' });
+      await expect.soft(page).toHaveScreenshot(`academy-receipt-thermal-print-${theme}.png`, { fullPage: true });
+    });
+  }
+
   test('renders thermal view by default', async ({ page }) => {
     await setupMocks(page);
     await page.goto('/admin/cycle/c1/receipt');
     await expect(page.locator('#receipt-capture-root')).toBeVisible();
     await expect(page.getByText(/COHORT RECEIPT/)).toBeVisible();
+    await expect(page.getByText('ACADEMY · FELLOW', { exact: true })).toBeVisible();
     await expect(page.getByText(/CICLO 4/)).toBeVisible();
     await expect(page.getByText('Alice').first()).toBeVisible();
   });
@@ -136,11 +173,29 @@ test.describe('Cycle receipt', () => {
     await page.waitForURL(/asOf=2026-05-01/);
   });
 
-  test('wrapped mode renders gradient blocks when ?mode=wrapped', async ({ page }) => {
+  test('wrapped mode renders Academy blocks when ?mode=wrapped', async ({ page }) => {
     await setupMocks(page);
     await page.goto('/admin/cycle/c1/receipt?mode=wrapped');
     await expect(page.getByText(/together you studied/i)).toBeVisible();
     await expect(page.getByText(/hall of fame/i)).toBeVisible();
+  });
+
+  test('thermal paper stays light in a dark app and in print', async ({ page }) => {
+    await setupMocks(page);
+    await page.addInitScript(() => localStorage.setItem('ics-theme', 'dark'));
+    await page.goto('/admin/cycle/c1/receipt');
+    const paper = page.locator('#receipt-capture-root');
+    await expect(paper).toBeVisible();
+    const isLight = () => paper.evaluate((element) => {
+      const channels = getComputedStyle(element).backgroundColor.match(/\d+/g)!;
+      return channels.slice(0, 3).every((value) => Number(value) > 240);
+    });
+    expect(await isLight()).toBe(true);
+    expect((await paper.boundingBox())!.width).toBe(720);
+    await page.emulateMedia({ media: 'print' });
+    expect(await isLight()).toBe(true);
+    await expect(page.getByRole('button', { name: 'Download PNG' })).toBeHidden();
+    expect((await paper.boundingBox())!.width).toBe(720);
   });
 
   test('receipt route does not render admin sidebar', async ({ page }) => {

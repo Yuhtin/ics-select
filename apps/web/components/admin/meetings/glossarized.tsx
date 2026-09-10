@@ -136,7 +136,7 @@ function GlossaryChip({
         type="button"
         onClick={() => setOpen((v) => !v)}
         className={clsx(
-          'cursor-help underline decoration-dotted underline-offset-[3px] transition-colors',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface cursor-help underline decoration-dotted underline-offset-[3px] transition-colors',
           open
             ? 'decoration-primary text-fg'
             : 'decoration-fg-faint text-fg hover:decoration-fg-soft',
@@ -152,7 +152,7 @@ function GlossaryChip({
           // stop bubbling so clicking inside doesn't close via outside-click handler
           onMouseDown={(e) => e.stopPropagation()}
         >
-          <span className="font-mono text-[9px] uppercase tracking-eyebrow text-fg-mute font-semibold">
+          <span className="font-sans text-xs text-fg-mute font-semibold">
             Glossário · {term}
           </span>
           <span className="mt-1.5 block font-sans text-[13px] leading-relaxed text-fg-soft">

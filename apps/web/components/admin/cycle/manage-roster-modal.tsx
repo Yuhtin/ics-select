@@ -115,31 +115,31 @@ export function ManageRosterModal({
       backdrop="blur"
       scrollBehavior="inside"
     >
-      <ModalContent>
+      <ModalContent className="rounded-card border border-border-token bg-surface font-sans text-fg shadow-modal">
         <ModalHeader className="flex flex-col gap-1">
-          <span className="font-serif-tool text-lg font-semibold">
+          <span className="font-sans text-lg font-semibold">
             Roster · {cycleName}
           </span>
-          <span className="font-mono text-[11px] font-normal text-ink-mute">
+          <span className="font-mono text-[11px] font-normal text-fg-mute">
             {members.length} no ciclo
           </span>
         </ModalHeader>
 
         <ModalBody className="gap-6">
           <section className="space-y-2">
-            <p className="font-mono text-[10px] uppercase tracking-label text-ink-mute">
+            <p className="font-sans text-xs font-medium text-fg-mute">
               No ciclo
             </p>
             {members.length === 0 ? (
-              <p className="font-mono text-xs text-ink-mute">Ninguém ainda.</p>
+              <p className="font-sans text-xs text-fg-mute">Ninguém ainda.</p>
             ) : (
-              <ul className="divide-y divide-rule rounded-card border border-rule">
+              <ul className="divide-y divide-border-token rounded-card border border-border-token">
                 {members.map((m) => (
                   <li
                     key={m.userId}
                     className="flex items-center gap-3 px-3 py-2"
                   >
-                    <span className="flex-1 min-w-0 truncate font-sans text-sm text-ink">
+                    <span className="flex-1 min-w-0 truncate font-sans text-sm text-fg">
                       {m.name}
                     </span>
                     <button
@@ -149,7 +149,7 @@ export function ManageRosterModal({
                         remove.mutate({ cycleId, userId: m.userId })
                       }
                       aria-label={`Remover ${m.name} do ciclo`}
-                      className="rounded-input p-1 text-ink-mute transition-colors hover:bg-paper-warm hover:text-outcome-stuck disabled:opacity-40"
+                      className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface rounded-input p-1 text-fg-mute transition-colors hover:bg-bg-subtle hover:text-outcome-stuck disabled:opacity-40"
                     >
                       <X className="h-4 w-4" strokeWidth={1.5} />
                     </button>
@@ -160,35 +160,35 @@ export function ManageRosterModal({
           </section>
 
           <section className="space-y-2">
-            <p className="font-mono text-[10px] uppercase tracking-label text-ink-mute">
+            <p className="font-sans text-xs font-medium text-fg-mute">
               Adicionar
             </p>
             <div className="relative">
               <Search
-                className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint"
+                className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-fg-faint"
                 strokeWidth={1.5}
               />
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Buscar por nome ou email…"
-                className="w-full rounded-input border border-rule bg-paper py-2 pl-9 pr-3 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-focus/40"
+                className="w-full rounded-input border border-border-token bg-surface py-2 pl-9 pr-3 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
               />
             </div>
 
             {isLoading ? (
-              <p className="font-mono text-xs text-ink-mute">Carregando…</p>
+              <p className="font-sans text-xs text-fg-mute">Carregando…</p>
             ) : candidates.length === 0 ? (
-              <p className="rounded-card border border-dashed border-rule py-6 text-center font-mono text-xs text-ink-mute">
+              <p className="rounded-card border border-dashed border-border-token py-6 text-center font-sans text-xs text-fg-mute">
                 {query ? 'Ninguém encontrado.' : 'Todo mundo já está no ciclo.'}
               </p>
             ) : (
-              <ul className="max-h-64 divide-y divide-rule overflow-y-auto rounded-card border border-rule">
+              <ul className="max-h-64 divide-y divide-border-token overflow-y-auto rounded-card border border-border-token">
                 {candidates.map((u) => (
                   <li key={u.id}>
                     <label
                       className={clsx(
-                        'flex cursor-pointer items-center gap-3 px-3 py-2 transition-colors hover:bg-paper-warm',
+                        'flex cursor-pointer items-center gap-3 px-3 py-2 transition-colors hover:bg-bg-subtle',
                         errors[u.id] && 'bg-outcome-stuck/5',
                       )}
                     >
@@ -197,17 +197,17 @@ export function ManageRosterModal({
                         checked={selected.has(u.id)}
                         onChange={() => toggle(u.id)}
                         disabled={busy}
-                        className="h-4 w-4 accent-ink"
+                        className="h-4 w-4 accent-primary"
                       />
                       <span className="flex-1 min-w-0">
-                        <span className="block truncate font-sans text-sm text-ink">
+                        <span className="block truncate font-sans text-sm text-fg">
                           {u.name}
                         </span>
-                        <span className="block truncate font-mono text-[10px] text-ink-mute">
+                        <span className="block truncate font-sans text-xs text-fg-mute">
                           {u.email}
                         </span>
                         {errors[u.id] && (
-                          <span className="mt-0.5 block font-mono text-[10px] text-outcome-stuck">
+                          <span className="mt-0.5 block font-sans text-xs text-outcome-stuck">
                             {errors[u.id]}
                           </span>
                         )}
@@ -221,11 +221,12 @@ export function ManageRosterModal({
         </ModalBody>
 
         <ModalFooter>
-          <Button variant="light" onPress={onClose} isDisabled={busy}>
+          <Button variant="light" onPress={onClose} isDisabled={busy} className="rounded-input font-sans text-fg hover:bg-surface-hover">
             Fechar
           </Button>
           <Button
             color="primary"
+            className="rounded-pill bg-primary font-sans font-semibold text-primary-fg"
             onPress={handleAdd}
             isLoading={add.isPending}
             isDisabled={selected.size === 0 || busy}
