@@ -569,6 +569,55 @@ test('short external Calendar events keep their full touch target and focus visi
   }
 });
 
+for (const width of [390, 1440]) {
+  test(`consecutive and grid-start external events have disjoint usable destinations at ${width}px`, async ({ page }) => {
+    await mockStudioMember(page);
+    await page.setViewportSize({ width, height: 900 });
+    const events = [
+      { id: 'later', title: 'Second short meeting', start: '2026-04-16T17:35:00Z', end: '2026-04-16T18:10:00Z', htmlLink: 'https://calendar.google.com/event?eid=second' },
+      { id: 'first', title: 'First short meeting', start: '2026-04-16T17:00:00Z', end: '2026-04-16T17:35:00Z', meetLink: 'https://meet.google.com/first' },
+      { id: 'opening', title: 'Opening short meeting', start: '2026-04-16T10:00:00Z', end: '2026-04-16T10:35:00Z', meetLink: 'https://meet.google.com/opening' },
+    ];
+    await page.route(`${API_BASE}/me/calendar?*`, (route) => route.fulfill({ json: {
+      weekStart: '2026-04-12', weekEnd: '2026-04-18', timezone: 'America/Sao_Paulo', hasGoogleConnection: true,
+      events: events.map((event) => ({ ...event, kind: 'EXTERNAL', allDay: false })),
+    } }));
+    await page.goto('/me/calendar');
+    const grid = page.getByTestId('calendar-grid-scroller');
+    await expect(grid.getByText('First short meeting', { exact: true })).toBeVisible();
+    // Test the visible target's center and all four corners. Bounding boxes
+    // alone miss a later event intercepting the preceding event's action.
+    for (const url of ['https://meet.google.com/first', 'https://calendar.google.com/event?eid=second', 'https://meet.google.com/opening']) {
+      const link = page.locator(`a[href="${url}"]`);
+      await link.scrollIntoViewIfNeeded();
+      const hits = await link.evaluate((element) => {
+        const box = element.getBoundingClientRect();
+        const points = [[box.left + 1, box.top + 1], [box.right - 1, box.top + 1], [box.left + 1, box.bottom - 1], [box.right - 1, box.bottom - 1], [box.left + box.width / 2, box.top + box.height / 2]];
+        return { width: box.width, height: box.height, destinations: points.map(([x, y]) => document.elementFromPoint(x, y)?.closest('a')?.getAttribute('href') ?? null) };
+      });
+      expect.soft(hits.width).toBeGreaterThanOrEqual(44);
+      expect.soft(hits.height).toBeGreaterThanOrEqual(44);
+      expect.soft(hits.destinations).toEqual([url, url, url, url, url]);
+    }
+    // External actions live outside the time-scaled blocks; their event titles
+    // and chronological ordering explicitly associate agenda and grid.
+    const agenda = page.getByTestId('calendar-agenda');
+    await expect(agenda.getByRole('link')).toHaveText([
+      /Opening short meeting.*07:00–07:35/s,
+      /First short meeting.*14:00–14:35/s,
+      /Second short meeting.*14:35–15:10/s,
+    ]);
+    for (const [title, expectedTop] of [['Opening short meeting', 0], ['First short meeting', 392], ['Second short meeting', 424.6667]] as const) {
+      const block = grid.getByText(title, { exact: true }).locator('xpath=ancestor::div[contains(concat(" ", @class, " "), " absolute ")][1]');
+      const geometry = await block.evaluate((element) => ({ top: parseFloat((element as HTMLElement).style.top), height: parseFloat((element as HTMLElement).style.height) }));
+      expect(geometry.top).toBeCloseTo(expectedTop, 2);
+      expect(geometry.height).toBeCloseTo(32.6667, 2);
+      await expect(block.locator('a, button, [tabindex]')).toHaveCount(0);
+    }
+    await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  });
+}
+
 async function freezeStudioDate(page: Page) {
   // Freeze Date alone: temporal-polyfill relies on the native Intl constructors.
   await page.addInitScript(() => {
@@ -593,6 +642,28 @@ test('onboarding uses guided progress and focuses each question in reduced motio
   await expect(page.getByText('2 of 4', { exact: true })).toBeVisible();
   await expect(page.locator('[data-onboarding-panel]')).toHaveCSS('transform', 'none');
   await expect.poll(() => page.evaluate(() => document.getAnimations().filter((animation) => animation.playState === 'running').length)).toBe(0);
+});
+
+test('onboarding phone question names its input and announces the described validation error', async ({ page }) => {
+  await mockStudioMember(page);
+  await page.route(new RegExp(`^${API_BASE}/me$`), (route) => route.fulfill({ json: { ...member, targetTrack: null } }));
+  await page.goto('/me/onboarding');
+  const phone = page.getByRole('textbox');
+  await expect.soft(phone).toHaveAccessibleName('Where should we reach you?');
+  const questionId = await page.getByRole('heading', { name: 'Where should we reach you?' }).getAttribute('id');
+  expect.soft(questionId).toBeTruthy();
+  if (questionId) await expect.soft(phone).toHaveAttribute('aria-labelledby', questionId);
+  await phone.fill('+551');
+  const error = page.getByText('E.164 format: + country code + number. Example: +5511999999999', { exact: true });
+  await expect(phone).toHaveAttribute('aria-invalid', 'true');
+  await expect.soft(phone).toHaveAccessibleDescription('E.164 format: + country code + number. Example: +5511999999999');
+  await expect.soft(error).toHaveAttribute('role', 'alert');
+  await expect(page.getByRole('button', { name: 'Next', exact: true })).toBeDisabled();
+  await phone.fill('+5511987654321');
+  await expect(phone).not.toHaveAttribute('aria-invalid', 'true');
+  await expect(phone).not.toHaveAttribute('aria-describedby');
+  await expect(error).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Next', exact: true })).toBeEnabled();
 });
 
 
@@ -626,7 +697,7 @@ for (const width of [390, 768, 1440]) {
           await expect(page.getByRole('heading', { name: 'How did it go?' })).toBeFocused();
         }
         if (route === 'calendar') {
-          await expect(page.getByText('Mentor office hours')).toBeVisible();
+          await expect(page.getByTestId('calendar-grid-scroller').getByText('Mentor office hours')).toBeVisible();
           const scroller = page.getByTestId('calendar-grid-scroller');
           await expect(scroller).toHaveCSS('overflow-x', 'auto');
           if (width < 1024) await scroller.evaluate((element) => {
@@ -711,8 +782,20 @@ test('Retro response remains reachable at 200 percent mobile zoom', async ({ pag
   await response.fill('A resposta continua acessível com o teclado aberto.');
   // A reduced visual height models the keyboard reserving the lower viewport.
   await page.setViewportSize({ width: 390, height: 450 });
-  await response.evaluate((element) => element.scrollIntoView({ block: 'center' }));
-  await expect(response).toBeInViewport();
+  const submit = page.getByRole('button', { name: 'Submit retro', exact: true });
+  for (const control of [response, submit]) {
+    await control.focus();
+    await control.evaluate((element) => element.scrollIntoView({ block: 'center' }));
+    const box = await control.boundingBox();
+    const bottomBar = await page.getByRole('navigation', { name: 'Main navigation' }).boundingBox();
+    expect(box!.x).toBeGreaterThanOrEqual(0);
+    expect(box!.x + box!.width).toBeLessThanOrEqual(390);
+    expect(box!.y).toBeGreaterThanOrEqual(0);
+    expect(box!.y + box!.height).toBeLessThanOrEqual(bottomBar!.y);
+    expect(box!.y + box!.height).toBeLessThanOrEqual(450);
+    await expect(control).toBeFocused();
+  }
+  await expect(submit).toBeEnabled();
   await expect(response).toHaveValue('A resposta continua acessível com o teclado aberto.');
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });

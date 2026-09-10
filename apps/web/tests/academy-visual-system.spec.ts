@@ -354,8 +354,8 @@ for (const theme of ['light', 'dark'] as const) {
     await page.addStyleTag({ content: 'nextjs-portal { display: none !important; }' });
     await expect(page).toHaveURL(/\/me\/calendar$/);
     await expect(page.getByText('This week · 1 Academy Fellow')).toBeVisible();
-    await expect(page.getByText('Mentor office hours')).toBeVisible();
-    const external = page.getByRole('link', { name: 'Open external link' });
+    await expect(page.getByTestId('calendar-grid-scroller').getByText('Mentor office hours')).toBeVisible();
+    const external = page.getByRole('link', { name: 'Open external link: Mentor office hours' });
     await expect(external).toHaveAttribute('href', 'https://meet.google.com/example');
     const target = await external.boundingBox();
     expect(target?.width).toBeGreaterThanOrEqual(44);

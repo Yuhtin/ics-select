@@ -185,10 +185,12 @@ export default function MemberOnboardingPage() {
                   value={phone}
                   onChange={setPhone}
                   autoFocus
+                  aria-labelledby="onboarding-question"
+                  aria-describedby={phone.length > 0 && !phoneOk ? 'onboarding-phone-error' : undefined}
                   error={phone.length > 0 && !phoneOk}
                 />
                 {phone.length > 0 && !phoneOk && (
-                  <p className="mt-2 font-sans text-[11px] text-danger">
+                  <p id="onboarding-phone-error" role="alert" className="mt-2 font-sans text-[11px] text-danger">
                     E.164 format: + country code + number. Example: +5511999999999
                   </p>
                 )}
@@ -356,7 +358,7 @@ function StepCard({
       <p className="font-sans text-xs font-medium text-fg-mute">
         {eyebrow}
       </p>
-      <h2 ref={headingRef} tabIndex={-1} className="mt-2 text-[28px] font-semibold leading-[1.15] tracking-[-0.045em] text-fg outline-none sm:text-[36px]">
+      <h2 id="onboarding-question" ref={headingRef} tabIndex={-1} className="mt-2 text-[28px] font-semibold leading-[1.15] tracking-[-0.045em] text-fg outline-none sm:text-[36px]">
         {title}
       </h2>
       <p className="mt-2 max-w-prose font-sans text-[14px] leading-relaxed text-fg-soft">

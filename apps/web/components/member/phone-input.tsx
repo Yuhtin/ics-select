@@ -44,6 +44,8 @@ interface PhoneInputProps {
   error?: boolean;
   invalid?: boolean;
   className?: string;
+  'aria-labelledby'?: string;
+  'aria-describedby'?: string;
 }
 
 export function PhoneInput({
@@ -56,6 +58,8 @@ export function PhoneInput({
   error,
   invalid,
   className,
+  'aria-labelledby': labelledBy,
+  'aria-describedby': describedBy,
 }: PhoneInputProps) {
   const id = useId();
   const hasError = error || invalid;
@@ -80,6 +84,8 @@ export function PhoneInput({
         onBlur={onBlur}
         placeholder={placeholder}
         aria-invalid={hasError || undefined}
+        aria-labelledby={labelledBy}
+        aria-describedby={describedBy}
         className={clsx(
           'min-h-12 w-full rounded-none border-0 border-b-2 bg-transparent px-0 py-2 font-sans text-base text-fg outline-none transition-colors placeholder:text-fg-mute focus:ring-0',
           hasError
