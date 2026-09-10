@@ -139,6 +139,66 @@ test.describe('settings tabs', () => {
   });
 
   for (const theme of ['light', 'dark'] as const) {
+    test(`mobile settings tab focus stays inside the scroller in ${theme}`, async ({ page }) => {
+      await page.setViewportSize({ width: 390, height: 844 });
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      await page.addInitScript((value) => localStorage.setItem('ics-theme', value), theme);
+      await page.goto('/me/settings/profile');
+      const nav = page.getByRole('navigation', { name: 'Settings sections' });
+      const before = await nav.boundingBox();
+      for (const link of await nav.getByRole('link').all()) {
+        await link.focus();
+        await expect(link).toBeFocused();
+        // An inset ring stays within the 44px link, including the scroller's bottom edge.
+        await expect(link).toHaveCSS('box-shadow', /inset/);
+        const geometry = await link.evaluate((element) => {
+          const link = element.getBoundingClientRect();
+          const nav = element.closest('nav')!.getBoundingClientRect();
+          return { left: link.left - nav.left, right: nav.right - link.right,
+            top: link.top - nav.top, bottom: nav.bottom - link.bottom, height: link.height };
+        });
+        expect(geometry.left).toBeGreaterThanOrEqual(0);
+        expect(geometry.right).toBeGreaterThanOrEqual(0);
+        expect(geometry.top).toBeGreaterThanOrEqual(0);
+        expect(geometry.bottom).toBeGreaterThanOrEqual(0);
+        expect(geometry.height).toBeGreaterThanOrEqual(44);
+      }
+      expect((await nav.boundingBox())!.height).toBe(before!.height);
+      await expect(nav.getByRole('link', { name: 'Profile', exact: true })).toHaveCSS('border-bottom-width', '2px');
+      await expect(nav).toHaveCSS('overflow-x', 'auto');
+    });
+
+    test(`invalid phone has a distinct unclipped keyboard focus in ${theme}`, async ({ page }) => {
+      await page.setViewportSize({ width: 390, height: 844 });
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      await page.addInitScript((value) => localStorage.setItem('ics-theme', value), theme);
+      await page.goto('/me/settings/profile');
+      const phone = page.getByRole('textbox', { name: 'WhatsApp phone' });
+      await phone.fill('+55');
+      await page.getByRole('heading', { name: 'Your preferences.' }).click();
+      await expect(phone).toHaveAttribute('aria-invalid', 'true');
+      const unfocused = await phone.evaluate((element) => {
+        const style = getComputedStyle(element);
+        return { shadow: style.boxShadow, border: style.borderBottomColor };
+      });
+      const lastTab = page.getByRole('navigation', { name: 'Settings sections' }).getByRole('link', { name: 'Availability' });
+      await lastTab.focus();
+      await page.keyboard.press('Tab');
+      await expect(phone).toBeFocused();
+      await expect(phone).not.toHaveCSS('box-shadow', unfocused.shadow);
+      await expect(phone).toHaveCSS('box-shadow', /inset/);
+      await expect(phone).toHaveCSS('border-bottom-color', unfocused.border);
+      await expect(phone).toHaveCSS('border-top-width', '0px');
+      await expect(phone).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+      const inside = await phone.evaluate((element) => {
+        const rect = element.getBoundingClientRect();
+        const parent = element.parentElement!.getBoundingClientRect();
+        return rect.left >= parent.left && rect.right <= parent.right && rect.top >= parent.top && rect.bottom <= parent.bottom;
+      });
+      expect(inside).toBe(true);
+      await expect(page.getByText('Formato inválido.', { exact: false })).toBeVisible();
+    });
+
     test(`settings fields preserve validation, autosave and retry feedback in ${theme}`, async ({ page }) => {
       await page.emulateMedia({ reducedMotion: 'reduce' });
       await page.addInitScript((value) => localStorage.setItem('ics-theme', value), theme);

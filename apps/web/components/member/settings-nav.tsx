@@ -58,7 +58,7 @@ export function SettingsNav() {
               href={t.href}
               aria-current={active ? 'page' : undefined}
               className={clsx(
-                'inline-flex min-h-11 items-center shrink-0 whitespace-nowrap border-b-2 px-1 font-sans text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg',
+                'inline-flex min-h-11 items-center shrink-0 whitespace-nowrap border-b-2 px-1 font-sans text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset',
                 active
                   ? 'border-primary font-semibold text-primary dark:text-primary-fg'
                   : 'border-transparent text-fg-soft hover:border-border-strong hover:text-fg',

@@ -83,7 +83,7 @@ export function PhoneInput({
         className={clsx(
           'min-h-12 w-full rounded-none border-0 border-b-2 bg-transparent px-0 py-2 font-sans text-base text-fg outline-none transition-colors placeholder:text-fg-mute focus:ring-0',
           hasError
-            ? 'border-danger focus:border-danger'
+            ? 'border-danger focus:border-danger focus-visible:shadow-[inset_0_-2px_0_0_hsl(var(--danger))]'
             : 'border-border-strong focus:border-primary',
         )}
       />
