@@ -39,7 +39,7 @@ export function ProfileFields({ initialPhone, initialTrack }: ProfileFieldsProps
   );
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-8 [&>div+div]:border-t [&>div+div]:border-border-token [&>div+div]:pt-8">
       <div>
         <SectionLabel>WhatsApp phone</SectionLabel>
         <p className="mt-1 font-sans text-sm text-fg-soft">
@@ -47,6 +47,8 @@ export function ProfileFields({ initialPhone, initialTrack }: ProfileFieldsProps
         </p>
         <div className="mt-3 max-w-xs">
           <PhoneInput
+            label="WhatsApp phone"
+            className="[&>label]:sr-only"
             value={phoneField.value}
             onChange={phoneField.onChange}
             onBlur={phoneField.onBlur}

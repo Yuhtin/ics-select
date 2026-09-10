@@ -81,6 +81,8 @@ test.describe('settings tabs', () => {
       }
     });
 
+    await page.route(`${API_BASE}/me/retro/current`, (route) => route.fulfill({ json: { open: false, retro: null } }));
+
     // /me/theme — appearance page mutations.
     await page.route(`${API_BASE}/me/theme`, (route) =>
       route.fulfill({ status: 200, contentType: 'application/json', body: '{}' }),
@@ -96,6 +98,36 @@ test.describe('settings tabs', () => {
     );
   });
 
+  test('settings uses ruled local navigation and low-emphasis fields', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/me/settings/profile');
+    const nav = page.getByRole('navigation', { name: 'Settings sections' });
+    const active = nav.getByRole('link', { name: 'Profile', exact: true });
+    await expect(active).toHaveAttribute('aria-current', 'page');
+    await expect(nav).toHaveCSS('border-right-width', '1px');
+    await expect.soft(active).toHaveCSS('border-left-width', '3px');
+    await expect.soft(active).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+    const phone = page.getByRole('textbox');
+    await expect.soft(phone).toHaveCSS('border-bottom-width', '2px');
+    await expect.soft(phone).toHaveCSS('border-top-width', '0px');
+    await expect(page.getByRole('status')).toContainText('Saved');
+  });
+
+  test('mobile settings tabs use an active underline and never clip', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/me/settings/appearance');
+    const active = page.getByRole('navigation', { name: 'Settings sections' }).getByRole('link', { name: 'Appearance' });
+    await expect(active).toHaveCSS('border-bottom-width', '2px');
+    await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  });
+
+  test('availability query failure stays in the settings content column', async ({ page }) => {
+    await page.route(`${API_BASE}/me/availability`, (route) => route.fulfill({ status: 503, json: {} }));
+    await page.goto('/me/settings/availability');
+    await expect(page.getByText('Could not load availability.', { exact: true })).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText('Available time slots', { exact: true })).toHaveCount(0);
+  });
+
   test('/me/settings redirects to /me/settings/profile and shows WhatsApp phone section', async ({
     page,
   }) => {
@@ -103,10 +135,75 @@ test.describe('settings tabs', () => {
     await expect(page).toHaveURL(/\/me\/settings\/profile$/);
     await expect(page.getByText('Academy Fellow', { exact: true }).first()).toBeVisible();
     await expect(page.getByText('ICS Select', { exact: true })).toHaveCount(0);
-    await expect(page.getByText('WhatsApp phone')).toBeVisible();
+    await expect(page.getByText('WhatsApp phone').first()).toBeVisible();
   });
 
   for (const theme of ['light', 'dark'] as const) {
+    test(`settings fields preserve validation, autosave and retry feedback in ${theme}`, async ({ page }) => {
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      await page.addInitScript((value) => localStorage.setItem('ics-theme', value), theme);
+      const patches: unknown[] = [];
+      let releaseSave: (() => void) | undefined;
+      await page.route(`${API_BASE}/me/profile`, async (route) => {
+        patches.push(route.request().postDataJSON());
+        if (patches.length === 1) {
+          await new Promise<void>((resolve) => { releaseSave = resolve; });
+          await route.fulfill({ status: 503, json: {} });
+        } else {
+          await route.fulfill({ json: MOCK_USER });
+        }
+      });
+      await page.goto('/me/settings/profile');
+      const phone = page.getByRole('textbox', { name: 'WhatsApp phone' });
+      await phone.fill('+55');
+      await expect(phone).toHaveAttribute('aria-invalid', 'true');
+      await expect(page.getByText('Formato inválido.', { exact: false })).toBeVisible();
+      await page.getByRole('heading', { name: 'Your preferences.' }).click();
+      expect(patches).toEqual([]);
+      await phone.fill('+5511987654321');
+      await expect(phone).toHaveValue('+55 (11) 98765-4321');
+      await expect(phone).toBeFocused();
+      const focusColor = await phone.evaluate((element) => getComputedStyle(element).borderBottomColor);
+      await expect(page.getByRole('status')).toContainText('Saving');
+      expect(patches).toEqual([{ whatsappPhone: '+5511987654321' }]);
+      releaseSave!();
+      const retry = page.getByRole('button', { name: 'Save failed — Retry' });
+      await expect(retry).toBeVisible();
+      await retry.click();
+      await expect(page.getByRole('status')).toContainText('Saved');
+      expect(patches).toEqual([{ whatsappPhone: '+5511987654321' }, { whatsappPhone: '+5511987654321' }]);
+      await expect(phone).toHaveValue('+55 (11) 98765-4321');
+      await expect(phone).not.toHaveCSS('border-bottom-color', focusColor);
+
+      let availabilityPatch: Record<string, unknown> | undefined;
+      await page.route(`${API_BASE}/me/availability`, (route) => {
+        if (route.request().method() === 'PATCH') availabilityPatch = route.request().postDataJSON();
+        return route.fulfill({ json: MOCK_AVAILABILITY });
+      });
+      await page.goto('/me/settings/availability');
+      const timezone = page.getByRole('textbox', { name: 'Timezone' });
+      await expect(timezone).toHaveCSS('border-top-width', '0px');
+      await expect(timezone).toHaveCSS('border-bottom-width', '2px');
+      await timezone.fill('Europe/Lisbon');
+      await page.getByRole('heading', { name: 'Your preferences.' }).click();
+      await expect.poll(() => availabilityPatch?.timezone).toBe('Europe/Lisbon');
+      expect(availabilityPatch?.slots).toEqual([{ dayOfWeek: 0, startMinute: 1140, endMinute: 1320 }]);
+    });
+
+    test(`all settings tabs fit desktop in ${theme}`, async ({ page }) => {
+      await page.setViewportSize({ width: 1440, height: 900 });
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      await page.addInitScript((value) => localStorage.setItem('ics-theme', value), theme);
+      for (const [tab, label] of [['profile', 'WhatsApp phone'], ['appearance', 'Your choice syncs across devices.'], ['availability', 'Available time slots']]) {
+        await page.goto(`/me/settings/${tab}`);
+        await page.addStyleTag({ content: 'nextjs-portal { display: none !important; }' });
+        await expect(page.getByText(label, { exact: true }).first()).toBeVisible();
+        await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+        await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+        await expect(page).toHaveScreenshot(`academy-settings-${tab}-${theme}-desktop.png`, { fullPage: true, animations: 'disabled' });
+      }
+    });
+
     test(`time picker is immediately static with reduced motion in ${theme}`, async ({ page }) => {
       await page.emulateMedia({ reducedMotion: 'reduce' });
       await page.addInitScript((value) => localStorage.setItem('ics-theme', value), theme);
@@ -226,7 +323,7 @@ test.describe('settings tabs', () => {
       for (const [tab, label] of [['profile', 'WhatsApp phone'], ['appearance', 'Your choice syncs across devices.'], ['availability', 'Available time slots']]) {
         await page.goto(`/me/settings/${tab}`);
         await page.addStyleTag({ content: 'nextjs-portal { display: none !important; }' });
-        await expect(page.getByText(label, { exact: true })).toBeVisible();
+        await expect(page.getByText(label, { exact: true }).first()).toBeVisible();
         await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
         await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
         await expect(page).toHaveScreenshot(`academy-settings-${tab}-${theme}-mobile.png`, { fullPage: true, animations: 'disabled' });

@@ -58,7 +58,7 @@ export function AvailabilitySlotEditor({ slots, onChange }: Props) {
   }
 
   return (
-    <div className="space-y-2">
+    <div className="border-b border-border-token">
       {DAY_SHORT.map((label, day) => {
         const daySlots = byDay.get(day) ?? [];
         const overlap = detectOverlap(daySlots);
@@ -66,12 +66,12 @@ export function AvailabilitySlotEditor({ slots, onChange }: Props) {
           <div
             key={day}
             className={clsx(
-              'rounded-card border bg-surface px-3 py-3 sm:px-4',
+              'border-t py-4',
               overlap ? 'border-outcome-stuck' : 'border-border-token',
             )}
           >
-            <div className="flex flex-col items-start gap-2 sm:flex-row sm:gap-4">
-              <span className="mt-2 w-12 shrink-0 font-sans text-xs font-medium text-fg-mute">
+            <div className="flex items-start gap-2 sm:gap-4">
+              <span className="mt-3 w-8 sm:w-12 shrink-0 font-sans text-xs font-medium text-fg-mute">
                 {label}
               </span>
               <div className="min-w-0 flex-1 space-y-2">
@@ -81,7 +81,7 @@ export function AvailabilitySlotEditor({ slots, onChange }: Props) {
                   </p>
                 )}
                 {daySlots.map((s, idx) => (
-                  <div key={idx} className="flex items-center gap-2">
+                  <div key={idx} className="flex flex-wrap items-center gap-2">
                     <TimePill
                       value={s.startMinute}
                       onChange={(v) => updateSlot(day, idx, { startMinute: v })}

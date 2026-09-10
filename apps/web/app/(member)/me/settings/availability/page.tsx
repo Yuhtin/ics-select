@@ -4,7 +4,7 @@ import { useMeAvailability } from '../../../../../lib/queries/me-settings';
 import { AvailabilityGrid } from '../../../../../components/member/availability-grid';
 
 export default function AvailabilityPage() {
-  const { data: availability, isLoading } = useMeAvailability();
+  const { data: availability, isLoading, isError } = useMeAvailability();
 
   if (isLoading) {
     return (
@@ -14,8 +14,12 @@ export default function AvailabilityPage() {
     );
   }
 
+  if (isError && !availability) {
+    return <p role="alert" className="font-sans text-sm text-danger">Could not load availability.</p>;
+  }
+
   return (
-    <div className="max-w-2xl">
+    <div>
       <AvailabilityGrid initial={availability} />
     </div>
   );

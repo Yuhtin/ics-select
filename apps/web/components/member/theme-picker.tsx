@@ -56,14 +56,6 @@ function ThemeCard({ variant, active, onClick, padding }: CardProps) {
       <ThemePreviewSvg variant={variant} />
       <div className="flex items-center gap-2">
         <span
-          aria-hidden
-          className={clsx(
-            'h-2 w-2 rounded-full',
-            variant === 'light' ? 'bg-[#17171b]' : 'bg-[#f4f4f1]',
-            variant === 'dark' && 'ring-1 ring-border-token',
-          )}
-        />
-        <span
           className={clsx(
             'font-sans text-sm font-semibold',
             active ? 'text-primary dark:text-primary-fg' : 'text-fg',
@@ -77,53 +69,36 @@ function ThemeCard({ variant, active, onClick, padding }: CardProps) {
           className="absolute right-3 top-3 grid h-5 w-5 place-items-center rounded-full bg-primary text-primary-fg"
           aria-hidden
         >
-          <Check className="h-3 w-3" strokeWidth={2} />
+          <Check className="h-3 w-3" strokeWidth={1.5} />
         </span>
       )}
     </button>
   );
 }
 
-/**
- * Static SVG mini-preview. Colors are hardcoded so the "Dark" card looks dark
- * even when the site is currently in Light mode (and vice versa).
- */
+/** Scope the Academy tokens so each preview keeps its own theme. */
 function ThemePreviewSvg({ variant }: { variant: 'light' | 'dark' }) {
-  const palette =
-    variant === 'light'
-      ? { bg: '#f3f3f1', subtle: '#edeef2', ink: '#17171b', inkSoft: '#46464e', accent: '#2f00ff', rule: '#dadbe2', surface: '#fdfdfc' }
-      : { bg: '#101013', subtle: '#17171c', ink: '#f4f4f1', inkSoft: '#a0a0ab', accent: '#7052ff', rule: '#31323a', surface: '#1e1e24' };
-
   return (
     <svg
+      data-theme={variant}
       viewBox="0 0 160 96"
       role="img"
       aria-label={`${variant === 'light' ? 'Light' : 'Dark'} theme preview`}
-      className="w-full rounded-[6px]"
+      className="w-full overflow-hidden rounded-[6px]"
     >
-      <rect width="160" height="96" fill={palette.bg} rx="6" />
-      {/* topbar */}
-      <rect x="0" y="0" width="160" height="14" fill={palette.subtle} />
-      <rect x="8" y="5" width="28" height="4" fill={palette.ink} rx="1" />
-      <rect x="144" y="4" width="8" height="6" fill={palette.inkSoft} rx="1" />
-      {/* sidebar */}
-      <rect x="0" y="14" width="36" height="82" fill={palette.surface} stroke={palette.rule} />
-      <rect x="6" y="22" width="22" height="3" fill={palette.inkSoft} rx="1" />
-      <rect x="6" y="30" width="18" height="3" fill={palette.inkSoft} rx="1" />
-      <rect x="6" y="38" width="22" height="3" fill={palette.accent} rx="1" />
-      <rect x="6" y="46" width="14" height="3" fill={palette.inkSoft} rx="1" />
-      {/* main card */}
-      <rect x="44" y="22" width="108" height="66" fill={palette.surface} stroke={palette.rule} rx="4" />
-      <rect x="50" y="30" width="48" height="5" fill={palette.ink} rx="1" />
-      <rect x="50" y="40" width="80" height="3" fill={palette.inkSoft} rx="1" />
-      <rect x="50" y="46" width="70" height="3" fill={palette.inkSoft} rx="1" />
-      {/* list rows */}
-      <rect x="50" y="58" width="3" height="8" fill={palette.accent} rx="1" />
-      <rect x="57" y="58" width="60" height="3" fill={palette.ink} rx="1" />
-      <rect x="57" y="64" width="36" height="2" fill={palette.inkSoft} rx="1" />
-      <rect x="50" y="74" width="3" height="8" fill={palette.inkSoft} rx="1" />
-      <rect x="57" y="74" width="54" height="3" fill={palette.ink} rx="1" />
-      <rect x="57" y="80" width="30" height="2" fill={palette.inkSoft} rx="1" />
+      <rect width="160" height="96" fill="hsl(var(--bg))" />
+      <rect width="22" height="96" fill="hsl(var(--member-rail-bg))" />
+      <rect x="7" y="9" width="8" height="5" fill="hsl(var(--member-rail-fg))" rx="1" />
+      <rect x="4" y="23" width="14" height="13" fill="hsl(var(--primary))" rx="2" />
+      <path d="M8 29H14M8 43H14M8 54H14M8 82H14" stroke="hsl(var(--member-rail-fg))" strokeWidth="2" />
+      <rect x="32" y="11" width="54" height="5" fill="hsl(var(--fg))" rx="1" />
+      <path d="M32 23H150M32 63H150M32 79H150" stroke="hsl(var(--border))" />
+      <rect x="32" y="32" width="2" height="23" fill="hsl(var(--primary))" />
+      <rect x="40" y="33" width="65" height="4" fill="hsl(var(--fg))" rx="1" />
+      <rect x="40" y="41" width="48" height="2" fill="hsl(var(--fg-mute))" rx="1" />
+      <rect x="40" y="48" width="25" height="6" fill="hsl(var(--primary))" rx="2" />
+      <path d="M32 70H43M32 86H43" stroke="hsl(var(--fg-mute))" strokeWidth="2" />
+      <path d="M50 70H119M50 86H102" stroke="hsl(var(--fg-soft))" strokeWidth="3" />
     </svg>
   );
 }

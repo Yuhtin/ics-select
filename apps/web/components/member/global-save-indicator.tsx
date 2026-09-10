@@ -61,7 +61,7 @@ export function GlobalSaveIndicator() {
   return (
     <div
       className={clsx(
-        'flex min-h-11 flex-wrap items-center gap-2 rounded-input px-3 py-1 font-sans text-xs font-medium',
+        'flex min-h-11 flex-wrap items-center gap-2 py-1 font-sans text-xs font-medium',
         status === 'idle' && 'text-fg-soft',
         status === 'saving' && 'text-fg-mute',
         status === 'error' && 'text-danger',
@@ -78,7 +78,7 @@ export function GlobalSaveIndicator() {
       )}
       {status === 'saving' && (
         <>
-          <Loader2 className="h-3.5 w-3.5 animate-spin" strokeWidth={1.5} />
+          <Loader2 className="h-3.5 w-3.5 animate-spin motion-reduce:animate-none" strokeWidth={1.5} />
           <span>Saving…</span>
         </>
       )}

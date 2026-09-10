@@ -21,7 +21,7 @@ export function SettingsNav() {
       {/* Desktop sidebar */}
       <nav
         aria-label="Settings sections"
-        className="hidden md:flex md:w-52 md:flex-col md:gap-0.5 md:border-r md:border-border-token md:pr-4"
+        className="hidden md:flex md:min-w-0 md:flex-col md:gap-1 md:border-r md:border-border-token md:pr-4"
       >
         {TABS.map((t) => {
           const active = t.href === activeHref;
@@ -32,10 +32,10 @@ export function SettingsNav() {
               href={t.href}
               aria-current={active ? 'page' : undefined}
               className={clsx(
-                'flex min-h-11 items-center gap-3 rounded-input px-3 font-sans text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg',
+                'flex min-h-11 items-center gap-3 border-l-[3px] px-3 font-sans text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg',
                 active
-                  ? 'bg-primary-soft font-medium text-primary dark:text-primary-fg'
-                  : 'text-fg-soft hover:bg-bg-subtle hover:text-fg',
+                  ? 'border-primary font-semibold text-primary dark:text-primary-fg'
+                  : 'border-transparent text-fg-soft hover:bg-bg-subtle hover:text-fg',
               )}
             >
               <Icon className="h-4 w-4" strokeWidth={1.5} />
@@ -45,10 +45,10 @@ export function SettingsNav() {
         })}
       </nav>
 
-      {/* Mobile pills */}
+      {/* Mobile text tabs */}
       <nav
         aria-label="Settings sections"
-        className="flex gap-2 overflow-x-auto pb-1 md:hidden"
+        className="flex min-w-0 gap-5 overflow-x-auto border-b border-border-token px-1 pt-1 md:hidden"
       >
         {TABS.map((t) => {
           const active = t.href === activeHref;
@@ -58,10 +58,10 @@ export function SettingsNav() {
               href={t.href}
               aria-current={active ? 'page' : undefined}
               className={clsx(
-                'inline-flex min-h-11 items-center whitespace-nowrap rounded-input border px-3 font-sans text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg',
+                'inline-flex min-h-11 items-center shrink-0 whitespace-nowrap border-b-2 px-1 font-sans text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg',
                 active
-                  ? 'border-primary bg-primary text-primary-fg'
-                  : 'border-border-token bg-surface text-fg-soft hover:border-border-strong hover:text-fg',
+                  ? 'border-primary font-semibold text-primary dark:text-primary-fg'
+                  : 'border-transparent text-fg-soft hover:border-border-strong hover:text-fg',
               )}
             >
               {t.label}

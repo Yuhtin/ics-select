@@ -117,10 +117,10 @@ export function AvailabilityGrid({ initial }: Props) {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 [&>div+div]:border-t [&>div+div]:border-border-token [&>div+div]:pt-8">
       <div>
-        <div className="flex items-start justify-between gap-4 rounded-card border border-border-token bg-surface px-4 py-3">
-          <div className="flex-1">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5">
               <SectionLabel className="mb-0">Block calendar as Busy</SectionLabel>
               <Tooltip
@@ -158,6 +158,7 @@ export function AvailabilityGrid({ initial }: Props) {
             onValueChange={(next) => setAndCommit('calendarBusy', next)}
             aria-label="Block calendar as Busy"
             size="sm"
+            classNames={{ base: 'min-h-11 min-w-11 shrink-0' }}
           />
         </div>
       </div>
@@ -214,11 +215,13 @@ export function AvailabilityGrid({ initial }: Props) {
         <SectionLabel>Timezone</SectionLabel>
         <input
           type="text"
+          aria-label="Timezone"
+          aria-invalid={timezoneField.invalid || undefined}
           value={timezoneField.value}
           onChange={(e) => timezoneField.onChange(e.target.value)}
           onBlur={timezoneField.onBlur}
           placeholder="America/Sao_Paulo"
-          className="mt-2 min-h-11 w-full max-w-xs rounded-input border border-border-token bg-surface px-3 py-1.5 font-sans text-sm text-fg placeholder:text-fg-mute focus:outline-none focus:ring-2 focus:ring-primary"
+          className="mt-2 min-h-12 w-full max-w-xs rounded-none border-0 border-b-2 border-border-strong bg-transparent px-0 py-2 font-sans text-base text-fg outline-none placeholder:text-fg-mute focus:border-primary focus:ring-0 aria-[invalid=true]:border-danger"
         />
       </div>
     </div>

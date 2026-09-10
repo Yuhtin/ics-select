@@ -17,12 +17,12 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="max-w-2xl space-y-10">
+    <div className="space-y-8">
       <ProfileFields
         initialPhone={user.whatsappPhone}
         initialTrack={user.targetTrack}
       />
-      <div>
+      <div className="border-t border-border-token pt-8">
         <SectionLabel>Google Calendar</SectionLabel>
         <div className="mt-3">
           <GoogleStatusCard connected={user.googleConnected} email={user.email} />

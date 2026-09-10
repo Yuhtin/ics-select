@@ -81,12 +81,10 @@ export function PhoneInput({
         placeholder={placeholder}
         aria-invalid={hasError || undefined}
         className={clsx(
-          'w-full rounded-input border bg-surface px-4 py-3 font-sans text-base text-fg transition-colors placeholder:text-fg-mute focus:outline-none focus:ring-2',
+          'min-h-12 w-full rounded-none border-0 border-b-2 bg-transparent px-0 py-2 font-sans text-base text-fg outline-none transition-colors placeholder:text-fg-mute focus:ring-0',
           hasError
-            ? 'border-danger focus:border-danger focus:ring-danger/15'
-            : value.length === 0
-              ? 'border-border-strong focus:border-primary focus:ring-primary/15'
-              : 'border-border-token focus:border-primary focus:ring-primary/25',
+            ? 'border-danger focus:border-danger'
+            : 'border-border-strong focus:border-primary',
         )}
       />
     </div>
