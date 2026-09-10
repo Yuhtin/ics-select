@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { ArrowLeft, ExternalLink } from 'lucide-react';
 import clsx from 'clsx';
 import type { ItemResponse } from '../../lib/queries/me-item';
@@ -37,6 +37,9 @@ export function ItemFocus({ item }: ItemFocusProps) {
   const [reflection, setReflection] = useState(item.reflection ?? '');
   const [editing, setEditing] = useState(false);
   const [outcomeStep, setOutcomeStep] = useState<OutcomeStep>('outcome');
+  const activeOutcomeStep = useRef<OutcomeStep>('outcome');
+  const outcomeSectionRef = useRef<HTMLElement>(null);
+  const restoreEntryFocus = useRef(false);
   const [direction, setDirection] = useState<1 | -1>(1);
   const [saveError, setSaveError] = useState<string | null>(null);
   const flowId = useId();
@@ -44,6 +47,15 @@ export function ItemFocus({ item }: ItemFocusProps) {
   const [actualMinutesInput, setActualMinutesInput] = useState('');
 
   const mutation = useSetItemOutcome();
+
+  useEffect(() => {
+    if (!editing && restoreEntryFocus.current) {
+      restoreEntryFocus.current = false;
+      // The closed section contains its replacement entry action (or Undo).
+      // Wait for React to commit it before restoring keyboard focus.
+      outcomeSectionRef.current?.querySelector('button')?.focus({ preventScroll: true });
+    }
+  }, [editing]);
 
   const now = new Date();
   const platform = detectPlatform(item.libraryItem.url, item.libraryItem.format);
@@ -92,9 +104,16 @@ export function ItemFocus({ item }: ItemFocusProps) {
   const finalStep = stepIndex === outcomeSteps.length - 1;
   const heading = outcomeStep === 'outcome' ? 'How did it go?' : outcomeStep === 'reflection' ? 'Sua nota' : 'Tempo gasto (min)';
 
+  function moveToStep(step: OutcomeStep, nextDirection: 1 | -1) {
+    // AnimatePresence retains outgoing controls and their old handlers. Set this
+    // synchronously so they cannot change the step list once navigation starts.
+    activeOutcomeStep.current = step;
+    setOutcomeStep(step);
+    setDirection(nextDirection);
+  }
+
   function openEditor() {
-    setOutcomeStep('outcome');
-    setDirection(1);
+    moveToStep('outcome', 1);
     setEditing(true);
   }
 
@@ -182,7 +201,7 @@ export function ItemFocus({ item }: ItemFocusProps) {
         </section>
       )}
 
-      <section>
+      <section ref={outcomeSectionRef}>
         {editing ? (
           <>
             <GuidedFlow
@@ -198,15 +217,12 @@ export function ItemFocus({ item }: ItemFocusProps) {
               submittingLabel="Saving…"
               submitting={mutation.isPending}
               exitLabel="Exit outcome editor"
-              onExit={() => setEditing(false)}
-              onPrevious={() => {
-                setDirection(-1);
-                setOutcomeStep(outcomeSteps[stepIndex - 1]);
+              onExit={() => {
+                restoreEntryFocus.current = true;
+                setEditing(false);
               }}
-              onContinue={() => {
-                setDirection(1);
-                setOutcomeStep(outcomeSteps[stepIndex + 1]);
-              }}
+              onPrevious={() => moveToStep(outcomeSteps[stepIndex - 1], -1)}
+              onContinue={() => moveToStep(outcomeSteps[stepIndex + 1], 1)}
               onSubmit={handleSave}
             >
               <fieldset disabled={mutation.isPending} className="min-w-0">
@@ -214,7 +230,11 @@ export function ItemFocus({ item }: ItemFocusProps) {
                   <OutcomePicker
                     presentation="guided"
                     value={outcome}
-                    onChange={(value) => { setOutcome(value); setSaveError(null); }}
+                    onChange={(value) => {
+                      if (activeOutcomeStep.current !== 'outcome') return;
+                      setOutcome(value);
+                      setSaveError(null);
+                    }}
                     disabled={mutation.isPending}
                     showSkip={item.skippable && (item.outcome === 'PENDING' || outcome === 'SKIPPED')}
                   />

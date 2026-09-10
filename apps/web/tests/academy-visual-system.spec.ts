@@ -329,6 +329,9 @@ for (const theme of ['light', 'dark'] as const) {
     await minutes.fill('0');
     await expect(page.getByText('Use um número inteiro entre 1 e 1440.')).toBeVisible();
     await minutes.fill('45');
+    // The guided heading receives focus after entrance; capture that stable state
+    // rather than racing the native number input's focus/spinner appearance.
+    await page.getByRole('heading', { name: 'Tempo gasto (min)' }).focus();
     await page.evaluate(() => window.scrollTo(0, 0));
     await expect(page).toHaveScreenshot(`academy-item-route-${theme}.png`, { fullPage: true, animations: 'disabled' });
     const outcomeRequest = page.waitForRequest((request) => request.url().endsWith('/plans/plan-1/items/binary-search/outcome') && request.method() === 'PATCH');

@@ -413,3 +413,69 @@ for (const width of [390, 800]) {
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   });
 }
+
+
+for (const staleChoice of ['Not yet', 'Already known']) {
+  test(`Item outcome ignores stale ${staleChoice} choice during the exit transition`, async ({ page }) => {
+    await mockStudioMember(page);
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    const writes: unknown[] = [];
+    await page.route(`${API_BASE}/plans/plan-1/items/binary-search/outcome`, async (route) => {
+      const payload = route.request().postDataJSON();
+      writes.push(payload);
+      await route.fulfill({ json: { ...itemDetail, ...payload } });
+    });
+    await page.goto('/me/item/binary-search');
+    await page.getByRole('button', { name: 'How did it go?' }).click();
+    await page.getByRole('button', { name: 'Nailed it', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Continue', exact: true })).toBeEnabled();
+    // Attempt both an immediate stale activation and one after React starts
+    // the normal-motion exit. Neither can change the conditional step list.
+    const outgoingStillMounted = await page.getByRole('button', { name: 'Continue', exact: true }).evaluate(async (button, label) => {
+      const choice = Array.from(document.querySelectorAll('button')).find((candidate) => candidate.textContent?.trim() === label)!;
+      (button as HTMLButtonElement).click();
+      choice.click();
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+      const stillMounted = choice.isConnected;
+      choice.click();
+      return stillMounted;
+    }, staleChoice);
+    expect(outgoingStillMounted).toBe(true);
+    await expect(page.getByText('2 of 3', { exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Sua nota' })).toBeFocused();
+    await expect(page.getByRole('textbox', { name: /nota/i })).toBeVisible();
+    await page.getByRole('button', { name: 'Previous question' }).click();
+    await expect(page.getByRole('heading', { name: 'How did it go?' })).toBeFocused();
+    await expect(page.getByRole('button', { name: 'Nailed it', exact: true })).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByText('1 of 3', { exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Continue', exact: true }).click();
+    await page.getByRole('textbox', { name: /nota/i }).fill('The original outcome remains selected.');
+    await page.getByRole('button', { name: 'Continue', exact: true }).click();
+    await page.getByRole('spinbutton').fill('45');
+    expect(writes).toEqual([]);
+    await page.getByRole('button', { name: 'Save outcome' }).click();
+    await expect.poll(() => writes).toEqual([{ outcome: 'DONE_EASY', reflection: 'The original outcome remains selected.', actualMinutes: 45 }]);
+  });
+}
+
+for (const outcome of ['PENDING', 'DONE_EASY'] as const) {
+  test(`Item outcome Exit restores keyboard focus for ${outcome}`, async ({ page }) => {
+    await mockStudioMember(page);
+    await page.route(`${API_BASE}/me/item/binary-search`, (route) => route.fulfill({ json: { ...itemDetail, outcome, reflection: 'Keep the existing answer.' } }));
+    await page.goto('/me/item/binary-search');
+    const entry = page.getByRole('button', { name: outcome === 'PENDING' ? 'How did it go?' : 'Edit', exact: true });
+    await entry.focus();
+    await page.keyboard.press('Enter');
+    await expect(page.getByRole('heading', { name: 'How did it go?' })).toBeFocused();
+    const exit = page.getByRole('button', { name: 'Exit outcome editor' });
+    await exit.focus();
+    await page.keyboard.press('Enter');
+    await expect(entry).toBeFocused();
+    // The replacement control is usable immediately, without restarting Tab at the page top.
+    await page.keyboard.press('Enter');
+    await expect(page.getByRole('heading', { name: 'How did it go?' })).toBeFocused();
+    await page.getByRole('button', { name: 'Nailed it', exact: true }).click();
+    await page.getByRole('button', { name: 'Continue', exact: true }).click();
+    await expect(page.getByRole('textbox', { name: /nota/i })).toHaveValue('Keep the existing answer.');
+  });
+}
