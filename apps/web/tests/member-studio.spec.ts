@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import type { ItemResponse } from '../lib/queries/me-item';
 
 const API_BASE = 'http://localhost:3001';
 const member = {
@@ -14,12 +15,25 @@ const item = {
   carriedFromItemId: null,
 };
 
+const itemDetail: ItemResponse = {
+  id: item.id, planId: item.planId, order: item.order, outcome: 'PENDING',
+  skippable: true, reflection: null, completedAt: null,
+  scheduledAt: item.scheduledAt, scheduledMinutes: item.scheduledMinutes,
+  libraryItem: {
+    id: 'library-binary-search', title: item.title, format: item.format,
+    estimatedMinutes: item.estimatedMinutes, url: item.url, topic: item.topic,
+    description: 'Practice classic, lower-bound, and upper-bound binary search.',
+  },
+  carriedFrom: null,
+};
+
 async function mockStudioMember(page: Page, retroOpen = true) {
   await page.addInitScript(() => localStorage.setItem('ics_access_token', 'studio-token'));
   await page.route(`${API_BASE}/**`, (route) => {
     const path = new URL(route.request().url()).pathname;
     const body: Record<string, unknown> = {
       '/me': member,
+      '/me/item/binary-search': itemDetail,
       '/me/calendar': {
         weekStart: '2026-04-12', weekEnd: '2026-04-18', timezone: 'America/Sao_Paulo', hasGoogleConnection: true,
         events: [
@@ -229,6 +243,172 @@ for (const width of [390, 1440]) {
       expect((await control.boundingBox())?.height).toBeGreaterThanOrEqual(44);
       await control.focus();
       await expect(control).not.toHaveCSS('box-shadow', 'none');
+    }
+    await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  });
+}
+
+
+test('Item outcome asks one decision at a time and keeps the existing payload', async ({ page }) => {
+  await mockStudioMember(page);
+  const writes: unknown[] = [];
+  await page.route(`${API_BASE}/plans/plan-1/items/binary-search/outcome`, async (route) => {
+    const payload = route.request().postDataJSON();
+    writes.push(payload);
+    await route.fulfill({ json: { ...itemDetail, ...payload } });
+  });
+  await page.goto('/me/item/binary-search');
+  await expect(page.getByTestId('item-focus-header')).toHaveCSS('border-left-width', '4px');
+  await expect(page.getByRole('textbox')).toHaveCount(0);
+  await page.getByRole('button', { name: 'How did it go?' }).click();
+  await expect(page.getByRole('heading', { name: 'How did it go?' })).toBeFocused();
+  await expect(page.getByRole('button', { name: 'Save outcome', exact: true })).toBeDisabled();
+  await page.getByRole('button', { name: 'Nailed it', exact: true }).click();
+  await page.getByRole('button', { name: 'Continue', exact: true }).click();
+  const reflection = page.getByRole('textbox', { name: /nota/i });
+  await expect(page.getByRole('spinbutton')).toHaveCount(0);
+  await reflection.fill('Entendi o invariante.');
+  await page.getByRole('button', { name: 'Continue', exact: true }).click();
+  const minutes = page.getByRole('spinbutton', { name: 'Tempo gasto (min)' });
+  await expect(reflection).toHaveCount(0);
+  await minutes.fill('0');
+  await expect(page.getByText('Use um número inteiro entre 1 e 1440.')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Save outcome' })).toBeDisabled();
+  await minutes.fill('45');
+  expect(writes).toEqual([]);
+  await page.getByRole('button', { name: 'Save outcome' }).click();
+  await expect.poll(() => writes).toEqual([{ outcome: 'DONE_EASY', reflection: 'Entendi o invariante.', actualMinutes: 45 }]);
+  await expect(page.getByRole('button', { name: 'Exit outcome editor' })).toHaveCount(0);
+});
+
+test('Item outcome keeps answers on failure, exit and retry', async ({ page }) => {
+  await mockStudioMember(page);
+  let fail = true;
+  await page.route(`${API_BASE}/plans/plan-1/items/binary-search/outcome`, async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 350));
+    await route.fulfill({ status: fail ? 500 : 200, json: fail ? { error: { code: 'INTERNAL', message: 'Could not save outcome.' } } : { ...itemDetail, ...route.request().postDataJSON() } });
+  });
+  await page.goto('/me/item/binary-search');
+  await page.getByRole('button', { name: 'How did it go?' }).click();
+  await page.getByRole('button', { name: 'Got it (hard)', exact: true }).click();
+  await page.getByRole('button', { name: 'Continue', exact: true }).click();
+  await page.getByRole('textbox', { name: /nota/i }).fill('A resposta fica aqui.');
+  await page.getByRole('button', { name: 'Continue', exact: true }).click();
+  const minutes = page.getByRole('spinbutton', { name: 'Tempo gasto (min)' });
+  await minutes.fill('38');
+  await page.getByRole('button', { name: 'Save outcome' }).click();
+  await expect(page.getByRole('button', { name: 'Saving…' })).toBeDisabled();
+  await expect(minutes).toHaveValue('38');
+  await expect(page.getByRole('main').getByRole('alert')).toHaveText('Could not save outcome.');
+  await expect(minutes).toHaveValue('38');
+  await page.getByRole('button', { name: 'Previous question' }).click();
+  await expect(page.getByRole('textbox', { name: /nota/i })).toHaveValue('A resposta fica aqui.');
+  await page.getByRole('button', { name: 'Exit outcome editor' }).click();
+  await page.getByRole('button', { name: 'How did it go?' }).click();
+  await expect(page.getByRole('button', { name: 'Got it (hard)', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await page.getByRole('button', { name: 'Continue', exact: true }).click();
+  await expect(page.getByRole('textbox', { name: /nota/i })).toHaveValue('A resposta fica aqui.');
+  await page.getByRole('button', { name: 'Continue', exact: true }).click();
+  await expect(minutes).toHaveValue('38');
+  await minutes.fill('39');
+  await expect(page.getByRole('main').getByRole('alert')).toHaveCount(0);
+  fail = false;
+  await page.getByRole('button', { name: 'Save outcome' }).click();
+  await expect(page.getByRole('button', { name: 'Exit outcome editor' })).toHaveCount(0);
+});
+
+
+test('Item outcome preserves skip, undo, completed edit and optimistic item state', async ({ page }) => {
+  await mockStudioMember(page);
+  let stored: ItemResponse = { ...itemDetail };
+  let release: (() => void) | undefined;
+  let writes = 0;
+  await page.route(`${API_BASE}/me/item/binary-search`, (route) => route.fulfill({ json: stored }));
+  await page.route(`${API_BASE}/plans/plan-1/items/binary-search/outcome`, async (route) => {
+    writes += 1;
+    const payload = route.request().postDataJSON();
+    if (payload.outcome === 'SKIPPED') await new Promise<void>((resolve) => { release = resolve; });
+    stored = { ...stored, ...payload };
+    await route.fulfill({ json: stored });
+  });
+  await page.goto('/me/item/binary-search');
+  await page.getByRole('button', { name: 'How did it go?' }).click();
+  await page.getByRole('button', { name: 'Already known', exact: true }).click();
+  await expect(page.getByRole('textbox')).toHaveCount(0);
+  await expect(page.getByRole('spinbutton')).toHaveCount(0);
+  const skipRequest = page.waitForRequest((request) => request.method() === 'PATCH');
+  await page.getByRole('button', { name: 'Save outcome' }).click();
+  expect((await skipRequest).postDataJSON()).toEqual({ outcome: 'SKIPPED', actualMinutes: null });
+  // Cache flips to a completed marker before the server resolves, but the active answer stays visible.
+  await expect(page.getByTestId('item-focus-header')).toHaveClass(/border-l-success/);
+  await expect(page.getByRole('button', { name: 'Already known', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  release!();
+  await expect(page.getByRole('button', { name: 'Undo' })).toBeVisible();
+  const undoRequest = page.waitForRequest((request) => request.method() === 'PATCH');
+  await page.getByRole('button', { name: 'Undo' }).click();
+  expect((await undoRequest).postDataJSON()).toEqual({ outcome: 'PENDING', actualMinutes: null });
+  await expect(page.getByRole('heading', { name: 'How did it go?' })).toBeFocused();
+  await expect(page.getByRole('button', { name: 'Already known', exact: true })).toHaveAttribute('aria-pressed', 'false');
+  await page.getByRole('button', { name: 'Stuck', exact: true }).click();
+  await page.getByRole('button', { name: 'Continue', exact: true }).click();
+  await page.getByRole('textbox', { name: /nota/i }).fill('Preciso de ajuda com o invariante.');
+  await expect(page.getByRole('spinbutton')).toHaveCount(0);
+  const stuckRequest = page.waitForRequest((request) => request.method() === 'PATCH');
+  await page.getByRole('button', { name: 'Save outcome' }).click();
+  expect((await stuckRequest).postDataJSON()).toEqual({ outcome: 'STUCK', reflection: 'Preciso de ajuda com o invariante.', actualMinutes: null });
+  await expect(page.getByText('Stuck — help requested')).toBeVisible();
+  await expect(page.getByText('The program director has been notified. Talk to them when you can.')).toBeVisible();
+  await page.getByRole('button', { name: 'Edit', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Stuck', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('button', { name: 'Already known', exact: true })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Continue', exact: true }).click();
+  await expect(page.getByRole('textbox', { name: /nota/i })).toHaveValue('Preciso de ajuda com o invariante.');
+  await page.getByRole('button', { name: 'Previous question' }).click();
+  await page.getByRole('button', { name: 'Not yet', exact: true }).click();
+  await expect(page.getByText('1 of 1', { exact: true })).toBeVisible();
+  const pendingRequest = page.waitForRequest((request) => request.method() === 'PATCH');
+  await page.getByRole('button', { name: 'Save outcome' }).click();
+  expect((await pendingRequest).postDataJSON()).toEqual({ outcome: 'PENDING', reflection: 'Preciso de ajuda com o invariante.', actualMinutes: null });
+  await expect(page.getByRole('button', { name: 'How did it go?' })).toBeVisible();
+  expect(writes).toBe(4);
+});
+
+
+for (const width of [390, 800]) {
+  test(`Item outcome keeps keyboard focus and actions reachable at ${width}px`, async ({ page }) => {
+    await mockStudioMember(page);
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    // 800x450 is the CSS viewport of a 1600x900 display at 200% browser zoom.
+    await page.setViewportSize({ width, height: 450 });
+    await page.goto('/me/item/binary-search');
+    const entry = page.getByRole('button', { name: 'How did it go?' });
+    await entry.focus();
+    await page.keyboard.press('Enter');
+    await expect(page.getByRole('heading', { name: 'How did it go?' })).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('button', { name: 'Nailed it', exact: true })).toBeFocused();
+    await page.keyboard.press('Enter');
+    await page.getByRole('button', { name: 'Continue', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Sua nota' })).toBeFocused();
+    await page.keyboard.press('Tab');
+    const reflection = page.getByRole('textbox', { name: /nota/i });
+    await expect(reflection).toBeFocused();
+    await page.keyboard.type('Long answers stay local.');
+    await expect(reflection).toHaveValue('Long answers stay local.');
+    await expect(page.locator('[data-guided-panel]')).toHaveCSS('transform', 'none');
+    await page.getByRole('button', { name: 'Continue', exact: true }).click();
+    await page.getByRole('spinbutton').fill('1441');
+    await expect(page.getByRole('button', { name: 'Save outcome' })).toBeDisabled();
+    await page.getByRole('spinbutton').fill('45');
+    const save = page.getByRole('button', { name: 'Save outcome' });
+    await save.scrollIntoViewIfNeeded();
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    expect((await save.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+    await expect(save).toBeInViewport();
+    if (width < 768) {
+      const action = await page.getByRole('link', { name: /Retro open/ }).boundingBox();
+      const button = await save.boundingBox();
+      expect(button!.y + button!.height).toBeLessThanOrEqual(action!.y);
     }
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   });

@@ -1,19 +1,20 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { ArrowLeft, ExternalLink } from 'lucide-react';
 import clsx from 'clsx';
 import type { ItemResponse } from '../../lib/queries/me-item';
 import { useSetItemOutcome } from '../../lib/queries/me-item';
 import type { ItemOutcome } from '@ics-select/shared';
 import { Eyebrow } from '../ui/eyebrow';
-import { Pill } from '../ui/pill';
 import { Button } from '../ui/button';
 import { OutcomePicker } from '../ui/outcome-picker';
 import { OutcomeDot } from '../ui/outcome-dot';
 import { formatTimeLocal, formatDateLocal } from '../../lib/format/time';
-import { platformLabel, detectPlatform, type PlatformKey } from '../../lib/format/platform';
+import { GuidedFlow } from './guided-flow';
+import { GuidedTextResponse } from './guided-text-response';
+import { platformLabel, detectPlatform } from '../../lib/format/platform';
 
 // Outcomes that require the member to report time spent. SKIPPED, STUCK
 // and PENDING are excluded — the member either didn't study the item or
@@ -24,14 +25,7 @@ const TIME_REQUIRED_OUTCOMES: ReadonlySet<ItemOutcome> = new Set([
   'DOUBTS',
 ]);
 
-const PLATFORM_STRIPE: Record<PlatformKey, string> = {
-  leetcode: 'bg-platform-leetcode',
-  youtube: 'bg-platform-youtube',
-  medium: 'bg-platform-medium',
-  github: 'bg-platform-github',
-  article: 'bg-platform-article',
-  book: 'bg-platform-book',
-};
+type OutcomeStep = 'outcome' | 'reflection' | 'time';
 
 interface ItemFocusProps {
   item: ItemResponse;
@@ -41,7 +35,12 @@ export function ItemFocus({ item }: ItemFocusProps) {
   const isDone = item.outcome !== 'PENDING';
   const [outcome, setOutcome] = useState<ItemOutcome | null>(isDone ? item.outcome : null);
   const [reflection, setReflection] = useState(item.reflection ?? '');
-  const [editing, setEditing] = useState(!isDone);
+  const [editing, setEditing] = useState(false);
+  const [outcomeStep, setOutcomeStep] = useState<OutcomeStep>('outcome');
+  const [direction, setDirection] = useState<1 | -1>(1);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const flowId = useId();
+  const headingId = `${flowId}-${outcomeStep}`;
   const [actualMinutesInput, setActualMinutesInput] = useState('');
 
   const mutation = useSetItemOutcome();
@@ -84,19 +83,37 @@ export function ItemFocus({ item }: ItemFocusProps) {
   const canSave =
     outcome !== null && (!requiresTime || parsedMinutes !== null);
 
+  const outcomeSteps: OutcomeStep[] = outcome === null ? ['outcome'] : [
+    'outcome',
+    ...(outcome !== 'PENDING' && outcome !== 'SKIPPED' ? ['reflection' as const] : []),
+    ...(requiresTime ? ['time' as const] : []),
+  ];
+  const stepIndex = outcomeSteps.indexOf(outcomeStep);
+  const finalStep = stepIndex === outcomeSteps.length - 1;
+  const heading = outcomeStep === 'outcome' ? 'How did it go?' : outcomeStep === 'reflection' ? 'Sua nota' : 'Tempo gasto (min)';
+
+  function openEditor() {
+    setOutcomeStep('outcome');
+    setDirection(1);
+    setEditing(true);
+  }
+
   function handleSave() {
-    if (!outcome || !canSave) return;
-    // Optimistic update flips the cache immediately, so we can close the form
-    // synchronously instead of awaiting the slow backend round-trip.
+    if (!outcome || !canSave || mutation.isPending) return;
+    setSaveError(null);
     mutation.mutate({
       planId: item.planId,
       itemId: item.id,
       outcome,
       reflection: reflection.trim() === '' ? undefined : reflection,
       actualMinutes: requiresTime ? parsedMinutes : null,
+    }, {
+      onSuccess: () => {
+        setActualMinutesInput('');
+        setEditing(false);
+      },
+      onError: (error) => setSaveError(error.message),
     });
-    setActualMinutesInput('');
-    setEditing(false);
   }
 
   function applyOutcome(o: ItemOutcome) {
@@ -104,7 +121,7 @@ export function ItemFocus({ item }: ItemFocusProps) {
   }
 
   return (
-    <div className="max-w-3xl space-y-8">
+    <div className="max-w-[800px] space-y-8">
       <Link
         href="/me"
         className="inline-flex min-h-11 items-center gap-1.5 rounded-input font-sans text-sm text-fg-mute hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
@@ -113,35 +130,21 @@ export function ItemFocus({ item }: ItemFocusProps) {
       </Link>
 
       <header
+        data-testid="item-focus-header"
         className={clsx(
-          'relative rounded-card border border-border-token bg-surface p-6 sm:p-8',
-          isRunningLate && 'border-warn/50',
+          'border-b border-l-4 border-border-token pb-7 pl-5',
+          isRunningLate ? 'border-l-warn' : isDone ? 'border-l-success' : 'border-l-primary',
         )}
       >
-        {!isRunningLate && (
-          <span
-            aria-hidden
-            className={clsx(
-              'absolute left-0 top-6 bottom-6 w-[2px] rounded-full',
-              isDone ? PLATFORM_STRIPE[platform] : 'bg-primary',
-            )}
-          />
-        )}
         <Eyebrow className={eyebrowClass}>{eyebrowText}</Eyebrow>
-        <h1 className="mt-3 font-sans text-[30px] font-semibold leading-[1.15] tracking-tight md:text-[40px]">
+        <h1 className="mt-3 font-sans text-[32px] font-semibold leading-[1.12] tracking-[-0.045em] sm:text-[40px]">
           {item.libraryItem.title}
         </h1>
-        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 font-mono text-xs text-fg-mute">
-          <span className="uppercase tracking-label text-fg-soft">{platformLabel(platform)}</span>
-          <span aria-hidden>·</span>
+        <p className="mt-4 flex flex-wrap gap-x-4 gap-y-1 font-sans text-xs text-fg-mute">
+          <span>{platformLabel(platform)}</span>
           <span>{item.libraryItem.estimatedMinutes} min</span>
-          {item.libraryItem.topic && (
-            <>
-              <span aria-hidden>·</span>
-              <span className="uppercase tracking-label">{item.libraryItem.topic.label}</span>
-            </>
-          )}
-        </div>
+          {item.libraryItem.topic && <span>{item.libraryItem.topic.label}</span>}
+        </p>
       </header>
 
       {item.libraryItem.url && (
@@ -152,7 +155,7 @@ export function ItemFocus({ item }: ItemFocusProps) {
           className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-input bg-primary px-6 text-sm font-semibold text-primary-fg hover:bg-primary/90 md:w-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
         >
           Open on {platformLabel(platform)}
-          <ExternalLink className="h-4 w-4" strokeWidth={1.75} />
+          <ExternalLink className="h-4 w-4" strokeWidth={1.5} />
         </a>
       )}
 
@@ -166,7 +169,7 @@ export function ItemFocus({ item }: ItemFocusProps) {
       )}
 
       {item.carriedFrom && (
-        <section className="rounded-card border border-reflect/30 bg-reflect-soft/40 p-5 md:p-6">
+        <section className="border-l-2 border-reflect pl-5">
           <Eyebrow className="!text-accent">Carried from last week · your note</Eyebrow>
           {item.carriedFrom.reflection ? (
             <p className="mt-2 font-sans leading-relaxed text-fg-soft">&ldquo;{item.carriedFrom.reflection}&rdquo;</p>
@@ -180,57 +183,82 @@ export function ItemFocus({ item }: ItemFocusProps) {
       )}
 
       <section>
-        <Eyebrow>How did it go?</Eyebrow>
         {editing ? (
-          <div className="mt-3 space-y-4">
-            <OutcomePicker
-              value={outcome}
-              onChange={setOutcome}
-              showSkip={item.skippable && item.outcome === 'PENDING'}
-            />
-            {outcome && outcome !== 'PENDING' && outcome !== 'SKIPPED' && (
-              <textarea
-                value={reflection}
-                onChange={(e) => setReflection(e.target.value)}
-                placeholder="Escreve em pt-BR se quiser — é sua nota"
-                className="w-full min-h-[96px] rounded-input border border-border-token bg-surface p-3 font-sans text-sm text-fg placeholder:text-fg-mute focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-            )}
-            {requiresTime && (
-              <div className="space-y-2">
-                <label className="block">
-                  <p className="font-mono text-[11px] uppercase tracking-[0.1em] text-fg-mute">
-                    Tempo gasto (min)
-                  </p>
-                  <input
-                    type="number"
-                    inputMode="numeric"
-                    min={1}
-                    max={1440}
-                    step={1}
-                    value={actualMinutesInput}
-                    onChange={(e) => setActualMinutesInput(e.target.value)}
-                    placeholder="Ex: 45"
-                    className="mt-1 min-h-11 w-32 rounded-input border border-border-token bg-surface px-3 py-2 font-mono text-sm tabular-nums text-fg placeholder:text-fg-mute focus:outline-none focus:ring-2 focus:ring-primary"
-                  />
-                </label>
-                {actualMinutesInput.trim() !== '' && parsedMinutes === null && (
-                  <p className="font-sans text-[11px] text-outcome-stuck">
-                    Use um número inteiro entre 1 e 1440.
-                  </p>
-                )}
-              </div>
-            )}
-            <Button
-              onClick={handleSave}
-              disabled={!canSave || mutation.isPending}
-              className="[&:disabled]:bg-bg-subtle [&:disabled]:text-fg-mute [&:disabled]:opacity-100"
+          <>
+            <GuidedFlow
+              stepKey={outcomeStep}
+              headingId={headingId}
+              index={stepIndex}
+              total={outcomeSteps.length}
+              direction={direction}
+              title={heading}
+              canContinue={finalStep ? canSave : outcome !== null}
+              final={finalStep}
+              submitLabel="Save outcome"
+              submittingLabel="Saving…"
+              submitting={mutation.isPending}
+              exitLabel="Exit outcome editor"
+              onExit={() => setEditing(false)}
+              onPrevious={() => {
+                setDirection(-1);
+                setOutcomeStep(outcomeSteps[stepIndex - 1]);
+              }}
+              onContinue={() => {
+                setDirection(1);
+                setOutcomeStep(outcomeSteps[stepIndex + 1]);
+              }}
+              onSubmit={handleSave}
             >
-              {mutation.isPending ? 'Saving…' : 'Save outcome'}
-            </Button>
-          </div>
+              <fieldset disabled={mutation.isPending} className="min-w-0">
+                {outcomeStep === 'outcome' && (
+                  <OutcomePicker
+                    presentation="guided"
+                    value={outcome}
+                    onChange={(value) => { setOutcome(value); setSaveError(null); }}
+                    disabled={mutation.isPending}
+                    showSkip={item.skippable && (item.outcome === 'PENDING' || outcome === 'SKIPPED')}
+                  />
+                )}
+                {outcomeStep === 'reflection' && (
+                  <GuidedTextResponse
+                    id={`${flowId}-reflection`}
+                    labelledBy={headingId}
+                    value={reflection}
+                    onChange={(value) => { setReflection(value); setSaveError(null); }}
+                    placeholder="Escreve em pt-BR se quiser — é sua nota"
+                  />
+                )}
+                {outcomeStep === 'time' && (
+                  <div className="space-y-3">
+                    <input
+                      aria-labelledby={headingId}
+                      aria-invalid={actualMinutesInput.trim() !== '' && parsedMinutes === null || undefined}
+                      aria-describedby={actualMinutesInput.trim() !== '' && parsedMinutes === null ? `${flowId}-time-error` : undefined}
+                      type="number"
+                      inputMode="numeric"
+                      min={1}
+                      max={1440}
+                      step={1}
+                      value={actualMinutesInput}
+                      onChange={(event) => { setActualMinutesInput(event.target.value); setSaveError(null); }}
+                      placeholder="Ex: 45"
+                      className="min-h-14 w-full max-w-48 rounded-none border-0 border-b-2 border-border-strong bg-transparent px-0 font-mono text-3xl tabular-nums text-fg outline-none placeholder:text-fg-mute focus:border-primary focus:ring-0"
+                    />
+                    {actualMinutesInput.trim() !== '' && parsedMinutes === null && (
+                      <p id={`${flowId}-time-error`} role="alert" className="font-sans text-xs text-outcome-stuck">
+                        Use um número inteiro entre 1 e 1440.
+                      </p>
+                    )}
+                  </div>
+                )}
+              </fieldset>
+            </GuidedFlow>
+            {saveError && <p role="alert" className="font-sans text-sm text-danger">{saveError}</p>}
+          </>
+        ) : item.outcome === 'PENDING' ? (
+          <Button variant="ghost" onClick={openEditor} className="w-full">How did it go?</Button>
         ) : item.outcome === 'SKIPPED' ? (
-          <div className="mt-3 flex items-center gap-2 text-outcome-skipped">
+          <div className="flex flex-wrap items-center gap-2 text-outcome-skipped">
             <OutcomeDot outcome="SKIPPED" size="sm" />
             <span className="text-sm font-semibold">Already known</span>
             <button
@@ -238,7 +266,7 @@ export function ItemFocus({ item }: ItemFocusProps) {
               onClick={async () => {
                 await applyOutcome('PENDING');
                 setOutcome(null);
-                setEditing(true);
+                openEditor();
               }}
               className="min-h-11 rounded-input px-2 text-xs underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
             >
@@ -246,14 +274,15 @@ export function ItemFocus({ item }: ItemFocusProps) {
             </button>
           </div>
         ) : (
-          <div className="mt-3 space-y-3">
+          <div className="space-y-3">
+            <Eyebrow>How did it go?</Eyebrow>
             <p className="font-sans text-sm text-fg">
               {item.outcome.replace('_', ' ')}
             </p>
             {item.reflection && (
               <p className="font-sans leading-relaxed text-fg-soft">&ldquo;{item.reflection}&rdquo;</p>
             )}
-            <Button variant="ghost" onClick={() => setEditing(true)}>
+            <Button variant="ghost" onClick={openEditor}>
               Edit
             </Button>
           </div>
@@ -261,7 +290,7 @@ export function ItemFocus({ item }: ItemFocusProps) {
       </section>
 
       {item.outcome === 'STUCK' && (
-        <aside className="rounded-card border border-danger/40 bg-danger-soft p-5 md:p-6">
+        <aside className="border-l-2 border-danger pl-5">
           <p className="font-mono text-[10px] uppercase tracking-eyebrow font-semibold text-outcome-stuck">
             Stuck — help requested
           </p>
