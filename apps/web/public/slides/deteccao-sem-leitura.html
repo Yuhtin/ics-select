@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Detecção sem leitura</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect" />
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --wa-green:      #25D366;
+    --wa-green-deep: #1DA851;
+    --wa-teal:       #128C7E;
+    --wa-teal-dark:  #075E54;
+    --wa-blue:       #34B7F1;
+    --wa-bubble-out: #DCF8C6;
+    --wa-bubble-in:  #FFFFFF;
+    --wa-chat-bg:    #ECE5DD;
+    --wa-notice:     #FDF4C5;
+    --wa-notice-ink: #7A6C3E;
+    --ink:           #111B21;
+    --ink-2:         #3B4A54;
+    --ink-3:         #667781;
+    --hairline:      #E9EDEF;
+    --canvas:        #FFFFFF;
+  }
+
+  html, body { background: var(--canvas); color: var(--ink); font-family: 'Inter', 'Helvetica Neue', sans-serif; overflow: hidden; height: 100vh; margin: 0; }
+  .display { letter-spacing: -0.032em; font-weight: 700; }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+  .slide { display: none; height: 100vh; width: 100vw; position: relative; }
+  .slide.active { display: flex; }
+
+  /* WhatsApp chat wallpaper: beige ground plus faint doodle grain */
+  .wallpaper {
+    background-color: var(--wa-chat-bg);
+    background-image:
+      radial-gradient(circle at 12% 22%, rgba(7,94,84,.05) 0 2px, transparent 2px),
+      radial-gradient(circle at 68% 8%,  rgba(7,94,84,.04) 0 3px, transparent 3px),
+      radial-gradient(circle at 88% 62%, rgba(7,94,84,.05) 0 2px, transparent 2px),
+      radial-gradient(circle at 32% 78%, rgba(7,94,84,.04) 0 3px, transparent 3px),
+      radial-gradient(circle at 52% 44%, rgba(7,94,84,.03) 0 2px, transparent 2px);
+    background-size: 220px 220px, 300px 300px, 260px 260px, 340px 340px, 180px 180px;
+  }
+
+  /* Chat bubbles with tails, WhatsApp radius */
+  .bubble { position: relative; border-radius: 7.5px; box-shadow: 0 1px 0.5px rgba(11,20,26,.13); }
+  .bubble-in  { background: var(--wa-bubble-in);  border-top-left-radius: 0; }
+  .bubble-out { background: var(--wa-bubble-out); border-top-right-radius: 0; }
+  .bubble-in::before {
+    content: ''; position: absolute; top: 0; left: -8px;
+    border-top: 0 solid transparent; border-right: 9px solid var(--wa-bubble-in);
+    border-bottom: 13px solid transparent;
+  }
+  .bubble-out::before {
+    content: ''; position: absolute; top: 0; right: -8px;
+    border-top: 0 solid transparent; border-left: 9px solid var(--wa-bubble-out);
+    border-bottom: 13px solid transparent;
+  }
+
+  /* Double check: the verification motif of this deck */
+  .checks { display: inline-flex; gap: 1px; align-items: center; vertical-align: middle; }
+  .checks svg { width: 17px; height: 17px; display: block; }
+  .checks.read svg   { color: var(--wa-blue); }
+  .checks.sent svg   { color: var(--ink-3); }
+
+  .notice-pill {
+    background: var(--wa-notice); color: var(--wa-notice-ink);
+    border-radius: 7.5px; padding: 8px 16px; font-size: 15px; line-height: 1.4;
+    box-shadow: 0 1px 0.5px rgba(11,20,26,.13);
+  }
+  .date-pill {
+    background: rgba(255,255,255,.92); color: var(--ink-3);
+    border-radius: 7.5px; padding: 6px 14px; font-size: 13px; font-weight: 500;
+    text-transform: uppercase; letter-spacing: .08em;
+    box-shadow: 0 1px 0.5px rgba(11,20,26,.13);
+  }
+
+  .topbar { background: var(--wa-teal-dark); color: #fff; }
+  .card { background: #fff; border: 1px solid var(--hairline); border-radius: 12px; }
+
+  @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes fadeIn  { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes popIn   { from { opacity: 0; transform: scale(.94) translateY(8px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+  .slide.active .anim      { animation: slideUp .55s cubic-bezier(.16,1,.3,1) backwards; }
+  .slide.active .anim-fade { animation: fadeIn .7s cubic-bezier(.16,1,.3,1) backwards; }
+  .slide.active .anim-pop  { animation: popIn .5s cubic-bezier(.16,1,.3,1) backwards; }
+  .slide.active .stagger > * { animation: popIn .45s cubic-bezier(.16,1,.3,1) backwards; }
+  .slide.active .stagger > *:nth-child(1) { animation-delay: .06s; }
+  .slide.active .stagger > *:nth-child(2) { animation-delay: .18s; }
+  .slide.active .stagger > *:nth-child(3) { animation-delay: .30s; }
+  .slide.active .stagger > *:nth-child(4) { animation-delay: .42s; }
+  .slide.active .stagger > *:nth-child(5) { animation-delay: .54s; }
+  .slide.active .stagger > *:nth-child(6) { animation-delay: .66s; }
+  .slide.active .stagger > *:nth-child(7) { animation-delay: .78s; }
+  .slide.active .stagger > *:nth-child(8) { animation-delay: .90s; }
+  .slide.active .delay-1 { animation-delay: .14s; }
+  .slide.active .delay-2 { animation-delay: .28s; }
+  .slide.active .delay-3 { animation-delay: .42s; }
+
+  .code { font-family: 'JetBrains Mono', monospace; font-size: 17px; line-height: 1.75; background: #0B141A; color: #E9EDEF; border-radius: 12px; padding: 26px 30px; }
+  .code .kw  { color: #7EE2A8; font-weight: 600; }
+  .code .str { color: #FDE68A; }
+  .code .num { color: #34B7F1; }
+  .code .com { color: #5C6B73; font-style: italic; }
+  .code .var { color: #8FD3FF; }
+
+  @media print {
+    @page { size: 1600px 900px; margin: 0; }
+    html, body { overflow: visible !important; height: auto !important; width: auto !important; background: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    #deck { overflow: visible !important; height: auto !important; width: auto !important; display: block !important; position: static !important; }
+    .slide { display: flex !important; width: 1600px !important; height: 900px !important; min-height: 900px !important; max-height: 900px !important; page-break-after: always !important; page-break-inside: avoid !important; break-after: page !important; break-inside: avoid !important; animation: none !important; position: relative !important; }
+    .slide:last-child { page-break-after: avoid !important; break-after: avoid !important; }
+    .slide *, .slide *::before, .slide *::after { animation: none !important; transition: none !important; }
+    body > div.fixed { display: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div id="deck" class="relative w-screen h-screen overflow-hidden"></div>
+
+<div class="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 mono text-[10px] uppercase tracking-[0.2em] text-neutral-400 pointer-events-none">
+  <span id="slide-num">01</span><span class="text-neutral-300">/</span><span id="slide-total">??</span>
+</div>
+
+<script>
+const SECTION = {
+  problema:  { n: '00', label: 'O problema',            accent: '#075E54' },
+  modelo:    { n: '01', label: 'O modelo',              accent: '#25D366' },
+  servidor:  { n: '02', label: 'Rodando no servidor',   accent: '#128C7E' },
+  virada:    { n: '03', label: 'A virada',              accent: '#25D366' },
+  sai:       { n: '04', label: 'O que sai do celular',  accent: '#128C7E' },
+  caminho:   { n: '05', label: 'O caminho do dado',     accent: '#075E54' },
+  chega:     { n: '06', label: 'E o modelo, como chega',accent: '#34B7F1' },
+  fica:      { n: '07', label: 'O que fica',            accent: '#25D366' },
+};
+
+const CHECK_SVG = '<svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 9.5 4.5 12.5 10.5 5.5"/><path d="M7 9.5 10 12.5 16 5.5"/></svg>';
+const checks = (read) => `<span class="checks ${read ? 'read' : 'sent'}">${CHECK_SVG}</span>`;
+
+const meta = (s, t) => `<span class="text-[13px] text-[#667781] ml-2 whitespace-nowrap">${t || '09:41'} ${checks(s)}</span>`;
+
+function topbar(sec, right) {
+  const g = SECTION[sec];
+  return `
+  <header class="absolute top-0 left-0 right-0 topbar px-14 py-4 flex items-center gap-4 z-30">
+    <div class="w-11 h-11 rounded-full bg-white/15 flex items-center justify-center text-[18px] font-bold">${g.n}</div>
+    <div class="leading-tight">
+      <div class="text-[19px] font-semibold">${g.label}</div>
+      <div class="text-[13px] text-white/60">detecção sem leitura</div>
+    </div>
+    <div class="ml-auto mono text-[11px] uppercase tracking-[0.22em] text-white/50">${right || 'ICS · 2026'}</div>
+  </header>`;
+}
+
+function foot(sec) {
+  const g = SECTION[sec];
+  return `<footer class="absolute bottom-0 left-0 right-0 px-14 py-4 flex justify-between items-center mono text-[10px] uppercase tracking-[0.24em] z-30" style="color:${g.accent}">
+    <span>WhatsApp Scam Alert</span><span class="text-[#667781]">Meta Engineering · 08.2026</span></footer>`;
+}
+
+/* ---------- renderers ---------- */
+
+function r_cover(s) {
+  return `
+  <section class="slide wallpaper w-full h-full overflow-hidden">
+    <div class="relative z-10 w-full max-w-[1360px] mx-auto px-16 flex flex-col justify-center gap-7 self-center">
+      <div class="flex justify-center anim-fade"><div class="notice-pill flex items-center gap-2">🔒 As mensagens são protegidas com criptografia de ponta a ponta. Ninguém fora desta conversa pode lê-las.</div></div>
+      <div class="flex justify-start anim delay-1">
+        <div class="bubble bubble-in max-w-[1000px] px-7 py-6">
+          <h1 class="display text-[76px] leading-[1.02] text-[#111B21]">Detecção sem leitura</h1>
+          <p class="text-[26px] text-[#3B4A54] mt-4 leading-snug">Como proteger seu avô de um golpe sem ler as mensagens do seu avô.</p>
+          <div class="text-right">${meta(true, '09:41')}</div>
+        </div>
+      </div>
+      <div class="flex justify-end anim delay-2">
+        <div class="bubble bubble-out max-w-[720px] px-6 py-4">
+          <p class="text-[21px] text-[#111B21] leading-snug">WhatsApp Scam Alert · Meta Engineering, agosto de 2026</p>
+          <div class="text-right">${meta(true, '09:41')}</div>
+        </div>
+      </div>
+    </div>
+  </section>`;
+}
+
+function r_divider(s) {
+  const g = SECTION[s.section];
+  return `
+  <section class="slide wallpaper w-full h-full overflow-hidden">
+    <div class="relative z-10 w-full max-w-[1300px] mx-auto px-16 flex flex-col items-center justify-center gap-8 self-center text-center">
+      <div class="date-pill anim-pop">${g.n} · ${g.label}</div>
+      <h2 class="display text-[92px] leading-[1.02] anim delay-1" style="color:${g.accent}">${s.title}</h2>
+      ${s.sub ? `<p class="text-[27px] text-[#3B4A54] max-w-[1000px] anim delay-2 leading-snug">${s.sub}</p>` : ''}
+    </div>
+  </section>`;
+}
+
+function r_hook(s, big) {
+  const g = SECTION[s.section];
+  return `
+  <section class="slide wallpaper w-full h-full overflow-hidden">
+    ${topbar(s.section)}
+    <div class="relative z-10 w-full max-w-[1320px] mx-auto px-16 flex flex-col gap-6 self-center justify-center pt-16">
+      ${s.eyebrow ? `<div class="mono text-[13px] uppercase tracking-[0.3em] anim" style="color:${g.accent}">${s.eyebrow}</div>` : ''}
+      <div class="flex justify-start anim delay-1">
+        <div class="bubble bubble-in max-w-[1180px] px-8 py-7">
+          <h2 class="display text-[${big ? 68 : 54}px] leading-[1.1] text-[#111B21]">${s.title}</h2>
+          ${s.sub ? `<p class="text-[25px] text-[#3B4A54] mt-4 leading-snug">${s.sub}</p>` : ''}
+          <div class="text-right">${meta(false)}</div>
+        </div>
+      </div>
+      ${s.tags ? `<div class="flex flex-wrap gap-2 anim delay-3">${s.tags.map(t => `<span class="mono text-[12px] px-3 py-1.5 rounded-full bg-white/80 border border-[#E9EDEF] text-[#3B4A54]">${t}</span>`).join('')}</div>` : ''}
+    </div>
+    ${foot(s.section)}
+  </section>`;
+}
+const r_hookBig = (s) => r_hook(s, true);
+
+function r_chat(s) {
+  const g = SECTION[s.section];
+  return `
+  <section class="slide wallpaper w-full h-full overflow-hidden">
+    ${topbar(s.section)}
+    <div class="relative z-10 w-full max-w-[1200px] mx-auto px-16 flex flex-col gap-3 self-center justify-center pt-16 stagger">
+      ${s.notice ? `<div class="flex justify-center mb-2"><div class="notice-pill">${s.notice}</div></div>` : ''}
+      ${s.msgs.map(m => `
+        <div class="flex ${m.out ? 'justify-end' : 'justify-start'}">
+          <div class="bubble ${m.out ? 'bubble-out' : 'bubble-in'} max-w-[860px] px-6 py-4">
+            <p class="text-[${m.big ? 34 : 24}px] leading-snug text-[#111B21] ${m.big ? 'display' : ''}">${m.t}</p>
+            ${m.note ? `<p class="text-[18px] text-[#667781] mt-2 leading-snug">${m.note}</p>` : ''}
+            <div class="text-right">${meta(m.read !== false)}</div>
+          </div>
+        </div>`).join('')}
+    </div>
+    ${foot(s.section)}
+  </section>`;
+}
+
+function r_list(s) {
+  const g = SECTION[s.section];
+  return `
+  <section class="slide bg-white w-full h-full overflow-hidden">
+    ${topbar(s.section)}
+    <div class="relative z-10 w-full max-w-[1340px] mx-auto px-16 flex flex-col gap-8 self-center justify-center pt-16">
+      <div>
+        <h2 class="display text-[50px] leading-tight anim">${s.title}</h2>
+        ${s.sub ? `<p class="text-[23px] text-[#667781] mt-2">${s.sub}</p>` : ''}
+      </div>
+      <div class="flex flex-col stagger">
+        ${s.items.map((it, i) => `
+          <div class="flex items-start gap-6 py-5 border-b border-[#E9EDEF]">
+            <div class="shrink-0 w-11 h-11 rounded-full flex items-center justify-center text-[16px] font-bold" style="background:${g.accent}1a;color:${g.accent}">${it.icon || (i + 1)}</div>
+            <div class="min-w-0">
+              <div class="text-[26px] font-semibold text-[#111B21] leading-snug">${it.kw}</div>
+              ${it.txt ? `<div class="text-[21px] text-[#3B4A54] mt-1 leading-snug">${it.txt}</div>` : ''}
+            </div>
+            ${it.ok ? `<div class="ml-auto shrink-0 pt-2">${checks(true)}</div>` : ''}
+          </div>`).join('')}
+      </div>
+    </div>
+    ${foot(s.section)}
+  </section>`;
+}
+
+function r_compare(s) {
+  const g = SECTION[s.section];
+  return `
+  <section class="slide bg-white w-full h-full overflow-hidden">
+    ${topbar(s.section)}
+    <div class="relative z-10 w-full max-w-[1400px] mx-auto px-16 flex flex-col gap-9 self-center justify-center pt-16">
+      <h2 class="display text-[50px] leading-tight anim">${s.title}</h2>
+      <div class="grid grid-cols-2 gap-8 stagger">
+        ${s.cards.map((c, i) => `
+          <div class="card p-9 flex flex-col gap-4" style="${i === 0 ? '' : `border-color:${g.accent}55;background:${g.accent}0a;`}">
+            <div class="mono text-[12px] uppercase tracking-[0.24em]" style="color:${i === 0 ? '#667781' : g.accent}">${c.sub}</div>
+            <div class="display text-[36px] leading-tight text-[#111B21]">${c.title}</div>
+            <ul class="flex flex-col gap-3 mt-1">
+              ${c.points.map(p => `<li class="text-[21px] text-[#3B4A54] leading-snug flex gap-3"><span style="color:${i === 0 ? '#B0BEC5' : g.accent}">•</span><span>${p}</span></li>`).join('')}
+            </ul>
+          </div>`).join('')}
+      </div>
+    </div>
+    ${foot(s.section)}
+  </section>`;
+}
+
+function r_compare3(s) {
+  const g = SECTION[s.section];
+  return `
+  <section class="slide bg-white w-full h-full overflow-hidden">
+    ${topbar(s.section)}
+    <div class="relative z-10 w-full max-w-[1440px] mx-auto px-16 flex flex-col gap-9 self-center justify-center pt-16">
+      <h2 class="display text-[50px] leading-tight anim">${s.title}</h2>
+      <div class="grid grid-cols-3 gap-6 stagger">
+        ${s.cards.map((c, i) => `
+          <div class="card p-8 flex flex-col gap-3" style="${c.hi ? `border-color:${g.accent};background:${g.accent}0d;` : ''}">
+            <div class="mono text-[11px] uppercase tracking-[0.22em]" style="color:${c.hi ? g.accent : '#667781'}">${c.tag}</div>
+            <div class="display text-[30px] leading-tight text-[#111B21]">${c.title}</div>
+            <div class="text-[19px] text-[#667781] leading-snug">${c.sub || ''}</div>
+            <ul class="flex flex-col gap-2 mt-2">
+              ${(c.points || []).map(p => `<li class="text-[19px] text-[#3B4A54] leading-snug flex gap-2"><span style="color:${c.hi ? g.accent : '#B0BEC5'}">•</span><span>${p}</span></li>`).join('')}
+            </ul>
+          </div>`).join('')}
+      </div>
+    </div>
+    ${foot(s.section)}
+  </section>`;
+}
+
+function r_code(s) {
+  const g = SECTION[s.section];
+  return `
+  <section class="slide bg-white w-full h-full overflow-hidden">
+    ${topbar(s.section)}
+    <div class="relative z-10 w-full max-w-[1400px] mx-auto px-16 flex flex-col gap-8 self-center justify-center pt-16">
+      <h2 class="display text-[46px] leading-tight anim">${s.title}</h2>
+      <div class="grid ${s.notes ? 'grid-cols-[1.5fr_1fr]' : 'grid-cols-1'} gap-8 items-start">
+        <pre class="code anim delay-1 overflow-hidden">${s.code}</pre>
+        ${s.notes ? `<div class="flex flex-col gap-5 stagger">
+          ${s.notes.map(n => `<div class="border-l-4 pl-5 py-1" style="border-color:${g.accent}">
+            <div class="text-[21px] font-semibold text-[#111B21] leading-snug">${n.kw}</div>
+            <div class="text-[19px] text-[#3B4A54] mt-1 leading-snug">${n.txt}</div></div>`).join('')}
+        </div>` : ''}
+      </div>
+    </div>
+    ${foot(s.section)}
+  </section>`;
+}
+
+function r_pipeline(s) {
+  const g = SECTION[s.section];
+  return `
+  <section class="slide bg-white w-full h-full overflow-hidden">
+    ${topbar(s.section)}
+    <div class="relative z-10 w-full max-w-[1460px] mx-auto px-14 flex flex-col gap-4 self-center justify-center pt-20 pb-14">
+      <div>
+        <h2 class="display text-[44px] leading-tight anim">${s.title}</h2>
+        ${s.sub ? `<p class="text-[21px] text-[#667781] mt-1">${s.sub}</p>` : ''}
+      </div>
+      <div class="flex flex-col stagger">
+        ${s.stages.map((st, i) => `
+          <div class="flex items-center gap-6 py-3 ${i < s.stages.length - 1 ? 'border-b border-[#E9EDEF]' : ''}">
+            <div class="shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-[15px] font-bold" style="background:${g.accent}1a;color:${g.accent}">${i + 1}</div>
+            <div class="shrink-0 w-[210px]">
+              <div class="text-[22px] font-semibold text-[#111B21] leading-tight">${st.name}</div>
+              <div class="mono text-[11px] uppercase tracking-[0.16em] text-[#667781] mt-0.5">${st.en}</div>
+            </div>
+            <div class="flex-1 min-w-0 text-[16.5px] text-[#3B4A54] leading-snug pr-4">${st.what}</div>
+            <div class="shrink-0 text-[#B0BEC5] text-[20px]">&rsaquo;</div>
+            <div class="shrink-0 w-[430px] mono text-[14px] leading-snug px-4 py-2.5 rounded-lg" style="background:#0B141A;color:#E9EDEF">${st.out}</div>
+          </div>`).join('')}
+      </div>
+      <div class="grid grid-cols-3 gap-5 mt-1 stagger">
+        ${s.notes.map(n => `
+          <div class="border-l-4 pl-4 py-1" style="border-color:${g.accent}">
+            <div class="text-[17.5px] font-semibold text-[#111B21] leading-snug">${n.kw}</div>
+            <div class="text-[15.5px] text-[#3B4A54] mt-1 leading-snug">${n.txt}</div>
+          </div>`).join('')}
+      </div>
+    </div>
+    ${foot(s.section)}
+  </section>`;
+}
+
+function r_diagram(s) {
+  return `
+  <section class="slide bg-white w-full h-full overflow-hidden">
+    ${topbar(s.section)}
+    <div class="relative z-10 w-full max-w-[1400px] mx-auto px-16 flex flex-col gap-6 self-center justify-center pt-16">
+      <h2 class="display text-[42px] leading-tight anim">${s.title}</h2>
+      <img src="${s.src}" alt="${s.title}" class="anim delay-1 w-full object-contain rounded-xl border border-[#E9EDEF]" style="max-height:60vh" />
+      ${s.credit ? `<div class="mono text-[12px] text-[#667781]">${s.credit}</div>` : ''}
+    </div>
+    ${foot(s.section)}
+  </section>`;
+}
+
+function r_diagramFull(s) {
+  return `
+  <section class="slide bg-white w-full h-full overflow-hidden">
+    <div class="relative z-10 w-full h-full px-10 py-8 flex flex-col gap-3 items-center justify-center">
+      <h2 class="display text-[30px] leading-tight anim">${s.title}</h2>
+      <img src="${s.src}" alt="${s.title}" class="anim delay-1 object-contain" style="max-height:78vh;max-width:100%" />
+      ${s.credit ? `<div class="mono text-[11px] text-[#667781]">${s.credit}</div>` : ''}
+    </div>
+  </section>`;
+}
+
+function r_closing(s) {
+  return `
+  <section class="slide wallpaper w-full h-full overflow-hidden">
+    <div class="relative z-10 w-full max-w-[1320px] mx-auto px-16 flex flex-col gap-5 self-center justify-center">
+      <div class="flex justify-center anim-fade"><div class="date-pill">Fim da aula</div></div>
+      <div class="flex justify-start anim delay-1">
+        <div class="bubble bubble-in max-w-[1120px] px-8 py-7">
+          <h2 class="display text-[56px] leading-[1.08] text-[#111B21]">${s.title}</h2>
+          <div class="text-right">${meta(true)}</div>
+        </div>
+      </div>
+      <div class="flex justify-end anim delay-2">
+        <div class="bubble bubble-out max-w-[900px] px-7 py-5">
+          <p class="text-[24px] text-[#111B21] leading-snug">${s.sub}</p>
+          <div class="text-right">${meta(true)}</div>
+        </div>
+      </div>
+      <div class="flex justify-center mt-3 anim delay-3"><div class="notice-pill">${s.notice}</div></div>
+    </div>
+  </section>`;
+}
+
+/* ---------- deck ---------- */
+
+const slides = [
+  { type: 'cover' },
+
+  // 00 O PROBLEMA
+  { type: 'divider', section: 'problema', title: 'O problema', sub: 'Três bilhões de pessoas, uma epidemia de golpe, e uma promessa de que ninguém lê nada.' },
+  { type: 'hookBig', section: 'problema', eyebrow: 'Bola pra sala', title: 'Você tem 3 bilhões de usuários e uma epidemia de golpe.<br/>Que métrica você olha pra detectar?', sub: 'Anota tudo no quadro antes de avançar.' },
+  { type: 'list', section: 'problema', title: 'O que a sala normalmente responde', sub: 'Todas boas. Todas usadas em produção.',
+    items: [
+      { kw: 'Volume de envio', txt: 'quantas mensagens a conta dispara por minuto, e pra quantos destinos distintos' },
+      { kw: 'Denúncias recebidas', txt: 'quantos usuários reportaram aquele número' },
+      { kw: 'Idade da conta', txt: 'conta criada há duas horas mandando pra 500 pessoas' },
+      { kw: 'Taxa de bloqueio', txt: 'proporção de quem bloqueia logo depois da primeira mensagem' },
+      { kw: 'Contatos não recíprocos', txt: 'manda pra muita gente, quase ninguém responde' },
+    ] },
+  { type: 'hookBig', section: 'problema', title: 'Reparem: nenhuma dessas olha o conteúdo.', sub: 'E o golpe é o conteúdo. Uma conta antiga, de baixo volume, mandando uma mensagem só, passa por todas elas.' },
+
+  // 01 O MODELO
+  { type: 'divider', section: 'modelo', title: 'O modelo', sub: 'A solução que a Meta encontrou: um classificador de texto.' },
+  { type: 'hook', section: 'modelo', eyebrow: 'Scam Alert', title: 'A Meta treinou um classificador de golpe.<br/>Treinado em quê?', tags: ['classificação', 'texto', 'probabilístico'] },
+  { type: 'list', section: 'modelo', title: 'Treino e escopo',
+    items: [
+      { kw: 'Treinado em denúncias', txt: 'padrões observados em conversas de golpe que usuários reportaram voluntariamente', ok: true },
+      { kw: 'Só mensagens de não contatos', txt: 'sua mãe pedindo dinheiro com urgência nunca é analisada. O escopo é o maior redutor de falso positivo do sistema', ok: true },
+      { kw: 'Classificação probabilística', txt: 'ele estima uma probabilidade, não prova intenção. Existe um limiar, e onde colocar o limiar é decisão de produto' },
+    ] },
+  { type: 'compare', section: 'modelo', title: 'Dois baldes de sinal',
+    cards: [
+      { sub: 'Balde 1', title: 'Sinais linguísticos', points: ['Urgência e pressão: "agora", "última chance", "não conta pra ninguém"', 'Pedido de ação sensível: mandar dinheiro, compartilhar código, clicar link, escanear QR', 'Enquadramento social: um favor, um problema, um risco, uma solução rápida'] },
+      { sub: 'Balde 2', title: 'Estrutura conversacional', points: ['Golpe tem ritmo: gancho rápido, empurrão pra agir, escalada', 'Olha como a troca progride, não uma linha isolada', 'O roteiro muda, o formato se repete'] },
+    ] },
+  { type: 'chat', section: 'modelo', notice: 'Nenhuma dessas mensagens, sozinha, é golpe.',
+    msgs: [
+      { t: 'Oi, tudo bem?', read: false },
+      { t: 'Preciso de um favor rápido, é meio urgente', read: false },
+      { t: 'Chegou um código no seu SMS. Me manda ele?', read: false },
+      { t: 'O arco é o golpe.', big: true, out: true },
+    ] },
+  { type: 'pipeline', section: 'modelo', title: 'Como uma rede neural de texto decide', sub: 'Ela não lê. Ela transforma palavra em número, e número em probabilidade. Cinco etapas.',
+    stages: [
+      { name: 'A janela', en: 'input', what: 'A entrada é o trecho recente da conversa, não uma mensagem sozinha.', out: '"me manda o código que chegou no seu SMS"' },
+      { name: 'Tokenização', en: 'tokenizer', what: 'Pedaços menores que a palavra, de um vocabulário fixo. Gíria e erro de digitação entram.', out: '["me","manda","o","códig","##o","que",...]<br/>&rarr; [1045, 8823, 210, 6612, 2093, 977, ...]' },
+      { name: 'Embedding', en: 'embedding', what: 'Cada id vira um vetor. Sentidos próximos ficam próximos nesse espaço.', out: '"código" &rarr; [0.12, -0.88, 0.34, ... ]<br/>384 números por token' },
+      { name: 'Encoder', en: 'attention', what: 'Cada token se ajusta aos vizinhos. "Código" perto de "manda" não é o mesmo que perto de "programação".', out: 'N vetores &rarr; 1 vetor de resumo' },
+      { name: 'Cabeça', en: 'classifier head', what: 'Uma última matriz de pesos espreme tudo entre 0 e 1.', out: 'p = 0.87   &rarr;   p &gt; LIMIAR   &rarr;   mostrar_aviso()' },
+    ],
+    notes: [
+      { kw: 'Os pesos são esses números', txt: 'Embedding, encoder e cabeça. É isso que a Meta entrega pra auditoria: números, não regras.' },
+      { kw: 'Treinar é ajustar os números', txt: 'Milhares de conversas corrigem os pesos até golpe cair alto. Ninguém programou "urgência é suspeito".' },
+      { kw: 'Ele não entende, reconhece', txt: 'Padrão estatístico, não compreensão. Por isso a saída é probabilidade, e por isso existe limiar.' },
+    ] },
+
+  // 02 NO SERVIDOR
+  { type: 'divider', section: 'servidor', title: 'Rodando no servidor', sub: 'Do jeito que qualquer um de nós construiria.' },
+  { type: 'hookBig', section: 'servidor', eyebrow: 'Bola pra sala', title: 'Esse modelo rodando no servidor da Meta.<br/>Achem os dois problemas.' },
+  { type: 'compare', section: 'servidor', title: 'Os dois problemas',
+    cards: [
+      { sub: 'Problema 1', title: 'Escalabilidade', points: ['Bilhões de mensagens por dia', 'Cada uma vira uma inferência de rede neural', 'Custo de GPU e latência que crescem junto com o uso', 'Você paga pra proteger, e paga mais quanto mais gente proteger'] },
+      { sub: 'Problema 2', title: 'Privacidade', points: ['A mensagem precisa chegar em claro no servidor', 'Isso quebra a promessa central do produto', 'Não é desconforto: é a razão de existir do WhatsApp indo embora', 'E cria um alvo: um lugar onde tudo passa legível'] },
+    ] },
+
+  // 03 A VIRADA
+  { type: 'divider', section: 'virada', title: 'A virada', sub: 'A resposta cabe em quatro palavras.' },
+  { type: 'hookBig', section: 'virada', title: 'Roda no celular.' },
+  { type: 'compare', section: 'virada', title: 'Como isso resolve os dois de uma vez',
+    cards: [
+      { sub: 'Escalabilidade', title: 'A computação já está paga', points: ['O aparelho é do usuário', 'Cada celular processa só as próprias mensagens', 'O custo escala sozinho: mais usuários trazem mais CPU junto', 'Zero GPU no servidor'] },
+      { sub: 'Privacidade', title: 'A mensagem nunca sai', points: ['O texto já está em claro no aparelho: é onde ele aparece na tela', 'Processar ali não viola E2E por definição', 'Nenhum conteúdo de mensagem sai do dispositivo para classificação', 'Não existe alvo central pra invadir ou intimar'] },
+    ] },
+  { type: 'hook', section: 'virada', title: 'Mas cabe?<br/>Quanto pesa um classificador de texto?', sub: 'Um transformer de servidor tem centenas de MB e precisa de GPU.' },
+  { type: 'list', section: 'virada', title: 'Como fazer caber no bolso', sub: 'Três técnicas, aplicadas em sequência.',
+    items: [
+      { icon: '1', kw: 'Destilação', txt: 'um modelo grande ensina um pequeno. DistilBERT mantém quase toda a acurácia com cerca de 40% menos parâmetros e latência' },
+      { icon: '2', kw: 'Quantização', txt: 'pesos deixam de ser float de 32 bits e viram INT8 ou INT4. Cerca de 4x menor, com perda de acurácia abaixo de 1%' },
+      { icon: '3', kw: 'Runtime on-device', txt: 'o ExecuTorch é o stack da Meta pra isso, já rodando em Instagram, Messenger e WhatsApp' },
+      { icon: '✓', kw: 'Resultado', txt: 'ordem de 22 a 44 MB. Cabe no orçamento de tamanho de um app e roda em milissegundos, sem rede', ok: true },
+    ] },
+
+  // 04 O QUE SAI
+  { type: 'divider', section: 'sai', title: 'O que sai do celular', sub: 'Porque alguma coisa precisa sair.' },
+  { type: 'hook', section: 'sai', title: 'Se roda tudo local,<br/>como a Meta sabe se está funcionando?', sub: 'Sem medição não dá pra saber se o limiar está certo, nem se a versão nova melhorou.' },
+  { type: 'list', section: 'sai', title: 'A telemetria mínima', sub: 'Duas contagens. Nada além disso.',
+    items: [
+      { kw: 'warning counts', txt: 'quantas vezes o modelo no dispositivo mostrou um aviso de golpe', ok: true },
+      { kw: 'user action counts', txt: 'quantas vezes o usuário confiou, bloqueou ou denunciou depois do aviso', ok: true },
+      { kw: 'Pra quê', txt: 'medir se a feature funciona e melhorar as versões seguintes do modelo' },
+      { kw: 'O que nunca sai', txt: 'conteúdo de mensagem, remetente, o que foi marcado. E nada é enviado automaticamente sem ação do usuário' },
+    ] },
+  { type: 'hook', section: 'sai', eyebrow: 'Fundamento', title: 'O que a criptografia ponta a ponta garante?<br/>E o que ela nunca prometeu?', tags: ['e2ee', 'endpoints', 'texto em claro'] },
+  { type: 'code', section: 'sai', title: 'E2E protege o meio, não as pontas',
+    code: `<span class="var">Alice</span>                 <span class="com">servidor</span>                 <span class="var">Bob</span>
+  <span class="str">"oi"</span>
+    │
+    ├─ cifra ──────►  <span class="com">[ blob ilegível ]</span>  ──────► decifra ─┤
+                                                        <span class="str">"oi"</span>
+                          <span class="com">▲</span>                              <span class="com">▲</span>
+                  <span class="com">nunca viu o conteúdo</span>            <span class="kw">VÊ o conteúdo</span>`,
+    notes: [
+      { kw: 'É sobre o meio', txt: 'o servidor carrega bytes cifrados. As duas pontas sempre veem o texto: é lá que a mensagem aparece na tela.' },
+      { kw: 'Logo, processar no celular não viola nada', txt: 'o texto já está lá.' },
+      { kw: 'E é por isso que a promessa fica frágil', txt: 'se o servidor pode mandar código pro seu celular, ele não precisa quebrar a criptografia. Ele pede pro seu aparelho contar. Guardem essa.' },
+    ] },
+
+  // 05 O CAMINHO DO DADO
+  { type: 'divider', section: 'caminho', title: 'O caminho do dado', sub: 'Um contador sai do seu celular. Acompanhe cada metro dele.' },
+  { type: 'hook', section: 'caminho', eyebrow: 'Anonimização', title: 'Você cifrou o número.<br/>Ele ainda chega com o seu IP carimbado.', sub: 'Dado anônimo que chega com remetente não é anônimo. Como esconder quem mandou?' },
+  { type: 'diagram', section: 'caminho', title: 'OHTTP: cada parte conhece só metade', src: '../diagrams/deteccao-sem-leitura/external/ohttp-relay.png', credit: 'Oblivious HTTP, RFC 9458' },
+  { type: 'list', section: 'caminho', title: 'Por que o relay não consegue ler', sub: 'Criptografia assimétrica, e um intermediário que é outra empresa.',
+    items: [
+      { kw: 'Cifra com a chave pública do destino', txt: 'só o servidor final tem a chave privada. O relay recebe bytes opacos e repassa os mesmos bytes' },
+      { kw: 'O relay troca o remetente', txt: 'ele remove o seu IP e coloca o dele. O destino vê o conteúdo, nunca você' },
+      { kw: 'Duas metades, dois donos', txt: 'relay vê IP e não conteúdo. Servidor vê conteúdo e não IP. O relay é a Cloudflare, não a Meta', ok: true },
+      { kw: 'Não é VPN', txt: 'na VPN você confia que o provedor não lê. Aqui ele não tem como ler, mesmo querendo' },
+    ] },
+  { type: 'hook', section: 'caminho', eyebrow: 'RA-TLS', title: 'O cadeado verde prova que é o servidor certo.<br/>Prova qual código roda lá dentro?', sub: 'Nenhum programa consegue provar coisas sobre si mesmo: o mentiroso e a testemunha são a mesma pessoa.' },
+  { type: 'compare', section: 'caminho', title: 'TLS por baixo, atestação por cima',
+    cards: [
+      { sub: 'TLS, o S do HTTPS', title: 'Prova quem é o servidor', points: ['Certificado assinado por uma autoridade certificadora', 'Garante: você está falando com o dono deste domínio', 'Não diz nada sobre qual código está rodando', 'Pra uso normal basta, porque você já confiava na empresa'] },
+      { sub: 'RA-TLS', title: 'Prova qual binário é o servidor', points: ['A CPU mede o que foi carregado e assina com chave de fábrica', 'A cadeia sobe até a AMD ou a Intel, não até a Meta', 'O relatório amarra a chave TLS daquela conexão específica', 'Sem isso, memória cifrada é uma caixa trancada cuja chave você deu pra um estranho'] },
+    ] },
+  { type: 'hook', section: 'caminho', eyebrow: 'TEE', title: 'Pra somar, alguém precisa ver as parcelas.<br/>Onde isso acontece?', sub: 'Esse instante intermediário é a única vulnerabilidade do desenho inteiro.' },
+  { type: 'compare', section: 'caminho', title: 'Dois TEEs, dois papéis', 
+    cards: [
+      { sub: 'TEE 1', title: 'Orquestrador TEE', points: ['Sem estado', 'Recebe as métricas cifradas', 'Valida se a configuração de privacidade está correta', 'Junta em lote e encaminha'] },
+      { sub: 'TEE 2', title: 'Agregador TEE', points: ['Soma os contadores em histogramas', 'Descarta a métrica individual depois de somar', 'Aplica limiar de k-anonimato', 'Adiciona ruído de privacidade diferencial'] },
+    ] },
+  { type: 'hook', section: 'caminho', eyebrow: 'CVM', title: 'Onde o dado fica em claro,<br/>e quem consegue olhar?', tags: ['cvm', 'dram cifrada', 'atestação'] },
+  { type: 'code', section: 'caminho', title: 'A fronteira é a borda do silício',
+    code: `        <span class="kw">┌─────────────┐</span>
+        <span class="kw">│     CPU     │</span>   <span class="com">1 chip lacrado de fábrica</span>
+        <span class="kw">│   a mesa    │</span>   <span class="str">DENTRO: dado em CLARO</span>
+        <span class="kw">└──────┬──────┘</span>
+               │  <span class="com">fios na placa-mãe</span>
+        <span class="var">┌──────┴──────┐</span>
+        <span class="var">│     RAM     │</span>   <span class="com">chips separados, do lado de fora</span>
+        <span class="var">│  o armário  │</span>   <span class="num">AQUI: CIFRADO por hardware</span>
+        <span class="var">└─────────────┘</span>`,
+    notes: [
+      { kw: 'A CPU não é o protegido, é o guarda', txt: 'o host roda na mesma CPU. Mas na troca de contexto ela salva o estado numa área cifrada e limpa os registradores sozinha, antes de devolver o núcleo.' },
+      { kw: 'Sem shell remoto', txt: 'nem engenheiros da Meta nem sistemas em rede acessam o shell da CVM em tempo de execução.' },
+      { kw: 'Controle não é visibilidade', txt: 'o host pode pausar, matar e negar CPU. Ele só não consegue olhar. TEE protege confidencialidade e integridade, não disponibilidade.' },
+    ] },
+  { type: 'list', section: 'caminho', title: 'Checkpoints: como salvar sem sair da caixa', sub: 'A agregação leva dias. A RAM morre num crash.',
+    items: [
+      { kw: 'É um save de videogame', txt: 'periodicamente o agregado parcial é gravado em disco, pra que uma queda não jogue a medição fora' },
+      { kw: 'Cifrado, e só a mesma versão abre', txt: 'a chave é liberada apenas pra um TEE rodando o mesmo binário atestado. Nem com acesso total à máquina se abre' },
+      { kw: 'Só tem soma parcial dentro', txt: 'não é que guardaram pouco por política. A métrica individual já tinha sido descartada: não existe mais nada pra salvar', ok: true },
+      { kw: 'Retenção limitada', txt: 'guardado apenas pelo período necessário pra recuperar, e apagado. Arquivo salvo é responsabilidade, não patrimônio' },
+    ] },
+  { type: 'hook', section: 'caminho', eyebrow: 'Agregação', title: 'Por que agregar?<br/>E por que estragar o número de propósito?', sub: 'O total verdadeiro é 40.132. O que sai é 40.087. Sempre diferente.' },
+  { type: 'code', section: 'caminho', title: 'A matemática: por que número exato entrega gente',
+    code: `<span class="com">// o ataque de subtração</span>
+segunda-feira:  <span class="num">40.000</span> alertas
+terça-feira:    <span class="num">40.001</span> alertas
+                <span class="com">───────</span>
+                     <span class="kw">+1</span>
+
+<span class="com">// se UMA pessoa entrou no grupo entre os dois dias,</span>
+<span class="com">// você acabou de descobrir o dado dela</span>
+<span class="com">// sem nunca ter lido nada dela</span>`,
+    notes: [
+      { kw: 'ε épsilon', txt: 'quanto de ruído. Mede o quanto o resultado pode mudar por causa de uma única pessoa. Pequeno significa mais privacidade e número menos preciso.' },
+      { kw: 'δ delta', txt: 'a chance de a garantia falhar mesmo assim. Posto em algo como 1 em 1 bilhão, menor que 1 dividido pelo número de usuários.' },
+      { kw: 'k anonimato', txt: 'o piso. Balde com contribuintes de menos não é publicado com ruído: é suprimido inteiro. Com 3 pessoas, nenhum ruído razoável esconde.' },
+    ] },
+  { type: 'compare', section: 'caminho', title: 'E a lógica de negócio: por que a Meta QUER pior precisão',
+    cards: [
+      { sub: 'O que ela abre mão', title: 'Precisão que não usaria', points: ['A pergunta real é "a feature funciona?"', '"cerca de 40 mil, cerca de 60% acatados" responde igual', 'Mais ou menos 200 não muda nenhuma decisão de produto'] },
+      { sub: 'O que ela ganha', title: 'Não poder ser obrigada', points: ['Não dá pra entregar o que você não tem: nem sob ordem judicial', 'Não dá pra vazar, nem pra um funcionário abusar', 'Agregado com ruído é estatística. Contagem por usuário é dado pessoal, com todo o peso regulatório junto', 'Dado que você guarda é responsabilidade, não patrimônio'] },
+    ] },
+  { type: 'diagramFull', section: 'caminho', title: 'Confidential Federated Analytics: o fluxo completo do dado', src: '../diagrams/deteccao-sem-leitura/analytics-pipeline.png' },
+
+  // 06 O MODELO CHEGA
+  { type: 'divider', section: 'chega', title: 'E o modelo, como chega?', sub: 'Metade do problema ainda está aberta.' },
+  { type: 'hookBig', section: 'chega', eyebrow: 'Bola pra sala', title: 'Roda no seu celular.<br/>Quem escolheu o que roda?' },
+  { type: 'chat', section: 'chega', notice: 'Vocês agora são um governo autoritário.',
+    msgs: [
+      { t: 'Queremos ler as mensagens de um jornalista.', out: true },
+      { t: 'O WhatsApp tem E2E forte. Nada quebrado.', out: true },
+      { t: 'Não quebra nada. Manda pro celular dele um modelo diferente.', big: true },
+      { t: 'A criptografia continua perfeita. O aparelho dele entrega o conteúdo sozinho, porque foi o que o código pediu.' },
+    ] },
+  { type: 'list', section: 'chega', title: 'Não direcionabilidade', sub: 'Ninguém pode entregar um modelo específico a um usuário específico, nem via experimentação.',
+    items: [
+      { icon: '1', kw: 'Ledger antes de servir', txt: 'toda versão, inclusive as experimentais, tem o SHA-256 publicado num log append-only de terceiro antes de chegar em alguém', ok: true },
+      { icon: '2', kw: 'Download anônimo', txt: 'credencial anônima e relay OHTTP que remove o IP. O payload não tem seletor de identidade', ok: true },
+      { icon: '3', kw: 'Sorteio no cliente', txt: 'o celular gera uma semente local e se auto atribui a um grupo. O servidor não influencia qual variante você recebe', ok: true },
+      { icon: '4', kw: 'Pesos auditados', txt: 'pesquisadores independentes recebem os pesos pelo Bug Bounty pra confirmar que o modelo serve só pra golpe', ok: true },
+    ] },
+  { type: 'hook', section: 'chega', eyebrow: 'Auditabilidade', title: 'Publicar um hash resolve o quê?<br/>A Meta continua sendo quem publica.', sub: 'O log não impede o modelo dirigido. Ele impede fazer isso em silêncio.' },
+  { type: 'compare', section: 'chega', title: 'Por que um log append-only basta',
+    cards: [
+      { sub: 'A propriedade', title: 'Não se apaga', points: ['Pra entregar um modelo pra uma pessoa só, a Meta teria que publicar o hash dele num log público operado por outro', 'Fica lá, pra sempre', 'Qualquer pesquisador pergunta: por que existe uma versão que quase ninguém baixou?', 'Você não confia na Meta. Confia na aritmética de um log que ela não controla'] },
+      { sub: 'Você já usa isso', title: 'Certificate Transparency', points: ['Desde 2013, toda autoridade certificadora publica cada certificado emitido', 'Abra crt.sh e busque o domínio da faculdade agora', 'Você nunca leu um log de CT na vida, e mesmo assim ele funciona', 'Transparência não exige que todos confiram. Exige que qualquer um possa'] },
+    ] },
+  { type: 'compare', section: 'chega', title: 'Binário e digest viajam por caminhos diferentes, de propósito',
+    cards: [
+      { sub: 'Caminho barato', title: 'O binário, pelo CDN', points: ['Vários MB de pesos e tokenizers', 'Entregue perto de você, replicado no mundo todo', 'Não precisa ser confiável: se um nó for comprometido e entregar bytes adulterados, o hash não bate e o celular descarta', 'É o mesmo padrão de baixar uma ISO de um espelho e conferir o checksum no site oficial'] },
+      { sub: 'Caminho verificado', title: 'O digest, pelo endpoint', points: ['Poucos KB: manifesto JSON com hashes, versão e timestamp', 'Assinado em Ed25519 com chaves da Cloudflare, não da Meta', 'A chave pública vem hardcoded no binário do app, nunca é buscada na rede', 'Vai pelo relay OHTTP, sem revelar quem pediu'] },
+    ] },
+  { type: 'diagramFull', section: 'chega', title: 'Ledger Verification e Model Download: o fluxo completo do modelo', src: '../diagrams/deteccao-sem-leitura/model-download-flow.png' },
+
+  // 07 O QUE FICA
+  { type: 'divider', section: 'fica', title: 'O que fica', sub: 'Cinco coisas que valem fora do WhatsApp.' },
+  { type: 'list', section: 'fica', title: 'Os cinco aprendizados',
+    items: [
+      { icon: '1', kw: 'E2E protege o meio, não a ponta', txt: 'quando ouvir "é criptografado ponta a ponta", pergunte: e o código que roda na ponta, quem manda nele?' },
+      { icon: '2', kw: 'Todo sistema de rollout é entrega dirigida de código', txt: 'feature flag, remote config, teste A/B. Você constrói um por ano. Agora enxerga o outro uso' },
+      { icon: '3', kw: 'Verificabilidade vale mais que promessa', txt: 'a pergunta de projeto: se eu quebrasse minha própria regra, alguém de fora descobriria?' },
+      { icon: '4', kw: 'Log append-only é primitiva, não assunto de fintech', txt: 'serve pra saldo, certificado, hash de modelo e trilha de auditoria. Sempre a mesma propriedade' },
+      { icon: '5', kw: 'Agregado não é anônimo', txt: 'k-anonimato e limiar de coorte são uma linha de código no seu dashboard, e a diferença entre relatório e vazamento' },
+    ] },
+  { type: 'compare3', section: 'fica', title: 'As perguntas que você leva pro próximo sistema que construir',
+    cards: [
+      { tag: 'Alcance', title: 'Meu sistema consegue entregar código diferente pra UM usuário?', sub: 'Se sim, você tem um canal de ataque dirigido, independente de intenção.' },
+      { tag: 'Rastro', title: 'Se alguém fizesse isso, dava pra descobrir depois?', sub: 'Se a resposta é "só com acesso ao banco interno", não dá.', hi: true },
+      { tag: 'Sorteio', title: 'Quem atribui o grupo do seu teste A/B?', sub: 'Se é o servidor, o servidor pode escolher a dedo. Semente local custa quase nada.' },
+    ] },
+  { type: 'closing', title: 'Privacidade não é onde o dado está.<br/>É quem escolhe o código que toca nele.', sub: '"Roda no seu celular" não é garantia nenhuma se foi o servidor que escolheu o que roda.', notice: '🔒 O problema, o modelo, os dois gargalos, a virada, a telemetria, o enclave, o ledger.' },
+];
+
+const RENDERERS = { cover: r_cover, divider: r_divider, hook: r_hook, hookBig: r_hookBig, chat: r_chat, list: r_list, compare: r_compare, compare3: r_compare3, code: r_code, pipeline: r_pipeline, diagram: r_diagram, diagramFull: r_diagramFull, closing: r_closing };
+
+const deck = document.getElementById('deck');
+deck.innerHTML = slides.map(s => RENDERERS[s.type](s)).join('');
+
+let current = 0;
+const allSlides = deck.querySelectorAll('.slide');
+document.getElementById('slide-total').textContent = String(allSlides.length).padStart(2, '0');
+
+function show(idx) {
+  current = Math.max(0, Math.min(allSlides.length - 1, idx));
+  allSlides.forEach((s, i) => s.classList.toggle('active', i === current));
+  document.getElementById('slide-num').textContent = String(current + 1).padStart(2, '0');
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown' || e.key === 'j') { e.preventDefault(); show(current + 1); }
+  else if (e.key === 'ArrowLeft' || e.key === 'PageUp' || e.key === 'k') { e.preventDefault(); show(current - 1); }
+  else if (e.key === 'Home') { show(0); }
+  else if (e.key === 'End') { show(allSlides.length - 1); }
+});
+
+document.addEventListener('click', (e) => { if (e.target.closest('a, button, code')) return; show(current + 1); });
+
+const wantsPrint = new URLSearchParams(window.location.search).get('print') === '1';
+if (wantsPrint) {
+  allSlides.forEach(s => s.classList.add('active'));
+  window.addEventListener('load', () => setTimeout(() => window.print(), 1000));
+} else { show(0); }
+</script>
+</body>
+</html>
