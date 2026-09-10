@@ -199,6 +199,59 @@ test.describe('settings tabs', () => {
       await expect(page.getByText('Formato inválido.', { exact: false })).toBeVisible();
     });
 
+    test(`invalid timezone keeps distinct keyboard focus and its autosave contract in ${theme}`, async ({ page }) => {
+      await page.setViewportSize({ width: 390, height: 844 });
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      await page.addInitScript((value) => localStorage.setItem('ics-theme', value), theme);
+      const patches: unknown[] = [];
+      await page.route(`${API_BASE}/me/availability`, (route) => {
+        if (route.request().method() === 'PATCH') patches.push(route.request().postDataJSON());
+        return route.fulfill({ json: MOCK_AVAILABILITY });
+      });
+      await page.goto('/me/settings/availability');
+      const timezone = page.getByRole('textbox', { name: 'Timezone' });
+      await timezone.fill(' ');
+      // Blur flushes the existing driver, which must reject an invalid timezone.
+      await page.getByRole('heading', { name: 'Your preferences.' }).click();
+      await expect(timezone).toHaveAttribute('aria-invalid', 'true');
+      const unfocused = await timezone.evaluate((element) => {
+        const style = getComputedStyle(element);
+        const box = element.getBoundingClientRect();
+        return { shadow: style.boxShadow, border: style.borderBottomColor, width: box.width, height: box.height };
+      });
+      await timezone.focus();
+      await page.keyboard.press('Shift+Tab');
+      await page.keyboard.press('Tab');
+      await expect(timezone).toBeFocused();
+      await expect.soft(timezone).not.toHaveCSS('box-shadow', unfocused.shadow);
+      await expect.soft(timezone).toHaveCSS('box-shadow', /0px -2px 0px 0px inset/);
+      await expect(timezone).toHaveCSS('border-bottom-color', unfocused.border);
+      await expect(timezone).toHaveAttribute('aria-invalid', 'true');
+      for (const side of ['top', 'left', 'right']) await expect(timezone).toHaveCSS(`border-${side}-width`, '0px');
+      await expect(timezone).toHaveCSS('border-bottom-width', '2px');
+      await expect(timezone).toHaveCSS('border-radius', '0px');
+      await expect(timezone).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+      const focused = await timezone.boundingBox();
+      expect(focused!.width).toBe(unfocused.width);
+      expect(focused!.height).toBe(unfocused.height);
+      expect(focused!.height).toBeGreaterThanOrEqual(44);
+      expect(patches).toEqual([]);
+      await timezone.fill('Europe/Lisbon');
+      await expect(timezone).not.toHaveAttribute('aria-invalid', 'true');
+      // Keep focus: persistence must still occur through the existing debounce.
+      await expect.poll(() => patches.length).toBeGreaterThan(0);
+      // The existing development updater may be replayed by Strict Mode;
+      // every actual write must retain the same complete availability payload.
+      for (const patch of patches) expect(patch).toEqual({
+        mondayMinutes: null, tuesdayMinutes: null, wednesdayMinutes: null, thursdayMinutes: null,
+        fridayMinutes: null, saturdayMinutes: null, sundayMinutes: null,
+        preferredSessionMinutes: 60, timezone: 'Europe/Lisbon', calendarBusy: true,
+        slots: [{ dayOfWeek: 0, startMinute: 1140, endMinute: 1320 }], clearDays: [0, 1, 2, 3, 4, 5, 6],
+      });
+      await expect(timezone).toBeFocused();
+      await expect(page.getByRole('status')).toContainText('Saved');
+    });
+
     test(`settings fields preserve validation, autosave and retry feedback in ${theme}`, async ({ page }) => {
       await page.emulateMedia({ reducedMotion: 'reduce' });
       await page.addInitScript((value) => localStorage.setItem('ics-theme', value), theme);
@@ -217,11 +270,20 @@ test.describe('settings tabs', () => {
       const phone = page.getByRole('textbox', { name: 'WhatsApp phone' });
       await phone.fill('+55');
       await expect(phone).toHaveAttribute('aria-invalid', 'true');
-      await expect(page.getByText('Formato inválido.', { exact: false })).toBeVisible();
+      const phoneError = page.getByText('Formato inválido.', { exact: false });
+      await expect(phoneError).toBeVisible();
+      await expect.soft(phone).toHaveAccessibleDescription('Formato inválido. Inclua o código do país (ex: +5511999999999).');
+      const errorId = await phoneError.getAttribute('id');
+      expect.soft(errorId).toBeTruthy();
+      if (errorId) await expect(phone).toHaveAttribute('aria-describedby', errorId);
+      await expect.soft(phoneError).toHaveAttribute('role', 'alert');
       await page.getByRole('heading', { name: 'Your preferences.' }).click();
       expect(patches).toEqual([]);
       await phone.fill('+5511987654321');
       await expect(phone).toHaveValue('+55 (11) 98765-4321');
+      await expect(phone).not.toHaveAttribute('aria-invalid', 'true');
+      await expect(phone).not.toHaveAttribute('aria-describedby');
+      await expect(phoneError).toHaveCount(0);
       await expect(phone).toBeFocused();
       const focusColor = await phone.evaluate((element) => getComputedStyle(element).borderBottomColor);
       await expect(page.getByRole('status')).toContainText('Saving');

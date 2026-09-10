@@ -221,7 +221,7 @@ export function AvailabilityGrid({ initial }: Props) {
           onChange={(e) => timezoneField.onChange(e.target.value)}
           onBlur={timezoneField.onBlur}
           placeholder="America/Sao_Paulo"
-          className="mt-2 min-h-12 w-full max-w-xs rounded-none border-0 border-b-2 border-border-strong bg-transparent px-0 py-2 font-sans text-base text-fg outline-none placeholder:text-fg-mute focus:border-primary focus:ring-0 aria-[invalid=true]:border-danger"
+          className="mt-2 min-h-12 w-full max-w-xs rounded-none border-0 border-b-2 border-border-strong bg-transparent px-0 py-2 font-sans text-base text-fg outline-none placeholder:text-fg-mute focus:border-primary focus:ring-0 aria-[invalid=true]:border-danger aria-[invalid=true]:focus-visible:shadow-[inset_0_-2px_0_0_hsl(var(--danger))]"
         />
       </div>
     </div>

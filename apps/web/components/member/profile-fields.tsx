@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useId, useMemo } from 'react';
 import { TRACKS } from '@ics-select/shared';
 import { useUpdateProfile } from '../../lib/queries/me-settings';
 import { useAutoSaveField } from '../../lib/forms/use-auto-save-field';
@@ -17,6 +17,7 @@ const PHONE_REGEX = /^\+\d{8,15}$/;
 
 export function ProfileFields({ initialPhone, initialTrack }: ProfileFieldsProps) {
   const update = useUpdateProfile();
+  const phoneErrorId = useId();
 
   const phoneField = useAutoSaveField<string>({
     initial: initialPhone ?? '',
@@ -53,10 +54,11 @@ export function ProfileFields({ initialPhone, initialTrack }: ProfileFieldsProps
             onChange={phoneField.onChange}
             onBlur={phoneField.onBlur}
             invalid={phoneInvalidDisplay}
+            aria-describedby={phoneInvalidDisplay ? phoneErrorId : undefined}
           />
         </div>
         {phoneInvalidDisplay && (
-          <p className="mt-2 font-sans text-xs leading-relaxed text-danger">
+          <p id={phoneErrorId} role="alert" className="mt-2 font-sans text-xs leading-relaxed text-danger">
             Formato inválido. Inclua o código do país (ex: +5511999999999).
           </p>
         )}
