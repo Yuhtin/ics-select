@@ -3,6 +3,7 @@ import { clsx } from 'clsx';
 import type { ItemOutcome } from '@ics-select/shared';
 import { detectPlatform, platformLabel } from '../../../lib/format/platform';
 import { formatTimeLocal, formatMinutes } from '../../../lib/format/time';
+import { computeDayFreeMinutes } from '../../../lib/scheduling/day-free';
 
 export type DayCardItem = {
   itemId: string;
@@ -60,30 +61,18 @@ export function WeekDayCard(props: WeekDayCardProps) {
   // All declared slots are already in the past in the member's timezone —
   // scheduler can't use this day anymore. Treat similarly to noSlots.
   const allPast = !isOff && !noSlots && futureSlots.length === 0;
-  const scheduledMinutes = props.items.reduce((sum, i) => sum + i.durationMinutes, 0);
-  // How many minutes does Calendar busy consume *inside* the future slots?
-  // Anything outside the slots doesn't reduce free capacity (the member never
-  // claimed it as study time). busyBlocks are already adjusted (own ICS events
-  // subtracted) so they represent only external conflicts.
-  const busyInSlots = (props.busyBlocks ?? []).reduce((sum, b) => {
-    for (const s of futureSlots) {
-      const overlap = Math.max(
-        0,
-        Math.min(b.endMinute, s.endMinute) - Math.max(b.startMinute, s.startMinute),
-      );
-      sum += overlap;
-    }
-    return sum;
-  }, 0);
-  // The scheduler inserts a 10-min buffer between consecutive items in the same
-  // slot. Account for this so "free" reflects what truly fits next, not the raw
-  // remaining minutes minus items.
-  const BUFFER_MINUTES = 10;
-  const bufferCost = props.items.length > 0 ? BUFFER_MINUTES : 0;
+  // busyBlocks are already adjusted (own ICS events subtracted) so they
+  // represent only external conflicts.
   const free =
     isOff || noSlots || allPast
       ? 0
-      : Math.max(0, (props.capMinutes ?? 0) - scheduledMinutes - busyInSlots - bufferCost);
+      : computeDayFreeMinutes({
+          capMinutes: props.capMinutes ?? 0,
+          futureSlots,
+          busyBlocks: props.busyBlocks ?? [],
+          scheduledMinutes: props.items.reduce((sum, i) => sum + i.durationMinutes, 0),
+          itemCount: props.items.length,
+        });
 
   return (
     <div
