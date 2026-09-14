@@ -3,7 +3,6 @@ import { useMemo } from 'react';
 import { SectionLabel } from '../../ui/section-label';
 import {
   WeekDayCard,
-  type DayCardBusyBlock,
   type DayCardItem,
   type DayCardSlot,
 } from './week-day-card';
@@ -12,6 +11,7 @@ import type {
   PreviewBusyBlock,
   SchedulingPlacement,
 } from '../../../lib/queries/admin-plan-preview';
+import { bucketBusyByLocalDay, localToUtcMs } from '../../../lib/scheduling/busy-by-day';
 
 export type WeekAvailability = {
   timezone: string;
@@ -42,44 +42,6 @@ function dayIdxOf(iso: string, weekStartIso: string): number {
   const start = new Date(weekStartIso);
   const diff = Math.floor((date.getTime() - start.getTime()) / (24 * 60 * 60 * 1000));
   return Math.max(0, Math.min(6, diff));
-}
-
-/**
- * Compute the UTC milliseconds for a (year, month, day, hour, minute) tuple
- * interpreted in `tz`. Mirrors the backend `localMinuteToUtc` so frontend
- * past-slot detection matches what the scheduler considered past.
- */
-function localToUtcMs(
-  year: number,
-  month: number,
-  day: number,
-  hour: number,
-  minute: number,
-  tz: string,
-): number {
-  const naiveUtc = Date.UTC(year, month - 1, day, hour, minute);
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone: tz,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hourCycle: 'h23',
-  }).formatToParts(new Date(naiveUtc));
-  const map: Record<string, string> = {};
-  for (const p of parts) if (p.type !== 'literal') map[p.type] = p.value;
-  const asUtcMs = Date.UTC(
-    Number(map.year),
-    Number(map.month) - 1,
-    Number(map.day),
-    Number(map.hour),
-    Number(map.minute),
-    Number(map.second),
-  );
-  const offsetMin = Math.round((asUtcMs - naiveUtc) / 60_000);
-  return naiveUtc - offsetMin * 60_000;
 }
 
 export function WeekPreview(props: WeekPreviewProps) {
@@ -117,41 +79,12 @@ export function WeekPreview(props: WeekPreviewProps) {
 
   const totalMinutes = props.placements.reduce((sum, p) => sum + p.durationMinutes, 0);
 
-  const busyByWeekday = useMemo(() => {
-    const buckets: DayCardBusyBlock[][] = [[], [], [], [], [], [], []];
-    const start = new Date(props.weekStart);
-    for (const b of props.busyBlocks ?? []) {
-      const bStart = new Date(b.start);
-      const bEnd = new Date(b.end);
-      const dayDiff = Math.floor(
-        (bStart.getTime() - start.getTime()) / (24 * 60 * 60 * 1000),
-      );
-      if (dayDiff < 0 || dayDiff > 6) continue;
-      // Render in BRT-local minutes since the day card slots are local minutes.
-      const localMinutes = (d: Date) => {
-        const parts = new Intl.DateTimeFormat('en-GB', {
-          timeZone: props.availability.timezone,
-          hour: '2-digit',
-          minute: '2-digit',
-          hourCycle: 'h23',
-        })
-          .formatToParts(d)
-          .reduce<Record<string, string>>((acc, p) => {
-            if (p.type !== 'literal') acc[p.type] = p.value;
-            return acc;
-          }, {});
-        return Number(parts.hour) * 60 + Number(parts.minute);
-      };
-      buckets[dayDiff]!.push({
-        startMinute: localMinutes(bStart),
-        endMinute: localMinutes(bEnd),
-      });
-    }
-    for (const bucket of buckets) {
-      bucket.sort((a, b) => a.startMinute - b.startMinute);
-    }
-    return buckets;
-  }, [props.busyBlocks, props.weekStart, props.availability.timezone]);
+  // Render in member-local minutes since the day card slots are local minutes.
+  const busyByWeekday = useMemo(
+    () =>
+      bucketBusyByLocalDay(props.busyBlocks ?? [], props.weekStart, props.availability.timezone),
+    [props.busyBlocks, props.weekStart, props.availability.timezone],
+  );
 
   return (
     <section>
