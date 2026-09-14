@@ -87,6 +87,65 @@ describe('phase1 ordered placement', () => {
     expect(sol.unplaced[0]!.itemId).toBe('b');
   });
 
+  describe('day cap smaller than the preferred session', () => {
+    // Mon–Fri 08:00–22:00, 30-min cap every day. A member who declares "30
+    // minutes a day" with the default 60-min session used to get every item
+    // longer than 30 min rejected outright.
+    const wideWeek = [0, 1, 2, 3, 4].map((d) => iv(d, 480, 1320));
+    const caps30: (number | null)[] = [30, 30, 30, 30, 30, null, null];
+
+    it('splits chunks into cap-sized sessions across days instead of overflowing', () => {
+      const sol = phase1([ch('a', 60, 1), ch('b', 45, 2)], wideWeek, caps30, pref);
+      expect(sol.unplaced).toHaveLength(0);
+      const minutesOf = (id: string) =>
+        sol.placements.filter((p) => p.chunk.itemId === id).map((p) => p.chunk.minutes);
+      expect(minutesOf('a')).toEqual([30, 30]);
+      expect(minutesOf('b')).toEqual([30, 15]);
+      const days = sol.placements.map((p) => wideWeek[p.intervalIdx]!.dayIdx);
+      expect(days).toEqual([0, 1, 2, 3]);
+    });
+
+    it('keeps the item order across the split sessions', () => {
+      const sol = phase1([ch('a', 60, 1), ch('b', 45, 2)], wideWeek, caps30, pref);
+      expect(sol.unplaced).toHaveLength(0);
+      const startMOW = (p: (typeof sol.placements)[number]) => {
+        const itv = wideWeek[p.intervalIdx]!;
+        return itv.dayIdx * 1440 + itv.startMinute + p.offsetInInterval;
+      };
+      const starts = sol.placements.map(startMOW);
+      expect([...starts].sort((x, y) => x - y)).toEqual(starts);
+      const lastA = Math.max(...sol.placements.filter((p) => p.chunk.itemId === 'a').map(startMOW));
+      const firstB = Math.min(...sol.placements.filter((p) => p.chunk.itemId === 'b').map(startMOW));
+      expect(lastA).toBeLessThan(firstB);
+    });
+
+    it('does not fill leftover cap room with a sliver smaller than the session', () => {
+      // 'a' takes 15 of Monday's 30. The 60-min 'b' must not drop a 15-min
+      // piece into the remaining room; it starts on Tuesday as a full 30.
+      const sol = phase1([ch('a', 15, 1), ch('b', 60, 2)], wideWeek, caps30, pref);
+      expect(sol.unplaced).toHaveLength(0);
+      const onMonday = sol.placements.filter((p) => wideWeek[p.intervalIdx]!.dayIdx === 0);
+      expect(onMonday.map((p) => p.chunk.itemId)).toEqual(['a']);
+      const b = sol.placements.filter((p) => p.chunk.itemId === 'b');
+      expect(b.map((p) => p.chunk.minutes)).toEqual([30, 30]);
+      expect(b.map((p) => wideWeek[p.intervalIdx]!.dayIdx)).toEqual([1, 2]);
+    });
+
+    it('rounds the session down to a 15-min multiple for odd caps', () => {
+      const caps50: (number | null)[] = [50, 50, null, null, null, null, null];
+      const sol = phase1([ch('a', 60, 1)], wideWeek, caps50, pref);
+      expect(sol.unplaced).toHaveLength(0);
+      expect(sol.placements.map((p) => p.chunk.minutes)).toEqual([45, 15]);
+      expect(sol.placements.map((p) => wideWeek[p.intervalIdx]!.dayIdx)).toEqual([0, 1]);
+    });
+
+    it('also splits in relaxed order mode', () => {
+      const sol = phase1([ch('a', 60, 1), ch('b', 45, 2)], wideWeek, caps30, pref, true);
+      expect(sol.unplaced).toHaveLength(0);
+      for (const p of sol.placements) expect(p.chunk.minutes).toBeLessThanOrEqual(30);
+    });
+  });
+
   it('hard order: a later-order short chunk never lands before an earlier-order long chunk', () => {
     // The Cauan regression: under the old size-desc heuristic, the small chunk
     // would be tucked into a leftover gap on an earlier day, jumping ahead of
