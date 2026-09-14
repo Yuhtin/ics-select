@@ -101,6 +101,31 @@ describe('SchedulerService.plan — canonical cases', () => {
     expect(result.overflow[0]!.itemId).toBe('b');
   });
 
+  it('3b. cap below the preferred session splits items into cap-sized sessions', () => {
+    // Real case: 30-min cap Mon–Fri with the default 60-min session. Three
+    // videos (15 + 60 + 45 allocated) must land as 15 · 30 · 30 · 30 · 15.
+    const result = svc.plan(
+      input({
+        availability: {
+          slots: allSlots0822(),
+          caps: [30, 30, 30, 30, 30, null, null],
+          preferredSessionMinutes: 60,
+          timezone: 'America/Sao_Paulo',
+        },
+        items: [
+          { id: 'ml', estimatedMinutes: 15, order: 1 },
+          { id: 'lr', estimatedMinutes: 60, order: 2 },
+          { id: 'dt', estimatedMinutes: 45, order: 3 },
+        ],
+      }),
+    );
+    expect(result.overflow).toHaveLength(0);
+    expect(result.sessions.map((s) => s.durationMinutes)).toEqual([15, 30, 30, 30, 15]);
+    const dayOf = (d: Date) =>
+      new Date(d.toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' })).getDay();
+    expect(result.sessions.map((s) => dayOf(s.scheduledAt))).toEqual([1, 2, 3, 4, 5]);
+  });
+
   it('4. busy block carves a slot and sessions avoid the busy range', () => {
     const busyStart = new Date('2026-04-13T20:00:00-03:00'); // 23:00 UTC
     const busyEnd = new Date('2026-04-13T20:30:00-03:00');   // 23:30 UTC
