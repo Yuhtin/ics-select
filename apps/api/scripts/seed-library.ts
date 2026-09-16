@@ -84,6 +84,9 @@ const TOPICS: TopicSeed[] = [
   { slug: 'deploy', label: 'Deploy', order: 26 },
   { slug: 'observability', label: 'Observability', order: 27 },
   { slug: 'design-patterns', label: 'Design Patterns', order: 28 },
+  // Engenharia aplicada de LLM (RAG, vector DB, agentes, MCP). Criado 2026-09-16
+  // a partir do pedido do Eduardo Hirohito; fica em Eng. Fundamentals (<30).
+  { slug: 'ai-engineering', label: 'AI Engineering', order: 29 },
 
   // System Design — Building Blocks (order 30–36)
   { slug: 'load-balancers', label: 'Load Balancers', order: 30 },
@@ -6903,6 +6906,199 @@ const ITEMS: ItemSeed[] = [
     source: 'Book — Building Secure and Reliable Systems',
     tags: ['concept', 'book', 'bsrs', 'incident-recovery', 'credential-rotation', 'post-mortem', 'google'],
     topicOrder: { 'security': 37 },
+  },
+  // ---------------------------------------------------------------------------
+  // ai-engineering — trilha "banco de dados pronto pra agente" (2026-09-16).
+  // Montada a partir do pedido do Eduardo Hirohito: RAG, vetorização com
+  // pgvector, agente conversacional lendo o banco, e depois um harness em que
+  // o agente executa ações via endpoints. Orders 1-13 na sequência: o que é
+  // vetor/RAG/agente/MCP → mapa completo → cases de data agent e text-to-SQL
+  // → arquitetura de RAG → como desenhar agentes → riscos de agente com ação.
+  // Todos os canais são whitelisted (Fireship, Takeda, ByteByteGo, ByteMonk);
+  // artigos são blogs de engenharia (Uber, Pinterest, Anthropic) e o README
+  // do pgvector.
+  // ---------------------------------------------------------------------------
+  {
+    title: 'Vector databases are so hot right now. WTF are they?',
+    url: 'https://www.youtube.com/watch?v=klTvEwg3oJ4',
+    description:
+      'Fireship — o que é um vetor de embedding, por que texto/imagem viram lista de números, e o que um banco vetorial faz de diferente de um índice normal. 4min.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 4,
+    topicSlugs: ['ai-engineering', 'databases'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Fireship',
+    tags: ['concept', 'vector-database', 'embeddings', 'similarity-search', 'fireship'],
+    topicOrder: { 'ai-engineering': 1, 'databases': 26 },
+  },
+  {
+    title: 'RAG: A Técnica Por Trás do Cursor',
+    url: 'https://www.youtube.com/watch?v=nRyf1iQU4mk',
+    description:
+      'Arthur Takeda — RAG explicado pelo caso do Cursor: por que o modelo não pode ler tudo, como o código vira embedding, como a busca traz só o trecho relevante pro prompt. 6min.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 6,
+    topicSlugs: ['ai-engineering'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Arthur Takeda',
+    tags: ['concept', 'rag', 'embeddings', 'retrieval', 'cursor', 'arthur-takeda'],
+    topicOrder: { 'ai-engineering': 2 },
+  },
+  {
+    title: 'What Are AI Agents Really About?',
+    url: 'https://www.youtube.com/watch?v=eHEHE2fpnWQ',
+    description:
+      'ByteByteGo — a diferença entre um chatbot e um agente: loop de raciocínio, chamada de ferramenta, leitura do resultado, próxima ação. Onde o LLM decide e onde o código decide. 6min.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 6,
+    topicSlugs: ['ai-engineering'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — ByteByteGo',
+    tags: ['concept', 'ai-agents', 'tool-use', 'agent-loop', 'bytebytego'],
+    topicOrder: { 'ai-engineering': 3 },
+  },
+  {
+    title: "Why Everyone's Talking About MCP?",
+    url: 'https://www.youtube.com/watch?v=_d0duu3dED4',
+    description:
+      'ByteByteGo — Model Context Protocol: um padrão pra expor ferramentas e dados a um modelo sem escrever integração nova pra cada par app × modelo. Client, server, tools, resources. 6min.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 6,
+    topicSlugs: ['ai-engineering'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — ByteByteGo',
+    tags: ['concept', 'mcp', 'tool-use', 'protocol', 'bytebytego'],
+    topicOrder: { 'ai-engineering': 4 },
+  },
+  {
+    title: 'Embeddings, Vector database, Agent, RAG & MCP: How Modern AI Systems Actually Work',
+    url: 'https://www.youtube.com/watch?v=PByDzuOrkek',
+    description:
+      'ByteMonk — as cinco peças num único diagrama: embedding gera o vetor, o banco vetorial guarda, RAG busca e monta o prompt, o agente decide o que fazer, MCP conecta às ferramentas. Assista depois dos quatro vídeos curtos pra ver onde cada um encaixa. 11min.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 11,
+    topicSlugs: ['ai-engineering'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — ByteMonk',
+    tags: ['concept', 'rag', 'embeddings', 'vector-database', 'ai-agents', 'mcp', 'architecture', 'bytemonk'],
+    topicOrder: { 'ai-engineering': 5 },
+  },
+  {
+    title: 'How OpenAI Built Its Data Agent',
+    url: 'https://www.youtube.com/watch?v=5V8tP5jDZ8U',
+    description:
+      'ByteByteGo — como a OpenAI montou um agente interno que responde perguntas sobre os dados da empresa: catálogo de tabelas, schema no contexto, geração de SQL, execução e verificação. É o caso "agente que lê o banco" em produção. 7min.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 7,
+    topicSlugs: ['ai-engineering', 'databases'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — ByteByteGo',
+    tags: ['case-study', 'data-agent', 'text-to-sql', 'ai-agents', 'openai', 'bytebytego'],
+    topicOrder: { 'ai-engineering': 6, 'databases': 27 },
+  },
+  {
+    title: 'pgvector — README (vetores dentro do Postgres)',
+    url: 'https://github.com/pgvector/pgvector',
+    description:
+      'README oficial do pgvector: instalar a extensão, criar coluna `vector(n)`, inserir embeddings, buscar vizinho mais próximo com `<->` / `<=>`, e quando usar índice HNSW ou IVFFlat. Leia até a seção de indexação; o resto é referência.',
+    format: 'ARTICLE',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 25,
+    topicSlugs: ['ai-engineering', 'databases'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'GitHub — pgvector',
+    tags: ['practice', 'pgvector', 'postgres', 'vector-database', 'hnsw', 'ivfflat', 'embeddings'],
+    topicOrder: { 'ai-engineering': 7, 'databases': 28 },
+  },
+  {
+    title: 'MCP vs RAG vs AI Agents',
+    url: 'https://blog.bytebytego.com/p/ep202-mcp-vs-rag-vs-ai-agents',
+    description:
+      'ByteByteGo (newsletter EP202) — os três não competem: RAG resolve "o que o modelo sabe", MCP resolve "como o modelo alcança ferramentas", agente resolve "quem decide o próximo passo". Tabela de quando usar cada um e como combinam.',
+    format: 'ARTICLE',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 10,
+    topicSlugs: ['ai-engineering'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'Blog — ByteByteGo',
+    tags: ['tradeoffs', 'mcp', 'rag', 'ai-agents', 'bytebytego'],
+    topicOrder: { 'ai-engineering': 8 },
+  },
+  {
+    title: 'How to Build a Scalable RAG System for AI Apps (Full Architecture)',
+    url: 'https://www.youtube.com/watch?v=4KiiKQ9RVvA',
+    description:
+      'ByteMonk — arquitetura completa de RAG em produção: pipeline de ingestão (chunking, embedding, upsert), retrieval com filtro por metadado, reranking, montagem do prompt, cache e avaliação. Onde cada parte quebra em escala. 16min.',
+    format: 'VIDEO',
+    difficulty: 'HARD',
+    estimatedMinutes: 16,
+    topicSlugs: ['ai-engineering'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — ByteMonk',
+    tags: ['case-study', 'rag', 'chunking', 'reranking', 'ingestion-pipeline', 'architecture', 'bytemonk'],
+    topicOrder: { 'ai-engineering': 9 },
+  },
+  {
+    title: 'QueryGPT – Natural Language to SQL Using Generative AI',
+    url: 'https://www.uber.com/blog/query-gpt/',
+    description:
+      'Uber Engineering — como a Uber transforma pergunta em inglês em SQL sobre 1,2 milhão de queries/mês: RAG pra escolher tabelas e exemplos, workspaces por domínio, agentes de intenção e de schema, e o que deu errado na primeira versão.',
+    format: 'ARTICLE',
+    difficulty: 'HARD',
+    estimatedMinutes: 15,
+    topicSlugs: ['ai-engineering', 'databases'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'Blog — Uber Engineering',
+    tags: ['case-study', 'text-to-sql', 'rag', 'data-agent', 'uber'],
+    topicOrder: { 'ai-engineering': 10, 'databases': 29 },
+  },
+  {
+    title: 'How we built Text-to-SQL at Pinterest',
+    url: 'https://medium.com/pinterest-engineering/how-we-built-text-to-sql-at-pinterest-30bad30dabff',
+    description:
+      'Pinterest Engineering — text-to-SQL dentro do Querybook: schema das tabelas no prompt, colunas de baixa cardinalidade como contexto, streaming da resposta, e a segunda versão com índice vetorial pra achar a tabela certa antes de gerar a query. 35% mais rápido pra quem escreve SQL.',
+    format: 'ARTICLE',
+    difficulty: 'HARD',
+    estimatedMinutes: 12,
+    topicSlugs: ['ai-engineering', 'databases'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'Blog — Pinterest Engineering',
+    tags: ['case-study', 'text-to-sql', 'rag', 'schema-retrieval', 'pinterest'],
+    topicOrder: { 'ai-engineering': 11, 'databases': 30 },
+  },
+  {
+    title: 'Building Effective AI Agents',
+    url: 'https://www.anthropic.com/engineering/building-effective-agents',
+    description:
+      'Anthropic Engineering — o texto de referência pra desenhar agente: workflow vs agente, os padrões (prompt chaining, routing, parallelization, orchestrator-workers, evaluator-optimizer), quando NÃO usar agente, e como desenhar a interface das ferramentas. Leia antes de montar qualquer harness.',
+    format: 'ARTICLE',
+    difficulty: 'HARD',
+    estimatedMinutes: 20,
+    topicSlugs: ['ai-engineering'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'Blog — Anthropic Engineering',
+    tags: ['concept', 'ai-agents', 'agent-patterns', 'tool-design', 'orchestrator-workers', 'anthropic'],
+    topicOrder: { 'ai-engineering': 12 },
+  },
+  {
+    title: 'OWASP Agentic Top 10 Explained: The New Security Risks of AI Agents',
+    url: 'https://www.youtube.com/watch?v=UftYcziWO3g',
+    description:
+      'ByteMonk — os dez riscos do OWASP pra agentes que executam ação: prompt injection via dado recuperado, abuso de ferramenta, escalada de permissão, memória envenenada, agente que age fora do escopo. O que muda quando o modelo pode chamar endpoint. 22min.',
+    format: 'VIDEO',
+    difficulty: 'HARD',
+    estimatedMinutes: 22,
+    topicSlugs: ['ai-engineering', 'security'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — ByteMonk',
+    tags: ['concept', 'ai-agents', 'owasp', 'prompt-injection', 'agent-security', 'bytemonk'],
+    topicOrder: { 'ai-engineering': 13, 'security': 38 },
   },
 ];
 
