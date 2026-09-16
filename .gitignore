@@ -22,6 +22,7 @@ generated/
 .claude/skills/*/
 !.claude/skills/ics-library-curate/
 !.claude/skills/picking-class-topic-from-tech-blog/
+!.claude/skills/ics-plan-week/
 /.playwright-mcp
 .superpowers/
 prod-*.png

@@ -199,6 +199,8 @@ The engagement score is the **single source of truth** for "how engaged is this 
 
 ### Weekly plan flow
 
+The admin-side workflow for composing and publishing a member's week (reading the retro, deciding carry-overs, sizing to availability, curating missing material, approval gate before publish) is the project skill `.claude/skills/ics-plan-week/SKILL.md`. The scheduler facts below are what it relies on.
+
 The critical path is `apps/api/src/weekly-plans/` + `apps/api/src/scheduler/`. `WeeklyPlansService` handles CRUD on plan drafts; `PublicationService.publish` wires the scheduler + Google Calendar:
 
 1. Loads the plan's `items` (with library item metadata) and the member's `MemberAvailability`.
