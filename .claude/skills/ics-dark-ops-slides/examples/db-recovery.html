@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Sexta à noite: recuperando um banco em produção</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700&family=Caveat:wght@500;600&display=swap" rel="stylesheet">
+<style>
+/* ───────────────────────── tokens ───────────────────────── */
+:root{
+  --bg:#000000;
+  --card:#0A0A0C; --card2:#111114; --line:#232326; --line2:#2E2E32;
+  --text:#F4F4F5; --dim:#9A9A9F; --mute:#66666B;
+  --skel:#39393D; --skel2:#232323;
+
+  --red:#F45B4E;    --green:#3BA35A;  --hand:#4CC26E;
+  --amber:#F2BB3C;  --amber-soft:#C9A54F;
+  --sky:#45B0EA;    --blue:#3E7ACA;   --indigo:#9B94F0;
+  --violet:#B06CC8; --cyan:#22D3EE;   --rose:#F06A8A;
+
+  --tint-green:#0B2A1A; --tint-sky:#0A2A45; --tint-indigo:#2E2270; --tint-red:#2A0F0F;
+
+  --mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+  --sans:'Inter',-apple-system,system-ui,sans-serif;
+  --script:'Caveat',cursive;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;background:#000;overflow:hidden;color:var(--text);font-family:var(--mono)}
+
+/* ───────────────────────── stage 1280x720, escala pra caber ───────────────────────── */
+#deck{position:absolute;left:50%;top:50%;width:1280px;height:720px;transform-origin:center center;transform:translate(-50%,-50%) scale(1);background:#000}
+.slide{position:absolute;inset:0;display:none;background:#000}
+.slide.active{display:block}
+.slide>*{position:absolute}
+#ctr{position:fixed;right:16px;bottom:12px;font:14px var(--mono);color:#444;z-index:9}
+
+/* fragmentos (reveal progressivo, como no vídeo) */
+.f{opacity:0;transform:translateY(8px);transition:opacity .22s cubic-bezier(.16,1,.3,1),transform .22s cubic-bezier(.16,1,.3,1)}
+.f.on{opacity:1;transform:none}
+.f.ghost{opacity:.18;transform:none} /* variante "ainda não é a vez dele": aparece apagado */
+.f.ghost.on{opacity:1}
+
+/* modo impressão: ?print=1 empilha tudo com fragmentos ligados */
+html.print,body.print{overflow:auto;height:auto}
+body.print #deck{position:static;transform:none;width:1280px;height:auto;margin:0 auto}
+body.print .slide{position:relative;display:block;height:720px;margin:0 0 24px;page-break-after:always}
+body.print .f{opacity:1;transform:none}
+body.print #ctr{display:none}
+
+/* ───────────────────────── tipografia ───────────────────────── */
+.eyebrow{font:600 16px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+h1{font:700 56px/1.1 var(--mono);letter-spacing:-.01em}
+.h2{font:600 30px/1.2 var(--mono)}
+.dim{color:var(--dim)} .mute{color:var(--mute)}
+.b{font-weight:700} .sb{font-weight:600}
+.red{color:var(--red)} .green{color:var(--green)} .amber{color:var(--amber)} .sky{color:var(--sky)} .indigo{color:var(--indigo)}
+.hand{font:500 32px/1.15 var(--script);color:var(--hand)}
+.hand.red{color:var(--red)}
+.ug{text-decoration:none;border-bottom:3px solid var(--green);padding-bottom:1px}
+.ur{border-bottom:3px solid var(--red);padding-bottom:1px}
+.sans{font-family:var(--sans)}
+
+/* ───────────────────────── card / chip / pill ───────────────────────── */
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px}
+.card.sky{border-color:var(--sky)} .card.amber{border-color:var(--amber-soft)} .card.red{border-color:var(--red)}
+.card.green{border-color:var(--green)} .card.indigo{border-color:#7A6AE0}
+.card.fill-green{background:var(--tint-green);border-color:#2FA35A}
+.card.fill-sky{background:var(--tint-sky);border-color:var(--sky)}
+.card.fill-indigo{background:var(--tint-indigo);border-color:#7A6AE0}
+.card.fill-red{background:var(--tint-red);border-color:var(--red)}
+.card.node{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center}
+.card.node .name{font:700 26px/1 var(--mono)} .card.node .sub{font:400 20px/1 var(--mono);color:var(--dim);letter-spacing:.04em}
+.chip{display:inline-flex;align-items:center;justify-content:center;height:60px;padding:0 24px;border-radius:12px;border:1px solid var(--line);background:var(--card);font:500 24px var(--mono)}
+.chip.amber{border-color:var(--amber-soft)} .chip.sky{border-color:var(--sky)} .chip.dim{color:var(--dim)}
+.pill{display:inline-flex;align-items:center;height:48px;padding:0 20px;border-radius:10px;border:1px solid var(--line);background:var(--card);font:700 22px var(--mono);letter-spacing:.06em;text-transform:uppercase}
+.pill.amber{color:var(--amber);border-color:#7A6222} .pill.red{color:var(--red);border-color:#7A2A24}
+.kbd{display:inline-block;padding:4px 12px;border-radius:8px;background:#17171A;border:1px solid var(--line2);font:600 18px var(--mono)}
+.divider{height:1px;background:var(--line2)}
+
+/* strike: X vermelho canto a canto por cima (o "não é esse" / "morreu") */
+svg.x{pointer-events:none;overflow:visible}
+svg.x line{stroke:var(--red);stroke-width:6;stroke-linecap:round;vector-effect:non-scaling-stroke}
+svg.x.thin line{stroke-width:3}
+
+/* esqueleto: texto que não importa vira barra cinza */
+.skel{display:block;height:12px;border-radius:6px;background:var(--skel)}
+.skel.d{background:var(--skel2)} .skel.h{height:16px}
+
+/* ícones lucide inline */
+.ic{width:28px;height:28px;stroke:currentColor;fill:none;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}
+.ic.lg{width:52px;height:52px;stroke-width:1.5}
+.logo{width:36px;height:36px;object-fit:contain}
+.logo.lg{width:70px;height:70px}
+
+/* tabela mono */
+table.t{border-collapse:collapse;font:400 22px/1 var(--mono)}
+table.t th{font-weight:400;color:var(--dim);text-align:left;padding:0 0 18px}
+table.t td{padding:12px 0}
+table.t tr+tr td{border-top:1px solid var(--line)}
+table.t.plain tr+tr td{border-top:0}
+
+/* progress */
+.bar{display:flex;height:34px;border-radius:6px;overflow:hidden;background:#1a1a1d}
+.bar>i{display:block;height:100%}
+
+/* ───────────────────────── janelas (terminal / app / mock) ───────────────────────── */
+.win{background:#0B0B0D;border-radius:12px;overflow:hidden;border:1px solid #1C1C1F}
+.win .bar-t{height:56px;display:flex;align-items:center;justify-content:center;position:relative;color:var(--dim);font:400 18px var(--sans);background:#121214}
+.win .bar-t .lights{position:absolute;left:18px;top:20px;display:flex;gap:9px}
+.win .bar-t .lights i{width:15px;height:15px;border-radius:50%;background:#FF5F57}
+.win .bar-t .lights i:nth-child(2){background:#FEBC2E} .win .bar-t .lights i:nth-child(3){background:#28C840}
+.tabs{display:flex;height:48px;background:#141416;font:500 15px var(--sans);letter-spacing:.06em}
+.tabs>div{flex:1;display:flex;align-items:center;justify-content:center;color:var(--mute)}
+.tabs>div.on{background:#0B0B0D;color:var(--text)}
+.term{padding:24px 30px;font:400 19px/1.45 var(--mono);white-space:pre}
+.term .p{color:var(--green)} .term .p.dim{color:var(--mute)} .term .kw{color:#5BA8F5} .term .str{color:var(--amber)}
+.term .err{color:var(--red)} .term .c{color:var(--mute)} .term .cmd{color:#5BA8F5}
+.term .cur{display:inline-block;width:2px;height:20px;background:#fff;vertical-align:-3px;animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+
+/* app window (recovery workspace) */
+.app{font-family:var(--sans)}
+.app .lbl{font:500 20px/1 var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--dim)}
+.app .val{font:500 24px/1 var(--mono)}
+.app h3{font:500 32px/1 var(--sans)}
+.avatar{width:44px;height:44px;border-radius:50%;background:#2A2A2E;border:1px solid var(--line2);display:inline-flex;align-items:center;justify-content:center;font:600 16px var(--sans);color:#ddd}
+
+/* setas via svg */
+svg.arrows{position:absolute;inset:0;width:1280px;height:720px;pointer-events:none;overflow:visible}
+.ar{fill:none;stroke-width:3;stroke-linecap:round}
+.ar.gray{stroke:#B3B3B3} .ar.green{stroke:var(--green)} .ar.red{stroke:var(--red)} .ar.sky{stroke:var(--sky);stroke-width:4} .ar.amber{stroke:var(--amber)}
+.ar.dash{stroke-dasharray:10 10}
+
+/* time card */
+.time{inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:var(--sans)}
+.time .t{font-size:118px;font-weight:300;letter-spacing:-.02em;line-height:1}
+.time .d{font-size:38px;font-weight:400;margin-top:14px}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <marker id="m-gray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#B3B3B3"/></marker>
+    <marker id="m-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#3BA35A"/></marker>
+    <marker id="m-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#F45B4E"/></marker>
+    <marker id="m-amber" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#F2BB3C"/></marker>
+    <marker id="m-sky" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#45B0EA"/></marker>
+    <marker id="m-hand" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M1 1L9 5L1 9" fill="none" stroke="#4CC26E" stroke-width="2" stroke-linecap="round"/></marker>
+    <!-- lucide -->
+    <symbol id="i-file" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></symbol>
+    <symbol id="i-db" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></symbol>
+    <symbol id="i-folder" viewBox="0 0 24 24"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></symbol>
+    <symbol id="i-warn" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></symbol>
+    <symbol id="i-bell-off" viewBox="0 0 24 24"><path d="M8.7 3A6 6 0 0 1 18 8a21.3 21.3 0 0 0 .6 5"/><path d="M17 17H3s3-2 3-9a4.67 4.67 0 0 1 .3-1.7"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/><path d="m2 2 20 20"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
+    <symbol id="i-unlock" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+    <symbol id="i-xc" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></symbol>
+    <symbol id="i-ok" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></symbol>
+    <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M5 21a7 7 0 0 1 14 0"/></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></symbol>
+    <symbol id="i-history" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></symbol>
+    <symbol id="i-swap" viewBox="0 0 24 24"><path d="M8 3 4 7l4 4"/><path d="M4 7h16"/><path d="m16 21 4-4-4-4"/><path d="M20 17H4"/></symbol>
+    <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></symbol>
+    <symbol id="i-mega" viewBox="0 0 24 24"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></symbol>
+    <symbol id="i-spin" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-6.22-8.56"/></symbol>
+    <symbol id="i-bucket" viewBox="0 0 24 24"><path d="M4 7h16l-1.6 12.2A2 2 0 0 1 16.4 21H7.6a2 2 0 0 1-2-1.8Z"/><ellipse cx="12" cy="7" rx="8" ry="2.2"/></symbol>
+    <symbol id="i-cyl" viewBox="0 0 64 64"><ellipse cx="32" cy="14" rx="26" ry="9"/><path d="M6 14v36a26 9 0 0 0 52 0V14"/></symbol>
+  </defs>
+</svg>
+
+<div id="deck">
+
+<!-- ═══════════ 1 · capa ═══════════ -->
+<section class="slide active">
+  <div class="eyebrow" style="left:80px;top:150px">ICS Select · aula · infra</div>
+  <h1 style="left:80px;top:190px;width:1100px">Sexta à noite:<br>recuperando um banco<br>em produção</h1>
+  <div class="dim" style="left:80px;top:420px;font-size:22px">backups, restore drills, WAL, PITR, RPO / RTO, alert fatigue</div>
+  <div class="pill red" style="left:80px;top:500px"><svg class="ic" style="width:22px;height:22px;margin-right:10px"><use href="#i-warn"/></svg>incident</div>
+  <div class="hand" style="left:330px;top:488px">história real (quase)</div>
+  <svg class="arrows"><path class="ar" d="M326 516 q-20 14 -46 0" stroke="#4CC26E" stroke-width="2.5" fill="none" marker-end="url(#m-hand)"/></svg>
+  <div class="dim" style="left:80px;bottom:56px;font-size:18px">2026.3 · Hopes and Dreams</div>
+</section>
+
+<!-- ═══════════ 2 · time card ═══════════ -->
+<section class="slide">
+  <div class="time"><div class="t">10:40 PM</div><div class="d">Sex, 6 set</div></div>
+</section>
+
+<!-- ═══════════ 3 · grade de tópicos (agenda) ═══════════ -->
+<section class="slide">
+  <div class="card node f" style="left:128px;top:62px;width:318px;height:172px"><svg class="ic lg" style="color:var(--green)"><use href="#i-book"/></svg><div class="name" style="font-size:28px;line-height:1.15">Runbook<br>de restore</div></div>
+  <div class="card node f" style="left:481px;top:62px;width:318px;height:172px"><svg class="ic lg" style="color:var(--sky)"><use href="#i-refresh"/></svg><div class="name" style="font-size:28px;line-height:1.15">Restore<br>drills</div></div>
+  <div class="card node f" style="left:834px;top:62px;width:318px;height:172px"><svg class="ic lg" style="color:var(--amber)"><use href="#i-history"/></svg><div class="name" style="font-size:28px;line-height:1.15">Point-in-time<br>recovery</div></div>
+
+  <div class="card node f" style="left:52px;top:274px;width:318px;height:172px"><svg class="ic lg" style="color:var(--violet)"><use href="#i-swap"/></svg><div class="name" style="font-size:28px">Rodízio de turno</div></div>
+  <div class="card f" style="left:510px;top:284px;width:262px;height:152px;padding:14px 16px;font-size:13px">
+    <div style="display:flex;justify-content:space-between;align-items:center"><span><span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:#2E7D32;vertical-align:-2px"></span> S3 &nbsp;<span class="dim">acme-db-backups › prod/</span></span><span class="skel" style="width:40px;display:inline-block"></span></div>
+    <div class="sans sb" style="margin-top:10px;font-size:15px">Objects (8)</div>
+    <div style="margin-top:10px;display:grid;grid-template-columns:1fr auto;row-gap:8px;font-size:12px">
+      <span class="mute">leadgen-2030-09-06.dump</span><span class="red">not found</span>
+      <span class="sky">leadgen-2030-08-25.dump</span><span class="dim">Aug 25, 4:26 AM</span>
+      <span class="sky">leadgen-2030-08-24.dump</span><span class="dim">Aug 24, 4:24 AM</span>
+    </div>
+  </div>
+  <div class="card node f" style="left:910px;top:274px;width:318px;height:172px"><svg class="ic lg" style="color:#8B82E8"><use href="#i-target"/></svg><div class="name" style="font-size:28px">RPO / RTO</div></div>
+
+  <div class="card node f" style="left:310px;top:486px;width:318px;height:172px"><svg class="ic lg" style="color:var(--cyan)"><use href="#i-mega"/></svg><div class="name" style="font-size:28px;line-height:1.15">Comunicação<br>no incidente</div></div>
+  <div class="card node f" style="left:652px;top:486px;width:318px;height:172px"><svg class="ic lg" style="color:var(--rose)"><use href="#i-bell-off"/></svg><div class="name" style="font-size:28px">Alert fatigue</div></div>
+</section>
+
+<!-- ═══════════ 4 · arquitetura (grupo + nós + volume) ═══════════ -->
+<section class="slide">
+  <div style="left:52px;top:92px;display:flex;align-items:center;gap:14px"><img class="logo" style="width:46px;height:46px" src="https://cdn.simpleicons.org/kubernetes/326CE5" alt=""><span class="sb" style="font-size:28px">Kubernetes</span></div>
+  <div class="card" style="left:52px;top:152px;width:650px;height:412px"></div>
+  <div class="chip amber f" style="left:82px;top:207px;width:198px;height:82px;font-size:26px">web</div>
+  <div class="chip amber f" style="left:82px;top:318px;width:198px;height:82px;font-size:26px">api</div>
+  <div class="chip amber f" style="left:82px;top:432px;width:198px;height:82px;font-size:26px">worker</div>
+  <svg class="arrows"><g class="f"><path class="ar gray" d="M292 248H352" marker-end="url(#m-gray)"/><path class="ar gray" d="M292 359H352" marker-end="url(#m-gray)"/><path class="ar gray" d="M292 473H352" marker-end="url(#m-gray)"/></g></svg>
+  <div class="card node sky f" style="left:370px;top:238px;width:296px;height:242px">
+    <img class="logo lg" src="https://cdn.simpleicons.org/postgresql/4169E1" alt="">
+    <div class="name">postgres-0</div><div class="sub">production</div>
+  </div>
+  <svg class="arrows"><path class="ar sky f" d="M666 265H792"/></svg>
+  <div class="card f" style="left:792px;top:152px;width:448px;height:412px;padding:30px 40px">
+    <div style="display:flex;align-items:center;gap:14px;font-size:24px"><svg class="ic" style="width:34px;height:34px"><use href="#i-db"/></svg><span class="sb">pgdata-postgres-0</span></div>
+    <div class="b" style="font-size:38px;text-align:center;margin-top:20px">250 GiB</div>
+    <div class="divider" style="margin:18px 0 22px"></div>
+    <div style="text-align:center;font-size:24px"><span class="ug">/mnt/database_volume</span></div>
+    <div class="f" style="margin-top:34px;display:flex;align-items:center;gap:20px">
+      <div class="bar" style="flex:1"><i style="width:44%;background:#32A44F"></i><i style="width:47%;background:#FF7F83"></i></div>
+      <div class="b" style="font-size:30px">91%</div>
+    </div>
+    <div class="f" style="margin-top:14px;display:flex;gap:60px;font-size:24px;padding-left:10px"><span class="green">data/</span><span class="red">logs/</span></div>
+  </div>
+</section>
+
+<!-- ═══════════ 5 · terminal com abas STAGING / PRODUCTION ═══════════ -->
+<section class="slide">
+  <div class="win" style="left:0;top:0;width:1280px;height:720px;border:0;border-radius:0">
+    <div class="bar-t"><div class="lights"><i></i><i></i><i></i></div>kubectl -n production exec -it postgres-0 -- bash</div>
+    <div class="tabs"><div>STAGING</div><div class="on">PRODUCTION</div></div>
+    <div class="term"><span class="p">postgres-0:/#</span> LOG_DIRECTORY=/mnt/database_volume/logs
+<span class="p">postgres-0:/#</span> echo "$LOG_DIRECTORY"
+/mnt/database_volume/logs
+<span class="p">postgres-0:/#</span> ls $LOG_DIRECTORY
+postgresql-2030-09-10.log  postgresql-2030-09-12.log
+postgresql-2030-09-11.log  postgresql-2030-09-13.log
+<span class="p">postgres-0:/#</span>
+<span class="f err">error: lost connection to pod</span>
+<span class="f"><span class="p dim">~ $</span> <span class="cmd">kubectl</span> -n production exec -it postgres-0 -- bash</span>
+<span class="f"><span class="p">postgres-0:/#</span> <span class="ug">rm -rf $LOG_DIRECTORY/*</span></span>
+<span class="f err">rm: cannot remove '/dev/console': Device or resource busy
+rm: cannot remove '/dev/mqueue': Device or resource busy
+rm: cannot remove '/dev/pts': Device or resource busy
+rm: cannot remove '/dev/shm': Device or resource busy
+rm: cannot remove '/etc/hostname': Device or resource busy</span>
+<span class="f"><span class="p">postgres-0:/#</span> ^C
+<span class="p">postgres-0:/#</span> ls
+<span class="err">bash: <span class="ur">ls: command not found</span></span>
+<span class="p">postgres-0:/#</span> <span class="cur"></span></span></div>
+  </div>
+  <div class="kbd f" style="left:598px;top:650px">Ctrl+C</div>
+  <div class="hand red f" style="left:560px;top:372px">a variável estava vazia</div>
+  <svg class="arrows"><path class="ar f" d="M556 400 q-40 22 -86 -2" stroke="#F45B4E" stroke-width="2.5" fill="none" marker-end="url(#m-red)"/></svg>
+</section>
+
+<!-- ═══════════ 6 · session cards + árvore com strike ═══════════ -->
+<section class="slide">
+  <div class="dim" style="left:72px;top:40px;font-size:22px">session 1</div>
+  <div class="card" style="left:72px;top:72px;width:560px;height:200px;padding:22px 30px">
+    <div style="font-size:16px;white-space:nowrap"><span class="mute">~ $</span> <span style="color:#5BA8F5;font-weight:600">kubectl</span> -n production exec -it postgres-0 -- bash</div>
+    <div class="divider" style="margin:16px 0 22px"></div>
+    <div style="display:flex;align-items:center;gap:14px"><span class="chip dim" style="height:48px;font-size:17px;padding:0 14px">LOG_DIRECTORY</span><span class="sky b">=</span><span class="chip" style="height:48px;font-size:17px;padding:0 14px">/mnt/database_volume/logs</span></div>
+  </div>
+  <div class="red f" style="left:72px;top:290px;font-size:20px">error: lost connection to pod</div>
+
+  <div class="dim f" style="left:660px;top:40px;font-size:22px">session 2</div>
+  <div class="card f" style="left:660px;top:72px;width:560px;height:200px;padding:22px 30px">
+    <div style="font-size:16px;white-space:nowrap"><span class="mute">~ $</span> <span style="color:#5BA8F5;font-weight:600">kubectl</span> -n production exec -it postgres-0 -- bash</div>
+    <div class="divider" style="margin:16px 0 22px"></div>
+    <div style="display:flex;align-items:center;gap:14px"><span class="chip dim" style="height:48px;font-size:17px;padding:0 14px">LOG_DIRECTORY</span><span class="sky b">=</span><span class="chip" style="height:48px;width:280px"></span></div>
+  </div>
+  <div class="f" style="left:660px;top:290px;font-size:24px"><span class="sky b">rm</span> -rf <span class="ug">/*</span></div>
+
+  <svg class="arrows"><g class="f"><path d="M640 400 L320 460" stroke="#3A3A3E" stroke-width="2"/><path d="M640 400 L640 460" stroke="#3A3A3E" stroke-width="2"/><path d="M640 400 L960 460" stroke="#45B0EA" stroke-width="2.5"/><path d="M960 520 L960 570" stroke="#45B0EA" stroke-width="2.5"/></g></svg>
+  <div class="chip f" style="left:580px;top:370px;width:120px">/</div>
+  <div class="chip f" style="left:210px;top:460px;width:220px">/dev</div>
+  <div class="chip f" style="left:530px;top:460px;width:220px">/etc</div>
+  <div class="chip sky f" style="left:850px;top:460px;width:220px">/mnt</div>
+  <div class="chip f" style="left:750px;top:570px;width:420px;gap:12px"><img class="logo" src="https://cdn.simpleicons.org/postgresql/4169E1" alt=""> database_volume</div>
+  <svg class="x f" viewBox="0 0 100 100" preserveAspectRatio="none" style="left:580px;top:370px;width:120px;height:60px"><line x1="3" y1="3" x2="97" y2="97"/><line x1="97" y1="3" x2="3" y2="97"/></svg>
+  <svg class="x f" viewBox="0 0 100 100" preserveAspectRatio="none" style="left:210px;top:460px;width:220px;height:60px"><line x1="3" y1="3" x2="97" y2="97"/><line x1="97" y1="3" x2="3" y2="97"/></svg>
+  <svg class="x f" viewBox="0 0 100 100" preserveAspectRatio="none" style="left:530px;top:460px;width:220px;height:60px"><line x1="3" y1="3" x2="97" y2="97"/><line x1="97" y1="3" x2="3" y2="97"/></svg>
+  <svg class="x f" viewBox="0 0 100 100" preserveAspectRatio="none" style="left:850px;top:460px;width:220px;height:60px"><line x1="3" y1="3" x2="97" y2="97"/><line x1="97" y1="3" x2="3" y2="97"/></svg>
+  <svg class="x f thin" viewBox="0 0 100 100" preserveAspectRatio="none" style="left:750px;top:570px;width:420px;height:60px"><line x1="3" y1="3" x2="97" y2="97"/><line x1="97" y1="3" x2="3" y2="97"/></svg>
+</section>
+
+<!-- ═══════════ 7 · fluxo de backup + nota manuscrita + listagem ═══════════ -->
+<section class="slide">
+  <div class="card node f" style="left:42px;top:55px;width:467px;height:232px;gap:14px">
+    <div style="display:flex;align-items:center;gap:12px"><img class="logo" src="https://cdn.simpleicons.org/kubernetes/326CE5" alt=""><span class="b" style="font-size:26px">CronJob</span></div>
+    <div style="font-size:24px">nightly-db-backup</div>
+    <div style="font-size:22px"><span class="dim">schedule:</span> "0 4 * * *"</div>
+  </div>
+  <svg class="arrows"><g class="f"><path class="ar gray" d="M522 170H640" marker-end="url(#m-gray)"/></g><g class="f"><path class="ar gray" d="M936 170H1020" marker-end="url(#m-gray)"/></g></svg>
+  <div class="dim f" style="left:523px;top:200px;font-size:22px">pg_dump</div>
+  <div class="card node sky f" style="left:662px;top:55px;width:262px;height:232px"><img class="logo lg" src="https://cdn.simpleicons.org/postgresql/4169E1" alt=""><div class="name" style="font-size:24px">postgres-0</div></div>
+  <div class="card node f" style="left:1040px;top:62px;width:200px;height:212px"><svg class="ic lg" style="color:var(--indigo);width:70px;height:70px"><use href="#i-file"/></svg><div class="name" style="font-size:24px">.dump</div></div>
+
+  <div class="hand f" style="left:300px;top:318px">todo dia<br>às 4 da manhã</div>
+  <svg class="arrows"><path class="ar f" d="M330 320 q-10 -20 -40 -32" stroke="#4CC26E" stroke-width="2.5" fill="none" marker-end="url(#m-hand)"/></svg>
+
+  <div class="card f" style="left:42px;top:430px;width:1196px;height:230px;padding:26px 30px">
+    <div style="display:flex;align-items:center;gap:16px">
+      <span style="display:inline-flex;align-items:center;justify-content:center;width:50px;height:50px;border-radius:8px;background:#2E7D32"><svg class="ic" style="color:#fff;width:30px;height:30px"><use href="#i-bucket"/></svg></span>
+      <span style="font-size:26px">acme-db-backups/prod/</span>
+      <span class="pill amber" style="margin-left:auto">expected backup</span>
+    </div>
+    <table class="t plain" style="margin-top:26px;width:100%">
+      <tr><th style="width:50%">Name</th><th style="width:32%">Last modified</th><th>Size</th></tr>
+      <tr><td style="display:flex;align-items:center;gap:12px"><svg class="ic" style="color:var(--indigo)"><use href="#i-file"/></svg>leadgen-2030-09-13.dump</td><td>Sep 13, 4:00 AM</td><td>4.1 GB</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- ═══════════ 8 · linha do tempo com chave vermelha ═══════════ -->
+<section class="slide">
+  <div class="card" style="left:42px;top:48px;width:1196px;height:236px;padding:26px 30px">
+    <div style="display:flex;align-items:center;gap:16px">
+      <span style="display:inline-flex;align-items:center;justify-content:center;width:50px;height:50px;border-radius:8px;background:#2E7D32"><svg class="ic" style="color:#fff;width:30px;height:30px"><use href="#i-bucket"/></svg></span>
+      <span style="font-size:26px">acme-db-backups/prod/</span>
+      <span class="pill amber" style="margin-left:auto">expected backup</span>
+    </div>
+    <table class="t plain" style="margin-top:26px;width:100%">
+      <tr><th style="width:50%">Name</th><th style="width:32%">Last modified</th><th>Size</th></tr>
+      <tr><td style="display:flex;align-items:center;gap:12px"><svg class="ic" style="color:var(--indigo)"><use href="#i-file"/></svg>leadgen-2030-09-13.dump</td><td>Sep 13, 4:00 AM</td><td>4.1 GB</td></tr>
+    </table>
+  </div>
+  <svg class="arrows">
+    <path d="M100 413H1180" stroke="#5A5A5E" stroke-width="3"/>
+    <g class="f"><circle cx="246" cy="413" r="8" fill="#9B94F0"/><path d="M246 405V370" stroke="#9B94F0" stroke-width="2"/></g>
+    <g class="f"><circle cx="1036" cy="413" r="8" fill="#F45B4E"/><path d="M1036 405V370" stroke="#F45B4E" stroke-width="2"/></g>
+    <path class="f" d="M248 510 q0 14 14 14 H626 q14 0 14 14 q0 -14 14 -14 H1020 q14 0 14 -14" stroke="#F45B4E" stroke-width="3.5" fill="none"/>
+  </svg>
+  <div class="f" style="left:226px;top:328px;width:40px;height:40px;border:2px solid var(--indigo);border-radius:8px;display:flex;align-items:center;justify-content:center"><svg class="ic" style="color:var(--indigo);width:22px;height:22px"><use href="#i-file"/></svg></div>
+  <div class="f" style="left:1016px;top:326px;width:40px;height:40px;display:flex;align-items:center;justify-content:center"><svg class="ic lg" style="color:var(--red);width:44px;height:44px"><use href="#i-warn"/></svg></div>
+  <div class="f" style="left:180px;top:440px;font-size:24px">4:00 AM</div>
+  <div class="f" style="left:964px;top:440px;font-size:24px">10:45 PM</div>
+  <div class="f" style="left:0;top:548px;width:1280px;text-align:center"><div class="b" style="font-size:38px">18 h 45 min</div><div class="red sb" style="font-size:24px;margin-top:8px">perda potencial de dados</div></div>
+</section>
+
+<!-- ═══════════ 9 · WAL → heap page ═══════════ -->
+<section class="slide">
+  <div style="left:86px;top:88px"><div class="sb" style="font-size:30px">Write-Ahead Log</div><div class="green sb" style="font-size:26px;line-height:1">(WAL)</div></div>
+  <div class="card" style="left:97px;top:183px;width:312px;height:418px"></div>
+  <div class="card green f" style="left:122px;top:208px;width:262px;height:106px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px"><span class="dim" style="font-size:20px">0/1A2B3C8</span><span style="font-size:24px">8842 → won</span></div>
+  <div class="card green f" style="left:122px;top:339px;width:262px;height:106px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px"><span class="dim" style="font-size:20px">0/1A2B428</span><span style="font-size:24px">8843 → won</span></div>
+  <div class="card green f" style="left:122px;top:470px;width:262px;height:106px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px"><span class="dim" style="font-size:20px">0/1A2B4A0</span><span style="font-size:24px">8844 → won</span></div>
+  <svg class="arrows"><path class="ar green f" d="M420 261H622" marker-end="url(#m-green)"/><path class="ar green f" d="M420 392H622" marker-end="url(#m-green)"/><path class="ar green f" d="M420 523H622" marker-end="url(#m-green)"/></svg>
+  <div class="card" style="left:640px;top:72px;width:568px;height:512px;padding:26px 30px">
+    <div style="display:flex;align-items:center;gap:14px;font-size:26px"><img class="logo" src="https://cdn.simpleicons.org/postgresql/4169E1" alt=""><span class="sb">heap page</span><span class="dim" style="margin-left:auto;font-size:20px">8 kB</span></div>
+    <div class="divider" style="margin:18px 0 0"></div>
+    <table class="t plain" style="width:100%;margin-top:14px;font-size:24px">
+      <tr><th>id</th><th>type</th><th>status</th></tr>
+      <tr><td style="padding:34px 0">8842</td><td>lead</td><td><span class="f on">won</span></td></tr>
+      <tr><td style="padding:34px 0">8843</td><td>lead</td><td><span class="f on">won</span></td></tr>
+      <tr><td style="padding:34px 0">8844</td><td>lead</td><td><span class="f on">won</span></td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- ═══════════ 10 · PITR: base backup + WAL → instância isolada ═══════════ -->
+<section class="slide">
+  <div class="sb" style="left:0;top:26px;width:1280px;text-align:center;font-size:30px">Point In Time Recovery <span class="green">(PITR)</span></div>
+  <div class="card sky f" style="left:65px;top:112px;width:484px;height:92px;display:flex;align-items:center;justify-content:center;gap:16px;font-size:26px"><img class="logo" src="https://cdn.simpleicons.org/postgresql/4169E1" alt=""><span class="sky sb">Physical base backup</span></div>
+  <div class="card green f" style="left:741px;top:112px;width:346px;height:92px;display:flex;align-items:center;justify-content:center;gap:16px;font-size:26px"><span style="display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:8px;background:#2E7D32"><svg class="ic" style="color:#fff;width:26px;height:26px"><use href="#i-bucket"/></svg></span><span class="green sb">Archived WAL</span></div>
+  <div class="card f" style="left:73px;top:280px;width:1134px;height:296px;padding:30px 34px">
+    <div style="display:flex;align-items:center;gap:14px;font-size:26px"><img class="logo" src="https://cdn.simpleicons.org/postgresql/4169E1" alt=""><span class="sb">isolated instance</span></div>
+  </div>
+  <svg class="arrows">
+    <path class="ar sky f" d="M307 214V262" marker-end="url(#m-sky)"/>
+    <path class="ar green f" d="M914 214V262" marker-end="url(#m-green)"/>
+    <g class="f">
+      <path d="M162 450H1120" stroke="#3A3A3E" stroke-width="3"/>
+      <g stroke="#3A3A3E" stroke-width="2"><path d="M218 440v20M274 440v20M330 440v20M386 440v20M442 440v20M498 440v20M554 440v20M610 440v20M666 440v20M722 440v20M778 440v20M834 440v20M890 440v20M946 440v20M1002 440v20M1058 440v20"/></g>
+      <path d="M162 428V472" stroke="#45B0EA" stroke-width="4"/>
+    </g>
+    <path class="ar green f" d="M162 450H905" stroke-width="5"/>
+    <g class="f"><path d="M905 428V472" stroke="#4CC26E" stroke-width="6" stroke-linecap="round"/></g>
+    <g class="f"><path d="M1106 440l22 22M1128 440l-22 22" stroke="#F45B4E" stroke-width="3" stroke-linecap="round"/></g>
+  </svg>
+    <div class="sky sb f" style="left:162px;top:498px;font-size:24px">base backup</div>
+  <div class="green sb f" style="left:818px;top:386px;font-size:26px">10:43 PM</div>
+  <div class="dim f" style="left:772px;top:498px;font-size:24px">antes do rm -rf</div>
+</section>
+
+<!-- ═══════════ 11 · RPO / RTO ═══════════ -->
+<section class="slide">
+  <div style="left:0;top:52px;width:1280px;display:flex;justify-content:center;align-items:center;gap:12px"><svg class="ic" style="color:var(--red);width:40px;height:40px"><use href="#i-warn"/></svg><span class="red b" style="font-size:24px;letter-spacing:.06em">INCIDENT</span></div>
+  <svg class="arrows">
+    <path class="ar red dash" d="M640 100V570"/>
+    <g class="f"><path d="M73 185H640" stroke="#5A5A5E" stroke-width="3"/><circle cx="226" cy="185" r="8" fill="#9B94F0"/><path d="M226 178V150" stroke="#9B94F0" stroke-width="2"/></g>
+    <path class="ar red f" d="M636 285H240" stroke-width="5" marker-end="url(#m-red)"/>
+    <g class="f"><path d="M640 455H1207" stroke="#5A5A5E" stroke-width="3"/></g>
+    <path class="ar amber f" d="M644 455H868" stroke-width="5" marker-end="url(#m-amber)"/>
+  </svg>
+  <div class="f" style="left:206px;top:110px;width:40px;height:40px;border:2px solid var(--indigo);border-radius:8px;display:flex;align-items:center;justify-content:center"><svg class="ic" style="color:var(--indigo);width:22px;height:22px"><use href="#i-file"/></svg></div>
+  <div class="f" style="left:84px;top:200px;font-size:24px;line-height:1.3">4:00 AM<br>último backup bom</div>
+  <div class="f" style="left:230px;top:312px;width:400px;text-align:center"><div class="dim" style="font-size:22px">perda máxima de dados</div><div class="red b" style="font-size:44px;margin-top:6px">≤ 24 h</div></div>
+  <div class="f" style="left:720px;top:140px;width:440px;text-align:center"><div class="red b" style="font-size:44px">RPO</div><div class="dim" style="font-size:24px;margin-top:4px">Recovery Point Objective</div></div>
+  <div class="f" style="left:120px;top:430px;width:440px;text-align:center"><div class="amber b" style="font-size:44px">RTO</div><div class="dim" style="font-size:24px;margin-top:4px">Recovery Time Objective</div></div>
+  <div class="f" style="left:876px;top:372px;display:flex;flex-direction:column;align-items:center;gap:6px"><svg class="ic" style="color:var(--green);width:30px;height:30px"><use href="#i-ok"/></svg><span class="green" style="font-size:20px;line-height:1.2;text-align:center">serviço<br>de volta</span></div>
+  <div class="f" style="left:648px;top:478px;width:230px;text-align:center"><div class="dim" style="font-size:20px">downtime máximo</div><div class="amber b" style="font-size:36px">?</div></div>
+</section>
+
+<!-- ═══════════ 12 · tabela de metas + cards laterais ═══════════ -->
+<section class="slide">
+  <div class="card" style="left:38px;top:62px;width:782px;height:536px;padding:30px 28px">
+    <div class="sb" style="font-size:28px">Metas de recuperação (exemplo)</div>
+    <div class="divider" style="margin:22px 0 0"></div>
+    <div class="f" style="display:grid;grid-template-columns:130px 1fr 200px;align-items:center;height:130px;font-size:26px;border-bottom:1px solid var(--line)"><span class="red b" style="font-size:36px">RPO</span><span class="dim">perda máx. de dados</span><span class="dim">a combinar</span></div>
+    <div class="f" style="display:grid;grid-template-columns:130px 1fr 200px;align-items:center;height:130px;font-size:26px;border-bottom:1px solid var(--line)"><span class="amber b" style="font-size:36px">RTO</span><span class="dim">downtime máximo</span><span class="dim">a combinar</span></div>
+    <div class="f" style="display:grid;grid-template-columns:1fr 254px;row-gap:18px;align-items:center;margin-top:30px;font-size:26px">
+      <span class="dim">dono técnico</span><span class="chip" style="height:52px;background:#141416;border-color:#1E1E21"></span>
+      <span class="dim">dono do negócio</span><span class="chip" style="height:52px;background:#141416;border-color:#1E1E21"></span>
+    </div>
+  </div>
+  <svg class="arrows"><path class="ar red f" d="M830 210 L920 196" marker-end="url(#m-red)"/><path class="ar amber f" d="M830 360 L920 380" marker-end="url(#m-amber)"/></svg>
+  <div class="card node f" style="left:938px;top:122px;width:316px;height:134px"><div class="name" style="font-size:26px;line-height:1.2">Cadência<br>de backup</div></div>
+  <div class="card node f" style="left:938px;top:297px;width:316px;height:180px"><div class="name" style="font-size:26px;line-height:1.2">Duração testada<br>do restore</div></div>
+</section>
+
+<!-- ═══════════ 13 · gráfico com threshold + card de motivo ═══════════ -->
+<section class="slide">
+  <div class="card" style="left:20px;top:45px;width:1240px;height:388px;padding:24px 28px"><div style="font-size:24px">Duração do job de backup</div></div>
+  <svg class="arrows">
+    <path d="M140 365H1170" stroke="#2E2E32" stroke-width="2"/>
+    <g stroke="#2E2E32" stroke-width="2"><path d="M180 358v7M220 358v7M260 358v7M300 358v7M340 358v7M380 358v7M420 358v7M460 358v7M500 358v7M540 358v7M580 358v7M620 358v7M660 358v7M700 358v7M740 358v7M780 358v7M820 358v7M860 358v7M900 358v7M940 358v7M980 358v7M1020 358v7M1060 358v7M1100 358v7M1140 358v7"/></g>
+    <path class="f" d="M140 133H1180" stroke="#F2BB3C" stroke-width="3" stroke-dasharray="14 12"/>
+    <g class="f"><path d="M140 268 L180 248 L220 262 L260 226 L300 234 L340 203 L380 181 L420 165 L447 137" stroke="#9B94F0" stroke-width="3" fill="none"/><g fill="#9B94F0"><circle cx="140" cy="268" r="6"/><circle cx="180" cy="248" r="6"/><circle cx="220" cy="262" r="6"/><circle cx="260" cy="226" r="6"/><circle cx="300" cy="234" r="6"/><circle cx="340" cy="203" r="6"/><circle cx="380" cy="181" r="6"/><circle cx="420" cy="165" r="6"/></g></g>
+    <g class="f" stroke="#F45B4E" stroke-width="4" stroke-linecap="round" id="xs"></g>
+  </svg>
+  <div class="amber f" style="left:140px;top:150px;font-size:22px">30 min</div>
+  <div class="dim" style="left:88px;top:385px;font-size:22px">Aug 18</div>
+  <div class="dim" style="left:364px;top:385px;font-size:22px">Aug 25</div>
+  <div class="dim" style="left:1112px;top:385px;font-size:22px">Sep 13</div>
+  <div class="card f" style="left:20px;top:495px;width:845px;height:158px;padding:28px 34px;display:grid;grid-template-columns:64px 1fr auto;column-gap:36px;row-gap:22px;align-items:center;font-size:24px">
+    <img class="logo lg" style="grid-row:span 2;width:64px;height:64px" src="https://cdn.simpleicons.org/kubernetes/326CE5" alt="">
+    <span class="dim sans">Reason</span><span class="sans sb">DeadlineExceeded</span>
+    <span class="sans">activeDeadlineSeconds</span><span class="b">1800</span>
+  </div>
+  <div class="hand f" style="left:980px;top:522px">são os<br>30 minutos</div>
+  <svg class="arrows"><path class="ar f" d="M975 585 q-40 20 -100 8" stroke="#4CC26E" stroke-width="2.5" fill="none" marker-end="url(#m-hand)"/></svg>
+</section>
+
+<!-- ═══════════ 14 · alerta → rota (cards preenchidos) ═══════════ -->
+<section class="slide">
+  <div class="card" style="left:57px;top:126px;width:1166px;height:486px"></div>
+  <div class="dim" style="left:250px;top:158px;font-size:24px">Alerta</div>
+  <div class="dim" style="left:930px;top:158px;font-size:24px">Rota</div>
+  <div class="divider" style="left:87px;top:200px;width:1106px"></div>
+  <div class="divider" style="left:87px;top:400px;width:1106px"></div>
+  <div class="card fill-indigo f" style="left:95px;top:229px;width:397px;height:136px;display:flex;align-items:center;padding:0 60px;font-size:26px;font-weight:600;line-height:1.2">Backup do Postgres falhou</div>
+  <svg class="arrows"><path class="ar green f" d="M505 297H735" stroke-width="4" marker-end="url(#m-green)"/></svg>
+  <div class="card fill-green f" style="left:752px;top:226px;width:442px;height:142px;display:flex;align-items:center;gap:22px;padding:0 30px"><svg class="ic lg" style="color:var(--green)"><use href="#i-bell"/></svg><div><div class="sb" style="font-size:26px">On-call abre incidente</div><div class="dim" style="font-size:22px;margin-top:4px">ninguém dorme, mas resolve</div></div></div>
+  <div class="card fill-sky f ghost" style="left:95px;top:432px;width:397px;height:110px;display:flex;align-items:center;padding:0 40px;font-size:22px;line-height:1.2">Disk io wait acima<br>do threshold</div>
+  <div class="card fill-sky f" style="left:752px;top:436px;width:442px;height:142px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px"><span class="sans sb" style="font-size:26px">Dashboard</span><svg width="300" height="34" viewBox="0 0 300 34"><path d="M0 30 L34 20 L68 26 L102 8 L136 22 L170 12 L204 28 L238 18 L272 24 L300 14" stroke="#45B0EA" stroke-width="3" fill="none" stroke-linecap="round"/></svg></div>
+</section>
+
+<!-- ═══════════ 15 · app window: tarefas + handoff ═══════════ -->
+<section class="slide">
+  <div class="win app" style="left:0;top:0;width:1280px;height:720px;border:0;border-radius:0;font-family:var(--sans)">
+    <div class="bar-t"><div class="lights"><i></i><i></i><i></i></div>recovery workspace</div>
+    <div style="height:70px;display:flex;align-items:center;padding:0 44px;border-bottom:1px solid var(--line);font-size:22px"><span style="width:12px;height:12px;border-radius:50%;background:var(--red);margin-right:12px"></span>incident active<span class="dim" style="margin-left:auto;font-family:var(--mono)">Sun 8 Sep · 6:10 AM</span></div>
+    <div class="card" style="position:absolute;left:44px;top:158px;width:556px;height:492px">
+      <h3 style="padding:26px 26px 20px;border-bottom:1px solid var(--line)">tarefas de recovery</h3>
+      <div class="f" style="display:grid;grid-template-columns:44px 1fr;padding:22px 26px;border-bottom:1px solid var(--line);row-gap:6px;font-size:26px"><svg class="ic" style="color:var(--red)"><use href="#i-xc"/></svg><span>baixar o dump</span><span></span><span class="red val">aws: command not found</span></div>
+      <div class="f" style="display:grid;grid-template-columns:44px 1fr;padding:22px 26px;border-bottom:1px solid var(--line);row-gap:6px;font-size:26px"><svg class="ic" style="color:var(--red)"><use href="#i-xc"/></svg><span>ler o bucket</span><span></span><span class="red val">access denied</span></div>
+      <div class="f" style="display:grid;grid-template-columns:44px 1fr;padding:22px 26px;border-bottom:1px solid var(--line);row-gap:6px;font-size:26px"><svg class="ic" style="color:var(--red)"><use href="#i-unlock"/></svg><span>bucket virou público</span><span></span><span class="red val">still public</span></div>
+      <div class="f" style="display:grid;grid-template-columns:44px 1fr;padding:22px 26px;row-gap:6px;font-size:26px;color:var(--dim)"><svg class="ic"><use href="#i-clock"/></svg><span>rechecar acesso do bucket</span><span></span><span class="val">pending</span></div>
+    </div>
+    <div class="card f" style="position:absolute;left:646px;top:158px;width:590px;height:492px">
+      <h3 style="padding:26px 26px 20px;border-bottom:1px solid var(--line)">handoff note</h3>
+      <div style="padding:16px 26px 0;display:grid;row-gap:12px">
+        <span class="lbl">owner</span>
+        <div style="display:flex;gap:70px;font-size:26px"><span style="display:flex;align-items:center;gap:12px"><span class="avatar">GE</span>George</span><span style="display:flex;align-items:center;gap:12px"><span class="avatar" style="border-color:var(--green)">ZO</span>Zoomer</span></div>
+        <span class="lbl" style="margin-top:8px">current state</span>
+        <span class="val" style="display:flex;align-items:center;gap:12px"><svg class="ic" style="color:var(--green)"><use href="#i-ok"/></svg>pg_restore complete</span>
+        <span class="lbl" style="margin-top:8px">access risk</span>
+        <span class="val red">bucket still public</span>
+        <span class="lbl" style="margin-top:8px">next action</span>
+        <span class="val">recheck bucket access</span>
+        <span class="lbl" style="margin-top:8px">next shift</span>
+        <span class="val" style="display:flex;align-items:center;gap:16px">6:00 AM <span style="display:inline-flex"><span class="avatar" style="width:32px;height:32px;font-size:12px">A</span><span class="avatar" style="width:32px;height:32px;font-size:12px;margin-left:-8px">B</span><span class="avatar" style="width:32px;height:32px;font-size:12px;margin-left:-8px">C</span></span><span class="dim sans" style="font-size:22px"><span class="amber b">4</span> engineers</span></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ 16 · stat + tabela com colisão ═══════════ -->
+<section class="slide">
+  <div class="sb" style="left:72px;top:42px;font-size:30px">Esse plano de recuperação</div>
+  <div class="eyebrow" style="left:72px;top:130px">downtime</div>
+  <div class="amber b f" style="left:72px;top:160px;font-size:64px;line-height:1">≈ 45 h</div>
+  <div class="eyebrow" style="left:558px;top:130px">dados de</div>
+  <div class="sb f" style="left:558px;top:172px;font-size:36px;line-height:1">24 Aug <span class="dim">·</span> 12 dias atrás</div>
+  <div class="card" style="left:72px;top:272px;width:874px;height:208px">
+    <div style="height:64px;display:flex;align-items:center;padding:0 40px;font-size:22px;color:var(--dim);border-bottom:1px solid var(--line)">users</div>
+    <div class="eyebrow" style="position:absolute;left:40px;top:80px">id</div><div class="eyebrow" style="position:absolute;left:352px;top:80px">source</div><div class="eyebrow" style="position:absolute;left:666px;top:80px">created</div>
+    <div class="b" style="position:absolute;left:40px;top:120px;font-size:56px;line-height:1">4821</div>
+    <div class="green sb" style="position:absolute;left:352px;top:146px;font-size:26px">new signup</div>
+    <div style="position:absolute;left:666px;top:146px;font-size:26px">8 Sep</div>
+  </div>
+  <div class="f" style="left:174px;top:486px;display:flex;align-items:center;gap:12px"><svg class="ic" style="color:var(--red)"><use href="#i-warn"/></svg><span class="red b" style="font-size:30px">colisão de ID</span></div>
+  <div class="card f" style="left:72px;top:534px;width:874px;height:84px">
+    <div class="b" style="position:absolute;left:40px;top:14px;font-size:56px;line-height:1">4821</div>
+    <div class="dim" style="position:absolute;left:352px;top:28px;font-size:26px">backfill</div>
+    <div style="position:absolute;left:666px;top:28px;font-size:26px">28 Aug</div>
+  </div>
+  <div class="dim f" style="left:112px;top:636px;font-size:26px">pending historical import</div>
+</section>
+
+<!-- ═══════════ 17 · timeline vertical em duas colunas ═══════════ -->
+<section class="slide">
+  <div style="left:330px;top:52px;display:flex;align-items:center;gap:16px"><span style="width:14px;height:14px;border-radius:50%;background:var(--red)"></span><span class="sb" style="font-size:26px">O que deu errado</span></div>
+  <div style="left:816px;top:52px;display:flex;align-items:center;gap:16px"><span style="width:14px;height:14px;border-radius:50%;background:var(--green)"></span><span class="sb" style="font-size:26px">O conserto</span></div>
+  <svg class="arrows"><g stroke="#fff" stroke-width="2"><path d="M73 162V236" marker-end="url(#m-white)"/><path d="M73 270V344" marker-end="url(#m-white)"/><path d="M73 378V452" marker-end="url(#m-white)"/><path d="M73 486V560" marker-end="url(#m-white)"/></g><g fill="#F45B4E"><circle cx="73" cy="150" r="10"/><circle cx="73" cy="258" r="10"/><circle cx="73" cy="366" r="10"/><circle cx="73" cy="474" r="10"/><circle cx="73" cy="582" r="10"/></g></svg>
+  <div class="card" style="left:108px;top:114px;width:192px;height:72px;display:flex;align-items:center;justify-content:center;font-size:26px">6:01 PM</div>
+  <div class="card" style="left:108px;top:222px;width:192px;height:72px;display:flex;align-items:center;justify-content:center;font-size:26px">10:36 PM</div>
+  <div class="card" style="left:108px;top:330px;width:192px;height:72px;display:flex;align-items:center;justify-content:center;font-size:26px">10:44 PM</div>
+  <div class="card" style="left:108px;top:438px;width:192px;height:72px;display:flex;align-items:center;justify-content:center;font-size:26px">11:31 PM</div>
+  <div class="card" style="left:108px;top:546px;width:192px;height:72px;display:flex;align-items:center;justify-content:center;font-size:26px">3:00 AM</div>
+
+  <div class="f" style="left:330px;top:126px;width:460px;font-size:21px;line-height:1.35;white-space:nowrap"><span class="red">●</span>&nbsp; log_statement = all em prod<br><span class="dim">logs no mesmo volume dos dados</span></div>
+  <div class="f" style="left:816px;top:126px;width:460px;font-size:21px;line-height:1.35;white-space:nowrap"><span class="green">●</span>&nbsp; log em volume separado<br><span class="dim">ou rotação + retenção curta</span></div>
+  <div class="f" style="left:330px;top:234px;width:460px;font-size:21px;line-height:1.35;white-space:nowrap"><span class="red">●</span>&nbsp; alerta de disco só no Slack<br><span class="dim">ninguém on-call viu</span></div>
+  <div class="f" style="left:816px;top:234px;width:460px;font-size:21px;line-height:1.35;white-space:nowrap"><span class="green">●</span>&nbsp; crítico acorda alguém<br><span class="dim">o resto vai pro dashboard</span></div>
+  <div class="f" style="left:330px;top:342px;width:460px;font-size:21px;line-height:1.35;white-space:nowrap"><span class="red">●</span>&nbsp; rm -rf com variável vazia<br><span class="dim">sessão nova, variável não existia</span></div>
+  <div class="f" style="left:816px;top:342px;width:460px;font-size:21px;line-height:1.35;white-space:nowrap"><span class="green">●</span>&nbsp; set -u, caminho absoluto<br><span class="dim">ls antes do rm, e com par</span></div>
+  <div class="f" style="left:330px;top:450px;width:460px;font-size:21px;line-height:1.35;white-space:nowrap"><span class="red">●</span>&nbsp; "temos backup" (12 dias sem)<br><span class="dim">job morria por DeadlineExceeded</span></div>
+  <div class="f" style="left:816px;top:450px;width:460px;font-size:21px;line-height:1.35;white-space:nowrap"><span class="green">●</span>&nbsp; alerta de backup ausente<br><span class="dim">restore drill mensal</span></div>
+  <div class="f" style="left:330px;top:558px;width:460px;font-size:21px;line-height:1.35;white-space:nowrap"><span class="red">●</span>&nbsp; bucket público pra ir rápido<br><span class="dim">ainda público no dia seguinte</span></div>
+  <div class="f" style="left:816px;top:558px;width:460px;font-size:21px;line-height:1.35;white-space:nowrap"><span class="green">●</span>&nbsp; IAM role no pod<br><span class="dim">handoff note escrita</span></div>
+</section>
+
+<!-- ═══════════ 18 · mock de UI (Slack) com esqueleto ═══════════ -->
+<section class="slide">
+  <div style="left:0;top:0;width:1280px;height:720px;background:#1A1D21;font-family:var(--sans)">
+    <div style="height:64px;background:#3F0E40;display:flex;align-items:center;padding:0 24px;gap:20px"><span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:7px;background:#fff;color:#3F0E40;font:700 18px var(--sans)">#</span><span class="skel d" style="width:60px"></span><span style="margin:0 auto;width:580px;height:40px;border-radius:8px;background:#5A2C5B;display:flex;align-items:center;justify-content:center;font-size:20px;color:#ddd">Search Acme AI</span><span class="skel d" style="width:30px"></span></div>
+    <div style="position:absolute;left:0;top:64px;width:76px;bottom:0;background:#3F0E40;display:flex;flex-direction:column;align-items:center;gap:36px;padding-top:24px;font-size:15px;color:#ddd"><span class="skel" style="width:40px;height:40px;border-radius:10px;background:#5A2C5B"></span>Home<span>DMs</span><span>Activity</span><span>More</span></div>
+    <div style="position:absolute;left:76px;top:64px;width:268px;bottom:0;background:#3F0E40;padding:24px 18px;color:#ddd">
+      <div class="b" style="font-size:24px;color:#fff">Acme AI ▾</div>
+      <span class="skel" style="width:100px;margin-top:26px;background:#5A2C5B"></span><span class="skel" style="width:70px;margin-top:12px;background:#5A2C5B"></span>
+      <div style="margin-top:34px;font-size:15px;letter-spacing:.08em;color:#bbb">CHANNELS</div>
+      <div style="margin-top:14px;background:#1164A3;border-radius:6px;padding:8px 10px;font-size:20px;font-weight:600;color:#fff"># production-alerts</div>
+      <div style="margin-top:14px;padding:0 10px;font-size:20px;display:flex;align-items:center"># dev-alerts<span style="margin-left:auto;background:#E01E5A;border-radius:12px;padding:1px 9px;font-size:14px;font-weight:700;color:#fff">12</span></div>
+      <div style="margin-top:20px;display:grid;row-gap:20px;padding:0 10px"><span class="skel" style="width:110px;background:#5A2C5B"></span><span class="skel" style="width:150px;background:#5A2C5B"></span><span class="skel" style="width:80px;background:#5A2C5B"></span><span class="skel" style="width:130px;background:#5A2C5B"></span><span class="skel" style="width:100px;background:#5A2C5B"></span></div>
+    </div>
+    <div style="position:absolute;left:344px;top:64px;right:0;bottom:0;padding:22px 30px">
+      <div class="b" style="font-size:34px;color:#fff;display:flex;align-items:center;gap:14px"><span class="dim">#</span>production-alerts <span class="dim" style="font-size:20px">☆</span><span class="chip" style="margin-left:auto;height:36px;font-size:18px;color:#ddd;border-color:#333">9</span></div>
+      <div style="margin-top:22px;display:flex;align-items:center;gap:16px"><span style="flex:1;height:1px;background:#333"></span><span class="chip" style="height:44px;font-size:20px;color:#ddd;border-color:#444;background:#1A1D21;font-family:var(--sans)">Today</span><span style="flex:1;height:1px;background:#333"></span></div>
+      <div style="margin-top:20px;display:grid;grid-template-columns:48px 1fr;column-gap:14px;row-gap:10px"><img class="logo" style="width:48px;height:48px;border-radius:8px;background:#0B0B0D;padding:8px" src="https://cdn.simpleicons.org/grafana/F46800" alt=""><div><span class="b" style="font-size:22px;color:#aaa">Grafana</span> <span class="kbd" style="font-size:12px;padding:2px 8px;color:#aaa">APP</span> <span class="dim" style="font-size:18px">9:12 PM</span><span class="skel" style="width:420px;margin-top:10px"></span><span class="skel d" style="width:280px;margin-top:10px"></span></div></div>
+      <div class="f" style="margin-top:22px;display:grid;grid-template-columns:48px 1fr;column-gap:14px"><img class="logo" style="width:48px;height:48px;border-radius:8px;background:#0B0B0D;padding:8px" src="https://cdn.simpleicons.org/grafana/F46800" alt=""><div style="color:#fff">
+        <span class="b" style="font-size:22px">Grafana</span> <span class="kbd" style="font-size:12px;padding:2px 8px;color:#aaa">APP</span> <span class="dim" style="font-size:18px">10:36 PM</span>
+        <div style="margin-top:12px;display:flex;align-items:center;gap:14px;font-size:20px"><span class="pill red" style="height:40px;font-family:var(--sans);letter-spacing:0;text-transform:none;font-size:20px;background:#3A1412">CRITICAL</span><span class="dim">postgres-disk-usage · firing</span></div>
+        <div class="b f" style="margin-top:14px;font-size:26px;display:inline-block" ><span class="ug">Production database volume is running out of space</span></div>
+        <div style="margin-top:16px;display:grid;grid-template-columns:1fr 1fr;row-gap:6px;font-size:20px;width:560px"><span class="dim b">Current usage</span><span class="dim b">Threshold</span><span style="font-size:30px">91%</span><span style="font-size:30px">90%</span></div>
+      </div></div>
+      <div style="position:absolute;left:30px;right:30px;bottom:24px;height:100px;border:1px solid #444;border-radius:10px;padding:10px 16px;color:#888;font-size:20px"><div style="font-size:18px;color:#aaa">B &nbsp;<i>I</i>&nbsp; S &nbsp;≡&nbsp; &lt;/&gt;</div><div style="margin-top:12px">Message #production-alerts</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ 19 · end card ═══════════ -->
+<section class="slide">
+  <svg class="arrows" id="mesh"></svg>
+  <div class="sb" style="left:0;top:96px;width:1280px;text-align:center;font-size:44px">Obrigado</div>
+  <div class="dim" style="left:0;top:160px;width:1280px;text-align:center;font-size:22px">backup só existe depois que você restaurou</div>
+  <div class="pill" style="left:400px;top:520px;height:64px;font-size:22px;background:#E62117;border-color:#E62117;color:#fff;padding:0 34px;text-transform:none;letter-spacing:0">Dúvidas?</div>
+  <div class="pill" style="left:700px;top:520px;height:64px;font-size:22px;background:#1F1F22;border-color:#1F1F22;color:#fff;padding:0 34px;text-transform:none;letter-spacing:0">ICS Select</div>
+</section>
+
+</div>
+<div id="ctr">1 / 1</div>
+
+<script>
+// ─── engine: escala, navegação com fragmentos, modo print ───
+const deck = document.getElementById('deck');
+const slides = [...document.querySelectorAll('.slide')];
+let cur = 0;
+const PRINT = location.search.includes('print=1');
+function fit(){ if (PRINT) { deck.style.transform = 'none'; return; } const s = Math.min(innerWidth/1280, innerHeight/720); deck.style.transform = `translate(-50%,-50%) scale(${s})`; }
+addEventListener('resize', fit); fit();
+
+const frags = i => [...slides[i].querySelectorAll('.f')];
+function show(i, allOn){
+  slides[cur].classList.remove('active'); cur = i; slides[cur].classList.add('active');
+  frags(cur).forEach(f => f.classList.toggle('on', !!allOn));
+  document.getElementById('ctr').textContent = (cur+1) + ' / ' + slides.length;
+  location.hash = cur + 1;
+}
+function next(){
+  const off = frags(cur).filter(f => !f.classList.contains('on'));
+  if (off.length) { off[0].classList.add('on'); return; }
+  if (cur < slides.length - 1) show(cur + 1, false);
+}
+function prev(){
+  const on = frags(cur).filter(f => f.classList.contains('on'));
+  if (on.length) { on[on.length-1].classList.remove('on'); return; }
+  if (cur > 0) show(cur - 1, true);
+}
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); next(); }
+  if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); prev(); }
+  if (e.key === 'Home') show(0, false);
+  if (e.key === 'End') show(slides.length - 1, true);
+});
+document.addEventListener('click', e => { if (e.clientX > innerWidth/2) next(); else prev(); });
+
+// ?print=1 → tudo empilhado, fragmentos ligados (Cmd+P → salvar PDF, paisagem)
+if (PRINT) { document.documentElement.classList.add('print'); document.body.classList.add('print'); slides.forEach(s => s.classList.add('active')); document.querySelectorAll('.f').forEach(f => f.classList.add('on')); }
+else { const h = parseInt(location.hash.slice(1)); if (h >= 1 && h <= slides.length) show(h - 1, false); else show(0, false); }
+
+// ─── helpers de slide ───
+// slide 13: marcas X vermelhas depois do threshold
+(() => { const g = document.getElementById('xs'); if (!g) return; let d = '';
+  for (let x = 447; x <= 1165; x += 40) d += `M${x-9} ${133-9}l18 18M${x+9} ${133-9}l-18 18`;
+  const p = document.createElementNS('http://www.w3.org/2000/svg','path'); p.setAttribute('d', d); g.appendChild(p); })();
+// slide 17: marker branco
+(() => { const m = document.createElementNS('http://www.w3.org/2000/svg','marker'); m.id='m-white'; m.setAttribute('viewBox','0 0 10 10'); m.setAttribute('refX','9'); m.setAttribute('refY','5'); m.setAttribute('markerWidth','6'); m.setAttribute('markerHeight','6'); m.setAttribute('orient','auto');
+  m.innerHTML = '<path d="M0 0L10 5L0 10z" fill="#fff"/>'; document.querySelector('svg defs').appendChild(m); })();
+// slide 19: malha de nós (network mesh) determinística
+(() => { const svg = document.getElementById('mesh'); if (!svg) return; let seed = 7; const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
+  const pts = Array.from({length: 22}, () => [420 + rnd()*440, 190 + rnd()*470]); let s = '';
+  pts.forEach((a,i) => pts.forEach((b,j) => { if (j > i && Math.hypot(a[0]-b[0], a[1]-b[1]) < 150) s += `<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="#1F3A28" stroke-width="1.5"/>`; }));
+  pts.forEach(p => s += `<circle cx="${p[0]}" cy="${p[1]}" r="4" fill="#3BA35A"/>`); svg.innerHTML = s; })();
+</script>
+</body>
+</html>
