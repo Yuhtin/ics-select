@@ -5420,6 +5420,52 @@ const ITEMS: ItemSeed[] = [
     tags: ['concept', 'neural-network', 'autograd', 'micrograd', 'from-scratch', 'python', 'karpathy'],
     topicOrder: { 'data-science': 12 },
   },
+  // pandas (2026-09-21): pedido do Lucas Faria na retrô ("quero re-aprender a
+  // biblioteca"). Nenhum canal da whitelist cobre pandas; Socratica entra como
+  // channel-oneoff (vídeo aprovado, canal não) e Kaggle Learn como fonte nova de
+  // prática com exercícios corrigidos no browser (precedente: PortSwigger).
+  {
+    title: 'Pandas Explained: Series, DataFrames, and Real Data in Python',
+    url: 'https://www.youtube.com/watch?v=j00KgxRSeng',
+    description:
+      'Socratica: pandas em 15min. Series (valores com rótulo), DataFrame (colunas de Series que dividem o mesmo index), read_csv, filtro com máscara booleana, .loc, dados faltantes e groupby, tudo em cima de um CSV real de votação.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 15,
+    topicSlugs: ['data-science'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Socratica',
+    tags: ['concept', 'channel-oneoff', 'pandas', 'python', 'dataframe', 'series', 'socratica'],
+    topicOrder: { 'data-science': 13 },
+  },
+  {
+    title: 'Kaggle Learn Pandas: lessons 1-3 (creating, indexing, summary functions)',
+    url: 'https://www.kaggle.com/learn/pandas',
+    description:
+      'Kaggle Learn: lições 1 a 3 do curso de pandas. Ler CSV, selecionar com loc/iloc, filtrar por condição, describe, map e apply. 21 exercícios num notebook no browser, corrigidos na hora. Precisa de conta grátis no Kaggle.',
+    format: 'PROBLEM',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 90,
+    topicSlugs: ['data-science'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'Kaggle Learn',
+    tags: ['practice', 'pandas', 'python', 'dataframe', 'loc', 'iloc', 'lab', 'kaggle'],
+    topicOrder: { 'data-science': 14 },
+  },
+  {
+    title: 'Kaggle Learn Pandas: lessons 4-6 (grouping, missing values, combining)',
+    url: 'https://www.kaggle.com/code/residentmario/grouping-and-sorting',
+    description:
+      'Kaggle Learn: lições 4 a 6 do curso de pandas. groupby com agg, sort_values, tipos e valores faltantes (fillna, isnull), rename, e juntar tabelas com concat e join. 14 exercícios no mesmo formato.',
+    format: 'PROBLEM',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 65,
+    topicSlugs: ['data-science'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'Kaggle Learn',
+    tags: ['practice', 'pandas', 'python', 'groupby', 'missing-data', 'concat', 'join', 'lab', 'kaggle'],
+    topicOrder: { 'data-science': 15 },
+  },
 
   // ===========================================================================
   // cicd — 2026-04-28
