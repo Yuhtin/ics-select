@@ -117,7 +117,7 @@ Estas fases consolidam o produto: presença, dashboards, IA, WhatsApp, LGPD e re
 - **Aulas presenciais:** modelos `ClassSession` + `ClassAttendance`. Endpoint admin para registrar presença em lote (`POST /cycles/:id/classes/:classId/attendance`).
 - **Dashboard do admin:** `GET /admin/dashboard` retorna métricas de coorte (total de membros, planos publicados, % de itens concluídos, taxa de presença) e visão por membro. UI em `/admin/dashboard` e `/admin/members/[id]`.
 
-### Fase 6 — IA (OpenAI `gpt-5.4-mini`)
+### Fase 6 — IA (OpenAI `gpt-6-luna`)
 
 - **Draft de plano:** `POST /ai/draft-plan` gera um plano semanal sugerido a partir do histórico do membro e da biblioteca disponível.
 - **Brief → plano:** `POST /ai/brief-plan` recebe texto livre do admin e converte em itens estruturados.
@@ -167,7 +167,7 @@ Resumo das variáveis suportadas pelo `apps/api`. Ver `apps/api/.env.example` pa
 | `ALLOWED_EMAIL_DOMAINS` | sim | CSV de domínios autorizados |
 | `BOOTSTRAP_ADMIN_EMAILS` | não | CSV de e-mails que viram ADMIN no primeiro login |
 | `FRONTEND_BASE_URL` | sim | URL pública do web (para redirect pós-login) |
-| `OPENAI_API_KEY` | sim | OpenAI — embeddings + chat (`gpt-5.4-mini`) das features de IA |
+| `OPENAI_API_KEY` | sim | OpenAI — embeddings + chat (`gpt-6-luna`) das features de IA |
 | `EVOLUTION_API_BASE_URL` | não | URL do Evolution API self-hosted (Fase 7) |
 | `EVOLUTION_API_KEY` | não | API key do Evolution |
 | `EVOLUTION_INSTANCE` | não | Nome da instância pareada |

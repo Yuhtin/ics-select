@@ -142,12 +142,12 @@ describe('OpenAiChatProvider.callJsonWithTools', () => {
       messages: [{ role: 'user', content: 'go' }],
       tools: [TOOL],
       executeTool: jest.fn(),
-      model: 'gpt-5.6-luna',
+      model: 'gpt-6-luna',
       reasoningEffort: 'xhigh',
       maxTokens: 16000,
     });
     const arg = responsesMock.mock.calls[0]![0];
-    expect(arg.model).toBe('gpt-5.6-luna');
+    expect(arg.model).toBe('gpt-6-luna');
     expect(arg.reasoning).toEqual({ effort: 'xhigh' });
     expect(arg.max_output_tokens).toBe(16000);
     expect(arg.instructions).toBe('sys');
