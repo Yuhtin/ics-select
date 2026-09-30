@@ -2,22 +2,20 @@ import { Injectable } from '@nestjs/common';
 import OpenAI from 'openai';
 import type { ToolDefinition, ToolExecutor, ToolCall } from './tool-calling.js';
 
-export const MODEL = 'gpt-5.4-mini';
+export const MODEL = 'gpt-6-luna';
 
 /**
  * The weekly-plan draft is the one call worth paying reasoning for: it picks
- * and sequences a member's whole week. Everything else (brief, diagnose, chat)
- * stays on MODEL.
+ * and sequences a member's whole week, so it runs at xhigh effort. Everything
+ * else (brief, diagnose, chat) stays on MODEL with the default effort.
  */
-export const DRAFT_MODEL = 'gpt-5.6-luna';
+export const DRAFT_MODEL = 'gpt-6-luna';
 
-// Pricing per 1M tokens, per model. Luna's rates are the ones after OpenAI's
-// 2026-07-30 cut ($1/$6 before it) — recheck if the bill looks off. The >272k
-// input tier is ignored: our prompts are nowhere near it.
-const DEFAULT_PRICE = { input: 0.15, output: 0.6 };
+// Pricing per 1M tokens, per model (gpt-6-luna list price at its 2026-09-22
+// launch). The >272k input tier is ignored: our prompts are nowhere near it.
+const DEFAULT_PRICE = { input: 0.1, output: 0.5 };
 const PRICING: Record<string, { input: number; output: number }> = {
-  'gpt-5.4-mini': DEFAULT_PRICE,
-  'gpt-5.6-luna': { input: 0.2, output: 1.2 },
+  'gpt-6-luna': DEFAULT_PRICE,
 };
 
 export type ReasoningEffort = 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh';

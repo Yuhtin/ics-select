@@ -84,6 +84,9 @@ const TOPICS: TopicSeed[] = [
   { slug: 'deploy', label: 'Deploy', order: 26 },
   { slug: 'observability', label: 'Observability', order: 27 },
   { slug: 'design-patterns', label: 'Design Patterns', order: 28 },
+  // Engenharia aplicada de LLM (RAG, vector DB, agentes, MCP). Criado 2026-09-16
+  // a partir do pedido do Eduardo Hirohito; fica em Eng. Fundamentals (<30).
+  { slug: 'ai-engineering', label: 'AI Engineering', order: 29 },
 
   // System Design — Building Blocks (order 30–36)
   { slug: 'load-balancers', label: 'Load Balancers', order: 30 },
@@ -1371,7 +1374,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'YouTube — mycodeschool',
     tags: ['concept', 'dp', 'memoization', 'fibonacci', 'recursion-to-dp'],
-    topicOrder: { 'dp': 2, 'recursion': 2 },
+    topicOrder: { 'dp': 5, 'recursion': 2 },
   },
   {
     title: 'Top 5 Dynamic Programming Patterns for Coding Interviews — For Beginners',
@@ -1385,7 +1388,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'YouTube — NeetCode',
     tags: ['concept', 'dp', 'patterns', 'overview', 'neetcode'],
-    topicOrder: { 'dp': 1 },
+    topicOrder: { 'dp': 4 },
   },
   {
     title: 'The Recursive Staircase — Top Down & Bottom Up Dynamic Programming',
@@ -1399,7 +1402,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'YouTube — Back To Back SWE',
     tags: ['concept', 'dp', 'top-down', 'bottom-up', 'staircase', 'memoization', 'tabulation'],
-    topicOrder: { 'dp': 3, 'recursion': 10 },
+    topicOrder: { 'dp': 6, 'recursion': 10 },
   },
   {
     title: 'The 0/1 Knapsack Problem (Demystifying Dynamic Programming)',
@@ -1413,7 +1416,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'YouTube — Back To Back SWE',
     tags: ['concept', 'dp', '0-1-knapsack', '2d-dp', 'classic'],
-    topicOrder: { 'dp': 15 },
+    topicOrder: { 'dp': 18 },
   },
   {
     title: 'Edit Distance Between 2 Strings — The Levenshtein Distance',
@@ -1427,7 +1430,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'YouTube — Back To Back SWE',
     tags: ['concept', 'dp', 'edit-distance', 'levenshtein', 'string-dp', '2d-dp'],
-    topicOrder: { 'dp': 23 },
+    topicOrder: { 'dp': 26 },
   },
   {
     title: 'Grokking Algorithms — Dynamic Programming (chapter 9)',
@@ -1441,7 +1444,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'Book — Grokking Algorithms',
     tags: ['concept', 'book', 'grokking', 'dp', 'knapsack', 'lcs'],
-    topicOrder: { 'dp': 12 },
+    topicOrder: { 'dp': 15 },
   },
   {
     title: 'O que é replicação de Banco de Dados?',
@@ -4224,7 +4227,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 1-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-70', 'dp-1d'],
-    topicOrder: { 'dp': 5 },
+    topicOrder: { 'dp': 8 },
   },
   {
     title: 'LeetCode 746 — Min Cost Climbing Stairs',
@@ -4238,7 +4241,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 1-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-746', 'dp-1d'],
-    topicOrder: { 'dp': 6 },
+    topicOrder: { 'dp': 9 },
   },
   {
     title: 'LeetCode 322 — Coin Change',
@@ -4252,7 +4255,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 1-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-322', 'dp-1d'],
-    topicOrder: { 'dp': 18 },
+    topicOrder: { 'dp': 21 },
   },
   {
     title: 'LeetCode 91 — Decode Ways',
@@ -4266,7 +4269,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 1-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-91', 'dp-1d'],
-    topicOrder: { 'dp': 9 },
+    topicOrder: { 'dp': 12 },
   },
   {
     title: 'LeetCode 198 — House Robber',
@@ -4280,7 +4283,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 1-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-198', 'dp-1d'],
-    topicOrder: { 'dp': 7 },
+    topicOrder: { 'dp': 10 },
   },
   {
     title: 'LeetCode 213 — House Robber II',
@@ -4294,7 +4297,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 1-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-213', 'dp-1d'],
-    topicOrder: { 'dp': 8 },
+    topicOrder: { 'dp': 11 },
   },
   {
     title: 'LeetCode 300 — Longest Increasing Subsequence',
@@ -4308,7 +4311,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 1-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-300', 'dp-1d'],
-    topicOrder: { 'dp': 20 },
+    topicOrder: { 'dp': 23 },
   },
   {
     title: 'LeetCode 5 — Longest Palindromic Substring',
@@ -4322,7 +4325,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 1-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-5', 'dp-1d'],
-    topicOrder: { 'dp': 21 },
+    topicOrder: { 'dp': 24 },
   },
   {
     title: 'LeetCode 152 — Maximum Product Subarray',
@@ -4336,7 +4339,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 1-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-152', 'dp-1d'],
-    topicOrder: { 'dp': 11 },
+    topicOrder: { 'dp': 14 },
   },
   {
     title: 'LeetCode 647 — Palindromic Substrings',
@@ -4350,7 +4353,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 1-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-647', 'dp-1d'],
-    topicOrder: { 'dp': 22 },
+    topicOrder: { 'dp': 25 },
   },
   {
     title: 'LeetCode 416 — Partition Equal Subset Sum',
@@ -4364,7 +4367,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 1-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-416', 'dp-1d'],
-    topicOrder: { 'dp': 16 },
+    topicOrder: { 'dp': 19 },
   },
   {
     title: 'LeetCode 139 — Word Break',
@@ -4378,7 +4381,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 1-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-139', 'dp-1d'],
-    topicOrder: { 'dp': 10 },
+    topicOrder: { 'dp': 13 },
   },
 
   // ---------------------------------------------------------------------------
@@ -4398,7 +4401,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 2-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-309', 'dp-2d'],
-    topicOrder: { 'dp': 26 },
+    topicOrder: { 'dp': 29 },
   },
   {
     title: 'LeetCode 518 — Coin Change II',
@@ -4412,7 +4415,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 2-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-518', 'dp-2d'],
-    topicOrder: { 'dp': 19 },
+    topicOrder: { 'dp': 22 },
   },
   {
     title: 'LeetCode 72 — Edit Distance',
@@ -4426,7 +4429,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 2-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-72', 'dp-2d'],
-    topicOrder: { 'dp': 24 },
+    topicOrder: { 'dp': 27 },
   },
   {
     title: 'LeetCode 97 — Interleaving String',
@@ -4440,7 +4443,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 2-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-97', 'dp-2d'],
-    topicOrder: { 'dp': 25 },
+    topicOrder: { 'dp': 28 },
   },
   {
     title: 'LeetCode 1143 — Longest Common Subsequence',
@@ -4454,7 +4457,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 2-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-1143', 'dp-2d'],
-    topicOrder: { 'dp': 14 },
+    topicOrder: { 'dp': 17 },
   },
   {
     title: 'LeetCode 494 — Target Sum',
@@ -4468,7 +4471,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 2-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-494', 'dp-2d'],
-    topicOrder: { 'dp': 17 },
+    topicOrder: { 'dp': 20 },
   },
   {
     title: 'LeetCode 62 — Unique Paths',
@@ -4482,7 +4485,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 2-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-62', 'dp-2d'],
-    topicOrder: { 'dp': 13 },
+    topicOrder: { 'dp': 16 },
   },
   {
     title: 'LeetCode 312 — Burst Balloons',
@@ -4496,7 +4499,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 2-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-312', 'dp-2d'],
-    topicOrder: { 'dp': 30 },
+    topicOrder: { 'dp': 33 },
   },
   {
     title: 'LeetCode 115 — Distinct Subsequences',
@@ -4510,7 +4513,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 2-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-115', 'dp-2d'],
-    topicOrder: { 'dp': 28 },
+    topicOrder: { 'dp': 31 },
   },
   {
     title: 'LeetCode 329 — Longest Increasing Path In a Matrix',
@@ -4524,7 +4527,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 2-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-329', 'dp-2d'],
-    topicOrder: { 'dp': 27 },
+    topicOrder: { 'dp': 30 },
   },
   {
     title: 'LeetCode 10 — Regular Expression Matching',
@@ -4538,7 +4541,7 @@ const ITEMS: ItemSeed[] = [
     tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
     source: 'LeetCode — 2-D Dynamic Programming',
     tags: ['practice', 'leetcode', 'lc-10', 'dp-2d'],
-    topicOrder: { 'dp': 29 },
+    topicOrder: { 'dp': 32 },
   },
 
   // ---------------------------------------------------------------------------
@@ -5416,6 +5419,52 @@ const ITEMS: ItemSeed[] = [
     source: 'YouTube — Andrej Karpathy',
     tags: ['concept', 'neural-network', 'autograd', 'micrograd', 'from-scratch', 'python', 'karpathy'],
     topicOrder: { 'data-science': 12 },
+  },
+  // pandas (2026-09-21): pedido do Lucas Faria na retrô ("quero re-aprender a
+  // biblioteca"). Nenhum canal da whitelist cobre pandas; Socratica entra como
+  // channel-oneoff (vídeo aprovado, canal não) e Kaggle Learn como fonte nova de
+  // prática com exercícios corrigidos no browser (precedente: PortSwigger).
+  {
+    title: 'Pandas Explained: Series, DataFrames, and Real Data in Python',
+    url: 'https://www.youtube.com/watch?v=j00KgxRSeng',
+    description:
+      'Socratica: pandas em 15min. Series (valores com rótulo), DataFrame (colunas de Series que dividem o mesmo index), read_csv, filtro com máscara booleana, .loc, dados faltantes e groupby, tudo em cima de um CSV real de votação.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 15,
+    topicSlugs: ['data-science'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Socratica',
+    tags: ['concept', 'channel-oneoff', 'pandas', 'python', 'dataframe', 'series', 'socratica'],
+    topicOrder: { 'data-science': 13 },
+  },
+  {
+    title: 'Kaggle Learn Pandas: lessons 1-3 (creating, indexing, summary functions)',
+    url: 'https://www.kaggle.com/learn/pandas',
+    description:
+      'Kaggle Learn: lições 1 a 3 do curso de pandas. Ler CSV, selecionar com loc/iloc, filtrar por condição, describe, map e apply. 21 exercícios num notebook no browser, corrigidos na hora. Precisa de conta grátis no Kaggle.',
+    format: 'PROBLEM',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 90,
+    topicSlugs: ['data-science'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'Kaggle Learn',
+    tags: ['practice', 'pandas', 'python', 'dataframe', 'loc', 'iloc', 'lab', 'kaggle'],
+    topicOrder: { 'data-science': 14 },
+  },
+  {
+    title: 'Kaggle Learn Pandas: lessons 4-6 (grouping, missing values, combining)',
+    url: 'https://www.kaggle.com/code/residentmario/grouping-and-sorting',
+    description:
+      'Kaggle Learn: lições 4 a 6 do curso de pandas. groupby com agg, sort_values, tipos e valores faltantes (fillna, isnull), rename, e juntar tabelas com concat e join. 14 exercícios no mesmo formato.',
+    format: 'PROBLEM',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 65,
+    topicSlugs: ['data-science'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'Kaggle Learn',
+    tags: ['practice', 'pandas', 'python', 'groupby', 'missing-data', 'concat', 'join', 'lab', 'kaggle'],
+    topicOrder: { 'data-science': 15 },
   },
 
   // ===========================================================================
@@ -6561,6 +6610,541 @@ const ITEMS: ItemSeed[] = [
     source: 'YouTube — IBM Technology',
     tags: ['concept', 'channel-oneoff', 'security', 'confidential-computing', 'tee', 'enclave', 'encryption', 'ibm-technology'],
     topicOrder: { 'security': 17 },
+  },
+  // ---------------------------------------------------------------------------
+  // dp — cabeça da ladder trazida pelo Davi (2026-09-09).
+  // Canais fora da whitelist, aprovados por vídeo (channel-oneoff). Orders 1-3;
+  // os 29 itens antigos de dp foram deslocados +3 pra abrir espaço.
+  // ---------------------------------------------------------------------------
+  {
+    title: "A Beginner's Guide to Dynamic Programming",
+    url: 'https://www.youtube.com/watch?v=oNoILrFOx2k',
+    description:
+      'Matt Guest — os princípios de DP com exemplos passo a passo e como identificar que um problema pede DP. Parte 1 de 3.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 8,
+    topicSlugs: ['dp'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — Matt Guest',
+    tags: ['concept', 'channel-oneoff', 'dp', 'overlapping-subproblems', 'intro'],
+    topicOrder: { 'dp': 1 },
+  },
+  {
+    title: 'What Is Dynamic Programming and How To Use It',
+    url: 'https://www.youtube.com/watch?v=vYquumk4nWw',
+    description:
+      'CS Dojo — DP em cima de Fibonacci: do recursivo que recalcula tudo até a versão com cache.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 15,
+    topicSlugs: ['dp'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — CS Dojo',
+    tags: ['concept', 'channel-oneoff', 'dp', 'memoization', 'fibonacci', 'intro'],
+    topicOrder: { 'dp': 2 },
+  },
+  {
+    title: 'Mastering Dynamic Programming — How to solve any interview problem',
+    url: 'https://www.youtube.com/watch?v=Hdr64lKQ3e4',
+    description:
+      'Tech With Nikola — por que recursão pura estoura, como memoization corta o custo, bottom-up vs top-down, e como reconhecer que um problema é DP.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 20,
+    topicSlugs: ['dp'],
+    tracks: ['BIG_TECH', 'COMPETITIVE_PROGRAMMING'],
+    source: 'YouTube — Tech With Nikola',
+    tags: ['concept', 'channel-oneoff', 'dp', 'memoization', 'top-down', 'bottom-up', 'pattern-recognition'],
+    topicOrder: { 'dp': 3 },
+  },
+  // ---------------------------------------------------------------------------
+  // security — trilha "como uma empresa protege uma aplicação web" (2026-09-15).
+  // Montada a partir do pedido do Bruno Kadayan. Orders 18-37 de `security`,
+  // na sequência do fluxo: entrada da requisição → identidade → labs de
+  // vulnerabilidade → infra interna (BeyondProd) → acesso de funcionários
+  // (BeyondCorp) → IAM → supply chain → incidente real → dado em uso → livro.
+  //
+  // Exceções aprovadas pelo Davi neste lote (canal NÃO entra na whitelist):
+  //   - OktaDev (talk OAuth/OIDC)                → channel-oneoff
+  //   - USENIX Enigma Conference (BeyondProd)    → channel-oneoff
+  //   - Google Cloud Tech (confidential talk)    → channel-oneoff
+  //   - Livro "Building Secure and Reliable Systems" (Google/O'Reilly, gratuito)
+  //     fora da whitelist Grokking; aprovado só para estes 5 capítulos.
+  // PortSwigger entra como PROBLEM/practice: página do tópico + labs Apprentice.
+  // ---------------------------------------------------------------------------
+  {
+    title: 'The Journey of an HTTP request to the Backend',
+    url: 'https://www.youtube.com/watch?v=K2qV6VpfR7I',
+    description:
+      'Hussein Nasser — o caminho de uma requisição até o backend: DNS, handshake TCP e TLS, proxy reverso, load balancer, API gateway. É o mapa onde cada controle de segurança vai ser encaixado depois. 37min.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 37,
+    topicSlugs: ['networking', 'security'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Hussein Nasser',
+    tags: ['concept', 'http', 'dns', 'tcp', 'tls', 'reverse-proxy', 'load-balancer', 'api-gateway', 'hussein-nasser'],
+    topicOrder: { 'networking': 10, 'security': 18 },
+  },
+  {
+    title: 'OAuth 2.0 and OpenID Connect (in plain English)',
+    url: 'https://www.youtube.com/watch?v=996OiexHze0',
+    description:
+      'OktaDev (Nate Barbettini) — talk de 63min: o problema que o OAuth resolve (delegar acesso sem entregar a senha), authorization code, implicit, client credentials, PKCE, e por que OAuth sozinho não serve pra login. OIDC entra na segunda metade com o ID token. Slides, sem código.',
+    format: 'VIDEO',
+    difficulty: 'HARD',
+    estimatedMinutes: 63,
+    topicSlugs: ['security'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — OktaDev',
+    tags: ['concept', 'channel-oneoff', 'oauth', 'oidc', 'authorization-code', 'pkce', 'id-token', 'okta'],
+    topicOrder: { 'security': 19 },
+  },
+  {
+    title: 'PortSwigger — Authentication vulnerabilities',
+    url: 'https://portswigger.net/web-security/authentication',
+    description:
+      'Web Security Academy — leia a página de authentication e faça 2 labs Apprentice (username enumeration, brute-force de senha). Os labs rodam no browser, sem instalar nada. Conta grátis.',
+    format: 'PROBLEM',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 50,
+    topicSlugs: ['security'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'PortSwigger Web Security Academy',
+    tags: ['practice', 'authentication', 'brute-force', 'username-enumeration', 'lab', 'portswigger'],
+    topicOrder: { 'security': 20 },
+  },
+  {
+    title: 'PortSwigger — Access control vulnerabilities',
+    url: 'https://portswigger.net/web-security/access-control',
+    description:
+      'Web Security Academy — página de access control (vertical, horizontal, IDOR) + 2 labs Apprentice. É o bug número 1 do OWASP Top 10 e o mais fácil de deixar passar em code review.',
+    format: 'PROBLEM',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 50,
+    topicSlugs: ['security'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'PortSwigger Web Security Academy',
+    tags: ['practice', 'access-control', 'idor', 'authorization', 'owasp', 'lab', 'portswigger'],
+    topicOrder: { 'security': 21 },
+  },
+  {
+    title: 'PortSwigger — Server-side request forgery (SSRF)',
+    url: 'https://portswigger.net/web-security/ssrf',
+    description:
+      'Web Security Academy — página de SSRF + 1 lab: como fazer o servidor disparar requisições pra dentro da rede (localhost, metadata endpoint da cloud) usando um campo que aceita URL.',
+    format: 'PROBLEM',
+    difficulty: 'HARD',
+    estimatedMinutes: 35,
+    topicSlugs: ['security'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'PortSwigger Web Security Academy',
+    tags: ['practice', 'ssrf', 'cloud-metadata', 'lab', 'portswigger'],
+    topicOrder: { 'security': 22 },
+  },
+  {
+    title: 'PortSwigger — Cross-site scripting (XSS)',
+    url: 'https://portswigger.net/web-security/cross-site-scripting',
+    description:
+      'Web Security Academy — página de XSS (reflected, stored, DOM-based) + 1 ou 2 labs Apprentice. Foco em entender por onde o script entra e o que o browser faz com ele.',
+    format: 'PROBLEM',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 45,
+    topicSlugs: ['security'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'PortSwigger Web Security Academy',
+    tags: ['practice', 'xss', 'reflected', 'stored', 'dom', 'lab', 'portswigger'],
+    topicOrder: { 'security': 23 },
+  },
+  {
+    title: 'PortSwigger — SQL injection',
+    url: 'https://portswigger.net/web-security/sql-injection',
+    description:
+      'Web Security Academy — página de SQL injection + 1 ou 2 labs Apprentice: como o payload entra na query, como ler dados de outra tabela via UNION, e por que query parametrizada fecha o buraco.',
+    format: 'PROBLEM',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 45,
+    topicSlugs: ['security', 'databases'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'PortSwigger Web Security Academy',
+    tags: ['practice', 'sql-injection', 'union', 'prepared-statements', 'lab', 'portswigger'],
+    topicOrder: { 'security': 24 },
+  },
+  {
+    title: 'BeyondProd: The Origin of Cloud-Native Security at Google',
+    url: 'https://www.youtube.com/watch?v=3o4jmLRQdNw',
+    description:
+      'USENIX Enigma 2020 — como o Google protege microsserviços em produção: identidade de serviço no lugar de perímetro de rede, mTLS entre serviços, isolamento de workloads, código com procedência conhecida, e deploy que só passa com code review e política central. 25min de slides.',
+    format: 'VIDEO',
+    difficulty: 'HARD',
+    estimatedMinutes: 25,
+    topicSlugs: ['security', 'cloud'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — USENIX Enigma Conference',
+    tags: ['case-study', 'channel-oneoff', 'beyondprod', 'zero-trust', 'mtls', 'service-identity', 'google', 'microservices'],
+    topicOrder: { 'security': 25, 'cloud': 19 },
+  },
+  {
+    title: 'BeyondProd (whitepaper)',
+    url: 'https://docs.cloud.google.com/docs/security/beyondprod',
+    description:
+      'Documentação do Google Cloud — a versão escrita do BeyondProd, com o que a talk não cabe: ALTS, Binary Authorization, sandboxing no Borg, e a tabela que compara controle tradicional vs. cloud-native. Leia depois do vídeo e use como consulta.',
+    format: 'ARTICLE',
+    difficulty: 'HARD',
+    estimatedMinutes: 30,
+    topicSlugs: ['security', 'cloud'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'Google Cloud Documentation',
+    tags: ['concept', 'beyondprod', 'zero-trust', 'alts', 'binary-authorization', 'borg', 'google'],
+    topicOrder: { 'security': 26, 'cloud': 20 },
+  },
+  {
+    title: 'Zero Trust and BeyondCorp Google Cloud',
+    url: 'https://cloud.google.com/blog/topics/developers-practitioners/zero-trust-and-beyondcorp-google-cloud',
+    description:
+      'Google Cloud Blog — o que muda quando a empresa para de confiar na rede interna: acesso decidido por identidade do usuário + estado do dispositivo, sem VPN, com IAP e IAM Conditions fazendo o papel de proxy. Explica onde o BeyondCorp (funcionários) termina e o BeyondProd (produção) começa.',
+    format: 'ARTICLE',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 12,
+    topicSlugs: ['security'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'Blog — Google Cloud',
+    tags: ['concept', 'zero-trust', 'beyondcorp', 'iap', 'context-aware-access', 'google'],
+    topicOrder: { 'security': 27 },
+  },
+  {
+    title: 'ConsoleMe: A Central Control Plane for AWS Permissions and Access',
+    url: 'https://netflixtechblog.com/consoleme-a-central-control-plane-for-aws-permissions-and-access-fd09afdd60a8',
+    description:
+      'Netflix TechBlog — como a Netflix controla permissões IAM em centenas de contas AWS: pedido de permissão em linguagem natural que vira policy, credenciais temporárias via CLI (Weep), e o time de segurança saindo do papel de gatekeeper. Least privilege aplicado em escala.',
+    format: 'ARTICLE',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 12,
+    topicSlugs: ['security', 'cloud'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'Blog — Netflix TechBlog',
+    tags: ['case-study', 'iam', 'aws', 'least-privilege', 'consoleme', 'netflix'],
+    topicOrder: { 'security': 28, 'cloud': 21 },
+  },
+  {
+    title: 'Disrupting supply chain attacks on npm and GitHub Actions',
+    url: 'https://github.blog/security/supply-chain-security/disrupting-supply-chain-attacks-on-npm-and-github-actions/',
+    description:
+      'GitHub Blog — o que o GitHub mudou depois dos ataques a pacotes npm e a pipelines de Actions: trusted publishing no lugar de token longo, cache read-only pra workflow não confiável, publish com 2FA extra, install scripts desligados por padrão no npm 12. Cada medida vem com o ataque que ela fecha.',
+    format: 'ARTICLE',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 15,
+    topicSlugs: ['security', 'cicd'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'Blog — GitHub',
+    tags: ['concept', 'supply-chain', 'npm', 'github-actions', 'trusted-publishing', 'tokens', 'github'],
+    topicOrder: { 'security': 29 },
+  },
+  {
+    title: 'Thanksgiving 2023 security incident',
+    url: 'https://blog.cloudflare.com/thanksgiving-2023-security-incident/',
+    description:
+      'Cloudflare Blog — post-mortem de invasão real: um token e três credenciais de service account que não foram rotacionados depois do vazamento da Okta, invasor dentro do Atlassian interno (36 tickets, 202 páginas de wiki, 76 repositórios), tentativa de chegar num servidor de console em São Paulo. O que parou o avanço foi Zero Trust com chave física, segmentação e firewall. Depois: 5.000+ credenciais rotacionadas. Tem timeline.',
+    format: 'ARTICLE',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 15,
+    topicSlugs: ['security'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'Blog — Cloudflare',
+    tags: ['case-study', 'incident-response', 'post-mortem', 'credential-rotation', 'lateral-movement', 'zero-trust', 'cloudflare'],
+    topicOrder: { 'security': 30 },
+  },
+  {
+    title: 'Confidential computing and confidential accelerators for AI workloads',
+    url: 'https://www.youtube.com/watch?v=a-hd78NX36c',
+    description:
+      'Google Cloud Tech — 47min de talk sobre dado em uso: Confidential VMs, TEE, attestation remota, e como isso chega na GPU (confidential accelerators) pra treinar e servir modelo sobre dado que nem o provedor de cloud vê. Comece pelo vídeo da IBM se ainda não sabe o que é TEE.',
+    format: 'VIDEO',
+    difficulty: 'HARD',
+    estimatedMinutes: 47,
+    topicSlugs: ['security', 'cloud'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Google Cloud Tech',
+    tags: ['concept', 'channel-oneoff', 'confidential-computing', 'tee', 'attestation', 'confidential-vm', 'gpu', 'google'],
+    topicOrder: { 'security': 31, 'cloud': 22 },
+  },
+  {
+    title: 'Confidential computing for data analytics, AI, and federated learning',
+    url: 'https://docs.cloud.google.com/architecture/security/confidential-computing-analytics-ai',
+    description:
+      'Guia de arquitetura do Google Cloud — padrões de confidential computing pra analytics, IA e federated learning, com diagramas de quem vê o dado em cada etapa. Longo (~40min). Leia como referência, não de uma vez.',
+    format: 'ARTICLE',
+    difficulty: 'HARD',
+    estimatedMinutes: 40,
+    topicSlugs: ['security', 'cloud'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'Google Cloud Documentation',
+    tags: ['concept', 'confidential-computing', 'federated-learning', 'analytics', 'architecture', 'google'],
+    topicOrder: { 'security': 32, 'cloud': 23 },
+  },
+  {
+    title: 'Building Secure and Reliable Systems — The Intersection of Security and Reliability (ch. 1)',
+    url: 'https://google.github.io/building-secure-and-reliable-systems/raw/ch01.html',
+    description:
+      'Livro do Google (O\'Reilly, gratuito online) — capítulo 1: onde segurança e confiabilidade se ajudam e onde brigam (redundância aumenta superfície de ataque; fail-open vs fail-closed), com o caso de uma senha de cofre perdida. Leia só este capítulo.',
+    format: 'BOOK',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 18,
+    topicSlugs: ['security', 'reliability'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'Book — Building Secure and Reliable Systems',
+    tags: ['concept', 'book', 'bsrs', 'security-vs-reliability', 'fail-open', 'google'],
+    topicOrder: { 'security': 33 },
+  },
+  {
+    title: 'Building Secure and Reliable Systems — Understanding Adversaries (ch. 2)',
+    url: 'https://google.github.io/building-secure-and-reliable-systems/raw/ch02.html',
+    description:
+      'Livro do Google — capítulo 2: quem ataca e por quê (hobbyista, crime organizado, insider, estado), o que cada um consegue fazer, e como isso vira threat model. Leia só este capítulo.',
+    format: 'BOOK',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 30,
+    topicSlugs: ['security'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'Book — Building Secure and Reliable Systems',
+    tags: ['concept', 'book', 'bsrs', 'threat-modeling', 'adversaries', 'insider-threat', 'google'],
+    topicOrder: { 'security': 34 },
+  },
+  {
+    title: 'Building Secure and Reliable Systems — Design for Least Privilege (ch. 5)',
+    url: 'https://google.github.io/building-secure-and-reliable-systems/raw/ch05.html',
+    description:
+      'Livro do Google — capítulo 5: least privilege na prática. Classificação de acesso, multi-party authorization, acesso temporário, proxies que registram tudo, e o custo de usabilidade que cada controle cobra. Capítulo longo (~40min).',
+    format: 'BOOK',
+    difficulty: 'HARD',
+    estimatedMinutes: 40,
+    topicSlugs: ['security'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'Book — Building Secure and Reliable Systems',
+    tags: ['concept', 'book', 'bsrs', 'least-privilege', 'multi-party-authorization', 'access-control', 'google'],
+    topicOrder: { 'security': 35 },
+  },
+  {
+    title: 'Building Secure and Reliable Systems — Crisis Management (ch. 17)',
+    url: 'https://google.github.io/building-secure-and-reliable-systems/raw/ch17.html',
+    description:
+      'Livro do Google — capítulo 17: o que fazer nas primeiras horas de um incidente de segurança. Como decidir se é crise, quem lidera, como manter o atacante sem saber que foi visto, e como comunicar sem vazar. Leia junto com o post-mortem da Cloudflare. ~40min.',
+    format: 'BOOK',
+    difficulty: 'HARD',
+    estimatedMinutes: 40,
+    topicSlugs: ['security', 'reliability'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'Book — Building Secure and Reliable Systems',
+    tags: ['concept', 'book', 'bsrs', 'incident-response', 'crisis-management', 'google'],
+    topicOrder: { 'security': 36 },
+  },
+  {
+    title: 'Building Secure and Reliable Systems — Recovery and Aftermath (ch. 18)',
+    url: 'https://google.github.io/building-secure-and-reliable-systems/raw/ch18.html',
+    description:
+      'Livro do Google — capítulo 18: depois que o incidente foi contido. Como planejar e escopar a recuperação, rotação de credenciais em massa, quando reinstalar máquina do zero, e o post-mortem sem culpa. ~40min.',
+    format: 'BOOK',
+    difficulty: 'HARD',
+    estimatedMinutes: 40,
+    topicSlugs: ['security', 'reliability'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'Book — Building Secure and Reliable Systems',
+    tags: ['concept', 'book', 'bsrs', 'incident-recovery', 'credential-rotation', 'post-mortem', 'google'],
+    topicOrder: { 'security': 37 },
+  },
+  // ---------------------------------------------------------------------------
+  // ai-engineering — trilha "banco de dados pronto pra agente" (2026-09-16).
+  // Montada a partir do pedido do Eduardo Hirohito: RAG, vetorização com
+  // pgvector, agente conversacional lendo o banco, e depois um harness em que
+  // o agente executa ações via endpoints. Orders 1-13 na sequência: o que é
+  // vetor/RAG/agente/MCP → mapa completo → cases de data agent e text-to-SQL
+  // → arquitetura de RAG → como desenhar agentes → riscos de agente com ação.
+  // Todos os canais são whitelisted (Fireship, Takeda, ByteByteGo, ByteMonk);
+  // artigos são blogs de engenharia (Uber, Pinterest, Anthropic) e o README
+  // do pgvector.
+  // ---------------------------------------------------------------------------
+  {
+    title: 'Vector databases are so hot right now. WTF are they?',
+    url: 'https://www.youtube.com/watch?v=klTvEwg3oJ4',
+    description:
+      'Fireship — o que é um vetor de embedding, por que texto/imagem viram lista de números, e o que um banco vetorial faz de diferente de um índice normal. 4min.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 4,
+    topicSlugs: ['ai-engineering', 'databases'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Fireship',
+    tags: ['concept', 'vector-database', 'embeddings', 'similarity-search', 'fireship'],
+    topicOrder: { 'ai-engineering': 1, 'databases': 26 },
+  },
+  {
+    title: 'RAG: A Técnica Por Trás do Cursor',
+    url: 'https://www.youtube.com/watch?v=nRyf1iQU4mk',
+    description:
+      'Arthur Takeda — RAG explicado pelo caso do Cursor: por que o modelo não pode ler tudo, como o código vira embedding, como a busca traz só o trecho relevante pro prompt. 6min.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 6,
+    topicSlugs: ['ai-engineering'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — Arthur Takeda',
+    tags: ['concept', 'rag', 'embeddings', 'retrieval', 'cursor', 'arthur-takeda'],
+    topicOrder: { 'ai-engineering': 2 },
+  },
+  {
+    title: 'What Are AI Agents Really About?',
+    url: 'https://www.youtube.com/watch?v=eHEHE2fpnWQ',
+    description:
+      'ByteByteGo — a diferença entre um chatbot e um agente: loop de raciocínio, chamada de ferramenta, leitura do resultado, próxima ação. Onde o LLM decide e onde o código decide. 6min.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 6,
+    topicSlugs: ['ai-engineering'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — ByteByteGo',
+    tags: ['concept', 'ai-agents', 'tool-use', 'agent-loop', 'bytebytego'],
+    topicOrder: { 'ai-engineering': 3 },
+  },
+  {
+    title: "Why Everyone's Talking About MCP?",
+    url: 'https://www.youtube.com/watch?v=_d0duu3dED4',
+    description:
+      'ByteByteGo — Model Context Protocol: um padrão pra expor ferramentas e dados a um modelo sem escrever integração nova pra cada par app × modelo. Client, server, tools, resources. 6min.',
+    format: 'VIDEO',
+    difficulty: 'EASY',
+    estimatedMinutes: 6,
+    topicSlugs: ['ai-engineering'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — ByteByteGo',
+    tags: ['concept', 'mcp', 'tool-use', 'protocol', 'bytebytego'],
+    topicOrder: { 'ai-engineering': 4 },
+  },
+  {
+    title: 'Embeddings, Vector database, Agent, RAG & MCP: How Modern AI Systems Actually Work',
+    url: 'https://www.youtube.com/watch?v=PByDzuOrkek',
+    description:
+      'ByteMonk — as cinco peças num único diagrama: embedding gera o vetor, o banco vetorial guarda, RAG busca e monta o prompt, o agente decide o que fazer, MCP conecta às ferramentas. Assista depois dos quatro vídeos curtos pra ver onde cada um encaixa. 11min.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 11,
+    topicSlugs: ['ai-engineering'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — ByteMonk',
+    tags: ['concept', 'rag', 'embeddings', 'vector-database', 'ai-agents', 'mcp', 'architecture', 'bytemonk'],
+    topicOrder: { 'ai-engineering': 5 },
+  },
+  {
+    title: 'How OpenAI Built Its Data Agent',
+    url: 'https://www.youtube.com/watch?v=5V8tP5jDZ8U',
+    description:
+      'ByteByteGo — como a OpenAI montou um agente interno que responde perguntas sobre os dados da empresa: catálogo de tabelas, schema no contexto, geração de SQL, execução e verificação. É o caso "agente que lê o banco" em produção. 7min.',
+    format: 'VIDEO',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 7,
+    topicSlugs: ['ai-engineering', 'databases'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — ByteByteGo',
+    tags: ['case-study', 'data-agent', 'text-to-sql', 'ai-agents', 'openai', 'bytebytego'],
+    topicOrder: { 'ai-engineering': 6, 'databases': 27 },
+  },
+  {
+    title: 'pgvector — README (vetores dentro do Postgres)',
+    url: 'https://github.com/pgvector/pgvector',
+    description:
+      'README oficial do pgvector: instalar a extensão, criar coluna `vector(n)`, inserir embeddings, buscar vizinho mais próximo com `<->` / `<=>`, e quando usar índice HNSW ou IVFFlat. Leia até a seção de indexação; o resto é referência.',
+    format: 'ARTICLE',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 25,
+    topicSlugs: ['ai-engineering', 'databases'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'GitHub — pgvector',
+    tags: ['practice', 'pgvector', 'postgres', 'vector-database', 'hnsw', 'ivfflat', 'embeddings'],
+    topicOrder: { 'ai-engineering': 7, 'databases': 28 },
+  },
+  {
+    title: 'MCP vs RAG vs AI Agents',
+    url: 'https://blog.bytebytego.com/p/ep202-mcp-vs-rag-vs-ai-agents',
+    description:
+      'ByteByteGo (newsletter EP202) — os três não competem: RAG resolve "o que o modelo sabe", MCP resolve "como o modelo alcança ferramentas", agente resolve "quem decide o próximo passo". Tabela de quando usar cada um e como combinam.',
+    format: 'ARTICLE',
+    difficulty: 'MEDIUM',
+    estimatedMinutes: 10,
+    topicSlugs: ['ai-engineering'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'Blog — ByteByteGo',
+    tags: ['tradeoffs', 'mcp', 'rag', 'ai-agents', 'bytebytego'],
+    topicOrder: { 'ai-engineering': 8 },
+  },
+  {
+    title: 'How to Build a Scalable RAG System for AI Apps (Full Architecture)',
+    url: 'https://www.youtube.com/watch?v=4KiiKQ9RVvA',
+    description:
+      'ByteMonk — arquitetura completa de RAG em produção: pipeline de ingestão (chunking, embedding, upsert), retrieval com filtro por metadado, reranking, montagem do prompt, cache e avaliação. Onde cada parte quebra em escala. 16min.',
+    format: 'VIDEO',
+    difficulty: 'HARD',
+    estimatedMinutes: 16,
+    topicSlugs: ['ai-engineering'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — ByteMonk',
+    tags: ['case-study', 'rag', 'chunking', 'reranking', 'ingestion-pipeline', 'architecture', 'bytemonk'],
+    topicOrder: { 'ai-engineering': 9 },
+  },
+  {
+    title: 'QueryGPT – Natural Language to SQL Using Generative AI',
+    url: 'https://www.uber.com/blog/query-gpt/',
+    description:
+      'Uber Engineering — como a Uber transforma pergunta em inglês em SQL sobre 1,2 milhão de queries/mês: RAG pra escolher tabelas e exemplos, workspaces por domínio, agentes de intenção e de schema, e o que deu errado na primeira versão.',
+    format: 'ARTICLE',
+    difficulty: 'HARD',
+    estimatedMinutes: 15,
+    topicSlugs: ['ai-engineering', 'databases'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'Blog — Uber Engineering',
+    tags: ['case-study', 'text-to-sql', 'rag', 'data-agent', 'uber'],
+    topicOrder: { 'ai-engineering': 10, 'databases': 29 },
+  },
+  {
+    title: 'How we built Text-to-SQL at Pinterest',
+    url: 'https://medium.com/pinterest-engineering/how-we-built-text-to-sql-at-pinterest-30bad30dabff',
+    description:
+      'Pinterest Engineering — text-to-SQL dentro do Querybook: schema das tabelas no prompt, colunas de baixa cardinalidade como contexto, streaming da resposta, e a segunda versão com índice vetorial pra achar a tabela certa antes de gerar a query. 35% mais rápido pra quem escreve SQL.',
+    format: 'ARTICLE',
+    difficulty: 'HARD',
+    estimatedMinutes: 12,
+    topicSlugs: ['ai-engineering', 'databases'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'Blog — Pinterest Engineering',
+    tags: ['case-study', 'text-to-sql', 'rag', 'schema-retrieval', 'pinterest'],
+    topicOrder: { 'ai-engineering': 11, 'databases': 30 },
+  },
+  {
+    title: 'Building Effective AI Agents',
+    url: 'https://www.anthropic.com/engineering/building-effective-agents',
+    description:
+      'Anthropic Engineering — o texto de referência pra desenhar agente: workflow vs agente, os padrões (prompt chaining, routing, parallelization, orchestrator-workers, evaluator-optimizer), quando NÃO usar agente, e como desenhar a interface das ferramentas. Leia antes de montar qualquer harness.',
+    format: 'ARTICLE',
+    difficulty: 'HARD',
+    estimatedMinutes: 20,
+    topicSlugs: ['ai-engineering'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'Blog — Anthropic Engineering',
+    tags: ['concept', 'ai-agents', 'agent-patterns', 'tool-design', 'orchestrator-workers', 'anthropic'],
+    topicOrder: { 'ai-engineering': 12 },
+  },
+  {
+    title: 'OWASP Agentic Top 10 Explained: The New Security Risks of AI Agents',
+    url: 'https://www.youtube.com/watch?v=UftYcziWO3g',
+    description:
+      'ByteMonk — os dez riscos do OWASP pra agentes que executam ação: prompt injection via dado recuperado, abuso de ferramenta, escalada de permissão, memória envenenada, agente que age fora do escopo. O que muda quando o modelo pode chamar endpoint. 22min.',
+    format: 'VIDEO',
+    difficulty: 'HARD',
+    estimatedMinutes: 22,
+    topicSlugs: ['ai-engineering', 'security'],
+    tracks: ['BIG_TECH', 'CONSULTING_TECH', 'STARTUP'],
+    source: 'YouTube — ByteMonk',
+    tags: ['concept', 'ai-agents', 'owasp', 'prompt-injection', 'agent-security', 'bytemonk'],
+    topicOrder: { 'ai-engineering': 13, 'security': 38 },
   },
 ];
 

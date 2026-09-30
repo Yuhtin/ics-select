@@ -19,7 +19,7 @@ Monorepo (pnpm 9 + Turborepo 2), Node 20:
 - `packages/prisma` — `schema.prisma` (32 migrations: numbered `0–10` for the foundational set, then letter-prefixed `b–w` once the digit space ran into ordering conflicts; pgvector + tsvector managed via raw SQL), re-exports the generated client. The runtime image points `main` at `generated/client/index.js` directly — no TS wrapper.
 - `packages/shared` — Compiled with tsc to `dist/` as CommonJS (required because `apps/api` resolves it at runtime, not via ts-jest). Holds `APP_VERSION` and (future) Zod contract schemas.
 
-AI features use **OpenAI `gpt-5.4-mini`** via `apps/api/src/common/openai/openai-chat.provider.ts` (`callJson`, `callText`, async-generator `stream`). There is no Anthropic dependency. **Embeddings were removed (2026-05-08):** the OpenAI embedding generation was deleted from `LibraryService` and the seed because no `SELECT` ever consumed them — the `LibraryItem.embedding` `vector(1536)` column is preserved nullable for legacy data and a possible future semantic-search feature, but is no longer written.
+AI features use **OpenAI `gpt-6-luna`** via `apps/api/src/common/openai/openai-chat.provider.ts` (`callJson`, `callText`, async-generator `stream`). There is no Anthropic dependency. **Embeddings were removed (2026-05-08):** the OpenAI embedding generation was deleted from `LibraryService` and the seed because no `SELECT` ever consumed them — the `LibraryItem.embedding` `vector(1536)` column is preserved nullable for legacy data and a possible future semantic-search feature, but is no longer written.
 
 ## Commands
 
@@ -198,6 +198,8 @@ The engagement score is the **single source of truth** for "how engaged is this 
 **Admin ranking response shape.** `GET /admin/cycle/:id` returns `ranking: { userId, name, pictureUrl, score, breakdown, hasAlert }[]` — admin gets the full 6-entry breakdown for diagnostics. `hasAlert` mirrors `members[].hasAlert` (STUCK proxy in last 72h).
 
 ### Weekly plan flow
+
+The admin-side workflow for composing and publishing a member's week (reading the retro, deciding carry-overs, sizing to availability, curating missing material, approval gate before publish) is the project skill `.claude/skills/ics-plan-week/SKILL.md`. The scheduler facts below are what it relies on.
 
 The critical path is `apps/api/src/weekly-plans/` + `apps/api/src/scheduler/`. `WeeklyPlansService` handles CRUD on plan drafts; `PublicationService.publish` wires the scheduler + Google Calendar:
 

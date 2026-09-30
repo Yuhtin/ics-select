@@ -66,7 +66,7 @@ A equipe do Academy acompanha o programa por um cockpit administrativo com visã
 
 **Aulas de arquitetura.** Abrem sistemas reais — como encurtadores de URL, mapas em tempo real, ledgers e arquiteturas orientadas a eventos — para discutir requisitos, escala e trade-offs.
 
-**IA como assistente.** O `gpt-5.4-mini` apoia rascunhos de plano, estruturação de briefs, diagnósticos e chat contextual. Toda geração registra tokens e custo; a decisão final continua com a equipe educacional.
+**IA como assistente.** O `gpt-6-luna` apoia rascunhos de plano, estruturação de briefs, diagnósticos e chat contextual. Toda geração registra tokens e custo; a decisão final continua com a equipe educacional.
 
 ## Stack
 
