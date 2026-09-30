@@ -549,7 +549,7 @@
 }
 .btg-plan-row[data-dragging='true'] { opacity: 0.4; }
 .btg-plan-row[data-over='true'] { box-shadow: inset 0 2px 0 var(--btg-primary); }
-.btg-drag { color: rgba(0, 0, 0, 0.4); cursor: grab; }
+.btg-drag { color: var(--btg-pending); cursor: grab; }
 .btg-lib-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--btg-border-soft); }
 .btg-lib-row:last-child { border-bottom: 0; }
 .btg-candidate {
