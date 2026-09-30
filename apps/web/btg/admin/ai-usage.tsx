@@ -69,7 +69,7 @@ export function BtgAiUsage() {
     <>
       <header className="btg-admin-header">
         <div className="btg-admin-header-title">
-          <span>OpenAI · gpt-5.4-mini</span>
+          <span>OpenAI · gpt-6-luna</span>
           <span>Uso de IA</span>
         </div>
         <div className="btg-al-seg" role="group" aria-label="Período">

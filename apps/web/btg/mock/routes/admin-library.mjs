@@ -118,7 +118,7 @@ function aiUsage(db) {
       aiRows.push({
         id: `ai-${d}-${c}`,
         userId: purpose === 'chat' ? db.ADMIN.id : members[Math.floor(r() * members.length)],
-        purpose, model: 'gpt-5.4-mini', promptTokens, responseTokens,
+        purpose, model: 'gpt-6-luna', promptTokens, responseTokens,
         costUsd: cost.toFixed(6), metadata: null,
         createdAt: new Date(Date.now() - d * db.helpers.DAY - Math.floor(r() * 10 * 3600_000)).toISOString(),
       });
