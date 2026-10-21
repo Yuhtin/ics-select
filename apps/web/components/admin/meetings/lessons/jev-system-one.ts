@@ -244,10 +244,37 @@ export const jevSystemOne: Lesson = {
       ],
     },
     {
+      id: 'beat-08-firstmate',
+      label: 'Caso real: o despacho do firstmate',
+      group: 'ferramentas',
+      beat: 8,
+      tags: ['firstmate', 'cascade', 'despacho', 'autorreportado'],
+      oneLine:
+        'Um orquestrador de agentes trocou o LLM que decidia o roteamento por uma pergunta tipada ao Jev: mesma resposta, 71% mais barato e 90% mais rápido (autorreportado).',
+      pass1:
+        'O firstmate, de Kun Chen (@kunchenguid no X, post de 17 de setembro de 2026), é um orquestrador que manda cada tarefa para o agente certo, ou seja, a combinação de harness, modelo e esforço de raciocínio, seguindo regras de despacho que o próprio usuário escreveu. Antes, um agente LLM lia as regras e os dados de cota com tool calls e raciocinava em texto até decidir. Ele trocou esse despacho pelo Jev: uma pergunta Choice, respondida em cerca de 200 ms, e o código aplica o resto.',
+      pass2:
+        '**As regras**\n\nQuatro linhas escritas à mão: geração de imagem vai para um modelo que gera imagem; design difícil de verdade vai para o modelo mais forte, perguntando antes; bug conhecido vai para um modelo rápido e barato; o resto vai para o perfil padrão. É uma pergunta de conjunto fechado, o caso exato do Jev.\n\n**Antes e depois**\n\nAntes: o LLM supervisor raciocinava em prosa e fazia 3 tool calls, 28,6 s por despacho. Depois: uma pergunta tipada ao Jev, resposta calibrada em ~200 ms, e o código cuida de gates de aprovação e cota, 2,75 s no total.\n\n**Os números (autorreportados)**\n\nNas 25 tarefas que ele avaliou, a resposta foi a mesma que o Fable daria. Contando a tool call que ainda chama o Jev, o despacho inteiro caiu 71% em custo e 90% em tempo. Só as chamadas ao Jev: mais de 100 e o dashboard ainda mostrava US$ 0,01, uma economia da ordem de 100x na parte substituída. A frase dele: "i think this is starting to enable a whole new architectural paradigm for software. LLMs are just a small part of it."',
+      pass3: [
+        {
+          gotcha: 'O Jev substituiu o agente inteiro.',
+          note: 'Substituiu só a decisão de roteamento. O trabalho em si continua com os agentes LLM; o Jev é a porta de entrada, como no cascade.',
+        },
+        {
+          gotcha: '25 de 25 prova que ele sempre acerta.',
+          note: 'São 25 tarefas avaliadas pelo próprio autor, comparadas com o Fable. É um sinal bom e pequeno, autorreportado, não um benchmark.',
+        },
+        {
+          gotcha: 'Os −90% de tempo são só do Jev.',
+          note: 'São do despacho inteiro, contando a tool call que chama o Jev e o código que aplica gates e cota. O Jev sozinho responde em ~200 ms.',
+        },
+      ],
+    },
+    {
       id: 'beat-08-state',
       label: 'Decida o que é o state',
       group: 'ferramentas',
-      beat: 8,
+      beat: 9,
       tags: ['state', 'disciplina', 'Mario'],
       oneLine:
         'Loop, segurança e contas ficam no código; o Jev fica com o julgamento estreito do meio, sobre um state que você escolheu.',
@@ -276,7 +303,7 @@ export const jevSystemOne: Lesson = {
       id: 'beat-09-casos',
       label: 'Casos de uso',
       group: 'avancado',
-      beat: 9,
+      beat: 10,
       tags: ['triagem', 'Valyu', 'Jack & Jill', 'browser agent', 'drone'],
       oneLine:
         'Julgar cada item de uma pilha grande, escolher o próximo clique de um agente, aconselhar um drone: sempre a pergunta estreita no meio de código comum.',
@@ -303,7 +330,7 @@ export const jevSystemOne: Lesson = {
       id: 'beat-10-quebra',
       label: 'Onde ele quebra',
       group: 'avancado',
-      beat: 10,
+      beat: 11,
       tags: ['jaggedness', 'injection', 'decompor'],
       oneLine:
         'Valor válido não é valor certo: a TypeSafe publica os próprios modos de falha numa página chamada jaggedness.',
@@ -330,7 +357,7 @@ export const jevSystemOne: Lesson = {
       id: 'beat-11-enxurrada',
       label: 'A enxurrada de classifiers',
       group: 'avancado',
-      beat: 11,
+      beat: 12,
       tags: ['Decisions API', 'gpt-6-luna', 'open weights', 'Apache-2.0'],
       oneLine:
         'Em três semanas, laboratórios e comunidade lançaram as próprias versões, muitas abertas, inclusive a OpenAI em gpt-6-luna.',
@@ -359,7 +386,7 @@ export const jevSystemOne: Lesson = {
       id: 'beat-12-fecho',
       label: 'Quebre em perguntas tipadas',
       group: 'fechamento',
-      beat: 12,
+      beat: 13,
       tags: ['pergunta tipada', 'Choice', 'Score', 'Noul'],
       oneLine:
         'Toda decisão em tempo de execução: quebre em perguntas tipadas.',
