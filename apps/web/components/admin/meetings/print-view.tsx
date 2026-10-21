@@ -231,7 +231,9 @@ function PrintDeep({ node, seen }: { node: LessonNode; seen: Set<string> }) {
           <Glossarized text={p} seen={seen} keyPrefix={`dp-${node.id}-p2-${i}`} />
         </p>
       ))}
+      {(node.anchor || (node.askWho && node.askWho.length > 0)) && (
       <div className="grid gap-3 sm:grid-cols-2">
+        {node.anchor && (
         <div className="rounded-input border border-border-token bg-bg-subtle/40 p-3">
           <p className="font-sans text-xs text-fg-mute font-semibold">
             Pergunta-âncora
@@ -240,6 +242,7 @@ function PrintDeep({ node, seen }: { node: LessonNode; seen: Set<string> }) {
             "<Glossarized text={node.anchor} seen={seen} keyPrefix={`dp-${node.id}-anc`} />"
           </p>
         </div>
+        )}
         {node.askWho && node.askWho.length > 0 && (
         <div className="rounded-input border border-border-token bg-bg-subtle/40 p-3">
           <p className="font-sans text-xs text-fg-mute font-semibold">
@@ -263,6 +266,7 @@ function PrintDeep({ node, seen }: { node: LessonNode; seen: Set<string> }) {
         </div>
         )}
       </div>
+      )}
     </div>
   );
 }
@@ -306,7 +310,9 @@ function PrintMastery({
           ))}
         </ul>
       )}
+      {(node.gotcha || node.followup) && (
       <div className="grid gap-3 sm:grid-cols-2">
+        {node.gotcha && (
         <div className="rounded-input border border-warn/30 bg-warn-soft/40 p-3">
           <p className="font-sans text-xs text-warn font-semibold">
             Provocação
@@ -315,6 +321,8 @@ function PrintMastery({
             <Glossarized text={node.gotcha} seen={seen} keyPrefix={`ms-${node.id}-got`} />
           </p>
         </div>
+        )}
+        {node.followup && (
         <div className="rounded-input border border-border-token bg-bg-subtle/50 p-3">
           <p className="font-sans text-xs text-fg-mute font-semibold">
             Pergunta-ponte
@@ -333,7 +341,9 @@ function PrintMastery({
             </span>
           </p>
         </div>
+        )}
       </div>
+      )}
     </div>
   );
 }

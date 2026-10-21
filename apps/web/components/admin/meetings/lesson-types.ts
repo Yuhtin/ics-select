@@ -98,10 +98,13 @@ export type LessonNode = {
   pass1: string;
   pass2: string;
   pass3: Pegadinha[];
-  anchor: string;
+  /** Opcional: aulas sem pergunta-âncora escondem o bloco. */
+  anchor?: string;
   askWho?: Asker[];
-  followup: string;
-  gotcha: string;
+  /** Opcional: aulas sem pergunta-ponte escondem o bloco. */
+  followup?: string;
+  /** Opcional: aulas sem provocação escondem o bloco. */
+  gotcha?: string;
   scenarios?: ResponseScenarios;
   /** Mermaid diagram source — render in Obsidian or any Mermaid-compatible viewer */
   diagram?: string;

@@ -311,7 +311,7 @@ function DeepPass({ node, seen }: { node: LessonNode; seen: Set<string> }) {
   const paragraphs = node.pass2.split(/\n\n+/);
   return (
     <div className="space-y-8">
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_280px]">
+      <div className={hasDeepSide(node) ? 'grid gap-8 lg:grid-cols-[minmax(0,1fr)_280px]' : 'grid gap-8'}>
         <div className="min-w-0 max-w-[640px] space-y-5">
           {paragraphs.map((p, i) => (
             <p
@@ -322,10 +322,12 @@ function DeepPass({ node, seen }: { node: LessonNode; seen: Set<string> }) {
             </p>
           ))}
         </div>
-        <aside className="space-y-5">
-          <AnchorCard node={node} seen={seen} />
-          <AskerCard node={node} seen={seen} />
-        </aside>
+        {hasDeepSide(node) && (
+          <aside className="space-y-5">
+            <AnchorCard node={node} seen={seen} />
+            <AskerCard node={node} seen={seen} />
+          </aside>
+        )}
       </div>
       <BoardVisuals node={node} />
       <DiagramMedia node={node} />
@@ -401,7 +403,7 @@ function BoardVisuals({ node }: { node: LessonNode }) {
 
 function MasteryPass({ node, seen }: { node: LessonNode; seen: Set<string> }) {
   return (
-    <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_280px]">
+    <div className={hasMasterySide(node) ? 'grid gap-8 lg:grid-cols-[minmax(0,1fr)_280px]' : 'grid gap-8'}>
       <div className="min-w-0 space-y-4">
         {node.pass3.map((p, i) => (
           <article
@@ -432,15 +434,28 @@ function MasteryPass({ node, seen }: { node: LessonNode; seen: Set<string> }) {
           </article>
         ))}
       </div>
-      <aside className="space-y-5">
-        <GotchaCard node={node} seen={seen} />
-        <FollowupCard node={node} seen={seen} />
-      </aside>
+      {hasMasterySide(node) && (
+        <aside className="space-y-5">
+          <GotchaCard node={node} seen={seen} />
+          <FollowupCard node={node} seen={seen} />
+        </aside>
+      )}
     </div>
   );
 }
 
+/** A coluna lateral do deep dive só existe se houver âncora ou gente pra perguntar. */
+function hasDeepSide(node: LessonNode): boolean {
+  return Boolean(node.anchor) || (node.askWho?.length ?? 0) > 0;
+}
+
+/** A coluna lateral do mastery só existe se houver provocação ou pergunta-ponte. */
+function hasMasterySide(node: LessonNode): boolean {
+  return Boolean(node.gotcha) || Boolean(node.followup);
+}
+
 function AnchorCard({ node, seen }: { node: LessonNode; seen: Set<string> }) {
+  if (!node.anchor) return null;
   return (
     <div className="rounded-card border border-border-token bg-surface p-5">
       <Eyebrow className="mb-2">Pergunta-âncora</Eyebrow>
@@ -483,6 +498,7 @@ function AskerCard({ node, seen }: { node: LessonNode; seen: Set<string> }) {
 }
 
 function GotchaCard({ node, seen }: { node: LessonNode; seen: Set<string> }) {
+  if (!node.gotcha) return null;
   return (
     <div className="rounded-card border border-warn/30 bg-warn-soft/40 p-5">
       <Eyebrow className="mb-2 text-warn">Gotcha da sala</Eyebrow>
@@ -494,6 +510,7 @@ function GotchaCard({ node, seen }: { node: LessonNode; seen: Set<string> }) {
 }
 
 function FollowupCard({ node, seen }: { node: LessonNode; seen: Set<string> }) {
+  if (!node.followup) return null;
   return (
     <div className="rounded-card border border-border-token bg-surface p-5">
       <Eyebrow className="mb-2">Pergunta-ponte</Eyebrow>

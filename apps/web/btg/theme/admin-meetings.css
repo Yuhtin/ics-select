@@ -150,6 +150,8 @@
 .btg .btg-mt-askrow { display: flex; align-items: center; gap: 8px; font-size: 14px; }
 .btg .btg-mt-askrow .btg-icon { font-size: 18px; }
 .btg .btg-mt-split { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 24px; align-items: start; }
+/* Aulas sem âncora/provocação/pergunta-ponte não têm coluna lateral: o texto ocupa a largura toda. */
+.btg .btg-mt-split:not(:has(> .btg-mt-side)) { grid-template-columns: minmax(0, 1fr); }
 .btg .btg-mt-side { display: flex; flex-direction: column; gap: 12px; }
 .btg .btg-mt-fade > .btg-mt-figure { margin-top: 20px; }
 .btg .btg-mt-fade > .btg-mt-split + .btg-mt-figure { margin-top: 24px; }
