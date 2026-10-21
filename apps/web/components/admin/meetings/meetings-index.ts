@@ -11,6 +11,7 @@ import { websocketRpcBlockchain } from './lessons/websocket-rpc-blockchain';
 import { vocabularioIa } from './lessons/vocabulario-ia';
 import { metodoIa } from './lessons/metodo-ia';
 import { noisyNeighborEbpf } from './lessons/noisy-neighbor-ebpf';
+import { jevSystemOne } from './lessons/jev-system-one';
 
 const LESSONS: Record<string, Lesson> = {
   [urlShortener.slug]: urlShortener,
@@ -25,6 +26,7 @@ const LESSONS: Record<string, Lesson> = {
   [vocabularioIa.slug]: vocabularioIa,
   [metodoIa.slug]: metodoIa,
   [noisyNeighborEbpf.slug]: noisyNeighborEbpf,
+  [jevSystemOne.slug]: jevSystemOne,
 };
 
 export function getLesson(slug: string): Lesson | undefined {

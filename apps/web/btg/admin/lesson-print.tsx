@@ -105,15 +105,19 @@ function PrintNode({ node, pass, seen }: { node: LessonNode; pass: Pass; seen: S
               <Prose text={p} seen={seen} />
             </p>
           ))}
-          <div className="btg-mt-print-grid">
-            <div className="btg-mt-print-box">
-              <p className="btg-eyebrow">Pergunta-âncora</p>
-              <p>
-                “<Prose text={node.anchor} seen={seen} />”
-              </p>
+          {(node.anchor || askers) && (
+            <div className="btg-mt-print-grid">
+              {node.anchor && (
+                <div className="btg-mt-print-box">
+                  <p className="btg-eyebrow">Pergunta-âncora</p>
+                  <p>
+                    “<Prose text={node.anchor} seen={seen} />”
+                  </p>
+                </div>
+              )}
+              {askers}
             </div>
-            {askers}
-          </div>
+          )}
         </>
       )}
 
@@ -131,20 +135,26 @@ function PrintNode({ node, pass, seen }: { node: LessonNode; pass: Pass; seen: S
               </p>
             </div>
           ))}
-          <div className="btg-mt-print-grid">
-            <div className="btg-mt-print-box">
-              <p className="btg-eyebrow">Provocação</p>
-              <p>
-                <Prose text={node.gotcha} seen={seen} />
-              </p>
+          {(node.gotcha || node.followup) && (
+            <div className="btg-mt-print-grid">
+              {node.gotcha && (
+                <div className="btg-mt-print-box">
+                  <p className="btg-eyebrow">Provocação</p>
+                  <p>
+                    <Prose text={node.gotcha} seen={seen} />
+                  </p>
+                </div>
+              )}
+              {node.followup && (
+                <div className="btg-mt-print-box">
+                  <p className="btg-eyebrow">Pergunta-ponte</p>
+                  <p>
+                    <Prose text={node.followup} seen={seen} />
+                  </p>
+                </div>
+              )}
             </div>
-            <div className="btg-mt-print-box">
-              <p className="btg-eyebrow">Pergunta-ponte</p>
-              <p>
-                <Prose text={node.followup} seen={seen} />
-              </p>
-            </div>
-          </div>
+          )}
         </>
       )}
     </article>

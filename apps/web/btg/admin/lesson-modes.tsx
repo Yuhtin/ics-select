@@ -298,18 +298,22 @@ function DeepPass({ node, seen }: { node: LessonNode; seen: Set<string> }) {
             </p>
           ))}
         </div>
-        <aside className="btg-mt-side">
-          <Callout label="Pergunta-âncora" icon="anchor">
-            <p className="btg-mt-quote">
-              “<Prose text={node.anchor} seen={seen} />”
-            </p>
-          </Callout>
-          {!!node.askWho?.length && (
-            <Callout label="Top 3 pra perguntar" icon="record_voice_over">
-              <Askers node={node} seen={seen} />
-            </Callout>
-          )}
-        </aside>
+        {(node.anchor || !!node.askWho?.length) && (
+          <aside className="btg-mt-side">
+            {node.anchor && (
+              <Callout label="Pergunta-âncora" icon="anchor">
+                <p className="btg-mt-quote">
+                  “<Prose text={node.anchor} seen={seen} />”
+                </p>
+              </Callout>
+            )}
+            {!!node.askWho?.length && (
+              <Callout label="Top 3 pra perguntar" icon="record_voice_over">
+                <Askers node={node} seen={seen} />
+              </Callout>
+            )}
+          </aside>
+        )}
       </div>
       {node.visuals?.map((v, i) => (
         <figure key={i} className="btg-card btg-mt-figure">
@@ -354,18 +358,24 @@ function MasteryPass({ node, seen }: { node: LessonNode; seen: Set<string> }) {
   return (
     <div className="btg-mt-split">
       <Pegadinhas items={node.pass3} seen={seen} />
-      <aside className="btg-mt-side">
-        <Callout label="Gotcha da sala" icon="error" tone="warn">
-          <p>
-            <Prose text={node.gotcha} seen={seen} />
-          </p>
-        </Callout>
-        <Callout label="Pergunta-ponte" icon="arrow_forward">
-          <p>
-            <Prose text={node.followup} seen={seen} />
-          </p>
-        </Callout>
-      </aside>
+      {(node.gotcha || node.followup) && (
+        <aside className="btg-mt-side">
+          {node.gotcha && (
+            <Callout label="Gotcha da sala" icon="error" tone="warn">
+              <p>
+                <Prose text={node.gotcha} seen={seen} />
+              </p>
+            </Callout>
+          )}
+          {node.followup && (
+            <Callout label="Pergunta-ponte" icon="arrow_forward">
+              <p>
+                <Prose text={node.followup} seen={seen} />
+              </p>
+            </Callout>
+          )}
+        </aside>
+      )}
     </div>
   );
 }
@@ -443,10 +453,14 @@ export function LiveMode({ lesson }: { lesson: Lesson }) {
         <div className="btg-mt-focus-body">
           <div className="btg-mt-focus-col">
             <div>
-              <p className="btg-mt-eyebrow">Pergunta-âncora</p>
-              <p className="btg-mt-anchor">
-                “<Prose text={node.anchor} seen={seen} />”
-              </p>
+              {node.anchor && (
+                <>
+                  <p className="btg-mt-eyebrow">Pergunta-âncora</p>
+                  <p className="btg-mt-anchor">
+                    “<Prose text={node.anchor} seen={seen} />”
+                  </p>
+                </>
+              )}
               <p className="btg-soft btg-mt-oneline">
                 <Prose text={node.oneLine} seen={seen} />
               </p>
@@ -489,16 +503,20 @@ export function LiveMode({ lesson }: { lesson: Lesson }) {
                 </div>
               </div>
             )}
-            <Callout label="Provocação" icon="error" tone="warn">
-              <p>
-                <Prose text={node.gotcha} seen={seen} />
-              </p>
-            </Callout>
-            <Callout label="Pergunta-ponte" icon="arrow_forward">
-              <p>
-                <Prose text={node.followup} seen={seen} />
-              </p>
-            </Callout>
+            {node.gotcha && (
+              <Callout label="Provocação" icon="error" tone="warn">
+                <p>
+                  <Prose text={node.gotcha} seen={seen} />
+                </p>
+              </Callout>
+            )}
+            {node.followup && (
+              <Callout label="Pergunta-ponte" icon="arrow_forward">
+                <p>
+                  <Prose text={node.followup} seen={seen} />
+                </p>
+              </Callout>
+            )}
           </div>
         </div>
       </article>

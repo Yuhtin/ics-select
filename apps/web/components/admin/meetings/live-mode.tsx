@@ -147,6 +147,9 @@ function BeatStepper({
 function FocusCard({ node }: { node: LessonNode }) {
   const meta = GROUP_META[node.group];
   const seen = new Set<string>();
+  // A coluna da direita só aparece se houver algo nela: aulas sem cenários,
+  // provocação e pergunta-ponte ocupam a largura toda.
+  const hasSide = Boolean(node.scenarios || node.gotcha || node.followup);
   return (
     <article className="relative overflow-hidden rounded-card border border-border-token bg-surface">
       <span
@@ -182,14 +185,30 @@ function FocusCard({ node }: { node: LessonNode }) {
         )}
       </header>
 
-      <div className="grid gap-0 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] lg:divide-x lg:divide-border-token">
+      <div
+        className={
+          hasSide
+            ? 'grid gap-0 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] lg:divide-x lg:divide-border-token'
+            : 'grid gap-0'
+        }
+      >
         <div className="space-y-7 px-7 py-7">
           <div>
-            <Eyebrow className="mb-3">Pergunta-âncora</Eyebrow>
-            <p className="font-sans text-2xl leading-snug text-fg lg:text-[26px]">
-              "<Glossarized text={node.anchor} seen={seen} keyPrefix={`${node.id}-anc`} />"
-            </p>
-            <p className="mt-4 font-sans text-[15px] leading-relaxed text-fg-soft">
+            {node.anchor ? (
+              <>
+                <Eyebrow className="mb-3">Pergunta-âncora</Eyebrow>
+                <p className="font-sans text-2xl leading-snug text-fg lg:text-[26px]">
+                  "<Glossarized text={node.anchor} seen={seen} keyPrefix={`${node.id}-anc`} />"
+                </p>
+              </>
+            ) : null}
+            <p
+              className={
+                node.anchor
+                  ? 'mt-4 font-sans text-[15px] leading-relaxed text-fg-soft'
+                  : 'font-sans text-xl leading-snug text-fg'
+              }
+            >
               <Glossarized text={node.oneLine} seen={seen} keyPrefix={`${node.id}-one`} />
             </p>
             {node.diagramUrl ? (
@@ -244,11 +263,13 @@ function FocusCard({ node }: { node: LessonNode }) {
           <PegadinhasList node={node} seen={seen} />
         </div>
 
+        {hasSide && (
         <div className="space-y-6 px-7 py-7">
           {node.scenarios && (
             <ScenariosBlock scenarios={node.scenarios} seen={seen} nodeId={node.id} />
           )}
 
+          {node.gotcha && (
           <div className="rounded-input border border-warn/30 bg-warn-soft/40 p-4">
             <Eyebrow className="mb-2 text-warn">
               <CircleAlert className="-mt-0.5 mr-1 inline h-3 w-3" strokeWidth={2} />
@@ -258,7 +279,9 @@ function FocusCard({ node }: { node: LessonNode }) {
               <Glossarized text={node.gotcha} seen={seen} keyPrefix={`${node.id}-got`} />
             </p>
           </div>
+          )}
 
+          {node.followup && (
           <div className="rounded-input border border-border-token bg-bg-subtle/50 p-4">
             <Eyebrow className="mb-2">Default forward</Eyebrow>
             <p className="flex items-start gap-2 text-sm leading-relaxed text-fg">
@@ -275,7 +298,9 @@ function FocusCard({ node }: { node: LessonNode }) {
               </span>
             </p>
           </div>
+          )}
         </div>
+        )}
       </div>
     </article>
   );
