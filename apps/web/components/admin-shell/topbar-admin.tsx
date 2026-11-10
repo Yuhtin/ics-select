@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import type { LucideIcon } from 'lucide-react';
 import {
   BookOpen,
+  Briefcase,
   CircleDot,
   ClipboardList,
   ListChecks,
@@ -30,6 +31,7 @@ const NAV: readonly NavItem[] = [
   { href: '/admin/cycles', label: 'Cycles', icon: CircleDot },
   { href: '/admin/plans', label: 'Plans', icon: ListChecks },
   { href: '/admin/library', label: 'Library', icon: BookOpen },
+  { href: '/admin/opportunities', label: 'Opportunities', icon: Briefcase },
   { href: '/admin/waitlist', label: 'Waitlist', icon: ClipboardList },
   { href: '/admin/meetings', label: 'Meetings', icon: Presentation },
   { href: '/admin/config', label: 'Config', icon: Settings },

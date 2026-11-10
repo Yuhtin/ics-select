@@ -22,6 +22,7 @@ import { LatestActivityCard } from '../../../../../components/admin/member-cockp
 import { RawDataAccordion } from '../../../../../components/admin/member-cockpit/raw-data-accordion';
 import { MocksCard } from '../../../../../components/admin/member-cockpit/mocks-card';
 import { PlanWeekModal } from '../../../../../components/admin/member-detail/plan-week-modal';
+import { InterestedInCard } from '../../../../../components/admin/member-detail/interested-in-card';
 import { Eyebrow } from '../../../../../components/ui/eyebrow';
 
 type Range = 'cycle' | '7d' | 'all';
@@ -139,6 +140,8 @@ export default function AdminMemberPage({ params }: { params: Promise<{ id: stri
           <LatestActivityCard events={data.recentActivity} />
         </div>
       </div>
+
+      <InterestedInCard userId={memberId} />
 
       {rawData && (
         <RawDataAccordion
