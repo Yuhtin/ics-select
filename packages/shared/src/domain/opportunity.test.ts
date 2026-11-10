@@ -31,6 +31,12 @@ describe('opportunity', () => {
   it('daysUntilClose counts BRT calendar days', () => {
     expect(daysUntilClose({ deadline: '2026-11-13', eventDate: null }, new Date('2026-11-10T12:00:00Z'))).toBe(3);
   });
+  it('whatsapp needs 8+ digits', async () => {
+    const { OpportunityContactSchema: C } = await import('./opportunity');
+    expect(C.safeParse({ name: 'A', whatsapp: 'abc' }).success).toBe(false);
+    expect(C.safeParse({ name: 'A', whatsapp: '+55 (11) 98765-4321' }).success).toBe(true);
+  });
+
   it('whatsappHref strips formatting', () => {
     expect(whatsappHref('+55 (11) 98765-4321')).toBe('https://wa.me/5511987654321');
   });

@@ -35,7 +35,7 @@ export const OpportunityLinkSchema = z.object({
 export const OpportunityContactSchema = z.object({
   name: z.string().min(1).max(80),
   role: z.string().max(80).optional(),
-  whatsapp: z.string().max(40).optional(),
+  whatsapp: z.string().max(40).refine((s) => s.replace(/\D/g, '').length >= 8, 'at least 8 digits').optional(),
   email: z.string().email().optional(),
   linkedin: httpUrl.optional(),
 });
