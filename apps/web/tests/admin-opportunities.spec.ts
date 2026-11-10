@@ -131,6 +131,10 @@ const list = [
     publishedAt: '2026-11-01T12:00:00Z', deadline: '2026-11-30',
     interests: [{ userId: 'u2', name: 'Luana Melo', pictureUrl: null, createdAt: '2026-11-09T12:00:00Z' }],
   },
+  {
+    ...base, id: 'closed1', title: 'Vaga Encerrada', type: 'FULL_TIME', companyName: 'Old Co', status: 'PUBLISHED',
+    publishedAt: '2026-10-01T12:00:00Z', deadline: '2026-10-10', isOpen: false,
+  },
 ];
 
 async function mock(page: Page, opts: { interested?: unknown[] | 'fail'; mutationsFail?: boolean } = {}) {
@@ -167,6 +171,7 @@ test('admin table lists drafts with status', async ({ page }) => {
   await expect(row).toBeVisible();
   await expect(row.getByText('DRAFT')).toBeVisible();
   await expect(page.getByRole('row', { name: /Estágio Nubank/ }).getByText('PUBLISHED')).toBeVisible();
+  await expect(page.getByRole('row', { name: /Vaga Encerrada/ }).getByText('Closed')).toBeVisible();
 });
 
 test('publish action PATCHes status PUBLISHED', async ({ page }) => {

@@ -1,5 +1,6 @@
 'use client';
 
+import { brtToday } from '@ics-select/shared';
 import { Popover, PopoverContent, PopoverTrigger } from '@heroui/react';
 import type { OpportunityDto } from '../../../lib/queries/opportunities';
 import { shortDate } from '../../opportunities/opportunity-card';
@@ -30,7 +31,7 @@ export function InterestListPopover({ interests }: { interests: OpportunityDto['
                 )}
               </span>
               <span className="text-fg">{i.name}</span>
-              <span className="ml-auto pl-4 tabular-nums text-fg-mute">{shortDate(i.createdAt.slice(0, 10))}</span>
+              <span className="ml-auto pl-4 tabular-nums text-fg-mute">{shortDate(brtToday(new Date(i.createdAt)))}</span>
             </li>
           ))}
         </ul>

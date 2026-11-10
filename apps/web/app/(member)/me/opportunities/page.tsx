@@ -11,6 +11,7 @@ import {
   useSetInterest,
   type OpportunityDto,
 } from '../../../../lib/queries/opportunities';
+import { ConfirmDialog } from '../../../../components/ui/confirm-dialog';
 import { StudioPageHeader } from '../../../../components/member/studio-page-header';
 import { OpportunityCard } from '../../../../components/opportunities/opportunity-card';
 import { OpportunityDetailModal } from '../../../../components/opportunities/opportunity-detail-modal';
@@ -49,6 +50,7 @@ export default function MeOpportunitiesPage() {
   const [filter, setFilter] = useState<Filter>('ALL');
   const [openId, setOpenId] = useState<string | null>(null);
   const [form, setForm] = useState<{ initial: OpportunityDto | null } | null>(null);
+  const [toArchive, setToArchive] = useState<OpportunityDto | null>(null);
   const [showClosed, setShowClosed] = useState(false);
 
   const all = data ?? [];
@@ -166,7 +168,17 @@ export default function MeOpportunitiesPage() {
           setOpenId(null);
           setForm({ initial: o });
         }}
-        onArchive={(o) => save.mutate({ id: o.id, input: { status: 'ARCHIVED' } }, { onSuccess: () => setOpenId(null) })}
+        onArchive={(o) => setToArchive(o)}
+      />
+      <ConfirmDialog
+        isOpen={!!toArchive}
+        onClose={() => setToArchive(null)}
+        title="Archive this post?"
+        description="Archived posts leave the board and only an admin can restore them."
+        confirmLabel="Archive"
+        onConfirm={() => {
+          if (toArchive) save.mutate({ id: toArchive.id, input: { status: 'ARCHIVED' } }, { onSuccess: () => { setToArchive(null); setOpenId(null); } });
+        }}
       />
       <OpportunityFormModal
         mode="member"

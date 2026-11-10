@@ -55,7 +55,10 @@ export function OpportunitiesTable({
                   <td className="px-4 py-3 text-fg">{o.title}</td>
                   <td className="px-4 py-3 text-fg-soft">{o.companyName}</td>
                   <td className="px-4 py-3 text-fg-soft">{OPPORTUNITY_TYPE_LABELS[o.type]}</td>
-                  <td className="px-4 py-3 text-xs text-fg-soft">{o.status}</td>
+                  <td className="px-4 py-3 text-xs text-fg-soft">
+                  {o.status}
+                  {o.status === 'PUBLISHED' && !o.isOpen && <span className="ml-1 text-fg-mute">Closed</span>}
+                </td>
                   <td className="px-4 py-3 text-fg-soft">{date ? shortDate(date) : '—'}</td>
                   <td className="px-4 py-3 text-fg-soft">{o.createdBy.name}</td>
                   <td className="px-4 py-3"><InterestListPopover interests={o.interests} /></td>
