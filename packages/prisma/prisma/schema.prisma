@@ -127,6 +127,8 @@ model User {
   invitesCreated     InvitedEmail[]      @relation("inviteCreatedBy")
   events             UserEvent[]
   mocks              MockInterview[]
+  opportunitiesCreated Opportunity[]
+  opportunityInterests OpportunityInterest[]
 }
 
 // Allowlist for first-login. Admin pre-registers an email with a role; the
@@ -536,4 +538,61 @@ model MockInterview {
   @@index([userId, cycleId])
   @@index([userId, conductedAt])
   @@index([type])
+}
+
+enum OpportunityType {
+  INTERNSHIP
+  SUMMER
+  FULL_TIME
+  CONTRACT
+  FREELANCE
+  EVENT
+  MENTORSHIP
+  OTHER
+}
+
+enum OpportunityStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum WorkMode {
+  REMOTE
+  HYBRID
+  ONSITE
+}
+
+model Opportunity {
+  id           String                @id @default(cuid())
+  title        String
+  type         OpportunityType
+  companyName  String
+  description  String?
+  location     String?
+  workMode     WorkMode?
+  compensation String?
+  deadline     DateTime?
+  eventDate    DateTime?
+  links        Json                  @default("[]")
+  contacts     Json                  @default("[]")
+  status       OpportunityStatus     @default(DRAFT)
+  publishedAt  DateTime?
+  createdById  String
+  createdBy    User                  @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  interests    OpportunityInterest[]
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
+
+  @@index([status, deadline])
+}
+
+model OpportunityInterest {
+  userId        String
+  opportunityId String
+  createdAt     DateTime    @default(now())
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  opportunity   Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+
+  @@id([userId, opportunityId])
 }

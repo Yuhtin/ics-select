@@ -1,4 +1,4 @@
-import { CalendarDays, House, UsersRound, type LucideIcon } from 'lucide-react';
+import { Briefcase, CalendarDays, House, UsersRound, type LucideIcon } from 'lucide-react';
 
 export interface MemberNavItem {
   href: string;
@@ -12,6 +12,7 @@ export const MEMBER_NAV_ITEMS: readonly MemberNavItem[] = [
   { href: '/me', label: 'Today', icon: House, exact: true, mobile: true },
   { href: '/me/calendar', label: 'Calendar', icon: CalendarDays, mobile: true },
   { href: '/me/cohort', label: 'Cohort', icon: UsersRound, mobile: true },
+  { href: '/me/opportunities', label: 'Opportunities', icon: Briefcase, mobile: true },
 ];
 
 export function isMemberNavActive(pathname: string, item: MemberNavItem): boolean {
