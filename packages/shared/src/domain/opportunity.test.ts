@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   OpportunityInputSchema,
+  OPPORTUNITY_TYPE_LABELS,
   OpportunityLinkSchema,
   closingDate,
   daysUntilClose,
@@ -42,5 +43,15 @@ describe('opportunity', () => {
     expect(
       OpportunityInputSchema.safeParse({ title: 'T', type: 'SUMMER', companyName: 'S', deadline: '13/11/2026' }).success,
     ).toBe(false);
+  });
+  it('pins SUMMER and CONTRACT labels', () => {
+    expect(OPPORTUNITY_TYPE_LABELS.SUMMER).toBe('Summer');
+    expect(OPPORTUNITY_TYPE_LABELS.CONTRACT).toBe('Contract · PJ');
+  });
+  it('rejects impossible calendar dates', () => {
+    const base = { title: 'T', type: 'SUMMER', companyName: 'S' };
+    expect(OpportunityInputSchema.safeParse({ ...base, deadline: '2026-02-30' }).success).toBe(false);
+    expect(OpportunityInputSchema.safeParse({ ...base, eventDate: '2026-13-45' }).success).toBe(false);
+    expect(OpportunityInputSchema.safeParse({ ...base, deadline: '2026-11-13' }).success).toBe(true);
   });
 });

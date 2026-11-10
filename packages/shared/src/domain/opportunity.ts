@@ -7,9 +7,9 @@ export type OpportunityType = (typeof OPPORTUNITY_TYPES)[number];
 
 export const OPPORTUNITY_TYPE_LABELS: Record<OpportunityType, string> = {
   INTERNSHIP: 'Internship',
-  SUMMER: 'Summer program',
+  SUMMER: 'Summer',
   FULL_TIME: 'Full-time',
-  CONTRACT: 'Contract',
+  CONTRACT: 'Contract · PJ',
   FREELANCE: 'Freelance',
   EVENT: 'Event',
   MENTORSHIP: 'Mentorship',
@@ -40,7 +40,13 @@ export const OpportunityContactSchema = z.object({
   linkedin: httpUrl.optional(),
 });
 
-const dateOnly = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'expected YYYY-MM-DD');
+const dateOnly = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, 'expected YYYY-MM-DD')
+  .refine((s) => {
+    const d = new Date(`${s}T00:00:00Z`);
+    return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === s;
+  }, 'invalid calendar date');
 
 export const OpportunityInputSchema = z.object({
   title: z.string().min(1).max(160),
