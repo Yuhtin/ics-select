@@ -32,9 +32,9 @@ export function OpportunitiesTable({
 
   return (
     <>
-      {(save.isError || del.isError) && (
+      {save.isError && (
         <p role="alert" className="mb-3 font-sans text-sm text-outcome-stuck">
-          {save.isError ? 'Could not update the opportunity. Try again.' : 'Could not delete the opportunity. Try again.'}
+          Could not update the opportunity. Try again.
         </p>
       )}
       <div className="overflow-x-auto rounded-card border border-border-token bg-surface">
@@ -67,7 +67,7 @@ export function OpportunitiesTable({
                           type="button"
                           className={ACTION}
                           disabled={save.isPending}
-                          onClick={() => save.mutate({ id: o.id, input: { status: next.to } })}
+                          onClick={() => { save.reset(); save.mutate({ id: o.id, input: { status: next.to } }); }}
                         >
                           {next.label}
                         </button>
@@ -85,7 +85,14 @@ export function OpportunitiesTable({
         isOpen={!!toDelete}
         onClose={() => { del.reset(); setToDelete(null); }}
         title="Delete opportunity?"
-        description={toDelete && `"${toDelete.title}" and its interest flags will be removed. This cannot be undone.`}
+        description={toDelete && (
+          <>
+            <p>{`"${toDelete.title}" and its interest flags will be removed. This cannot be undone.`}</p>
+            {del.isError && (
+              <p role="alert" className="mt-2 text-outcome-stuck">Could not delete the opportunity. Try again.</p>
+            )}
+          </>
+        )}
         confirmLabel="Delete"
         cancelLabel="Cancel"
         isLoading={del.isPending}

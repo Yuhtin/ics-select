@@ -214,7 +214,7 @@ test('failed DELETE keeps the dialog open with the error', async ({ page }) => {
   await page.getByRole('row', { name: /Rascunho de vaga/ }).getByRole('button', { name: 'Delete' }).click();
   const dialog = page.getByRole('dialog');
   await dialog.getByRole('button', { name: 'Delete' }).click();
-  await expect(page.getByText('Could not delete the opportunity').first()).toBeVisible();
+  await expect(dialog.getByRole('alert').filter({ hasText: 'Could not delete' })).toBeVisible();
   await expect(dialog).toBeVisible();
 });
 
