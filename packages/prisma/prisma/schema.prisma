@@ -579,7 +579,7 @@ model Opportunity {
   status       OpportunityStatus     @default(DRAFT)
   publishedAt  DateTime?
   createdById  String
-  createdBy    User                  @relation(fields: [createdById], references: [id])
+  createdBy    User                  @relation(fields: [createdById], references: [id], onDelete: Cascade)
   interests    OpportunityInterest[]
   createdAt    DateTime              @default(now())
   updatedAt    DateTime              @updatedAt
@@ -591,7 +591,7 @@ model OpportunityInterest {
   userId        String
   opportunityId String
   createdAt     DateTime    @default(now())
-  user          User        @relation(fields: [userId], references: [id])
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   opportunity   Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
 
   @@id([userId, opportunityId])
