@@ -77,9 +77,21 @@ describe('OpportunitiesService', () => {
     await expect(svc.update(member, 'o1', { status: 'DRAFT' }, NOW)).rejects.toBeInstanceOf(BadRequestException);
   });
 
+  it('member cannot edit or unarchive an ARCHIVED post', async () => {
+    prisma.opportunity.findUnique.mockResolvedValue(row({ status: 'ARCHIVED' }));
+    await expect(svc.update(member, 'o1', { status: 'PUBLISHED' }, NOW)).rejects.toBeInstanceOf(ForbiddenException);
+    expect(prisma.opportunity.update).not.toHaveBeenCalled();
+  });
+
+  it('setInterest swallows P2002 from a concurrent duplicate upsert', async () => {
+    prisma.opportunity.findUnique.mockResolvedValue(row({ status: 'PUBLISHED' }));
+    prisma.opportunityInterest.upsert.mockRejectedValue(Object.assign(new Error('dup'), { code: 'P2002' }));
+    expect(await svc.setInterest(member, 'o1', true, NOW)).toEqual({ ok: true });
+  });
+
   it('publishedAt is not reset on unarchive', async () => {
     prisma.opportunity.findUnique.mockResolvedValue(row({ status: 'ARCHIVED' }));
-    await svc.update(member, 'o1', { status: 'PUBLISHED' }, NOW);
+    await svc.update(admin, 'o1', { status: 'PUBLISHED' }, NOW);
     expect(prisma.opportunity.update.mock.calls[0][0].data.publishedAt).toBeUndefined();
   });
 

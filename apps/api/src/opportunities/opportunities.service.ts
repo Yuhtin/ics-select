@@ -94,6 +94,7 @@ export class OpportunitiesService {
     const admin = user.role === 'ADMIN';
     if (!admin && cur.createdById !== user.sub) throw new ForbiddenException('not your opportunity');
     if (!admin && cur.status === 'DRAFT') throw new NotFoundException('opportunity not found');
+    if (!admin && cur.status === 'ARCHIVED') throw new ForbiddenException('archived by admin or owner; cannot edit');
     if (!admin && input.status === 'DRAFT') throw new BadRequestException('members cannot set DRAFT');
     const { deadline, eventDate, ...rest } = input;
     const row = await this.prisma.opportunity.update({
@@ -122,9 +123,13 @@ export class OpportunitiesService {
     if (!isOpportunityOpen(opp, now)) throw new ConflictException('opportunity is closed');
     const key = { userId: user.sub, opportunityId: id };
     if (on) {
-      await this.prisma.opportunityInterest.upsert({
-        where: { userId_opportunityId: key }, create: key, update: {},
-      });
+      try {
+        await this.prisma.opportunityInterest.upsert({
+          where: { userId_opportunityId: key }, create: key, update: {},
+        });
+      } catch (e: any) {
+        if (e?.code !== 'P2002') throw e; // concurrent duplicate PUT: already flagged
+      }
     } else {
       await this.prisma.opportunityInterest.deleteMany({ where: key });
     }
