@@ -32,6 +32,11 @@ export function OpportunitiesTable({
 
   return (
     <>
+      {(save.isError || del.isError) && (
+        <p role="alert" className="mb-3 font-sans text-sm text-outcome-stuck">
+          {save.isError ? 'Could not update the opportunity. Try again.' : 'Could not delete the opportunity. Try again.'}
+        </p>
+      )}
       <div className="overflow-x-auto rounded-card border border-border-token bg-surface">
         <table className="w-full min-w-[960px] border-collapse text-left font-sans text-sm tabular-nums">
           <thead>
@@ -67,7 +72,7 @@ export function OpportunitiesTable({
                           {next.label}
                         </button>
                       )}
-                      <button type="button" className={ACTION} onClick={() => setToDelete(o)}>Delete</button>
+                      <button type="button" className={ACTION} onClick={() => { del.reset(); setToDelete(o); }}>Delete</button>
                     </div>
                   </td>
                 </tr>
@@ -78,13 +83,13 @@ export function OpportunitiesTable({
       </div>
       <ConfirmDialog
         isOpen={!!toDelete}
-        onClose={() => setToDelete(null)}
+        onClose={() => { del.reset(); setToDelete(null); }}
         title="Delete opportunity?"
         description={toDelete && `"${toDelete.title}" and its interest flags will be removed. This cannot be undone.`}
         confirmLabel="Delete"
         cancelLabel="Cancel"
         isLoading={del.isPending}
-        onConfirm={() => toDelete && del.mutate(toDelete.id, { onSettled: () => setToDelete(null) })}
+        onConfirm={() => toDelete && del.mutate(toDelete.id, { onSuccess: () => setToDelete(null) })}
       />
     </>
   );

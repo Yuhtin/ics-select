@@ -1,4 +1,4 @@
-import { expect, test, type Page, type Request } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
 const API_BASE = 'http://localhost:3001';
 const admin = {
@@ -133,13 +133,11 @@ const list = [
   },
 ];
 
-async function mock(page: Page, opts: { interested?: unknown[] | 'fail' } = {}) {
+async function mock(page: Page, opts: { interested?: unknown[] | 'fail'; mutationsFail?: boolean } = {}) {
   await page.addInitScript(() => localStorage.setItem('ics_access_token', 'adm-token'));
-  const requests: Request[] = [];
   await page.route(`${API_BASE}/**`, (route) => {
     const req = route.request();
     const url = new URL(req.url());
-    if (url.pathname.startsWith('/opportunities')) requests.push(req);
     if (url.pathname === '/me') return route.fulfill({ json: admin });
     if (url.pathname.endsWith('/cockpit')) return route.fulfill({ json: COCKPIT });
     if (url.pathname.endsWith('/mocks') || url.pathname.endsWith('/notes')) return route.fulfill({ json: [] });
@@ -152,12 +150,14 @@ async function mock(page: Page, opts: { interested?: unknown[] | 'fail' } = {}) 
       }
       return route.fulfill({ json: list });
     }
+    if (opts.mutationsFail && url.pathname.startsWith('/opportunities/') && ['PATCH', 'DELETE'].includes(req.method())) {
+      return route.fulfill({ status: 500, json: { error: { code: 'INTERNAL', message: 'boom' } } });
+    }
     if (url.pathname.startsWith('/opportunities/') && req.method() === 'PATCH') {
       return route.fulfill({ json: { ...list[0], ...req.postDataJSON() } });
     }
     return route.fulfill({ json: {} });
   });
-  return requests;
 }
 
 test('admin table lists drafts with status', async ({ page }) => {
@@ -170,12 +170,11 @@ test('admin table lists drafts with status', async ({ page }) => {
 });
 
 test('publish action PATCHes status PUBLISHED', async ({ page }) => {
-  const requests = await mock(page);
+  await mock(page);
   await page.goto('/admin/opportunities');
   const patch = page.waitForRequest((r) => r.method() === 'PATCH' && r.url().endsWith('/opportunities/draft1'));
   await page.getByRole('row', { name: /Rascunho de vaga/ }).getByRole('button', { name: 'Publish' }).click();
   expect((await patch).postDataJSON()).toEqual({ status: 'PUBLISHED' });
-  void requests;
 });
 
 test('interest count opens the member list', async ({ page }) => {
@@ -195,6 +194,32 @@ test('member detail shows Interested in when the member flagged something', asyn
 
 test('member detail hides Interested in when empty', async ({ page }) => {
   await mock(page, { interested: [] });
+  const asked = page.waitForResponse((r) => r.url().includes('interestedBy='));
+  await page.goto('/admin/member/u2');
+  await asked;
+  await expect(page.getByRole('heading', { name: 'Maria Clara' })).toBeVisible();
+  await expect(page.getByText('Interested in')).toHaveCount(0);
+});
+
+test('failed PATCH shows an error message', async ({ page }) => {
+  await mock(page, { mutationsFail: true });
+  await page.goto('/admin/opportunities');
+  await page.getByRole('row', { name: /Rascunho de vaga/ }).getByRole('button', { name: 'Publish' }).click();
+  await expect(page.getByRole('alert').filter({ hasText: 'Could not update' })).toBeVisible();
+});
+
+test('failed DELETE keeps the dialog open with the error', async ({ page }) => {
+  await mock(page, { mutationsFail: true });
+  await page.goto('/admin/opportunities');
+  await page.getByRole('row', { name: /Rascunho de vaga/ }).getByRole('button', { name: 'Delete' }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByRole('button', { name: 'Delete' }).click();
+  await expect(page.getByText('Could not delete the opportunity').first()).toBeVisible();
+  await expect(dialog).toBeVisible();
+});
+
+test('member detail keeps Interested in hidden when the request fails', async ({ page }) => {
+  await mock(page, { interested: 'fail' });
   const asked = page.waitForResponse((r) => r.url().includes('interestedBy='));
   await page.goto('/admin/member/u2');
   await asked;
