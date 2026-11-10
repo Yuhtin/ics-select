@@ -65,6 +65,13 @@ describe('OpportunitiesService', () => {
     expect(prisma.opportunity.update).not.toHaveBeenCalled();
   });
 
+  it('null in the PATCH body clears the column', async () => {
+    prisma.opportunity.findUnique.mockResolvedValue(row({ compensation: 'R$ 1k' }));
+    await svc.update(member, 'o1', { compensation: null, description: null, location: null, workMode: null } as any, NOW);
+    const data = prisma.opportunity.update.mock.calls[0][0].data;
+    expect(data).toMatchObject({ compensation: null, description: null, location: null, workMode: null });
+  });
+
   it('member cannot set DRAFT on own opportunity', async () => {
     prisma.opportunity.findUnique.mockResolvedValue(row());
     await expect(svc.update(member, 'o1', { status: 'DRAFT' }, NOW)).rejects.toBeInstanceOf(BadRequestException);

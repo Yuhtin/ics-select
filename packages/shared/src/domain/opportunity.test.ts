@@ -10,6 +10,10 @@ import {
 } from './opportunity';
 
 describe('opportunity', () => {
+  it('accepts null on clearable optional text fields (PATCH clears them)', () => {
+    const r = OpportunityInputSchema.partial().parse({ description: null, location: null, workMode: null, compensation: null });
+    expect(r).toMatchObject({ description: null, location: null, workMode: null, compensation: null });
+  });
   it('stays open on the deadline day late at night BRT', () => {
     const o = { status: 'PUBLISHED', deadline: new Date('2026-11-13T00:00:00Z'), eventDate: null };
     expect(isOpportunityOpen(o, new Date('2026-11-14T02:30:00Z'))).toBe(true);

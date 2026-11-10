@@ -42,17 +42,19 @@ function toForm(o: OpportunityDto | null | undefined): Form {
 }
 
 const opt = (s: string) => s.trim() || undefined;
+// Blank top-level optionals go as null so a PATCH clears the column (undefined would be dropped by JSON).
+const clearable = (s: string) => s.trim() || null;
 
-/** Form state → API body; blank optionals dropped so the shared schema validates them as absent. */
+/** Form state → API body. */
 function toInput(f: Form, mode: 'member' | 'admin') {
   return {
     title: f.title.trim(),
     type: f.type,
     companyName: f.companyName.trim(),
-    description: opt(f.description),
-    location: opt(f.location),
-    workMode: opt(f.workMode),
-    compensation: opt(f.compensation),
+    description: clearable(f.description),
+    location: clearable(f.location),
+    workMode: clearable(f.workMode),
+    compensation: clearable(f.compensation),
     deadline: f.deadline || null,
     eventDate: f.eventDate || null,
     links: f.links.filter((l) => l.label.trim() || l.url.trim()).map((l) => ({ label: l.label.trim(), url: l.url.trim() })),

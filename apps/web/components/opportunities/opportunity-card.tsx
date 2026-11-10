@@ -140,21 +140,9 @@ export function OpportunityCard({
   const place = placeLine(o);
   return (
     <div
-      role="button"
-      tabIndex={0}
       data-testid="opportunity-card"
-      aria-label={`${o.companyName} — ${o.title}`}
-      onClick={onOpen}
-      onKeyDown={(e) => {
-        if (e.target !== e.currentTarget) return;
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          onOpen();
-        }
-      }}
       className={clsx(
-        'flex w-full max-w-[380px] cursor-pointer flex-col gap-2.5 rounded-[12px] border border-border-token bg-surface p-4 text-left transition-colors duration-150',
-        'hover:border-border-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+        'relative flex w-full max-w-[380px] flex-col gap-2.5 rounded-[12px] border border-border-token bg-surface p-4 transition-colors duration-150 hover:border-border-strong',
         urgent && 'border-l-[3px] border-l-outcome-done-hard',
         !o.isOpen && 'opacity-60',
       )}
@@ -164,7 +152,16 @@ export function OpportunityCard({
       </div>
       <div>
         <p className="font-sans text-[13px] font-semibold text-fg-soft">{o.companyName}</p>
-        <h3 className="font-serif text-[19px] font-medium leading-snug text-fg">{o.title}</h3>
+        <h3 className="font-serif text-[19px] font-medium leading-snug text-fg">
+          {/* Stretched link pattern: the overlay makes the whole card open the modal without nesting controls. */}
+          <button
+            type="button"
+            onClick={onOpen}
+            className="cursor-pointer text-left after:absolute after:inset-0 after:rounded-[12px] focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-primary"
+          >
+            {o.title}
+          </button>
+        </h3>
       </div>
       {(place || o.compensation) && (
         <p className="flex flex-wrap gap-x-3 gap-y-1 font-sans text-xs text-fg-mute">
@@ -183,7 +180,7 @@ export function OpportunityCard({
           <AvatarStack people={o.interests} />
           <small className="truncate font-sans text-xs text-fg-mute">{interestCount(o)}</small>
         </span>
-        <InterestButton o={o} onToggle={onToggleInterest} />
+        <InterestButton o={o} onToggle={onToggleInterest} className="relative z-10" />
       </div>
     </div>
   );

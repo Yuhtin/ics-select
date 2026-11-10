@@ -110,7 +110,7 @@ test('toggling interest calls PUT', async ({ page }) => {
 test('detail modal shows WhatsApp link', async ({ page }) => {
   await mockMember(page);
   await page.goto('/me/opportunities');
-  await cards(page).filter({ hasText: 'Stripe' }).click();
+  await cards(page).filter({ hasText: 'Stripe' }).getByRole('button', { name: /Summer Internship/ }).click();
   const dialog = page.getByRole('dialog');
   await expect(dialog.getByRole('link', { name: /WhatsApp/ })).toHaveAttribute('href', 'https://wa.me/5511987654321');
   await expect(dialog.getByRole('link', { name: /E-mail/ })).toHaveAttribute('href', 'mailto:mariana@stripe.com');
@@ -128,6 +128,25 @@ test('member can share an opportunity', async ({ page }) => {
   await dialog.getByRole('button', { name: 'Share', exact: true }).click();
   const body = (await post).postDataJSON();
   expect(body).toMatchObject({ title: 'Vaga de Data Engineer', companyName: 'iFood', type: 'FULL_TIME' });
+  expect(body.status).toBeUndefined();
+});
+
+test('editing own opportunity and clearing compensation sends null', async ({ page }) => {
+  const own = {
+    ...base, id: 'mine', title: 'Freela de landing page', type: 'FREELANCE', companyName: 'AgroSense',
+    compensation: 'R$ 4.000', createdBy: { id: member.id, name: member.name, role: 'MEMBER' },
+  };
+  await mockMember(page, [own]);
+  await page.goto('/me/opportunities');
+  await cards(page).first().getByRole('button', { name: own.title }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Edit' }).click();
+  const dialog = page.getByRole('dialog');
+  await expect(dialog.getByLabel('Compensation')).toHaveValue('R$ 4.000');
+  await dialog.getByLabel('Compensation').fill('');
+  const patch = page.waitForRequest((r) => r.url().endsWith('/opportunities/mine') && r.method() === 'PATCH');
+  await dialog.getByRole('button', { name: 'Save', exact: true }).click();
+  const body = (await patch).postDataJSON();
+  expect(body).toHaveProperty('compensation', null);
   expect(body.status).toBeUndefined();
 });
 
