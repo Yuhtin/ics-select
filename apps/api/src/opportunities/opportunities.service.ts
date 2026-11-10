@@ -93,6 +93,7 @@ export class OpportunitiesService {
     if (!cur) throw new NotFoundException('opportunity not found');
     const admin = user.role === 'ADMIN';
     if (!admin && cur.createdById !== user.sub) throw new ForbiddenException('not your opportunity');
+    if (!admin && cur.status === 'DRAFT') throw new NotFoundException('opportunity not found');
     if (!admin && input.status === 'DRAFT') throw new BadRequestException('members cannot set DRAFT');
     const { deadline, eventDate, ...rest } = input;
     const row = await this.prisma.opportunity.update({

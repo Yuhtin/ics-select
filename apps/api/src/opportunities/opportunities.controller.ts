@@ -19,8 +19,8 @@ export class OpportunitiesController {
   constructor(private readonly service: OpportunitiesService) {}
 
   @Get()
-  list(@CurrentUser() user: JwtStrategyPayload, @Query('interestedBy') interestedBy?: string) {
-    return this.service.list(user, { interestedBy });
+  list(@CurrentUser() user: JwtStrategyPayload, @Query('interestedBy') interestedBy?: unknown) {
+    return this.service.list(user, { interestedBy: typeof interestedBy === 'string' ? interestedBy : undefined });
   }
 
   @Get(':id')

@@ -84,6 +84,12 @@ describe('OpportunitiesService', () => {
     expect('links' in data).toBe(false);
   });
 
+  it('member cannot update a DRAFT they own (404)', async () => {
+    prisma.opportunity.findUnique.mockResolvedValue(row({ status: 'DRAFT' }));
+    await expect(svc.update(member, 'o1', { status: 'PUBLISHED' }, NOW)).rejects.toBeInstanceOf(NotFoundException);
+    expect(prisma.opportunity.update).not.toHaveBeenCalled();
+  });
+
   it('member get of a DRAFT is 404', async () => {
     prisma.opportunity.findUnique.mockResolvedValue(row({ status: 'DRAFT' }));
     await expect(svc.get(member, 'o1', NOW)).rejects.toBeInstanceOf(NotFoundException);
